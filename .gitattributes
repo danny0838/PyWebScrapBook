@@ -1,0 +1,9 @@
+.gitattributes text
+.gitignore text
+*.py text
+*.wsgi text
+*.yaml text
+*.md text
+*.html text
+*.css text
+*.js text

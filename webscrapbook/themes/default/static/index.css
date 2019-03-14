@@ -1,0 +1,69 @@
+#data-table .highlight {
+  background-color: #CCCCFF;
+}
+
+#data-table th {
+  cursor: pointer;
+  text-align: inherit;
+}
+
+#data-table td {
+  padding: 0.2em;
+  vertical-align: top;
+}
+
+#data-table th.detail,
+#data-table td.detail {
+  padding-left: 2em;
+  text-align: right;
+}
+
+html[dir=rtl] #data-table th.detail,
+html[dir=rtl] #data-table td.detail {
+  padding-left: 0;
+  padding-right: 2em;
+  text-align: left;
+}
+
+#data-table td:nth-child(2) {
+  word-break: break-all;
+}
+
+#data-table[data-orderby="0"] th[data-orderby="0"] a,
+#data-table[data-orderby="1"] th[data-orderby="1"] a,
+#data-table[data-orderby="2"] th[data-orderby="2"] a,
+#data-table[data-orderby="3"] th[data-orderby="3"] a {
+  text-decoration: underline;
+}
+
+#data-table[data-orderby="0"][data-order="1"] th[data-orderby="0"] a::after,
+#data-table[data-orderby="1"][data-order="1"] th[data-orderby="1"] a::after,
+#data-table[data-orderby="2"][data-order="1"] th[data-orderby="2"] a::after,
+#data-table[data-orderby="3"][data-order="1"] th[data-orderby="3"] a::after {
+  content: "↓";
+  display: inline-block;
+}
+
+#data-table[data-orderby="0"][data-order="-1"] th[data-orderby="0"] a::after,
+#data-table[data-orderby="1"][data-order="-1"] th[data-orderby="1"] a::after,
+#data-table[data-orderby="2"][data-order="-1"] th[data-orderby="2"] a::after,
+#data-table[data-orderby="3"][data-order="-1"] th[data-orderby="3"] a::after {
+  content: "↑";
+  display: inline-block;
+}
+
+@media screen and (max-width: 500px) {
+  #data-table th.detail,
+  #data-table td.detail {
+    padding-left: 1em;
+  }
+
+  html[dir=rtl] #data-table th.detail,
+  html[dir=rtl] #data-table td.detail {
+    padding-right: 1em;
+  }
+}
+
+#command {
+  width: 2.8em;
+}
