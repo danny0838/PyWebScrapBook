@@ -341,7 +341,7 @@ def handle_directory_listing(localpath, format=None):
                     'size': entry.size,
                     'last_modified': entry.last_modified,
                     })
-        return http_response(data, format=format)
+        return http_response(data, format=format, **headers)
 
     body = template('index.tpl',
             sitename=runtime['name'],
