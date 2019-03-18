@@ -301,33 +301,12 @@ def handle_directory_listing(localpath, format=None):
     if not os.access(localpath, os.R_OK):
         return http_error(403, "You do not have permission to view this directory.", format=format)
 
-    # check 304
-    from bottle import parse_date, tob
-
+    # headers
     headers = {}
-
     stats = os.stat(localpath)
     headers['Last-Modified'] = email.utils.formatdate(stats.st_mtime, usegmt=True)
     headers['Date'] = email.utils.formatdate(time.time(), usegmt=True)
     headers['Cache-Control'] = 'no-cache'
-
-    getenv = request.environ.get
-
-    etag = '%d:%d:%d:%d:%s' % (stats.st_dev, stats.st_ino, stats.st_mtime,
-                               stats.st_size, localpath)
-    etag = hashlib.sha1(tob(etag)).hexdigest()
-
-    headers['ETag'] = etag
-    check = getenv('HTTP_IF_NONE_MATCH')
-    if check and check == etag:
-        return HTTPResponse(status=304, **headers)
-
-    if not check:
-        ims = getenv('HTTP_IF_MODIFIED_SINCE')
-        if ims:
-            ims = parse_date(ims.split(";")[0].strip())
-        if ims is not None and ims >= int(stats.st_mtime):
-            return HTTPResponse(status=304, **headers)
 
     # output index
     subentries = util.listdir(localpath)
