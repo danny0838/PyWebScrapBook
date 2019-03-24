@@ -306,7 +306,7 @@ def handle_directory_listing(localpath, format=None):
     stats = os.stat(localpath)
     headers['Last-Modified'] = email.utils.formatdate(stats.st_mtime, usegmt=True)
     headers['Date'] = email.utils.formatdate(time.time(), usegmt=True)
-    headers['Cache-Control'] = 'no-cache'
+    headers['Cache-Control'] = 'no-store'
 
     # output index
     subentries = util.listdir(localpath)
