@@ -30,7 +30,7 @@ setup(
         ],
     python_requires='~=3.5',
     install_requires=[
-        "bottle",
+        "bottle >= 0.12",
         'commonmark >= 0.8',
         ],
     packages=find_packages(),
