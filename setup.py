@@ -30,6 +30,7 @@ setup(
         ],
     python_requires='~=3.5',
     install_requires=[
+        "lxml >= 4.0",
         "bottle >= 0.12",
         'commonmark >= 0.8',
         ],

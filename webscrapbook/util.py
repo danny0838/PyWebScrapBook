@@ -5,7 +5,7 @@ import sys, os
 import subprocess
 from collections import namedtuple
 from html.parser import HTMLParser
-from xml.etree import ElementTree
+from lxml import etree
 import zipfile
 import math
 import re
@@ -361,7 +361,7 @@ def parse_maff_index_rdf(fh):
         }
 
     text = fh.read().decode('UTF-8')
-    root = ElementTree.fromstring(text)
+    root = etree.XML(text)
 
     return MaffPageInfo(
             load_attr('title'),
