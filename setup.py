@@ -31,7 +31,7 @@ setup(
     python_requires='~=3.5',
     install_requires=[
         "bottle",
-        'commonmark >= 0.6.4',
+        'commonmark >= 0.8',
         ],
     packages=find_packages(),
     package_data={
