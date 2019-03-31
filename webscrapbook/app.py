@@ -175,7 +175,7 @@ def http_response(body='', status=None, headers=None, format=None, **more_header
 
 
 def http_error(
-         status=None,
+         status=500,
          body=None,
          exception=None,
          traceback=None,
@@ -184,11 +184,10 @@ def http_error(
     """
     if format == 'json':
         more_headers['Content-type'] = 'application/json'
-        status = status or self.default_status
 
         body = {
             'error': {
-                'status': str(status),
+                'status': status,
                 'message': body,
                 },
             }
