@@ -96,11 +96,6 @@ class WSBServer(bottle.ServerAdapter):
         srv.serve_forever()
 
 
-def launch_browser(url, browser_path, **kwargs):
-    browser = webbrowser.get(browser_path)
-    browser.open(url, **kwargs)
-
-
 def serve(root, **kwargs):
     # switch to the specified directory and reload configs
     os.chdir(root)
@@ -150,14 +145,14 @@ def serve(root, **kwargs):
                 path=path,
                 )
 
-        browser_path = config['browser']['command'] or None
+        browser = webbrowser.get(config['browser']['command'] or None)
 
         kwargs = {
             'new': config['browser'].getint('new'),
             'autoraise': config['browser'].getboolean('top'),
             }
 
-        thread = Thread(target=launch_browser, args=[url, browser_path], kwargs=kwargs)
+        thread = Thread(target=browser.open, args=[url], kwargs=kwargs)
         thread.daemon = True
         thread.start()
 
