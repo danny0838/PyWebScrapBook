@@ -89,6 +89,17 @@ def view_in_explorer(path):
             launch(os.path.dirname(path))
 
 
+def checksum(file, method='sha1', chunk_size=4096):
+    """Calculate the checksum of a file.
+    """
+    h = hashlib.new(method)
+    with open(file, 'rb') as f:
+        for chunk in iter(lambda: f.read(chunk_size), b""):
+            h.update(chunk)
+        f.close()
+    return h.hexdigest()
+
+
 def file_info(file):
     """Read basic file information.
     """

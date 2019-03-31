@@ -43,6 +43,10 @@ Run `.wsb/serve.py` to start the server, or run below command from CLI:
 
     wsb serve
 
+### Open archive file directly
+
+Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the command path. Set default application of MAFF/HTZ file to the command at that path to open them directly in the browser with double-click.
+
 ### Further documentation
 
 Run below command for further help:

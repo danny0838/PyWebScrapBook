@@ -46,6 +46,7 @@ setup(
         'console_scripts': [
             'webscrapbook = webscrapbook.cli:main',
             'wsb = webscrapbook.cli:main',
+            'wsbview = webscrapbook.cli:view',
             ],
         },
     )

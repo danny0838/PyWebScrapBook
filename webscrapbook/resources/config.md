@@ -308,3 +308,27 @@ The index page to visit when the browser is launched. This is a URL path under
 the root path the application is served, without leading slash.
 
 (default: )
+
+
+#### `cache_dir`
+
+The directory name under the system temporary directory for cache files for
+viewing archive files.
+
+(default: webscrapbook.archives)
+
+
+#### `cache_expire`
+
+The duration in seconds for cache files for viewing archive files.
+
+(default: 259200 (3 days))
+
+
+#### `use_jar`
+
+Whether to use JAR protocol for viewing archive files. JAR protocol, supported
+by Firefox (Gecko) based browsers, allows accessing ZIP content files directly
+without extracting them in prior.
+
+(default: false)

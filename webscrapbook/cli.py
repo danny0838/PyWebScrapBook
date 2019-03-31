@@ -6,6 +6,7 @@ import os
 import argparse
 import json
 from getpass import getpass
+import time
 
 # this package
 from . import __package_name__, __version__
@@ -16,6 +17,17 @@ from . import util
 
 class WebScrapBookInitError(Exception):
     pass
+
+
+def time_ns():
+    """Get current time int with nanoseconds precision.
+    """
+    try:
+        return time.time_ns()
+    except AttributeError:
+        # time_ns is available since Python 3.7
+        # otherwise, fallback to time.time()
+        return int(time.time() * 1e9)
 
 
 def fcopy(fsrc, fdst):
@@ -123,6 +135,92 @@ def cmd_help(args):
         print(text)
 
 
+def cmd_view(args):
+    """View archive file(s) in the browser."""
+    view_archive_files(args['files'])
+
+
+def view_archive_files(files):
+    """View archive file(s) in the browser.
+
+    Set default application of MAFF/HTZ archive files to this command to open
+    them in the browser directly.
+    """
+    import tempfile
+    import zipfile
+    import hashlib
+    import time
+    import mimetypes
+    import webbrowser
+    import shutil
+    from urllib.parse import urljoin
+    from urllib.request import pathname2url
+
+    cache_dir = os.path.join(tempfile.gettempdir(), config['browser']['cache_dir'])
+    cache_expire = config['browser'].getint('cache_expire') * 10 ** 9
+    use_jar = config['browser'].getboolean('use_jar')
+    browser = webbrowser.get(config['browser']['command'] or None)
+
+    urls = []
+    for file in files:
+        mime, _ = mimetypes.guess_type(file)
+        if not mime in ("application/html+zip", "application/x-maff"):
+            continue
+
+        if use_jar:
+            base_url = 'jar:file:' + pathname2url(os.path.abspath(file)) + '!/'
+            if mime == "application/html+zip":
+                urls.append(base_url + 'index.html')
+            elif mime == "application/x-maff":
+                urls.extend([base_url + f.indexfilename for f in util.get_maff_pages(file)])
+            continue
+
+        # extract zip contents to dest_dir if not done yet
+        hash = util.checksum(file)
+        dest_dir = os.path.join(cache_dir, hash)
+        if os.path.isdir(dest_dir):
+            # update atime
+            atime = time_ns()
+            stat = os.stat(dest_dir)
+            os.utime(dest_dir, ns=(atime, stat.st_mtime_ns))
+        else:
+            os.renames(tempfile.mkdtemp(), dest_dir)
+            with zipfile.ZipFile(file) as zip:
+                zip.extractall(dest_dir)
+                zip.close()
+
+        # get URL of every index page
+        base_url = 'file:' + pathname2url(dest_dir) + '/'
+        if mime == "application/html+zip":
+            urls.append(base_url + 'index.html')
+        elif mime == "application/x-maff":
+            urls.extend([base_url + f.indexfilename for f in util.get_maff_pages(file)])
+
+    # open pages in the browser
+    for url in urls:
+        browser.open(url)
+
+    # remove stale caches
+    if not use_jar:
+        t = time_ns()
+        if os.path.isdir(cache_dir):
+            for temp_dir in os.listdir(cache_dir):
+                temp_dir = os.path.join(cache_dir, temp_dir)
+                atime = os.stat(temp_dir).st_atime_ns
+                if t > atime + cache_expire:
+                    shutil.rmtree(temp_dir)
+
+
+def view():
+    """CLI entry point for viewing archive files.
+    """
+    parser = argparse.ArgumentParser(description=view_archive_files.__doc__)
+    parser.add_argument('files', nargs='+',
+        help="""files to view.""")
+    args = vars(parser.parse_args())
+    view_archive_files(args['files'])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', default=False, action='store_true',
@@ -167,6 +265,13 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
     parser_help.add_argument('topic', default=None, action='store',
         choices=['config'],
         help="""detailed help topic.""")
+
+    # subcommand: view
+    parser_view = subparsers.add_parser('view',
+        help=cmd_view.__doc__, description=cmd_view.__doc__)
+    parser_view.set_defaults(func=cmd_view)
+    parser_view.add_argument('files', nargs='+',
+        help="""files to view.""")
 
     # parse the command
     args = vars(parser.parse_args())
