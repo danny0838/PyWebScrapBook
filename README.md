@@ -19,9 +19,9 @@ Add python to PATH so that it can be run from the command line interface (CLI).
 
 ### Install this package
 
-Run below command from CLI to install:
+Run below command from CLI to install (or upgrade to) the latest version:
 
-    python -m pip install webscrapbook
+    python -m pip install -U webscrapbook
 
 After installation, `wsb` or `webscrapbook` will be available from the CLI.
 
