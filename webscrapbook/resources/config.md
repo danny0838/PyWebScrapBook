@@ -285,18 +285,19 @@ The [browser] section defines the desired browser to launch when needed. The
 browser is launched when, for example, the server starts.
 
 
-#### `path`
+#### `command`
 
-The browser path with CLI arguments to launch. Empty to use system default
-browser.
+The browser path with CLI arguments to launch. Use "%s" to represent the URL
+and append "&" at end to launch browser in the background, which is generally
+preferred to avoid interruption. Empty to use system default browser.
 
 Example:
 
     # Launch a Chrome incognito window
-    browser_path: "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --incognito %s
+    command = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --incognito %s &
 
-    # Launch Firefox in Private Window
-    browser_path: "C:\Program Files\Mozilla Firefox\firefox.exe" -private-window %s
+    # Launch a Firefox private window
+    command = "C:\Program Files\Mozilla Firefox\firefox.exe" -private-window %s &
 
 (default: )
 
