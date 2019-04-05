@@ -147,12 +147,7 @@ def serve(root, **kwargs):
 
         browser = webbrowser.get(config['browser']['command'] or None)
 
-        kwargs = {
-            'new': config['browser'].getint('new'),
-            'autoraise': config['browser'].getboolean('top'),
-            }
-
-        thread = Thread(target=browser.open, args=[url], kwargs=kwargs)
+        thread = Thread(target=browser.open, args=[url])
         thread.daemon = True
         thread.start()
 

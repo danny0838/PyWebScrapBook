@@ -144,8 +144,6 @@ class Config():
         conf['server']['browse'] = 'true'
         conf['browser'] = {}
         conf['browser']['command'] = ''
-        conf['browser']['new'] = '0'
-        conf['browser']['top'] = 'false'
         conf['browser']['index'] = ''
         conf['book'] = {}
         conf['book']['name'] = 'scrapbook'

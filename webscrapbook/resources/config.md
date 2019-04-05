@@ -301,25 +301,6 @@ Example:
 (default: )
 
 
-#### `new`
-
-Attempt to launch homepage in a new browser window/tab.
-
-* 0: launch in the current window
-* 1: launch a new window
-* 2: launch a new tab
-
-(default: 0)
-
-
-#### `top`
-
-Set true to attempt to raise the launched browser window to the top. This is
-the default behavior for several platforms even if it's not set.
-
-(default: false)
-
-
 #### `index`
 
 The index page to visit when the browser is launched. This is a URL path under
