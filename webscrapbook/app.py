@@ -757,7 +757,7 @@ def handle_request(filepath):
                 with open(localpath, 'wb') as f:
                     f.write(bytes)
                     f.close()
-            except OSError:
+            except:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this file.", format=format)
 
