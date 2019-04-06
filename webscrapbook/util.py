@@ -4,7 +4,6 @@
 import sys, os
 import subprocess
 from collections import namedtuple
-from html.parser import HTMLParser
 from lxml import etree
 import zipfile
 import math
@@ -254,54 +253,33 @@ def zip_listdir(zip, subpath):
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target'])
 
 
-class MetaRefreshParser(HTMLParser):
-    """Retrieve meta refresh target from HTML.
-    """
-    def __init__(self):
-        self.meta_refresh_stack = []
-        super().__init__()
-
-    def handle_starttag(self, tag, attrs):
-        if tag != 'meta':
-            return
-
-        attrs = dict(attrs)
-
-        if attrs.get('http-equiv', '').lower().strip() != 'refresh':
-            return
-
-        time, _, content = attrs.get('content', '').partition(';')
-
-        try:
-            time = int(time)
-        except ValueError:
-            time = 0
-
-        m = re.match(r'^\s*url\s*=\s*(.*?)\s*$', content)
-        target = m.group(1) if m else None
-        self.meta_refresh_stack.append(MetaRefreshInfo(time=time, target=target))
-
-
-def parse_meta_refresh(fh):
+def parse_meta_refresh(file):
     """Retrieve meta refresh target from a file.
-
-    fh: a file or file handler.
     """
-    if type(fh) is str:
-        try:
-            fh = open(fh, 'rb')
-        except:
-            fh = None
+    try:
+        context = etree.iterparse(file, html=True, events=('end',), tag='meta')
+    except:
+        pass
+    else:
+        for event, elem in context:
+            if elem.attrib.get('http-equiv', '').lower() == 'refresh':
+                time, _, content = elem.attrib.get('content', '').partition(';')
 
-    if fh is not None:
-        try:
-            parser = MetaRefreshParser()
-            parser.feed(fh.read().decode('UTF-8'))
-            for mr in parser.meta_refresh_stack:
-                if mr.time == 0 and mr.target is not None:
-                    return mr
-        except:
-            pass
+                try:
+                    time = int(time)
+                except ValueError:
+                    time = 0
+
+                m = re.match(r'^\s*url\s*=\s*(.*?)\s*$', content, flags=re.I)
+                target = m.group(1) if m else None
+
+                if time == 0 and target is not None:
+                    return MetaRefreshInfo(time=time, target=target)
+        
+            # clean up to save memory
+            elem.clear()
+            while elem.getprevious() is not None:
+                del elem.getparent()[0]
 
     return MetaRefreshInfo(time=None, target=None)
 
