@@ -7,6 +7,7 @@ import argparse
 import json
 from getpass import getpass
 import time
+import traceback
 
 # this package
 from . import __package_name__, __version__
@@ -156,12 +157,14 @@ def view_archive_files(files):
     from urllib.parse import urljoin
     from urllib.request import pathname2url
 
-    cache_dir = os.path.join(tempfile.gettempdir(), config['browser']['cache_dir'])
+    cache_prefix = config['browser']['cache_prefix']
     cache_expire = config['browser'].getint('cache_expire') * 10 ** 9
     use_jar = config['browser'].getboolean('use_jar')
     browser = webbrowser.get(config['browser']['command'] or None)
 
+    temp_dir = tempfile.gettempdir()
     urls = []
+
     for file in files:
         mime, _ = mimetypes.guess_type(file)
         if not mime in ("application/html+zip", "application/x-maff"):
@@ -177,14 +180,18 @@ def view_archive_files(files):
 
         # extract zip contents to dest_dir if not done yet
         hash = util.checksum(file)
-        dest_dir = os.path.join(cache_dir, hash)
-        if os.path.isdir(dest_dir):
-            # update atime
-            atime = time_ns()
-            stat = os.stat(dest_dir)
-            os.utime(dest_dir, ns=(atime, stat.st_mtime_ns))
+        dest_prefix = cache_prefix + hash + '_'
+        for entry in os.listdir(temp_dir):
+            if entry.startswith(dest_prefix):
+                dest_dir = os.path.join(temp_dir, entry)
+
+                # update atime
+                atime = time_ns()
+                stat = os.stat(dest_dir)
+                os.utime(dest_dir, ns=(atime, stat.st_mtime_ns))
+                break
         else:
-            os.renames(tempfile.mkdtemp(), dest_dir)
+            dest_dir = tempfile.mkdtemp(prefix=dest_prefix)
             with zipfile.ZipFile(file) as zip:
                 zip.extractall(dest_dir)
                 zip.close()
@@ -203,12 +210,16 @@ def view_archive_files(files):
     # remove stale caches
     if not use_jar:
         t = time_ns()
-        if os.path.isdir(cache_dir):
-            for temp_dir in os.listdir(cache_dir):
-                temp_dir = os.path.join(cache_dir, temp_dir)
-                atime = os.stat(temp_dir).st_atime_ns
+        for entry in os.listdir(temp_dir):
+            if entry.startswith(cache_prefix):
+                cache_dir = os.path.join(temp_dir, entry)
+                atime = os.stat(cache_dir).st_atime_ns
                 if t > atime + cache_expire:
-                    shutil.rmtree(temp_dir)
+                    # cache may be created by another user and undeletable
+                    try:
+                        shutil.rmtree(cache_dir)
+                    except:
+                        traceback.print_exc()
 
 
 def view():

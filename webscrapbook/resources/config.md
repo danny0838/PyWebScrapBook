@@ -310,17 +310,18 @@ the root path the application is served, without leading slash.
 (default: )
 
 
-#### `cache_dir`
+#### `cache_prefix`
 
-The directory name under the system temporary directory for cache files for
-viewing archive files.
+The prefix for caches for viewing archive files under the system temporary
+directory. Assign a unique string if the default one conflicts with another
+application.
 
-(default: webscrapbook.archives)
+(default: webscrapbook.)
 
 
 #### `cache_expire`
 
-The duration in seconds for cache files for viewing archive files.
+The duration in seconds for cache files for viewing archive files to be purged.
 
 (default: 259200 (3 days))
 

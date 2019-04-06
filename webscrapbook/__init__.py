@@ -145,7 +145,7 @@ class Config():
         conf['browser'] = {}
         conf['browser']['command'] = ''
         conf['browser']['index'] = ''
-        conf['browser']['cache_dir'] = 'webscrapbook.archives'
+        conf['browser']['cache_prefix'] = 'webscrapbook.'
         conf['browser']['cache_expire'] = '259200'
         conf['browser']['use_jar'] = 'false'
         conf['book'] = {}
