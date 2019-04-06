@@ -118,12 +118,13 @@ def file_info(file):
 
     try:
         statinfo = os.stat(file)
-        size = statinfo.st_size if type is 'file' else None
-        last_modified = statinfo.st_mtime
     except:
         # unexpected error when getting stat info
         size = None
         last_modified = None
+    else:
+        size = statinfo.st_size if type is 'file' else None
+        last_modified = statinfo.st_mtime
 
     return FileInfo(name=name, type=type, size=size, last_modified=last_modified)
 
@@ -180,19 +181,21 @@ def zip_file_info(zip, subpath, check_missing_dir=False):
 
     try:
         info = zip.getinfo(subpath)
+    except KeyError:
+        pass
+    else:
         lm = info.date_time
         epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
         return FileInfo(name=basename, type='file', size=info.file_size, last_modified=epoch)
-    except KeyError:
-        pass
 
     try:
         info = zip.getinfo(subpath + '/')
+    except KeyError:
+        pass
+    else:
         lm = info.date_time
         epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
         return FileInfo(name=basename, type='dir', size=None, last_modified=epoch)
-    except KeyError:
-        pass
 
     if check_missing_dir:
         base = subpath + '/'
@@ -328,7 +331,9 @@ def get_maff_pages(file):
                 with zip.open(rdf, 'r') as f:
                     meta = parse_maff_index_rdf(f)
                     f.close()
-
+            except:
+                pass
+            else:
                 if meta.indexfilename is not None:
                     pages.append(MaffPageInfo(
                             meta.title,
@@ -338,8 +343,6 @@ def get_maff_pages(file):
                             meta.charset,
                             ))
                     continue
-            except:
-                pass
 
             for entry in topdirs[topdir]:
                 if entry.startswith(topdir + 'index.') and entry != topdir + 'index.rdf':
@@ -489,17 +492,19 @@ class TokenHandler():
             now = int(time.time())
 
         try:
-            for token_file in os.listdir(self.cache_dir):
+            token_files = os.listdir(self.cache_dir)
+        except FileNotFoundError:
+            pass
+        else:
+            for token_file in token_files:
                 token_file = os.path.join(self.cache_dir, token_file)
                 try:
                     expire = int(open(token_file, 'r', encoding='UTF-8').read())
                 except:
                     continue
-
-                if now >= expire:
-                    os.remove(token_file)
-        except FileNotFoundError:
-            pass
+                else:
+                    if now >= expire:
+                        os.remove(token_file)
 
     def check_delete_expire(self, now=None):
         if now is None:

@@ -58,8 +58,8 @@ def cmd_config(args):
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
         if not os.path.isfile(fdst):
+            print('Generating "{}"...'.format(fdst))
             try:
-                print('Generating "{}"...'.format(fdst))
                 fcopy(fsrc, fdst)
             except:
                 raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
@@ -74,8 +74,8 @@ def cmd_config(args):
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
             if not os.path.isfile(fdst):
+                print('Generating "{}"...'.format(fdst))
                 try:
-                    print('Generating "{}"...'.format(fdst))
                     fcopy(fsrc, fdst)
                 except:
                     raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
@@ -84,8 +84,8 @@ def cmd_config(args):
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
             if not os.path.isfile(fdst):
+                print('Generating "{}"...'.format(fdst))
                 try:
-                    print('Generating "{}"...'.format(fdst))
                     fcopy(fsrc, fdst)
                 except:
                     raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
@@ -94,8 +94,8 @@ def cmd_config(args):
         fdst = WSB_USER_CONFIG
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', WSB_LOCAL_CONFIG))
         if not os.path.isfile(fdst):
+            print('Generating "{}"...'.format(fdst))
             try:
-                print('Generating "{}"...'.format(fdst))
                 fcopy(fsrc, fdst)
             except:
                 raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
