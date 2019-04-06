@@ -365,7 +365,6 @@ def parse_maff_index_rdf(fh):
             node = root.find('./RDF:Description/MAF:' + attr, ns)
             return node.attrib['{' + ns['RDF'] + '}' + 'resource']
         except:
-            raise
             return None
 
     ns = {
