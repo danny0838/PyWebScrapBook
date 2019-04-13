@@ -708,7 +708,7 @@ def handle_request(filepath):
 
         return http_response(body, format=format)
 
-    elif action in ('mkdir', 'save', 'upload', 'delete', 'move', 'copy'):
+    elif action in ('mkdir', 'save', 'delete', 'move', 'copy'):
         if request.method != 'POST':
             headers = {
                 'Allow': 'POST',
@@ -758,33 +758,19 @@ def handle_request(filepath):
                 return http_error(500, "Unable to write to this path.", format=format)
 
             try:
-                bytes = request.forms.get('text', '').encode('ISO-8859-1')
-                with open(localpath, 'wb') as f:
-                    f.write(bytes)
-                    f.close()
+                file = request.files.get('upload')
+                if file is not None:
+                    if os.path.lexists(localpath):
+                        os.remove(localpath)
+                    file.save(localpath)
+                else:
+                    bytes = request.forms.get('text', '').encode('ISO-8859-1')
+                    with open(localpath, 'wb') as f:
+                        f.write(bytes)
+                        f.close()
             except:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this file.", format=format)
-
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            return redirect(request.url)
-
-        elif action == 'upload':
-            if os.path.lexists(localpath):
-                if not os.path.isfile(localpath):
-                    return http_error(400, "Found a non-file here.", format=format)
-                else:
-                    os.remove(localpath)
-
-            try:
-                os.makedirs(os.path.dirname(localpath), exist_ok=True)
-                file = request.files.get('upload')
-                file.save(localpath)
-            except OSError:
-                traceback.print_exc()
-                return http_error(500, "Unable to upload this file.", format=format)
 
             if format:
                 return http_response('Command run successfully.', format=format)

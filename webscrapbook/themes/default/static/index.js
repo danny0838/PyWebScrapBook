@@ -511,7 +511,7 @@ async function onCommandRun(event) {
           formData.append('upload', file);
 
           let xhr = await utils.wsb({
-            url: target + '?a=upload&f=json',
+            url: target + '?a=save&f=json',
             responseType: 'json',
             method: "POST",
             formData: formData,
