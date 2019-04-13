@@ -753,6 +753,11 @@ def handle_request(filepath):
 
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this path.", format=format)
+
+            try:
                 bytes = request.forms.get('text').encode('ISO-8859-1') or b''
                 with open(localpath, 'wb') as f:
                     f.write(bytes)
