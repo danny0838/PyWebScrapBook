@@ -708,7 +708,7 @@ def handle_request(filepath):
 
         return http_response(body, format=format)
 
-    elif action in ('mkdir', 'save', 'delete', 'move', 'copy'):
+    elif action in ('lock', 'unlock', 'mkdir', 'save', 'delete', 'move', 'copy'):
         if request.method != 'POST':
             headers = {
                 'Allow': 'POST',
@@ -724,11 +724,58 @@ def handle_request(filepath):
         token_handler.delete(token)
 
         # validate localpath
-        if os.path.abspath(localpath) == runtime['root']:
-            return http_error(403, "Unable to operate the root directory.", format=format)
+        if action not in ('lock', 'unlock'):
+            if os.path.abspath(localpath) == runtime['root']:
+                return http_error(403, "Unable to operate the root directory.", format=format)
+
+        # validate targetpath
+        if action in ('lock', 'unlock'):
+            name = request.params.get('name')
+            if name is None:
+                return http_error(400, "Lock name is not specified.", format=format)
+
+            targetpath = os.path.normpath(os.path.join(runtime['root'], WSB_DIR, 'server', 'locks', name))
+            if not targetpath.startswith(os.path.join(runtime['root'], WSB_DIR, 'server', 'locks', '')):
+                return http_error(400, 'Invalid lock name "{}".'.format(name), format=format)
 
         # handle action
-        if action == 'mkdir':
+
+        # action lock
+        # name: name of the lock file.
+        # chkt: recheck until the lock file not exist or fail out when time out.
+        # chks: how long to treat the lock file as stale.
+        if action == 'lock':
+            check_stale = request.params.get('chks', 300, type=int)
+            check_timeout = request.params.get('chkt', 5, type=int)
+            check_expire = time.time() + check_timeout
+            check_delta = min(check_timeout, 0.1)
+
+            while True:
+                if os.path.lexists(targetpath):
+                    t = time.time()
+                    if t >= os.stat(targetpath).st_mtime + check_stale:
+                        os.rmdir(targetpath)
+                    elif t >= check_expire:
+                        return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
+                    else:
+                        time.sleep(check_delta)
+                        continue
+
+                try:
+                    os.makedirs(targetpath)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, 'Unable to create lock "{}".'.format(name), format=format)
+                else:
+                    break
+
+        elif action == 'unlock':
+            try:
+                os.rmdir(targetpath)
+            except:
+                pass
+
+        elif action == 'mkdir':
             if os.path.lexists(localpath) and not os.path.isdir(localpath):
                 return http_error(400, "Found a non-directory here.", format=format)
 
