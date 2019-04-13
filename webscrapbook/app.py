@@ -758,7 +758,7 @@ def handle_request(filepath):
                 return http_error(500, "Unable to write to this path.", format=format)
 
             try:
-                bytes = request.forms.get('text').encode('ISO-8859-1') or b''
+                bytes = request.forms.get('text', '').encode('ISO-8859-1')
                 with open(localpath, 'wb') as f:
                     f.write(bytes)
                     f.close()
