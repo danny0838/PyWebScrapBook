@@ -528,7 +528,7 @@ async function onCommandRun(event) {
       const dir = document.getElementById('data-table').getAttribute('data-path');
       if (selectedEntries.length === 1) {
         const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-        const newPath = prompt('Input the new path:', dir + '/' + decodeURIComponent(target));
+        const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
         if (!newPath) {
           break;
         }
@@ -584,7 +584,7 @@ async function onCommandRun(event) {
       const dir = document.getElementById('data-table').getAttribute('data-path');
       if (selectedEntries.length === 1) {
         const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-        const newPath = prompt('Input the new path:', dir + '/' + decodeURIComponent(target));
+        const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
         if (!newPath) {
           break;
         }
@@ -601,11 +601,11 @@ async function onCommandRun(event) {
             formData: formData,
           });
         } catch (ex) {
-          alert(`Unable to move "${target}": ${ex.message}`);
+          alert(`Unable to copy "${target}": ${ex.message}`);
           break;
         }
       } else {
-        let newDir = prompt('Move to the path:', dir);
+        let newDir = prompt('Copy to the path:', dir);
         if (!newDir) {
           break;
         }

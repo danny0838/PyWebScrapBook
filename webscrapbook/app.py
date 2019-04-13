@@ -715,6 +715,7 @@ def handle_request(filepath):
                 }
             return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, **headers)
 
+        # validate and revoke token
         token = request.params.get('token') or ''
 
         if not token_handler.validate(token):
@@ -722,16 +723,11 @@ def handle_request(filepath):
 
         token_handler.delete(token)
 
+        # validate localpath
         if os.path.abspath(localpath) == runtime['root']:
             return http_error(403, "Unable to operate the root directory.", format=format)
 
-        targetpath = target = request.forms.get('target')
-
-        if target is not None:
-            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
-            if not targetpath.startswith(os.path.join(runtime['root'], '')):
-                return http_error(403, "Unable to operate beyond the root directory.", format=format)
-
+        # handle action
         if action == 'mkdir':
             if os.path.lexists(localpath) and not os.path.isdir(localpath):
                 return http_error(400, "Found a non-directory here.", format=format)
@@ -812,10 +808,20 @@ def handle_request(filepath):
             if not os.path.lexists(localpath):
                 return http_error(404, "File does not exist.", format=format)
 
+            target = request.forms.get('target')
+
+            if target is None:
+                return http_error(400, 'Target is not specified.', format=format)
+
+            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
+
+            if not targetpath.startswith(os.path.join(runtime['root'], '')):
+                return http_error(403, "Unable to operate beyond the root directory.", format=format)
+
             if os.path.lexists(targetpath):
                 return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-            else:
-                os.makedirs(os.path.dirname(targetpath), exist_ok=True)
+
+            os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
             try:
                 os.rename(localpath, targetpath)
@@ -835,10 +841,20 @@ def handle_request(filepath):
             if not os.path.lexists(localpath):
                 return http_error(404, "File does not exist.", format=format)
 
+            target = request.forms.get('target')
+
+            if target is None:
+                return http_error(400, 'Target is not specified.', format=format)
+
+            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
+
+            if not targetpath.startswith(os.path.join(runtime['root'], '')):
+                return http_error(403, "Unable to operate beyond the root directory.", format=format)
+
             if os.path.lexists(targetpath):
                 return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-            else:
-                os.makedirs(os.path.dirname(targetpath), exist_ok=True)
+
+            os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
             try:
                 shutil.copytree(localpath, targetpath)
@@ -852,6 +868,9 @@ def handle_request(filepath):
             if format:
                 return http_response('Command run successfully.', format=format)
 
+            parts = request.urlparts
+            new_parts = (parts[0], parts[1], re.sub(r'[^/]+/?$', r'', parts[2]), '', '')
+            new_url = urlunsplit(new_parts)
             return redirect(new_url)
 
     # "view" or unknown actions
