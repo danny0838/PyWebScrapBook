@@ -31,6 +31,14 @@ def time_ns():
         return int(time.time() * 1e9)
 
 
+def get_umask():
+    """Get configured umask.
+    """
+    umask = os.umask(0)
+    os.umask(umask)
+    return umask
+
+
 def fcopy(fsrc, fdst):
     """Copy a script file to target
 
@@ -77,6 +85,7 @@ def cmd_config(args):
                 print('Generating "{}"...'.format(fdst))
                 try:
                     fcopy(fsrc, fdst)
+                    os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except:
                     raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
 
@@ -87,6 +96,7 @@ def cmd_config(args):
                 print('Generating "{}"...'.format(fdst))
                 try:
                     fcopy(fsrc, fdst)
+                    os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except:
                     raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
 
