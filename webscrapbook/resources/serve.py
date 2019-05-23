@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
 import os
 from webscrapbook import server
-server.serve(os.path.dirname(os.path.dirname(__file__)))
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+server.serve(root)
