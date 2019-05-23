@@ -264,7 +264,7 @@ def main():
     parser_config.add_argument('-u', '--user', default=False, action='store_true',
         help="""generate and edit user config.""")
     parser_config.add_argument('-a', '--all', default=False, action='store_true',
-        help="""generate more assistent files.""")
+        help="""generate more assistant files.""")
 
     # subcommand: encrypt
     parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'],
