@@ -10,7 +10,7 @@ import math
 import re
 import hashlib
 import time
-from secrets import token_urlsafe
+import base64
 from urllib.parse import quote, unquote
 
 
@@ -428,10 +428,10 @@ class TokenHandler():
 
         self.check_delete_expire(now)
 
-        token = token_urlsafe()
+        token = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode('ascii')
         token_file = os.path.join(self.cache_dir, token)
         while os.path.lexists(token_file):
-            token = token_urlsafe()
+            token = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode('ascii')
             token_file = os.path.join(self.cache_dir, token)
 
         os.makedirs(os.path.dirname(token_file), exist_ok=True)
