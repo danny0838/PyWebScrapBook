@@ -10,8 +10,12 @@ import math
 import re
 import hashlib
 import time
-from secrets import token_urlsafe
 from urllib.parse import quote, unquote
+
+try:
+    from secrets import token_urlsafe
+except ImportError:
+    from .lib.secrets import token_urlsafe
 
 
 #########################################################################
