@@ -65,6 +65,7 @@
     <option value="upload" hidden>Upload</option>
     <option value="move" hidden>Move</option>
     <option value="copy" hidden>Copy</option>
+    <option value="link" hidden>Create link</option>
     <option value="delete" hidden>Delete</option>
   </select>
   <input type="file" id="upload-file-selector" multiple hidden>

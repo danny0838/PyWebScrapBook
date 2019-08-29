@@ -326,6 +326,7 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="upload"]').hidden = false;
       cmdElem.querySelector('[value="move"]').hidden = true;
       cmdElem.querySelector('[value="copy"]').hidden = true;
+      cmdElem.querySelector('[value="link"]').hidden = true;
       cmdElem.querySelector('[value="delete"]').hidden = true;
 
       cmdElem.querySelector('[value="edit"]').textContent = 'New File';
@@ -345,6 +346,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="move"]').hidden = false;
         cmdElem.querySelector('[value="copy"]').hidden = false;
+        cmdElem.querySelector('[value="link"]').hidden = false;
         cmdElem.querySelector('[value="delete"]').hidden = false;
       } else if (elem.classList.contains('file')) {
         cmdElem.querySelector('[value="source"]').hidden = false;
@@ -356,6 +358,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="move"]').hidden = false;
         cmdElem.querySelector('[value="copy"]').hidden = false;
+        cmdElem.querySelector('[value="link"]').hidden = false;
         cmdElem.querySelector('[value="delete"]').hidden = false;
 
         cmdElem.querySelector('[value="edit"]').textContent = 'Edit';
@@ -369,6 +372,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="move"]').hidden = false;
         cmdElem.querySelector('[value="copy"]').hidden = false;
+        cmdElem.querySelector('[value="link"]').hidden = false;
         cmdElem.querySelector('[value="delete"]').hidden = false;
       }
       break;
@@ -384,6 +388,7 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="upload"]').hidden = true;
       cmdElem.querySelector('[value="move"]').hidden = false;
       cmdElem.querySelector('[value="copy"]').hidden = false;
+      cmdElem.querySelector('[value="link"]').hidden = false;
       cmdElem.querySelector('[value="delete"]').hidden = false;
       break;
     }
@@ -622,6 +627,87 @@ async function onCommandRun(event) {
 
             let xhr = await utils.wsb({
               url: target + '?a=copy&f=json',
+              responseType: 'json',
+              method: "POST",
+              formData: formData,
+            });
+          } catch (ex) {
+            alert(`Unable to copy "${target}": ${ex.message}`);
+            break;
+          }
+        }
+      }
+      location.reload();
+      break;
+    }
+
+    case 'link': {
+      const getRelativePath = (target, base) => {
+        const targetPathParts = target.split('/');
+        const basePathParts = base.split('/');
+
+        let commonIndex;
+        basePathParts.every((v, i) => {
+          if (v === targetPathParts[i]) {
+            commonIndex = i;
+            return true;
+          }
+          return false;
+        });
+
+        let pathname = '../'.repeat(basePathParts.length - commonIndex - 2);
+        pathname += targetPathParts.slice(commonIndex + 1).join('/');
+        return pathname;
+      };
+
+      const dir = document.getElementById('data-table').getAttribute('data-path');
+      if (selectedEntries.length === 1) {
+        const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
+        const newPath = prompt('Input the new path:', dir + decodeURIComponent(target.replace(/\/$/, '')) + '.lnk.htm');
+        if (!newPath) {
+          break;
+        }
+
+        try {
+          const url = getRelativePath(dir + decodeURIComponent(target), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
+          const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
+
+          const formData = new FormData();
+          formData.append('token', await utils.acquireToken(target));
+          // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
+          formData.append('text', unescape(encodeURIComponent(content)));
+
+          let xhr = await utils.wsb({
+            url: newPath.split('/').map(x => encodeURIComponent(x)).join('/') + '?a=save&f=json',
+            responseType: 'json',
+            method: "POST",
+            formData: formData,
+          });
+        } catch (ex) {
+          alert(`Unable to create link at "${target}": ${ex.message}`);
+        }
+      } else {
+        let newDir = prompt('Create links at the path:', dir);
+        if (!newDir) {
+          break;
+        }
+
+        newDir = newDir.replace(/\/+$/, '') + '/';
+        for (const entry of selectedEntries) {
+          const target = entry.querySelector('a[href]').getAttribute('href');
+          const newPath = newDir + decodeURIComponent(target.replace(/\/$/, '')) + '.lnk.htm';
+
+          try {
+            const url = getRelativePath(dir + decodeURIComponent(target), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
+            const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
+
+            const formData = new FormData();
+            formData.append('token', await utils.acquireToken(target));
+            // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
+            formData.append('text', unescape(encodeURIComponent(content)));
+
+            let xhr = await utils.wsb({
+              url: newPath.split('/').map(x => encodeURIComponent(x)).join('/') + '?a=save&f=json',
               responseType: 'json',
               method: "POST",
               formData: formData,
