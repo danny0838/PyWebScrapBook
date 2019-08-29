@@ -1,5 +1,7 @@
 #data-table .highlight {
-  background-color: #CCCCFF;
+  outline: 1px solid #7DA2CE;
+  background: #EBF4FD; /* fallback */
+  background: linear-gradient(#EBF4FD, #C4DDFC);
 }
 
 #data-table th {
