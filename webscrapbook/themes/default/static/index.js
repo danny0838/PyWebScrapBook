@@ -105,6 +105,16 @@ function highlightElem(elem, willHighlight) {
   }
 }
 
+function getTypeFromUrl(url) {
+  if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(url)) {
+    return 'image';
+  } else if (/\.(mp4|ogg|webm)$/i.test(url)) {
+    return 'video';
+  } else {
+    return 'unknown';
+  }
+}
+
 function browseHtmlFolder() {
   var path = document.getElementById('data-table').getAttribute('data-path');
 
@@ -147,36 +157,49 @@ function viewerDefault() {
   dataViewer = dataTable;
 }
 
-function viewerGallery() {
+async function viewerGallery() {
   if (dataViewer.id === "img-gallery-view") { return; }
 
-  var wrapper = wrapper = document.createElement('div');
+  const wrapper = document.createElement('div');
   wrapper.id = "img-gallery-view";
 
-  var deferredElems = [];
-
-  var addImage = function (a, cls) {
-    var figure = wrapper.appendChild(document.createElement('figure'));
+  const addFigure = () => {
+    const figure = wrapper.appendChild(document.createElement('figure'));
     figure.style ='display: inline-block; margin: 0.2em; border: 0; padding: 0;';
+    return figure;
+  };
 
-    var anchor = figure.appendChild(document.createElement('a'));
+  const addAnchor = (a, type) => {
+    const figure = addFigure();
+
+    const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
     anchor.target = "_blank";
-
-    var img = anchor.appendChild(document.createElement('img'));
-    img.src = a.href;
-    img.alt = img.title = a.textContent;
-    img.style = 'margin: 0; border: 0; padding: 0; max-width: 100%; max-height: 200px;';
-    if (/\s*dir\s*/.test(cls)) { img.style.backgroundColor = '#ff8'; }
+    anchor.textContent = a.textContent;
+    anchor.className = 'icon ' + type;
 
     return figure;
   };
 
-  var addVideo = function (a) {
-    var figure = wrapper.appendChild(document.createElement('figure'));
-    figure.style ='display: inline-block; margin: 0.2em; border: 0; padding: 0;';
+  const addImage = (a) => {
+    const figure = addFigure();
 
-    var video = figure.appendChild(document.createElement('video'));
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = a.href;
+    anchor.target = "_blank";
+
+    const img = anchor.appendChild(document.createElement('img'));
+    img.src = a.href;
+    img.alt = img.title = a.textContent;
+    img.style = 'margin: 0; border: 0; padding: 0; max-width: 100%; max-height: 200px;';
+
+    return figure;
+  };
+
+  const addVideo = (a) => {
+    const figure = addFigure();
+
+    const video = figure.appendChild(document.createElement('video'));
     video.src = a.href;
     video.setAttribute("controls", "");
     video.title = a.textContent;
@@ -185,58 +208,97 @@ function viewerGallery() {
     return figure;
   };
 
-  Array.prototype.forEach.call(dataTable.querySelectorAll('tr:not(.extra)'), function (tr) {
-    var a = tr.querySelector('a[href]');
-    if (!a) { return; }
+  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tr:not(.extra)'), (tr) => {
+    let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
+    const a = tr.querySelector('a[href]');
+    if (!a) { return {a, type}; }
 
-    if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(a.href)) {
-      addImage(a);
-    } else if (/\.(mp4|ogg|webm)$/i.test(a.href)) {
-      addVideo(a);
-    } else {
-      deferredElems.push(addImage(a, tr.className));
+    if (type === 'dir') { return {a, type}; }
+
+    type = getTypeFromUrl(a.href);
+    if (type !== 'unknown') { return {a, type}; }
+
+    return fetch(a.href, {method: 'HEAD'}).then(r => {
+      type = getTypeFromUrl(r.url);
+      if (type !== 'unknown') { return {a, type}; }
+      type = 'file';
+      return {a, type};
+    }).catch(ex => {
+      type = 'link';
+      return {a, type};
+    });
+  }));
+
+  const deferredElems = [];
+
+  for (const {a, type} of tasks) {
+    if (!a) { continue; }
+
+    switch (type) {
+      case 'image':
+        addImage(a);
+        break;
+      case 'video':
+        addVideo(a);
+        break;
+      default:
+        deferredElems.push(addAnchor(a, type));
+        break;
     }
-  });
+  }
 
   // move deferred elems to last
-  deferredElems.forEach(function (elem) {
+  for (const elem of deferredElems) {
     wrapper.appendChild(elem);
-  });
+  }
 
   dataViewer.parentNode.replaceChild(wrapper, dataViewer);
   dataViewer = wrapper;
 }
 
-function viewerList() {
+async function viewerList() {
   if (dataViewer.id === "img-list-view") { return; }
 
-  var wrapper = document.createElement('div');
+  const wrapper = document.createElement('div');
   wrapper.id = "img-list-view";
 
-  var deferredElems = [];
-
-  var addImage = function (a, cls) {
-    var figure = wrapper.appendChild(document.createElement('figure'));
+  const addFigure = () => {
+    const figure = wrapper.appendChild(document.createElement('figure'));
     figure.style = 'margin-left: 0; margin-right: 0;';
+    return figure;
+  };
 
-    var anchor = figure.appendChild(document.createElement('a'));
+  const addAnchor = (a, type) => {
+    const figure = addFigure();
+
+    const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
     anchor.target = "_blank";
-
-    var img = anchor.appendChild(document.createElement('img'));
-    img.src = a.href;
-    img.alt = img.title = a.textContent;
-    img.style = 'max-width: 90vw; max-height: 90vh;';
-    if (/\s*dir\s*/.test(cls)) { img.style.backgroundColor = '#ff8'; }
+    anchor.textContent = a.textContent;
+    anchor.className = 'icon ' + type;
 
     return figure;
   };
 
-  var addVideo = function (a) {
-    var figure = wrapper.appendChild(document.createElement('figure'));
-    figure.style = 'margin-left: 0; margin-right: 0;';
+  const addImage = (a) => {
+    const figure = addFigure();
 
-    var video = figure.appendChild(document.createElement('video'));
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = a.href;
+    anchor.target = "_blank";
+
+    const img = anchor.appendChild(document.createElement('img'));
+    img.src = a.href;
+    img.alt = img.title = a.textContent;
+    img.style = 'max-width: 90vw; max-height: 90vh;';
+
+    return figure;
+  };
+
+  const addVideo = (a) => {
+    const figure = addFigure();
+
+    const video = figure.appendChild(document.createElement('video'));
     video.src = a.href;
     video.setAttribute("controls", "");
     video.title = a.textContent;
@@ -245,23 +307,49 @@ function viewerList() {
     return figure;
   };
 
-  Array.prototype.forEach.call(dataTable.querySelectorAll('tr:not(.extra)'), function (tr) {
-    var a = tr.querySelector('a[href]');
-    if (!a) { return; }
+  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tr:not(.extra)'), (tr) => {
+    let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
+    const a = tr.querySelector('a[href]');
+    if (!a) { return {a, type}; }
 
-    if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(a.href)) {
-      addImage(a);
-    } else if (/\.(mp4|ogg|webm)$/i.test(a.href)) {
-      addVideo(a);
-    } else {
-      deferredElems.push(addImage(a, tr.className));
+    if (type === 'dir') { return {a, type}; }
+
+    type = getTypeFromUrl(a.href);
+    if (type !== 'unknown') { return {a, type}; }
+
+    return fetch(a.href, {method: 'HEAD'}).then(r => {
+      type = getTypeFromUrl(r.url);
+      if (type !== 'unknown') { return {a, type}; }
+      type = 'file';
+      return {a, type};
+    }).catch(ex => {
+      type = 'link';
+      return {a, type};
+    });
+  }));
+
+  const deferredElems = [];
+
+  for (const {a, type} of tasks) {
+    if (!a) { continue; }
+
+    switch (type) {
+      case 'image':
+        addImage(a);
+        break;
+      case 'video':
+        addVideo(a);
+        break;
+      default:
+        deferredElems.push(addAnchor(a, type));
+        break;
     }
-  });
+  }
 
   // move deferred elems to last
-  deferredElems.forEach(function (elem) {
+  for (const elem of deferredElems) {
     wrapper.appendChild(elem);
-  });
+  }
 
   dataViewer.parentNode.replaceChild(wrapper, dataViewer);
   dataViewer = wrapper;
