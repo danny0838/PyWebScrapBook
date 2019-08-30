@@ -110,6 +110,8 @@ function getTypeFromUrl(url) {
     return 'image';
   } else if (/\.(mp4|ogg|webm)$/i.test(url)) {
     return 'video';
+  } else if (/\.(wav|mp3)$/i.test(url)) {
+    return 'audio';
   } else {
     return 'unknown';
   }
@@ -196,6 +198,18 @@ async function viewerGallery() {
     return figure;
   };
 
+  const addAudio = (a) => {
+    const figure = addFigure();
+
+    const audio = figure.appendChild(document.createElement('audio'));
+    audio.src = a.href;
+    audio.setAttribute("controls", "");
+    audio.title = a.textContent;
+    audio.style = 'margin: 0; border: 0; padding: 0; max-width: 100%; max-height: 200px;';
+
+    return figure;
+  };
+
   const addVideo = (a) => {
     const figure = addFigure();
 
@@ -237,6 +251,9 @@ async function viewerGallery() {
     switch (type) {
       case 'image':
         addImage(a);
+        break;
+      case 'audio':
+        addAudio(a);
         break;
       case 'video':
         addVideo(a);
@@ -295,6 +312,18 @@ async function viewerList() {
     return figure;
   };
 
+  const addAudio = (a) => {
+    const figure = addFigure();
+
+    const audio = figure.appendChild(document.createElement('audio'));
+    audio.src = a.href;
+    audio.setAttribute("controls", "");
+    audio.title = a.textContent;
+    audio.style = 'max-width: 90vw; max-height: 90vh;';
+
+    return figure;
+  };
+
   const addVideo = (a) => {
     const figure = addFigure();
 
@@ -336,6 +365,9 @@ async function viewerList() {
     switch (type) {
       case 'image':
         addImage(a);
+        break;
+      case 'audio':
+        addAudio(a);
         break;
       case 'video':
         addVideo(a);
