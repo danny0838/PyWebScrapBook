@@ -838,8 +838,8 @@ def handle_request(filepath):
 
                 if target is not None:
                     # Keep several chars as javascript encodeURI do,
-                    # plus "!" to keep "!/" redirect work.
-                    new_url = urljoin(request.url, quote(target, ',/?:@&=+$#!'))
+                    # plus "%" as target may have already been escaped.
+                    new_url = urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%"))
                     return redirect(new_url)
 
             # show static file for other cases
