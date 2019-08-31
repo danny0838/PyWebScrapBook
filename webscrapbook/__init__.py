@@ -35,6 +35,7 @@ class Config():
     """
     def __init__(self):
         self._conf = None
+        self._subsections = OrderedDict()
 
 
     def __getitem__(self, key):
@@ -43,15 +44,9 @@ class Config():
 
 
     @property
-    def book(self):
+    def subsections(self):
         if self._conf is None: self.load()  # lazy load
-        return self._book
-
-
-    @property
-    def auth(self):
-        if self._conf is None: self.load()  # lazy load
-        return self._auth
+        return self._subsections
 
 
     def dump(self, fh):
@@ -67,12 +62,14 @@ class Config():
         data = OrderedDict()
         for section in self._conf.sections():
             # remove [section "subsection"]
-            if re.search(r'\s+"[^"]*"$', section):
+            if re.search(r'\s*"[^"]*"\s*$', section):
                 continue
 
-            data[section] = OrderedDict()
-            for key in self._conf[section]:
-                data[section][key] = self._conf[section][key]
+            data[section] = OrderedDict(self._conf[section])
+
+        for sec, section in self.subsections.items():
+            for subsec, subsection in section.items():
+                data.setdefault(sec, OrderedDict())[subsec] = OrderedDict(subsection)
 
         # type casting
         data['server']['port'] = self._conf['server'].getint('port')
@@ -81,8 +78,6 @@ class Config():
         data['server']['browse'] = self._conf['server'].getboolean('browse')
         data['browser']['cache_expire'] = self._conf['browser'].getint('cache_expire')
         data['browser']['use_jar'] = self._conf['browser'].getboolean('use_jar')
-        data['auth'] = self._auth
-        data['book'] = self._book
 
         return data
 
@@ -102,29 +97,26 @@ class Config():
                 parser = ConfigParser(interpolation=None)
                 parser.read(file, encoding='UTF-8')
                 for section in parser.sections():
-                    if section not in conf:
-                        conf[section] = {}
-                    for key in parser[section]:
-                        conf[section][key] = parser[section][key]
+                    # Handle subsected sections formatted as [section "subsection"].
+                    # Also normalize [section] and [section  ""  ] to [section ""].
+                    m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
+                    if m:
+                        sec, subsec = m.group(1), m.group(2) or ''
+                        if sec in self.SUBSECTED:
+                            newsection = '{} "{}"'.format(sec, subsec)
+                            if newsection != section:
+                                conf.setdefault(newsection, OrderedDict())
+                                conf[newsection].update(parser[section])
+                                continue
+
+                    # conf.setdefault(...).update(...) doesn't work here as the
+                    # setdefault may return the default value rather then a
+                    # Section object.
+                    conf.setdefault(section, OrderedDict())
+                    conf[section].update(parser[section])
             except:
                 print('Error: Unable to load config from "{}".'.format(file), file=sys.stderr)
                 raise
-
-
-        def parse_subsection(name):
-            """Hanble subsection formatted as [section "subsection"].
-
-            Also map [section] to [section ""].
-            """
-            data = OrderedDict()
-            for section in conf:
-                m = re.search(r'^' + name + r'(?:\s*"([^"\]]*)")?$', section)
-                if not m: continue
-                c = data.setdefault(m.group(1) or '', OrderedDict())
-                for key in conf[section]:
-                    c[key] = conf[section][key]
-            return data
-
 
         # default config
         self._conf = conf = ConfigParser(interpolation=None)
@@ -149,12 +141,12 @@ class Config():
         conf['browser']['cache_prefix'] = 'webscrapbook.'
         conf['browser']['cache_expire'] = '259200'
         conf['browser']['use_jar'] = 'false'
-        conf['book'] = {}
-        conf['book']['name'] = 'scrapbook'
-        conf['book']['top_dir'] = ''
-        conf['book']['data_dir'] = ''
-        conf['book']['tree_dir'] = '.wsb/tree'
-        conf['book']['index'] = '.wsb/tree/map.html'
+        conf['book ""'] = {}
+        conf['book ""']['name'] = 'scrapbook'
+        conf['book ""']['top_dir'] = ''
+        conf['book ""']['data_dir'] = ''
+        conf['book ""']['tree_dir'] = '.wsb/tree'
+        conf['book ""']['index'] = '.wsb/tree/map.html'
 
         # user config
         load_config(WSB_USER_CONFIG)
@@ -162,8 +154,14 @@ class Config():
         # book config
         load_config(os.path.join(root, WSB_DIR, WSB_LOCAL_CONFIG))
 
-        # handle subsections
-        self._book = parse_subsection('book')
-        self._auth = parse_subsection('auth')
+        # map subsections
+        for section in conf:
+            m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
+            if m:
+                sec, subsec = m.group(1), m.group(2) or ''
+                if sec in self.SUBSECTED:
+                    self._subsections.setdefault(sec, OrderedDict())[subsec] = conf[section]
+
+    SUBSECTED = ['book', 'auth']
 
 config = Config()

@@ -134,7 +134,7 @@ def handle_authorization(format=None):
 
     Also modify runtime['permission'] for further access control.
     """
-    if not len(config.auth):
+    if not len(config.subsections.get('auth', {})):
         return
 
     auth_pass = False
@@ -145,7 +145,7 @@ def handle_authorization(format=None):
     if pw is None: pw = ''
 
     if user:
-        for _, entry in config.auth.items():
+        for _, entry in config.subsections['auth'].items():
             entry_user = entry.get('user', '')
             entry_pw = entry.get('pw', '')
             entry_pw_salt = entry.get('pw_salt', '')
