@@ -789,6 +789,8 @@ async function onCommandRun(event) {
           break;
         }
 
+        const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+
         try {
           const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
           const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
@@ -798,7 +800,6 @@ async function onCommandRun(event) {
           // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
           formData.append('text', unescape(encodeURIComponent(content)));
 
-          const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
           let xhr = await utils.wsb({
             url: target + '?a=save&f=json',
             responseType: 'json',
@@ -818,6 +819,7 @@ async function onCommandRun(event) {
         for (const entry of selectedEntries) {
           const source = entry.querySelector('a[href]').getAttribute('href');
           const newPath = newDir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm';
+          const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
 
           try {
             const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
@@ -828,7 +830,6 @@ async function onCommandRun(event) {
             // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
             formData.append('text', unescape(encodeURIComponent(content)));
 
-            const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
             let xhr = await utils.wsb({
               url: target + '?a=save&f=json',
               responseType: 'json',
@@ -836,7 +837,7 @@ async function onCommandRun(event) {
               formData: formData,
             });
           } catch (ex) {
-            alert(`Unable to copy "${target}": ${ex.message}`);
+            alert(`Unable to create link at "${target}": ${ex.message}`);
             break;
           }
         }
