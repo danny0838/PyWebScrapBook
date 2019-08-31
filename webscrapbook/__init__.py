@@ -76,11 +76,12 @@ class Config():
 
         # type casting
         data['server']['port'] = self._conf['server'].getint('port')
+        data['server']['threads'] = self._conf['server'].getint('threads')
         data['server']['ssl_on'] = self._conf['server'].getboolean('ssl_on')
+        data['server']['browse'] = self._conf['server'].getboolean('browse')
+        data['browser']['cache_expire'] = self._conf['browser'].getint('cache_expire')
+        data['browser']['use_jar'] = self._conf['browser'].getboolean('use_jar')
         data['auth'] = self._auth
-        data['browser']['launch'] = self._conf['browser'].getboolean('launch')
-        data['browser']['new'] = self._conf['browser'].getint('new')
-        data['browser']['top'] = self._conf['browser'].getboolean('top')
         data['book'] = self._book
 
         return data
