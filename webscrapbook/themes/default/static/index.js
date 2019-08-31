@@ -780,25 +780,27 @@ async function onCommandRun(event) {
         return pathname;
       };
 
+      const base = document.getElementById('data-table').getAttribute('data-base');
       const dir = document.getElementById('data-table').getAttribute('data-path');
       if (selectedEntries.length === 1) {
-        const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-        const newPath = prompt('Input the new path:', dir + decodeURIComponent(target.replace(/\/$/, '')) + '.lnk.htm');
+        const source = selectedEntries[0].querySelector('a[href]').getAttribute('href');
+        const newPath = prompt('Input the new path:', dir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm');
         if (!newPath) {
           break;
         }
 
         try {
-          const url = getRelativePath(dir + decodeURIComponent(target), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
+          const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
           const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
 
           const formData = new FormData();
-          formData.append('token', await utils.acquireToken(target));
+          formData.append('token', await utils.acquireToken(source));
           // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
           formData.append('text', unescape(encodeURIComponent(content)));
 
+          const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
           let xhr = await utils.wsb({
-            url: newPath.split('/').map(x => encodeURIComponent(x)).join('/') + '?a=save&f=json',
+            url: target + '?a=save&f=json',
             responseType: 'json',
             method: "POST",
             formData: formData,
@@ -814,20 +816,21 @@ async function onCommandRun(event) {
 
         newDir = newDir.replace(/\/+$/, '') + '/';
         for (const entry of selectedEntries) {
-          const target = entry.querySelector('a[href]').getAttribute('href');
-          const newPath = newDir + decodeURIComponent(target.replace(/\/$/, '')) + '.lnk.htm';
+          const source = entry.querySelector('a[href]').getAttribute('href');
+          const newPath = newDir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm';
 
           try {
-            const url = getRelativePath(dir + decodeURIComponent(target), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
+            const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
             const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
 
             const formData = new FormData();
-            formData.append('token', await utils.acquireToken(target));
+            formData.append('token', await utils.acquireToken(source));
             // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
             formData.append('text', unescape(encodeURIComponent(content)));
 
+            const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
             let xhr = await utils.wsb({
-              url: newPath.split('/').map(x => encodeURIComponent(x)).join('/') + '?a=save&f=json',
+              url: target + '?a=save&f=json',
               responseType: 'json',
               method: "POST",
               formData: formData,
