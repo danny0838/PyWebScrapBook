@@ -130,6 +130,14 @@ is migrated from legacy ScrapBook.
 (default: .wsb/tree/index.html)
 
 
+#### `no_tree`
+
+Set true to disable virtual tree system of the book, and files are managed
+through the filesystem only.
+
+(default: false)
+
+
 ### [auth] section(s)
 
 The [auth] section(s) define authenication rules. It can be subsected as

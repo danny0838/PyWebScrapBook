@@ -78,6 +78,8 @@ class Config():
         data['server']['browse'] = self._conf['server'].getboolean('browse')
         data['browser']['cache_expire'] = self._conf['browser'].getint('cache_expire')
         data['browser']['use_jar'] = self._conf['browser'].getboolean('use_jar')
+        for ss in data['book']:
+            data['book'][ss]['no_tree'] = self._conf['book "{}"'.format(ss)].getboolean('no_tree')
 
         return data
 
@@ -147,6 +149,7 @@ class Config():
         conf['book ""']['data_dir'] = ''
         conf['book ""']['tree_dir'] = '.wsb/tree'
         conf['book ""']['index'] = '.wsb/tree/map.html'
+        conf['book ""']['no_tree'] = 'false'
 
         # user config
         load_config(WSB_USER_CONFIG)
