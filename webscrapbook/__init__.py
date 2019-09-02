@@ -11,7 +11,7 @@ import re
 __all__ = ['WSB_USER_CONFIG', 'WSB_DIR', 'WSB_LOCAL_CONFIG', 'config']
 
 __package_name__ = 'webscrapbook'
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 __author__ = 'Danny Lin'
 __author_email__ = 'danny0838@gmail.com'
 __homepage__ = 'https://github.com/danny0838/PyWebScrapBook'
