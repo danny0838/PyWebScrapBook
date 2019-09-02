@@ -22,7 +22,7 @@ from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
 # dependency
 from .lib.patch import bottle
 import bottle
-from bottle import request, redirect, static_file, template
+from bottle import request, redirect, template
 from bottle import HTTPResponse, HTTPError
 import commonmark
 
@@ -36,6 +36,16 @@ runtime = {}
 
 # main app instance
 app = bottle.Bottle()
+
+
+def static_file(*args, **kwargs):
+    """Wrap bottle.static_file for customized behaviors.
+
+    - Use header 'Cache-Control: no-cache'.
+    """
+    result = bottle.static_file(*args, **kwargs)
+    result.set_header('Cache-Control', 'no-cache')
+    return result
 
 
 def http_response(body='', status=None, headers=None, format=None, **more_headers):
@@ -184,10 +194,10 @@ def handle_directory_listing(localpath, format=None):
 
     # headers
     headers = {}
+    headers['Cache-Control'] = 'no-store'
     stats = os.stat(localpath)
     headers['Last-Modified'] = email.utils.formatdate(stats.st_mtime, usegmt=True)
     headers['Date'] = email.utils.formatdate(time.time(), usegmt=True)
-    headers['Cache-Control'] = 'no-store'
 
     # output index
     subentries = util.listdir(localpath)
@@ -229,11 +239,11 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, format=None):
     from bottle import parse_date, tob
 
     headers = {}
+    headers['Cache-Control'] = 'no-cache'
 
     # check 304
     stats = os.stat(archivefile)
     headers['Last-Modified'] = email.utils.formatdate(stats.st_mtime, usegmt=True)
-    headers['Cache-Control'] = 'no-cache'
 
     getenv = request.environ.get
 
@@ -301,6 +311,7 @@ def handle_subarchive_path(
     fh = zip.open(subarchivepath, 'r')
 
     headers = dict()
+    headers['Cache-Control'] = 'no-cache'
 
     if encoding: headers['Content-Encoding'] = encoding
 
