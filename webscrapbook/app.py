@@ -477,7 +477,7 @@ def handle_request(filepath):
 
     # handle action
     if action == 'static':
-        return static_file(filepath, root=runtime['static'])
+        return static_file(filepath, root=runtime['static'], charset=None)
 
     elif action == 'source':
         # show text-like files as plain text
@@ -485,11 +485,11 @@ def handle_request(filepath):
                 mimetype.startswith('text/') or
                 mimetype.endswith('+xml') or
                 mimetype.endswith('+json') or
-                mimetype in ('application/javascript')
+                mimetype in ('application/javascript',)
                 ):
-            mimetype = 'text/plain; charset=UTF-8'
+            mimetype = 'text/plain'
 
-        return static_file(filepath, root=runtime['root'], mimetype=mimetype)
+        return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
 
     elif action in ('exec', 'browse'):
         if is_local_access():
@@ -843,7 +843,7 @@ def handle_request(filepath):
                     return redirect(new_url)
 
             # show static file for other cases
-            return static_file(filepath, root=runtime['root'], mimetype=mimetype)
+            return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
 
         # handle sub-archive path
         elif archivefile:
@@ -851,7 +851,7 @@ def handle_request(filepath):
                     mimetype, encoding, format=format)
 
         # probably 404 not found here
-        return static_file(filepath, root=runtime['root'], mimetype=mimetype)
+        return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
 
 
 def debug(*msg):
