@@ -7,14 +7,21 @@ import bottle
 from distutils.version import LooseVersion
 
 def patch_bottle_0_12():
-    """patch bugs in Bottle 0.12.*
+    """Patch for Bottle 0.12.*
 
-    https://github.com/bottlepy/bottle/issues/1129
-    https://github.com/bottlepy/bottle/issues/1132
+    - Implemented etag support for static_file() in 0.13. Removed "close" param
+      of _file_iter_range as it's not implemented in 0.12 yet.
+
+    - Serving root disk on Windows get's Access Denied. (bug in 0.12.*)
+      https://github.com/bottlepy/bottle/issues/1129
+
+    - Last modified time should be skipped when etag check fails. (bug in 0.13-dev)
+      https://github.com/bottlepy/bottle/issues/1132
     """
     if LooseVersion(bottle.__version__) >= LooseVersion("0.13"):
         return
 
+    # Import variables in Bottle's scope.
     import os
     import mimetypes
     import time
@@ -24,8 +31,7 @@ def patch_bottle_0_12():
     from bottle import HTTPResponse, HTTPError
     from bottle import parse_range_header, parse_date, _file_iter_range, tob
 
-    # implement static_file() in 0.13
-    # removed "close" param of _file_iter_range as it's not implemented in 0.12 yet.
+    # Code based on 0.12.17.
     def static_file(filename, root,
                     mimetype=True,
                     download=False,
