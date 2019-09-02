@@ -674,6 +674,9 @@ def handle_request(filepath):
             if os.path.lexists(localpath) and not os.path.isdir(localpath):
                 return http_error(400, "Found a non-directory here.", format=format)
 
+            if archivefile:
+                return http_error(400, "Unable to create inside an archive file.", format=format)
+
             try:
                 os.makedirs(localpath, exist_ok=True)
             except OSError:
@@ -688,6 +691,9 @@ def handle_request(filepath):
         elif action == 'save':
             if os.path.lexists(localpath) and not os.path.isfile(localpath):
                 return http_error(400, "Found a non-file here.", format=format)
+
+            if archivefile:
+                return http_error(400, "Unable to save inside an archive file.", format=format)
 
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
@@ -763,6 +769,10 @@ def handle_request(filepath):
             if os.path.lexists(targetpath):
                 return http_error(400, 'Found something at target "{}".'.format(target), format=format)
 
+            ta, tsa = get_archive_path(target, targetpath)
+            if ta:
+                return http_error(400, "Move target is inside an archive file.", format=format)
+
             os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
             try:
@@ -795,6 +805,10 @@ def handle_request(filepath):
 
             if os.path.lexists(targetpath):
                 return http_error(400, 'Found something at target "{}".'.format(target), format=format)
+
+            ta, tsa = get_archive_path(target, targetpath)
+            if ta:
+                return http_error(400, "Copy target is inside an archive file.", format=format)
 
             os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
