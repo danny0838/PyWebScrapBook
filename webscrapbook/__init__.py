@@ -129,7 +129,6 @@ class Config():
         conf['app']['base'] = ''
         conf['server'] = {}
         conf['server']['port'] = '8080'
-        conf['server']['bind'] = '127.0.0.1'
         conf['server']['host'] = 'localhost'
         conf['server']['threads'] = '0'
         conf['server']['ssl_on'] = 'false'
