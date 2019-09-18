@@ -103,6 +103,7 @@ def serve(root, **kwargs):
 
     # set params
     host = config['server']['host'] or ''
+    host2 = '[{}]'.format(host) if ':' in host else host
     port = config['server'].getint('port')
     ssl_on = config['server'].getboolean('ssl_on')
     ssl_key = config['server']['ssl_key']
@@ -127,7 +128,7 @@ def serve(root, **kwargs):
     print('WebScrapBook server starting up...')
     print('Document Root: {}'.format(os.path.abspath(root)))
     print('Listening on {scheme}://{host}:{port}'.format(
-            scheme=scheme, host=host, port=port))
+            scheme=scheme, host=host2, port=port))
     print('Hit Ctrl-C to shutdown.')
     print()
 
@@ -139,7 +140,7 @@ def serve(root, **kwargs):
 
         url = '{scheme}://{host}{port}{path}'.format(
                 scheme=scheme,
-                host=host,
+                host=host2,
                 port='' if (not ssl_on and port == 80) or (ssl_on and port == 443)
                         else ':' + str(port),
                 path=path,
