@@ -25,6 +25,12 @@ Run below command from CLI to install (or upgrade to) the latest version:
 
 After installation, `wsb` or `webscrapbook` will be available from the CLI.
 
+### Install Docker
+
+Starting a PyWebScrapBook instance is simple:
+
+    docker run --name webscrapbook -v /dokers/webscrapbook_data:/data -p 8080:8080/tcp vsc55/webscrapbook:latest
+
 ### Host a scrapbook
 
 Switch current working directory (CWD) to a directory you'd like to host.
