@@ -488,7 +488,12 @@ def handle_request(filepath):
 
     # handle action
     if action == 'static':
-        return static_file(filepath, root=runtime['static'], charset=None)
+        for i in runtime['statics']:
+            r = static_file(filepath, root=i, charset=None)
+            if type(r) is bottle.HTTPResponse:
+                return r
+        else:
+            return r
 
     elif action == 'source':
         # show text-like files as plain text
@@ -895,14 +900,14 @@ def init_app():
     runtime['root'] = os.path.abspath(config['app']['root'])
     runtime['name'] = config['app']['name']
 
-    # if a local theme is found, overwrite the default theme
-    runtime['theme'] = os.path.join(runtime['root'], WSB_DIR, 'themes', config['app']['theme'])
-    if not os.path.isdir(runtime['theme']):
-        runtime['theme'] = os.path.join(os.path.dirname(__file__), 'themes', config['app']['theme'])
-
-    runtime['static'] = os.path.join(runtime['theme'], 'static')
-    runtime['templates'] = os.path.join(runtime['theme'], 'templates')
-    bottle.TEMPLATE_PATH.insert(0, runtime['templates'])
+    # add path for themes
+    runtime['themes'] = [
+        os.path.join(runtime['root'], WSB_DIR, 'themes', config['app']['theme']),
+        os.path.join(os.path.dirname(__file__), 'themes', config['app']['theme']),
+        ]
+    runtime['statics'] = [os.path.join(t, 'static') for t in runtime['themes']]
+    runtime['templates'] = [os.path.join(t, 'templates') for t in runtime['themes']]
+    bottle.TEMPLATE_PATH = runtime['templates']
 
     # init token_handler
     global token_handler

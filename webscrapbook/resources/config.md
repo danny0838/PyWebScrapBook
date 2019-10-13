@@ -213,20 +213,12 @@ HTTPS) for public hosting.
 (default: 8080)
 
 
-#### `bind`
-
-The IP address the server listens to. Use "127.0.0.1" for local hosting, and
-"0.0.0.0" to allow access from any remote. You may have to configure your
-firewall to serve on WAN.
-
-(default: 127.0.0.1)
-
-
 #### `host`
 
 Host name of the server, for the server to identify itself and is used to 
 launch the browser. Use "localhost" for local hosting, or a configured domain
-name, IPv4, or IPv6 address.
+name, IPv4, or IPv6 address. (Configuration of firewall and routers may be
+needed for the server to be actually accessible from wide area network.)
 
 (default: localhost)
 

@@ -11,7 +11,7 @@ import re
 __all__ = ['WSB_USER_CONFIG', 'WSB_DIR', 'WSB_LOCAL_CONFIG', 'config']
 
 __package_name__ = 'webscrapbook'
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 __author__ = 'Danny Lin'
 __author_email__ = 'danny0838@gmail.com'
 __homepage__ = 'https://github.com/danny0838/PyWebScrapBook'
@@ -129,7 +129,6 @@ class Config():
         conf['app']['base'] = ''
         conf['server'] = {}
         conf['server']['port'] = '8080'
-        conf['server']['bind'] = '127.0.0.1'
         conf['server']['host'] = 'localhost'
         conf['server']['threads'] = '0'
         conf['server']['ssl_on'] = 'false'
