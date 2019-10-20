@@ -18,6 +18,9 @@ RUN apk upgrade --no-cache; \
 WORKDIR /
 COPY --chown=root:root ["entrypoint.sh", "run_wsb.sh", "./"]
 
+#Fix, hub.docker.com auto buils
+RUN chmod +x /*.sh
+
 ENV HTTP_PORT=8080 MODE_RUN=production WSB_VERSION=${wsb_ver:-latest}
 
 VOLUME ["/data"]
@@ -26,4 +29,5 @@ EXPOSE ${HTTP_PORT}/tcp
 HEALTHCHECK --interval=1m --timeout=15s --start-period=20s --retries=4  CMD curl -sf http://localhost:${HTTP_PORT} > /dev/null || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
+
 CMD ["start"]
