@@ -99,7 +99,7 @@ def cmd_config(args):
                     print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
                     sys.exit(1)
 
-    if args['user']:
+    elif args['user']:
         fdst = WSB_USER_CONFIG
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', WSB_LOCAL_CONFIG))
         if not os.path.isfile(fdst):
@@ -115,7 +115,11 @@ def cmd_config(args):
         except OSError:
             pass
 
-    if not any(args[k] for k in ('book', 'user')):
+    elif args['all']:
+        print("Error: Use --all in combine with --book.", file=sys.stderr)
+        sys.exit(1)
+
+    else:
         config.dump(sys.stdout)
 
 
@@ -264,7 +268,7 @@ def main():
     parser_config.add_argument('-u', '--user', default=False, action='store_true',
         help="""generate and edit user config.""")
     parser_config.add_argument('-a', '--all', default=False, action='store_true',
-        help="""generate more assistant files.""")
+        help="""generate more assistant files. (with --book)""")
 
     # subcommand: encrypt
     parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'],
