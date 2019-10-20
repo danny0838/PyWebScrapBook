@@ -29,7 +29,7 @@ After installation, `wsb` or `webscrapbook` will be available from the CLI.
 
 Starting a PyWebScrapBook instance is simple:
 
-    docker run --name webscrapbook -v /dokers/webscrapbook_data:/data -p 8080:8080/tcp vsc55/webscrapbook:latest
+    docker run --name webscrapbook -d -v /dokers/webscrapbook_data:/data -p 8080:8080/tcp vsc55/webscrapbook:latest
 
 ### Host a scrapbook
 
