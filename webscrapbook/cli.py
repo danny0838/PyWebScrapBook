@@ -56,7 +56,7 @@ def cmd_serve(args):
 
 
 def cmd_config(args):
-    """Show or edit config."""
+    """Show, generate, or edit config."""
     if args['book']:
         filename = WSB_LOCAL_CONFIG
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
@@ -69,10 +69,11 @@ def cmd_config(args):
                 print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
                 sys.exit(1)
 
-        try:
-            util.launch(fdst)
-        except OSError:
-            pass
+        if args['edit']:
+            try:
+                util.launch(fdst)
+            except OSError:
+                pass
 
         if args['all']:
             filename = 'serve.py'
@@ -110,10 +111,15 @@ def cmd_config(args):
                 print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
                 sys.exit(1)
 
-        try:
-            util.launch(fdst)
-        except OSError:
-            pass
+        if args['edit']:
+            try:
+                util.launch(fdst)
+            except OSError:
+                pass
+
+    elif args['edit']:
+        print("Error: Use --edit in combine with --book or --user.", file=sys.stderr)
+        sys.exit(1)
 
     elif args['all']:
         print("Error: Use --all in combine with --book.", file=sys.stderr)
@@ -264,11 +270,13 @@ def main():
         help=cmd_config.__doc__, description=cmd_config.__doc__)
     parser_config.set_defaults(func=cmd_config)
     parser_config.add_argument('-b', '--book', default=False, action='store_true',
-        help="""generate and edit book config.""")
+        help="""generate book config file.""")
     parser_config.add_argument('-u', '--user', default=False, action='store_true',
-        help="""generate and edit user config.""")
+        help="""generate user config file.""")
     parser_config.add_argument('-a', '--all', default=False, action='store_true',
         help="""generate more assistant files. (with --book)""")
+    parser_config.add_argument('-e', '--edit', default=False, action='store_true',
+        help="""edit the config file. (with --book or --user)""")
 
     # subcommand: encrypt
     parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'],
