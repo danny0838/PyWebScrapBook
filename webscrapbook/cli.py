@@ -16,10 +16,6 @@ from . import server
 from . import util
 
 
-class WebScrapBookInitError(Exception):
-    pass
-
-
 def time_ns():
     """Get current time int with nanoseconds precision.
     """
@@ -70,7 +66,8 @@ def cmd_config(args):
             try:
                 fcopy(fsrc, fdst)
             except:
-                raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
+                print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                sys.exit(1)
 
         try:
             util.launch(fdst)
@@ -87,7 +84,8 @@ def cmd_config(args):
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except:
-                    raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
+                    print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                    sys.exit(1)
 
             filename = 'serve.wsgi'
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
@@ -98,7 +96,8 @@ def cmd_config(args):
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except:
-                    raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
+                    print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                    sys.exit(1)
 
     if args['user']:
         fdst = WSB_USER_CONFIG
@@ -108,7 +107,8 @@ def cmd_config(args):
             try:
                 fcopy(fsrc, fdst)
             except:
-                raise WebScrapBookInitError("Unable to generate {}.".format(fdst))
+                print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                sys.exit(1)
 
         try:
             util.launch(fdst)
