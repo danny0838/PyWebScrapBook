@@ -49,6 +49,24 @@ class Config():
         return self._subsections
 
 
+    def get(self, name):
+        if self._conf is None: self.load()  # lazy load
+        parts = name.split('.')
+        if len(parts) == 3:
+            sec, subsec, key = parts
+            try:
+                return self.subsections[sec][subsec][key]
+            except KeyError:
+                pass
+        elif len(parts) == 2:
+            sec, key = parts
+            try:
+                return self._conf[sec][key]
+            except KeyError:
+                pass
+        return None
+
+
     def dump(self, fh):
         if self._conf is None: self.load()  # lazy load
         self._conf.write(fh)

@@ -125,6 +125,15 @@ def cmd_config(args):
         print("Error: Use --all in combine with --book.", file=sys.stderr)
         sys.exit(1)
 
+    elif args['name']:
+        value = config.get(args['name'])
+
+        if value is None:
+            print("Error: Config entry '{}' does not exist".format(args['name']), file=sys.stderr)
+            sys.exit(1)
+
+        print(value)
+
     else:
         config.dump(sys.stdout)
 
@@ -269,6 +278,8 @@ def main():
     parser_config = subparsers.add_parser('config', aliases=['c'],
         help=cmd_config.__doc__, description=cmd_config.__doc__)
     parser_config.set_defaults(func=cmd_config)
+    parser_config.add_argument('name', nargs='?',
+        help="""show value of the given config name. (in the form of <section>[.<subsection>].<key>)""")
     parser_config.add_argument('-b', '--book', default=False, action='store_true',
         help="""generate book config file.""")
     parser_config.add_argument('-u', '--user', default=False, action='store_true',
