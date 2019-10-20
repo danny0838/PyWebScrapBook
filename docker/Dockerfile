@@ -1,5 +1,3 @@
-# https://pypi.org/project/webscrapbook/
-
 FROM python:3.7.3-alpine
 
 LABEL version="1.0" maintainer="vsc55@cerebelum.net" description="Docker webscrapbook"
@@ -18,7 +16,6 @@ RUN apk upgrade --no-cache; \
 	apk del .build-deps;
 
 WORKDIR /
-COPY --chown=root:root ["config.ini", "./"]
 COPY --chown=root:root ["entrypoint.sh", "run_wsb.sh", "./"]
 
 ENV HTTP_PORT=8080 MODE_RUN=production WSB_VERSION=${wsb_ver:-latest}

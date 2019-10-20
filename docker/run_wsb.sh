@@ -18,6 +18,7 @@ PATH_CFG_DEFAULT=/$FILE_CFG
 EXEC_WSB=/usr/local/bin/wsb
 EXEC_EXTERNAL=$PATH_DATA/run_wsb.sh
 WSB_VERSION=$(${EXEC_WSB} --version | awk '{print $2;}')
+WSB_PORT=${HTTP_PORT:-8080}
 
 fun_check_path_data() {
 	if [[ ! -d $PATH_DATA ]]; then
@@ -47,15 +48,16 @@ fun_remove_config() {
 	fi
 }
 
-fun_copy_default_config() {
-	fun_check_path_wsb
-	fun_remove_config
-	cp -f $PATH_CFG_DEFAULT $PATH_CFG
-}
-
 fun_gen_config() {
 	fun_check_path_wsb
 	$EXEC_WSB --root $PATH_DATA config -ba
+}
+
+fun_fix_config() {
+	sed -i '/^\[app]/,/^\[/ s/^; root = ./root = .\/store\//' $PATH_CFG
+	sed -i "/^\[server]/,/^\[/ s/^; port = 8080/port = ${WSB_PORT}/" $PATH_CFG
+	sed -i '/^\[server]/,/^\[/ s/^; host = localhost/host = 0.0.0.0/' $PATH_CFG
+	sed -i '/^\[server]/,/^\[/ s/^; browse = true/browse = false/' $PATH_CFG
 }
 
 fun_check_chown() {
@@ -82,7 +84,7 @@ else
 		fun_check_chown
 	else
 		fun_gen_config
-		fun_copy_default_config
+		fun_fix_config
 		fun_check_chown
 	fi
 	$EXEC_WSB --root $PATH_DATA serve
