@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #
-# Script de control de arranque para demonio WSB.
+# Boot script for WSB daemon.
 #
 # @verions 1.0
 # @fecha 14/09/2019
 # @author Javier Pastor
-# @license PENDIENTE
+# @license GPL 3.0
 #
 
 FILE_CFG=config.ini
