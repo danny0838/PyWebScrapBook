@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""shim for Python < 3.6
+"""shim for secrets (since Python 3.6)
 
 https://github.com/python/cpython/blob/3.6/Lib/secrets.py
 """
