@@ -30,6 +30,11 @@ import commonmark
 from . import *
 from . import util
 
+try:
+    from time import time_ns
+except ImportError:
+    from .lib.shim.time import time_ns
+
 # runtime variables
 # initializated in get_app() just before app is started
 runtime = {}
@@ -741,7 +746,7 @@ def handle_request(filepath):
                         info = zipfile.ZipInfo(subarchivepath, time.localtime())
                     else:
                         info.date_time = time.localtime()
-                        temp_path = archivefile + '.' + str(time.time_ns())
+                        temp_path = archivefile + '.' + str(time_ns())
                         zip = zipfile.ZipFile(temp_path, 'w')
 
                     file = request.files.get('upload')
@@ -763,7 +768,7 @@ def handle_request(filepath):
                         zip0.close()
                         zip.close()
 
-                        temp_path = archivefile + '.' + str(time.time_ns())
+                        temp_path = archivefile + '.' + str(time_ns())
                         os.rename(archivefile, temp_path)
                         os.rename(zip.filename, archivefile)
                         os.remove(temp_path)
@@ -804,7 +809,7 @@ def handle_request(filepath):
             if archivefile:
                 try:
                     zip0 = zipfile.ZipFile(archivefile, 'r')
-                    temp_path = archivefile + '.' + str(time.time_ns())
+                    temp_path = archivefile + '.' + str(time_ns())
                     zip = zipfile.ZipFile(temp_path, 'w')
 
                     deleted = False
@@ -825,7 +830,7 @@ def handle_request(filepath):
                         os.remove(zip.filename)
                         return http_error(404, "Entry does not exist in this ZIP file.", format=format)
 
-                    temp_path = archivefile + '.' + str(time.time_ns())
+                    temp_path = archivefile + '.' + str(time_ns())
                     os.rename(archivefile, temp_path)
                     os.rename(zip.filename, archivefile)
                     os.remove(temp_path)

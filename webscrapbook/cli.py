@@ -15,16 +15,10 @@ from . import *
 from . import server
 from . import util
 
-
-def time_ns():
-    """Get current time int with nanoseconds precision.
-    """
-    try:
-        return time.time_ns()
-    except AttributeError:
-        # time_ns is available since Python 3.7
-        # otherwise, fallback to time.time()
-        return int(time.time() * 1e9)
+try:
+    from time import time_ns
+except ImportError:
+    from .lib.shim.time import time_ns
 
 
 def get_umask():
