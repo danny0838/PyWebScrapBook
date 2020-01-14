@@ -505,6 +505,10 @@ def handle_request(filepath):
                 ):
             mimetype = 'text/plain'
 
+        if archivefile:
+            return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath,
+                    mimetype, encoding, format=format)
+
         return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
 
     elif action in ('exec', 'browse'):
