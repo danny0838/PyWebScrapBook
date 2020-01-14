@@ -565,12 +565,21 @@ def handle_request(filepath):
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
 
-        try:
-            with open(localpath, 'rb') as f:
-                body = f.read()
-                f.close()
-        except FileNotFoundError:
-            body = b''
+        if archivefile:
+            with zipfile.ZipFile(archivefile, 'r') as zip:
+                try:
+                    info = zip.getinfo(subarchivepath)
+                except:
+                    body = b''
+                else:
+                    body = zip.read(info)
+        else:
+            try:
+                with open(localpath, 'rb') as f:
+                    body = f.read()
+                    f.close()
+            except FileNotFoundError:
+                body = b''
 
         try:
             body = body.decode('UTF-8')
@@ -594,14 +603,21 @@ def handle_request(filepath):
         if format:
             return http_error(400, "Action not supported.", format=format)
 
-        if not os.path.lexists(localpath):
-            return http_error(404, "File does not exist.", format=format)
-
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
 
         if not mimetype in ("text/html", "application/xhtml+xml"):
             return http_error(400, "This is not an HTML file.", format=format)
+
+        if archivefile:
+            with zipfile.ZipFile(archivefile, 'r') as zip:
+                try:
+                    info = zip.getinfo(subarchivepath)
+                except:
+                    return http_error(404, "File does not exist.", format=format)
+        else:
+            if not os.path.lexists(localpath):
+                return http_error(404, "File does not exist.", format=format)
 
         body = template('editx.tpl',
                 sitename=runtime['name'],
@@ -684,13 +700,26 @@ def handle_request(filepath):
                 return http_error(400, "Found a non-directory here.", format=format)
 
             if archivefile:
-                return http_error(400, "Unable to create inside an archive file.", format=format)
+                try:
+                    zip = zipfile.ZipFile(archivefile, 'a')
+                    subarchivepath = subarchivepath + '/'
 
-            try:
-                os.makedirs(localpath, exist_ok=True)
-            except OSError:
-                traceback.print_exc()
-                return http_error(500, "Unable to create a directory here.", format=format)
+                    try:
+                        info = zip.getinfo(subarchivepath)
+                    except KeyError:
+                        # subarchivepath does not exist
+                        info = zipfile.ZipInfo(subarchivepath, time.localtime())
+                        zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to write to this ZIP file.", format=format)
+
+            else:
+                try:
+                    os.makedirs(localpath, exist_ok=True)
+                except OSError:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to create a directory here.", format=format)
 
             if format:
                 return http_response('Command run successfully.', format=format)
@@ -702,28 +731,69 @@ def handle_request(filepath):
                 return http_error(400, "Found a non-file here.", format=format)
 
             if archivefile:
-                return http_error(400, "Unable to save inside an archive file.", format=format)
+                try:
+                    zip0 = zip = zipfile.ZipFile(archivefile, 'a')
 
-            try:
-                os.makedirs(os.path.dirname(localpath), exist_ok=True)
-            except:
-                traceback.print_exc()
-                return http_error(500, "Unable to write to this path.", format=format)
+                    try:
+                        info = zip.getinfo(subarchivepath)
+                    except KeyError:
+                        # subarchivepath does not exist
+                        info = zipfile.ZipInfo(subarchivepath, time.localtime())
+                    else:
+                        info.date_time = time.localtime()
+                        temp_path = archivefile + '.' + str(time.time_ns())
+                        zip = zipfile.ZipFile(temp_path, 'w')
 
-            try:
-                file = request.files.get('upload')
-                if file is not None:
-                    if os.path.lexists(localpath):
-                        os.remove(localpath)
-                    file.save(localpath)
-                else:
-                    bytes = request.forms.get('text', '').encode('ISO-8859-1')
-                    with open(localpath, 'wb') as f:
-                        f.write(bytes)
-                        f.close()
-            except:
-                traceback.print_exc()
-                return http_error(500, "Unable to write to this file.", format=format)
+                    file = request.files.get('upload')
+                    if file is not None:
+                        fp = zip.open(info, 'w', force_zip64=True)
+                        file.save(fp)
+                        fp.close()
+                    else:
+                        bytes = request.forms.get('text', '').encode('ISO-8859-1')
+                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+
+                    if zip is not zip0:
+                        for info in zip0.infolist():
+                            if info.filename == subarchivepath: continue
+                            zip.writestr(info, zip0.read(info),
+                                    compress_type=info.compress_type,
+                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+
+                        zip0.close()
+                        zip.close()
+
+                        temp_path = archivefile + '.' + str(time.time_ns())
+                        os.rename(archivefile, temp_path)
+                        os.rename(zip.filename, archivefile)
+                        os.remove(temp_path)
+                    else:
+                        zip.close()
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to write to this ZIP file.", format=format)
+
+            else:
+                try:
+                    os.makedirs(os.path.dirname(localpath), exist_ok=True)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to write to this path.", format=format)
+
+                try:
+                    file = request.files.get('upload')
+                    if file is not None:
+                        if os.path.lexists(localpath):
+                            os.remove(localpath)
+                        file.save(localpath)
+                    else:
+                        bytes = request.forms.get('text', '').encode('ISO-8859-1')
+                        with open(localpath, 'wb') as f:
+                            f.write(bytes)
+                            f.close()
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to write to this file.", format=format)
 
             if format:
                 return http_response('Command run successfully.', format=format)
@@ -731,27 +801,60 @@ def handle_request(filepath):
             return redirect(request.url)
 
         elif action == 'delete':
-            if not os.path.lexists(localpath):
-                return http_error(404, "File does not exist.", format=format)
+            if archivefile:
+                try:
+                    zip0 = zipfile.ZipFile(archivefile, 'r')
+                    temp_path = archivefile + '.' + str(time.time_ns())
+                    zip = zipfile.ZipFile(temp_path, 'w')
 
-            if os.path.islink(localpath):
-                try:
-                    os.remove(localpath)
+                    deleted = False
+                    for info in zip0.infolist():
+                        if (info.filename == subarchivepath or
+                                info.filename.startswith(subarchivepath + '/')):
+                            deleted = True
+                            continue
+
+                        zip.writestr(info, zip0.read(info),
+                                compress_type=info.compress_type,
+                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+
+                    zip0.close()
+                    zip.close()
+
+                    if not deleted:
+                        os.remove(zip.filename)
+                        return http_error(404, "Entry does not exist in this ZIP file.", format=format)
+
+                    temp_path = archivefile + '.' + str(time.time_ns())
+                    os.rename(archivefile, temp_path)
+                    os.rename(zip.filename, archivefile)
+                    os.remove(temp_path)
                 except:
                     traceback.print_exc()
-                    return http_error(500, "Unable to delete this link.", format=format)
-            elif os.path.isfile(localpath):
-                try:
-                    os.remove(localpath)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to delete this file.", format=format)
-            elif os.path.isdir(localpath):
-                try:
-                    shutil.rmtree(localpath)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to delete this directory.", format=format)
+                    return http_error(500, "Unable to write to this ZIP file.", format=format)
+
+            else:
+                if not os.path.lexists(localpath):
+                    return http_error(404, "File does not exist.", format=format)
+
+                if os.path.islink(localpath):
+                    try:
+                        os.remove(localpath)
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, "Unable to delete this link.", format=format)
+                elif os.path.isfile(localpath):
+                    try:
+                        os.remove(localpath)
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, "Unable to delete this file.", format=format)
+                elif os.path.isdir(localpath):
+                    try:
+                        shutil.rmtree(localpath)
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, "Unable to delete this directory.", format=format)
 
             if format:
                 return http_response('Command run successfully.', format=format)
