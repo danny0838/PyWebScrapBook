@@ -579,7 +579,7 @@ async function onCommandRun(event) {
     }
 
     case 'mkdir': {
-      const newFolderName = prompt('Input a name:', 'New Folder');
+      const newFolderName = prompt('Input a name:', 'new-folder');
       if (!newFolderName) {
         break;
       }
@@ -608,7 +608,7 @@ async function onCommandRun(event) {
         const target = selectedEntries[0].querySelector('a[href]').href;
         location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
       } else {
-        const newFileName = prompt('Input a name:', 'New File');
+        const newFileName = prompt('Input a name:', 'new-file.txt');
         if (!newFileName) {
           break;
         }
