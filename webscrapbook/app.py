@@ -28,6 +28,7 @@ import commonmark
 
 # this package
 from . import *
+from . import __version__
 from . import util
 
 try:
@@ -559,6 +560,7 @@ def handle_request(filepath):
         data['app']['is_local'] = is_local_access()
         data['app']['root'] = runtime['root']
         data['app']['base'] = get_base()
+        data['VERSION'] = __version__;
         data['WSB_DIR'] = WSB_DIR;
         data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG;
         return http_response(data, format=format)
