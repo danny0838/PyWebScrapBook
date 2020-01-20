@@ -948,8 +948,8 @@ def handle_request(filepath):
             new_url = urlunsplit(new_parts)
             return redirect(new_url)
 
-    # "view" or unknown actions
-    else:
+    # "view" or undefined actions
+    elif action == 'view':
         # show file information for other output formats
         if format:
             info = util.file_info(localpath)
@@ -996,6 +996,10 @@ def handle_request(filepath):
 
         # probably 404 not found here
         return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
+
+    # unknown action
+    else:
+        return http_error(400, "Action not supported.", format=format)
 
 
 def debug(*msg):
