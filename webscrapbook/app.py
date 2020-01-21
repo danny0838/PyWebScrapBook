@@ -74,6 +74,19 @@ def http_response(body='', status=None, headers=None, format=None, **more_header
 
         body = json.dumps(body, ensure_ascii=False)
 
+    # expect body to be a generator of text (mostly JSON) data
+    elif format == 'sse':
+        more_headers['Content-type'] = 'text/event-stream'
+
+        def wrapper(gen):
+            for data in gen:
+                yield "data: " + data + "\n\n"
+
+            yield "event: complete" + "\n"
+            yield "data: " + "\n\n"
+
+        body = wrapper(body)
+
     else:
         return http_error(400, 'Output format "{}" is not supported.'.format(format), format=format)
 
@@ -217,7 +230,21 @@ def handle_directory_listing(localpath, recursive=False, format=None):
     # output index
     subentries = util.listdir(localpath, recursive)
 
-    if format == 'json':
+    if format == 'sse':
+        def gen():
+            for entry in subentries:
+                data = {
+                    'name': entry.name,
+                    'type': entry.type,
+                    'size': entry.size,
+                    'last_modified': entry.last_modified,
+                    }
+
+                yield json.dumps(data, ensure_ascii=False)
+
+        return http_response(gen(), format=format, **headers)
+
+    elif format == 'json':
         data = []
         for entry in subentries:
             data.append({
