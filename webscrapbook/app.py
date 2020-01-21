@@ -59,7 +59,11 @@ def http_response(body='', status=None, headers=None, format=None, **more_header
 
     ref: https://jsonapi.org
     """
-    if format == 'json':
+    if not format:
+        pass
+
+    # expect body to be a JSON-serializable object
+    elif format == 'json':
         more_headers['Content-type'] = 'application/json'
 
         body = {
@@ -68,6 +72,9 @@ def http_response(body='', status=None, headers=None, format=None, **more_header
             }
 
         body = json.dumps(body, ensure_ascii=False)
+
+    else:
+        return http_error(400, 'Output format "{}" is not supported.'.format(format), format=format)
 
     return HTTPResponse(body, status, headers, **more_headers)
 
@@ -80,6 +87,7 @@ def http_error(
          format=None, **more_headers):
     """Handles formatted error response.
     """
+    # expect body to be a JSON-serializable object
     if format == 'json':
         more_headers['Content-type'] = 'application/json'
 
@@ -89,11 +97,11 @@ def http_error(
                 'message': body,
                 },
             }
+
         body = json.dumps(body, ensure_ascii=False)
         return HTTPResponse(body, status, **more_headers)
 
-    else:
-        return HTTPError(status, body, exception, traceback, **more_headers)
+    return HTTPError(status, body, exception, traceback, **more_headers)
 
 
 def get_base():
@@ -208,7 +216,7 @@ def handle_directory_listing(localpath, format=None):
     # output index
     subentries = util.listdir(localpath)
 
-    if format:
+    if format == 'json':
         data = []
         for entry in subentries:
             data.append({
@@ -228,7 +236,7 @@ def handle_directory_listing(localpath, format=None):
             subentries=subentries,
             )
 
-    return HTTPResponse(body, **headers)
+    return http_response(body, format=format, **headers)
 
 
 def handle_zip_directory_listing(zip, archivefile, subarchivepath, format=None):
@@ -528,8 +536,8 @@ def handle_request(filepath):
 
                 if format:
                     return http_response('Command run successfully.', format=format)
-                else:
-                    return http_response(status=204, format=format)
+
+                return http_response(status=204, format=format)
        
             return http_error(404, "File does not exist.", format=format)
 
