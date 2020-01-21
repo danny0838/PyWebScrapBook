@@ -190,7 +190,7 @@ def handle_authorization(format=None):
         return http_error(401, "You are not authorized.", format=format, **headers)
 
 
-def handle_directory_listing(localpath, format=None):
+def handle_directory_listing(localpath, recursive=False, format=None):
     """List contents in a directory.
     """
     # ensure directory has trailing '/'
@@ -215,7 +215,7 @@ def handle_directory_listing(localpath, format=None):
     headers['Date'] = email.utils.formatdate(time.time(), usegmt=True)
 
     # output index
-    subentries = util.listdir(localpath)
+    subentries = util.listdir(localpath, recursive)
 
     if format == 'json':
         data = []
@@ -556,7 +556,8 @@ def handle_request(filepath):
             return http_error(400, "Action not supported.", format=format)
 
         if os.path.isdir(localpath):
-            return handle_directory_listing(localtargetpath, format=format)
+            recursive = request.params.get('recursive', type=bool)
+            return handle_directory_listing(localtargetpath, recursive=recursive, format=format)
 
         return http_error(400, "This is not a directory.", format=format)
 

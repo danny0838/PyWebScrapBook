@@ -103,10 +103,13 @@ def checksum(file, method='sha1', chunk_size=4096):
     return h.hexdigest()
 
 
-def file_info(file):
+def file_info(file, base=None):
     """Read basic file information.
     """
-    name = os.path.basename(file)
+    if base is None:
+        name = os.path.basename(file)
+    else:
+        name = file[len(base)+1:].replace('\\', '/')
 
     if not os.path.lexists(file):
         type = None
@@ -132,14 +135,28 @@ def file_info(file):
     return FileInfo(name=name, type=type, size=size, last_modified=last_modified)
 
 
-def listdir(root):
+def listdir(base, recursive=False):
     """Generates FileInfo(s) and omit invalid entries.
     """
-    for filename in os.listdir(root):
-        file = os.path.join(root, filename)
-        info = file_info(file)
-        if info.type is None: continue
-        yield info
+    if not recursive:
+        for filename in os.listdir(base):
+            file = os.path.join(base, filename)
+            info = file_info(file)
+            if info.type is None: continue
+            yield info
+
+    else:
+        for root, dirs, files in os.walk(base):
+            for dir in dirs:
+                file = os.path.join(root, dir)
+                info = file_info(file, base)
+                if info.type is None: continue
+                yield info
+            for file in files:
+                file = os.path.join(root, file)
+                info = file_info(file, base)
+                if info.type is None: continue
+                yield info
 
 
 def format_filesize(bytes, si=False):
