@@ -18,6 +18,7 @@ import hashlib
 import json
 from base64 import b64decode
 from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
+from pathlib import Path
 
 # dependency
 from .lib.patch import bottle
@@ -686,18 +687,32 @@ def handle_request(filepath):
             check_delta = min(check_timeout, 0.1)
 
             while True:
-                if os.path.lexists(targetpath):
-                    t = time.time()
-                    if t >= os.stat(targetpath).st_mtime + check_stale:
-                        os.rmdir(targetpath)
-                    elif t >= check_expire:
-                        return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
-                    else:
-                        time.sleep(check_delta)
-                        continue
-
                 try:
                     os.makedirs(targetpath)
+                except FileExistsError:
+                    t = time.time()
+
+                    if t >= check_expire:
+                        return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
+
+                    try:
+                        lock_expire = os.stat(targetpath).st_mtime + check_stale
+                    except FileNotFoundError:
+                        # Lock removed by another process during the short interval.
+                        # Try acquire again.
+                        continue
+
+                    if t >= lock_expire:
+                        # Lock expired. Touch rather than remove and make for atomicity.
+                        try:
+                            Path(targetpath).touch()
+                        except:
+                            traceback.print_exc()
+                            return http_error(500, 'Unable to regenerate stale lock "{}".'.format(name), format=format)
+                        else:
+                            break
+
+                    time.sleep(check_delta)
                 except:
                     traceback.print_exc()
                     return http_error(500, 'Unable to create lock "{}".'.format(name), format=format)
