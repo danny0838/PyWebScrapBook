@@ -21,6 +21,8 @@ WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')
 WSB_DIR = '.wsb'
 WSB_LOCAL_CONFIG = 'config.ini'
 
+mimetypes.add_type("application/rss+xml", ".rss")
+mimetypes.add_type("application/atom+xml", ".atom")
 mimetypes.add_type("text/markdown", ".md")
 mimetypes.add_type("text/markdown", ".markdown")
 mimetypes.add_type("application/html+zip", ".htz")
