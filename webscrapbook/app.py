@@ -165,36 +165,49 @@ def is_local_access():
     return request.urlparts.hostname in ('localhost', '127.0.0.1', request.remote_addr)
 
 
-def handle_authorization(format=None):
+def handle_authorization(action, format=None):
     """Check if authorized or not.
 
     Return None if authorization passed, otherwise the header and body for authorization.
-
-    Also modify runtime['permission'] for further access control.
     """
-    if not len(config.subsections.get('auth', {})):
-        return
+    def get_permission():
+        if not len(config.subsections.get('auth', {})):
+            return 'all'
 
-    auth_pass = False
-    user, pw = request.auth or ('', '')
+        user, pw = request.auth or ('', '')
 
-    # The higher level (e.g. Apache if this is run via Apache WSGI) may remove
-    # the password and gets None. Revise to '' to prevent further error.
-    if pw is None: pw = ''
+        # The higher level (e.g. Apache if this is run via Apache WSGI) may remove
+        # the password and gets None. Revise to '' to prevent further error.
+        if pw is None: pw = ''
 
-    for _, entry in config.subsections['auth'].items():
-        entry_user = entry.get('user', '')
-        entry_pw = entry.get('pw', '')
-        entry_pw_salt = entry.get('pw_salt', '')
-        entry_pw_type = entry.get('pw_type', '')
-        entry_permission = entry.get('permission', 'all')
-        if (user == entry_user and
-                util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
-            auth_pass = True
-            runtime['permission'] = entry.get('permission', '')
-            break
+        for _, entry in config.subsections['auth'].items():
+            entry_user = entry.get('user', '')
+            entry_pw = entry.get('pw', '')
+            entry_pw_salt = entry.get('pw_salt', '')
+            entry_pw_type = entry.get('pw_type', '')
+            entry_permission = entry.get('permission', 'all')
+            if (user == entry_user and
+                    util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
+                return entry_permission
 
-    if not auth_pass:
+        return ''
+
+    def check_permission(permission):
+        if permission == 'all':
+            return True
+
+        elif permission == 'read':
+            if action in ('token', 'lock', 'unlock', 'mkdir', 'save', 'delete', 'move', 'copy'):
+                return False
+            else:
+                return True
+
+        else:
+            return False
+
+    perm = get_permission()
+
+    if not check_permission(perm):
         headers = {
             'WWW-Authenticate': 'Basic realm="Authentication required.", charset="UTF-8"',
             'Content-type': 'text/html',
@@ -508,9 +521,8 @@ def handle_request(filepath):
     format = request.params.getunicode('f', encoding='UTF-8')
     format = request.params.getunicode('format', encoding='UTF-8', default=format)
 
-    # handle authentication
-    runtime['permission'] = 'all'
-    auth_result = handle_authorization(format=format)
+    # handle authorization
+    auth_result = handle_authorization(action=action, format=format)
     if auth_result is not None:
         return auth_result
 
@@ -572,13 +584,6 @@ def handle_request(filepath):
             return http_error(400, "Command can only run on local device.", format=format)
 
     elif action == 'token':
-        if runtime['permission'] != 'all':
-            headers = {
-                'WWW-Authenticate': 'Basic realm="Authentication required.", charset="UTF-8"',
-                'Content-type': 'text/html',
-                }
-            return http_error(401, "You are not authorized to do this.", format=format, **headers)
-
         return http_response(token_handler.acquire(), format=format)
 
     elif action == 'list':
@@ -681,14 +686,6 @@ def handle_request(filepath):
                 'Allow': 'POST',
                 }
             return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, **headers)
-
-        # validate permission
-        if runtime['permission'] != 'all':
-            headers = {
-                'WWW-Authenticate': 'Basic realm="Authentication required.", charset="UTF-8"',
-                'Content-type': 'text/html',
-                }
-            return http_error(401, "You are not authorized to do this.", format=format, **headers)
 
         # validate and revoke token
         token = request.params.get('token') or ''
