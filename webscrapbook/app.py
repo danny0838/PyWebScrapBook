@@ -682,6 +682,14 @@ def handle_request(filepath):
                 }
             return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, **headers)
 
+        # validate permission
+        if runtime['permission'] != 'all':
+            headers = {
+                'WWW-Authenticate': 'Basic realm="Authentication required.", charset="UTF-8"',
+                'Content-type': 'text/html',
+                }
+            return http_error(401, "You are not authorized to do this.", format=format, **headers)
+
         # validate and revoke token
         token = request.params.get('token') or ''
 
