@@ -202,6 +202,12 @@ def handle_authorization(action, format=None):
             else:
                 return True
 
+        elif permission == 'view':
+            if action in ('view', 'source', 'static'):
+                return True
+            else:
+                return False
+
         else:
             return False
 

@@ -192,8 +192,14 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
 
 #### `permission`
 
-The permission for those who fullfills this condition. Use "all" for unlimited
-access. Use "read" for read-only access.
+The permission for those who fullfills this authorization condition.
+* "all": unrestricted access.
+* "read": read-only. APIs for data modification are disabled. Note that
+  essential server information is still exposed. Recommended for read-only
+  WebScrapBook browser extension access.
+* "view": web browsing only. Most APIs are disabled and access via
+  WebScrapBook browser extension is not allowed. Recommended for general public
+  access.
 
 (default: all)
 
