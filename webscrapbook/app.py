@@ -686,7 +686,7 @@ def handle_request(filepath):
         token = request.params.get('token') or ''
 
         if not token_handler.validate(token):
-            return http_error(401, 'Invalid access token.', format=format)
+            return http_error(400, 'Invalid access token.', format=format)
 
         token_handler.delete(token)
 
