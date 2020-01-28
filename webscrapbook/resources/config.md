@@ -153,6 +153,10 @@ example:
 You'll then be promopted to input a password, and then you can use the output
 for pw, "mysalt" for pw_salt, and "sha1" for pw_type.
 
+To specify permission for an anonymous user, create an [auth] section with
+empty user and a password matching an empty string (e.g. "plain" pw_type, empty
+pw, and empty pw_salt.)
+
 NOTE: Use HTTPS protocol as possible when password authorization is activated,
 as input user name and password are unencrypted during HTTP transmission.
 

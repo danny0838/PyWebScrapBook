@@ -182,18 +182,17 @@ def handle_authorization(format=None):
     # the password and gets None. Revise to '' to prevent further error.
     if pw is None: pw = ''
 
-    if user:
-        for _, entry in config.subsections['auth'].items():
-            entry_user = entry.get('user', '')
-            entry_pw = entry.get('pw', '')
-            entry_pw_salt = entry.get('pw_salt', '')
-            entry_pw_type = entry.get('pw_type', '')
-            entry_permission = entry.get('permission', 'all')
-            if (user == entry_user and
-                    util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
-                auth_pass = True
-                runtime['permission'] = entry.get('permission', '')
-                break
+    for _, entry in config.subsections['auth'].items():
+        entry_user = entry.get('user', '')
+        entry_pw = entry.get('pw', '')
+        entry_pw_salt = entry.get('pw_salt', '')
+        entry_pw_type = entry.get('pw_type', '')
+        entry_permission = entry.get('permission', 'all')
+        if (user == entry_user and
+                util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
+            auth_pass = True
+            runtime['permission'] = entry.get('permission', '')
+            break
 
     if not auth_pass:
         headers = {
