@@ -574,7 +574,11 @@ def handle_request(filepath):
 
     elif action == 'token':
         if runtime['permission'] != 'all':
-            return http_error(401, "You are not permitted to do this.", format=format)
+            headers = {
+                'WWW-Authenticate': 'Basic realm="Authentication required.", charset="UTF-8"',
+                'Content-type': 'text/html',
+                }
+            return http_error(401, "You are not authorized to do this.", format=format, **headers)
 
         return http_response(token_handler.acquire(), format=format)
 
