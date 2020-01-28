@@ -1,6 +1,6 @@
 ## Basic
 
-WebsScrapBook has 3 levels of configuration:
+WebScrapBook has 3 levels of configuration:
 
 * default: written in the source code
 * user: at "~/.wsbconfig"
@@ -11,10 +11,11 @@ with the latters overwriting the formers.
 
 ## Configuration Format
 
-WebsScrapBook config files are written in "ini" format, which looks like:
+A WebScrapBook config file is written in "ini" format, which looks like:
 
     # A "#" or ";" at line beginning starts a comment, causing the whole
-    # line ignored when run. You can also use a comment to "disable" a setting.
+    # line ignored when run. A comment can also be used to temporarily
+    # disable a setting for testing or debugging purpose.
 
     # "[" and "]" define a section.
     [server]
@@ -23,11 +24,11 @@ WebsScrapBook config files are written in "ini" format, which looks like:
     # to "theme  =    default  "
     theme = default
 
-    # Use on/off, yes/no, true/false, or 1/0 for a boolean value.
+    # Use true/false, on/off, yes/no, or 1/0 for a boolean value.
     ssl_on = false
 
-    # A section may be subsected using syntax [section "subsection"]. For
-    # such cases [section] will also be mapped as [section ""].
+    # A section may be subsected using syntax [section "subsection"]. In such
+    # case [section] also means [section ""].
     [auth "user1"]
     user = myuser1
     #...
@@ -106,8 +107,8 @@ without leading or trailing slash.
 #### `data_dir`
 
 The directory where scrapbook data should be stored in. It's a directory path
-under top_dir, without leading or trailing slash. Use "data" if the scrapbook
-is migrated from legacy ScrapBook.
+under top_dir, without leading or trailing slash, and cannot be under tree_dir
+or .wsb. Use "data" if the scrapbook is migrated from legacy ScrapBook.
 
 (default: )
 
@@ -115,7 +116,7 @@ is migrated from legacy ScrapBook.
 #### `tree_dir`
 
 The directory where scrapbook index tree should be stored in. It's a directory
-path under top_dir, withou leading or trailing slash. Use "tree" if the
+path under top_dir, without leading or trailing slash. Use "tree" if the
 scrapbook is migrated from legacy ScrapBook.
 
 (default: .wsb/tree)
@@ -132,18 +133,17 @@ is migrated from legacy ScrapBook.
 
 #### `no_tree`
 
-Set true to disable virtual tree system of the book, and files are managed
-through the filesystem only.
+Set true to disable virtual tree and index of the book.
 
 (default: false)
 
 
 ### [auth] section(s)
 
-The [auth] section(s) define authenication rules. It can be subsected as
-[auth "identifier"]. Authenication requirement is turned on when at least one
+The [auth] section(s) define authorization rules. It can be subsected as
+[auth "identifier"]. Authorization requirement is activated when at least one
 [auth] section exists. Each section defines a rule, and the user must fullfill
-the rule of at least one section to be able to access.
+at least one to be allowed to access.
 
 An encrypted password can be generated via the "encrypt" sub-command, For
 example:
@@ -153,11 +153,8 @@ example:
 You'll then be promopted to input a password, and then you can use the output
 for pw, "mysalt" for pw_salt, and "sha1" for pw_type.
 
-NOTE: Use password authenication with HTTPS protocol as possible, since user
-input user name and password are not encrypted during tramsmission when using
-HTTP.
-
-(default: )
+NOTE: Use HTTPS protocol as possible when password authorization is activated,
+as input user name and password are unencrypted during HTTP transmission.
 
 
 #### `user`
