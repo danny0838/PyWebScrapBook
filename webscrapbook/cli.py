@@ -82,7 +82,7 @@ def cmd_config(args):
                     print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
                     sys.exit(1)
 
-            filename = 'serve.wsgi'
+            filename = 'app.py'
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
             if not os.path.isfile(fdst):
