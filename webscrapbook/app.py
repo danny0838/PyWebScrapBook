@@ -761,11 +761,21 @@ def handle_request(filepath):
                 else:
                     break
 
+            if format:
+                return http_response('Command run successfully.', format=format)
+
+            return http_response(status=204, format=format)
+
         elif action == 'unlock':
             try:
                 os.rmdir(targetpath)
             except:
                 pass
+
+            if format:
+                return http_response('Command run successfully.', format=format)
+
+            return http_response(status=204, format=format)
 
         elif action == 'mkdir':
             if os.path.lexists(localpath) and not os.path.isdir(localpath):
