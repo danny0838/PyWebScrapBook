@@ -1039,7 +1039,7 @@ def handle_request(filepath):
 
         # handle directory
         if os.path.isdir(localpath):
-            return handle_directory_listing(localtargetpath, format=format)
+            return handle_directory_listing(localtargetpath)
 
         # handle file
         elif os.path.isfile(localpath):
@@ -1067,7 +1067,7 @@ def handle_request(filepath):
         # handle sub-archive path
         elif archivefile:
             return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath,
-                    mimetype, encoding, format=format)
+                    mimetype, encoding)
 
         # probably 404 not found here
         return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
