@@ -555,6 +555,9 @@ def handle_request(filepath):
             return r
 
     elif action == 'source':
+        if format:
+            return http_error(400, "Action not supported.", format=format)
+
         # show text-like files as plain text
         if mimetype and (
                 mimetype.startswith('text/') or
@@ -566,7 +569,7 @@ def handle_request(filepath):
 
         if archivefile:
             return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath,
-                    mimetype, encoding, format=format)
+                    mimetype, encoding)
 
         return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
 
