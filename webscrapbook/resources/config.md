@@ -254,9 +254,12 @@ actually accessible from wide area network.
 
 Set true to enable HTTPS, and false otherwise.
 
-Other `ssl_` settings are required for HTTPS to work correctly. A simple
-self-signed certificate can be generated using openssl for testing purpose or
-for private usage, e.g.:
+Set `ssl_key` and `ssl_cert` to define the certificate for SSL. If `ssl_on` is
+set while they're not, a temporary key will be auto-generated every time when
+the server starts.
+
+A simple self-signed certificate can be generated using OpenSSL for testing
+purpose or for private usage, e.g.:
 
     openssl req \
       -newkey rsa:2048 -nodes -keyout domain.key \

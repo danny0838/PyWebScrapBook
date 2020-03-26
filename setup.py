@@ -33,6 +33,7 @@ setup(
         'flask >= 1.1',
         'werkzeug',
         'jinja2',
+        'cryptography',
         'lxml >= 4.0',
         'commonmark >= 0.8',
         ],

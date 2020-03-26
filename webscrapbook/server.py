@@ -42,7 +42,8 @@ def serve(root, **kwargs):
     thread = Thread(target=make_app(root, config).run, kwargs={
         'host': host,
         'port': port,
-        'ssl_context': (ssl_cert, ssl_key) if ssl_on else None,
+        'ssl_context': ((ssl_cert, ssl_key) if ssl_cert and ssl_key
+                else 'adhoc' if ssl_on else None),
         })
     thread.daemon = True
     thread.start()
