@@ -97,7 +97,6 @@ class Config():
 
         # type casting
         data['server']['port'] = self._conf['server'].getint('port')
-        data['server']['threads'] = self._conf['server'].getint('threads')
         data['server']['ssl_on'] = self._conf['server'].getboolean('ssl_on')
         data['server']['browse'] = self._conf['server'].getboolean('browse')
         data['browser']['cache_expire'] = self._conf['browser'].getint('cache_expire')
@@ -154,7 +153,6 @@ class Config():
         conf['server'] = {}
         conf['server']['port'] = '8080'
         conf['server']['host'] = 'localhost'
-        conf['server']['threads'] = '0'
         conf['server']['ssl_on'] = 'false'
         conf['server']['ssl_key'] = ''
         conf['server']['ssl_cert'] = ''

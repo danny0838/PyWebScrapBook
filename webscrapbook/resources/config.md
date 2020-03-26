@@ -250,15 +250,6 @@ actually accessible from wide area network.
 (default: localhost)
 
 
-#### `threads`
-
-How many threads the server can use to process incoming connection. Assign a
-positive integer; otherwise it's determined automatically according to system
-CPUs.
-
-(default: 0)
-
-
 #### `ssl_on`
 
 Set true to enable HTTPS, and false otherwise.

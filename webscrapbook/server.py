@@ -25,7 +25,6 @@ def serve(root, **kwargs):
     ssl_on = config['server'].getboolean('ssl_on')
     ssl_key = config['server']['ssl_key']
     ssl_cert = config['server']['ssl_cert']
-    threads = config['server'].getint('threads')
     scheme = 'https' if ssl_on else 'http'
 
     host2 = '[{}]'.format(host) if ':' in host else host
@@ -44,7 +43,6 @@ def serve(root, **kwargs):
         'host': host,
         'port': port,
         'ssl_context': (ssl_cert, ssl_key) if ssl_on else None,
-        'threaded': True if threads == 0 or threads > 1 else False,
         })
     thread.daemon = True
     thread.start()
