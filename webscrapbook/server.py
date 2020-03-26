@@ -159,11 +159,3 @@ def serve(root, **kwargs):
         while True: time.sleep(100)
     except (KeyboardInterrupt, SystemExit):
         print('Keyboard interrupt received, shutting down server.')
-
-
-def main():
-    serve(".")
-
-
-if __name__ == '__main__':
-    main()
