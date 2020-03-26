@@ -1,28 +1,22 @@
-% from urllib.parse import quote, unquote
-% from webscrapbook import util
-% import time
-% qbase = quote(base)
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Index of {{ path }}</title>
-<link rel="stylesheet" type="text/css" href="{{ qbase }}/common.css?a=static">
-<link rel="stylesheet" type="text/css" href="{{ qbase }}/index.css?a=static">
-<script src="{{ qbase }}/common.js?a=static"></script>
-<script src="{{ qbase }}/index.js?a=static"></script>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Index of {{ path }}{% endblock %}
+{% block links %}
+<link rel="stylesheet" type="text/css" href="{{ base|urlencode }}/index.css?a=static">
+{%- endblock %}
+{% block scripts %}
+<script src="{{ base }}/common.js?a=static"></script>
+<script src="{{ base }}/index.js?a=static"></script>
+{%- endblock %}
+{% block content %}
 <header>
-<h1 id="header" class="breadcrumbs">\\
-% for label, subpath, sep, is_last in util.get_breadcrumbs(path, base, sitename, subarchivepath):
-%   if not is_last:
-<a href="{{ quote(subpath) }}">{{ label }}</a>{{ sep }}\\
-%   else:
-<a>{{ label }}</a>{{ sep }}\\
-%   end
-% end
+<h1 id="header" class="breadcrumbs">
+{%- for label, subpath, sep, is_last in util.get_breadcrumbs(path, base, sitename, subarchivepath) -%}
+  {%- if not loop.last -%}
+    <a href="{{ subpath|urlencode }}">{{ label }}</a>{{ sep }}
+  {%- else -%}
+    <a>{{ label }}</a>{{ sep }}
+  {%- endif -%}
+{%- endfor -%}
 </h1>
 </header>
 <main>
@@ -31,18 +25,16 @@
   <tr><th><a hidden>Directory</a></th><th><a>Name</a></th><th class="detail"><a>Last modified</a></th><th class="detail"><a>Size</a></th></tr>
 </thead>
 <tbody>
-<%
-  for info in subentries:
-    filename = info.name
-    url = quote(info.name) + ('/' if info.type == 'dir' else '')
-    filetype = info.type
-    size = info.size
-    size_text = util.format_filesize(size) if size else ''
-    lm = info.last_modified
-    lm_text = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(lm))
-%>
+{%- for info in subentries %}
+  {%- set filename = info.name %}
+  {%- set url = info.name|urlencode + ('/' if info.type == 'dir' else '') %}
+  {%- set filetype = info.type %}
+  {%- set size = info.size %}
+  {%- set size_text = util.format_filesize(size) if size else '' %}
+  {%- set lm = info.last_modified %}
+  {%- set lm_text = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(lm)) %}
   <tr class="{{ filetype }}"><td data-sort="{{ filename }}"><a class="icon {{ filetype }}" title="{{ filename }}"></a><td data-sort="{{ filename }}"><a href="{{ url }}">{{ filename }}</a></td><td class="detail" data-sort="{{ lm or '' }}">{{ lm_text }}</td><td class="detail" data-sort="{{ size or '' }}">{{ size_text }}</td></tr>
-<% end %>
+{%- endfor %}
 </tbody>
 </table>
 </main>
@@ -71,5 +63,4 @@
   <input type="file" id="upload-file-selector" multiple hidden>
 </form>
 </footer>
-</body>
-</html>
+{% endblock %}

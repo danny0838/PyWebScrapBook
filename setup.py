@@ -30,8 +30,10 @@ setup(
         ],
     python_requires='~=3.5',
     install_requires=[
-        "lxml >= 4.0",
-        "bottle >= 0.12",
+        'flask >= 1.1',
+        'werkzeug',
+        'jinja2',
+        'lxml >= 4.0',
         'commonmark >= 0.8',
         ],
     packages=find_packages(),
