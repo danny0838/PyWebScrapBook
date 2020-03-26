@@ -120,6 +120,7 @@ def cmd_config(args):
         sys.exit(1)
 
     elif args['name']:
+        config.load(args['root'])
         value = config.get(args['name'])
 
         if value is None:
@@ -129,6 +130,7 @@ def cmd_config(args):
         print(value)
 
     else:
+        config.load(args['root'])
         config.dump(sys.stdout)
 
 
