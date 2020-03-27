@@ -103,7 +103,6 @@ def serve(root, **kwargs):
 
     # set params
     host = config['server']['host'] or ''
-    host2 = '[{}]'.format(host) if ':' in host else host
     port = config['server'].getint('port')
     ssl_on = config['server'].getboolean('ssl_on')
     ssl_key = config['server']['ssl_key']
@@ -111,7 +110,16 @@ def serve(root, **kwargs):
     threads = config['server'].getint('threads')
     scheme = 'https' if ssl_on else 'http'
 
+    host2 = '[{}]'.format(host) if ':' in host else host
+    port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
+
     # start server
+    print('WebScrapBook server starting up...')
+    print('Document Root: {}'.format(os.path.abspath(root)))
+    print('Listening on {scheme}://{host}:{port}'.format(
+            scheme=scheme, host=host2, port=port))
+    print('Hit Ctrl-C to shutdown.')
+
     thread = Thread(target=init_app().run, kwargs={
         'host': host,
         'port': port,
@@ -125,13 +133,6 @@ def serve(root, **kwargs):
     thread.daemon = True
     thread.start()
 
-    print('WebScrapBook server starting up...')
-    print('Document Root: {}'.format(os.path.abspath(root)))
-    print('Listening on {scheme}://{host}:{port}'.format(
-            scheme=scheme, host=host2, port=port))
-    print('Hit Ctrl-C to shutdown.')
-    print()
-
     # launch the browser
     if config['server'].getboolean('browse'):
         base = config['app']['base'].rstrip('/')
@@ -141,23 +142,20 @@ def serve(root, **kwargs):
         url = '{scheme}://{host}{port}{path}'.format(
                 scheme=scheme,
                 host=host2,
-                port='' if (not ssl_on and port == 80) or (ssl_on and port == 443)
-                        else ':' + str(port),
+                port=port2,
                 path=path,
                 )
 
         browser = webbrowser.get(config['browser']['command'] or None)
 
+        print('Launching browser at {url} ...'.format(url=url))
         thread = Thread(target=browser.open, args=[url])
         thread.daemon = True
         thread.start()
 
-        print('Launching browser at {url} ...'.format(url=url))
-
     try:
         while True: time.sleep(100)
     except (KeyboardInterrupt, SystemExit):
-        print('')
         print('Keyboard interrupt received, shutting down server.')
 
 
