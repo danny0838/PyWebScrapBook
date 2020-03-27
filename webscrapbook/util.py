@@ -129,7 +129,7 @@ def file_info(file, base=None):
         size = None
         last_modified = None
     else:
-        size = statinfo.st_size if type is 'file' else None
+        size = statinfo.st_size if type == 'file' else None
         last_modified = statinfo.st_mtime
 
     return FileInfo(name=name, type=type, size=size, last_modified=last_modified)
