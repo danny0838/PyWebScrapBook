@@ -3,6 +3,7 @@
 """
 import os
 import time
+from ipaddress import IPv6Address, AddressValueError
 import webbrowser
 from threading import Thread
 
@@ -110,7 +111,12 @@ def serve(root, **kwargs):
     threads = config['server'].getint('threads')
     scheme = 'https' if ssl_on else 'http'
 
-    host2 = '[{}]'.format(host) if ':' in host else host
+    host2 = host3 = '[{}]'.format(host) if ':' in host else host
+    try:
+        if host == '0.0.0.0' or IPv6Address(host) == IPv6Address('::'):
+            host3 = 'localhost'
+    except AddressValueError:
+        pass
     port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
 
     # start server
@@ -141,7 +147,7 @@ def serve(root, **kwargs):
 
         url = '{scheme}://{host}{port}{path}'.format(
                 scheme=scheme,
-                host=host2,
+                host=host3,
                 port=port2,
                 path=path,
                 )
