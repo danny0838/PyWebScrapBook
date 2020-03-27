@@ -49,6 +49,10 @@ Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the command 
 
 ### Further documentation
 
-Run below command for further help:
+Run below command for help about available commands:
 
     wsb --help
+
+For documentation about configs, run:
+
+    wsb help config
