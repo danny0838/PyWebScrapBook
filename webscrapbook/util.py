@@ -425,7 +425,7 @@ class Encrypt():
         return text + salt
 
     def encrypt(self, text, salt='', method='plain'):
-        fn = getattr(self, method)
+        fn = getattr(self, method, None)
 
         if not callable(fn):
             print('Encrypt method "{}" not implemented, fallback to "plain".'.format(method), file=sys.stderr)
