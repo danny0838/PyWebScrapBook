@@ -119,7 +119,7 @@ def http_error(
 
 
 def get_base():
-    return (config['app']['base'] or request.environ.get('SCRIPT_NAME', '')).rstrip('/')
+    return request.environ.get('SCRIPT_NAME', '').rstrip('/')
 
 
 def get_pathname():
@@ -523,6 +523,10 @@ def handle_markdown_output(filepath, filename):
 def handle_request(filepath):
     """Handle an HTTP request (HEAD, GET, POST).
     """
+    # replace SCRIPT_NAME with the custom if set
+    if config['app']['base']:
+        request.environ.set('SCRIPT_NAME', config['app']['base'])
+
     action = request.params.getunicode('a', encoding='UTF-8', default='view')
     action = request.params.getunicode('action', encoding='UTF-8', default=action)
 
