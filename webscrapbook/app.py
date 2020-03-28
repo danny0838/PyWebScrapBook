@@ -576,23 +576,22 @@ def handle_request(filepath):
         return static_file(filepath, root=runtime['root'], mimetype=mimetype, charset=None)
 
     elif action in ('exec', 'browse'):
-        if is_local_access():
-            if os.path.lexists(localpath):
-                if action == 'browse':
-                    util.view_in_explorer(localpath)
+        if not is_local_access():
+            return http_error(400, "Command can only run on local device.", format=format)
 
-                elif action == 'exec':
-                    util.launch(localpath)
-
-                if format:
-                    return http_response('Command run successfully.', format=format)
-
-                return http_response(status=204, format=format)
-       
+        if not os.path.lexists(localpath):
             return http_error(404, "File does not exist.", format=format)
 
-        else:
-            return http_error(400, "Command can only run on local device.", format=format)
+        if action == 'browse':
+            util.view_in_explorer(localpath)
+
+        elif action == 'exec':
+            util.launch(localpath)
+
+        if format:
+            return http_response('Command run successfully.', format=format)
+
+        return http_response(status=204)
 
     elif action == 'token':
         return http_response(token_handler.acquire(), format=format)
@@ -766,21 +765,11 @@ def handle_request(filepath):
                 else:
                     break
 
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            return http_response(status=204, format=format)
-
         elif action == 'unlock':
             try:
                 os.rmdir(targetpath)
             except:
                 pass
-
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            return http_response(status=204, format=format)
 
         elif action == 'mkdir':
             if os.path.lexists(localpath) and not os.path.isdir(localpath):
@@ -807,11 +796,6 @@ def handle_request(filepath):
                 except OSError:
                     traceback.print_exc()
                     return http_error(500, "Unable to create a directory here.", format=format)
-
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            return redirect(request.url)
 
         elif action == 'save':
             if os.path.lexists(localpath) and not os.path.isfile(localpath):
@@ -882,11 +866,6 @@ def handle_request(filepath):
                     traceback.print_exc()
                     return http_error(500, "Unable to write to this file.", format=format)
 
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            return redirect(request.url)
-
         elif action == 'delete':
             if archivefile:
                 try:
@@ -943,14 +922,6 @@ def handle_request(filepath):
                         traceback.print_exc()
                         return http_error(500, "Unable to delete this directory.", format=format)
 
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            parts = request.urlparts
-            new_parts = (parts[0], parts[1], re.sub(r'[^/]+/?$', r'', parts[2]), '', '')
-            new_url = urlunsplit(new_parts)
-            return redirect(new_url)
-
         elif action == 'move':
             if not os.path.lexists(localpath):
                 return http_error(404, "File does not exist.", format=format)
@@ -979,14 +950,6 @@ def handle_request(filepath):
             except:
                 traceback.print_exc()
                 return http_error(500, 'Unable to move to target "{}".'.format(target), format=format)
-
-            if format:
-                return http_response('Command run successfully.', format=format)
-
-            parts = request.urlparts
-            new_parts = (parts[0], parts[1], re.sub(r'[^/]+/?$', r'', parts[2]), '', '')
-            new_url = urlunsplit(new_parts)
-            return redirect(new_url)
 
         elif action == 'copy':
             if not os.path.lexists(localpath):
@@ -1020,13 +983,10 @@ def handle_request(filepath):
                     traceback.print_exc()
                     return http_error(500, 'Unable to copy to target "{}".'.format(target), format=format)
 
-            if format:
-                return http_response('Command run successfully.', format=format)
+        if format:
+            return http_response('Command run successfully.', format=format)
 
-            parts = request.urlparts
-            new_parts = (parts[0], parts[1], re.sub(r'[^/]+/?$', r'', parts[2]), '', '')
-            new_url = urlunsplit(new_parts)
-            return redirect(new_url)
+        return http_response(status=204)
 
     # "view" or undefined actions
     elif action == 'view':
