@@ -122,18 +122,6 @@ def get_base():
     return request.environ.get('SCRIPT_NAME', '').rstrip('/')
 
 
-def get_pathname():
-    """Revise request.pathname of Bottle
-
-    When visiting http://example.com/app, request.pathname returns '/app/',
-    while we want '/app'.
-
-    http://example.com effectively means http://example.com/, so keep at least
-    '/' as final fallback.
-    """
-    return (request.environ.get('SCRIPT_NAME', '') + request.environ.get('PATH_INFO', '')) or '/'
-
-
 def get_archive_path(filepath, localpath):
     """Parse archive file path and the sub-archive path.
 
@@ -227,7 +215,7 @@ def handle_directory_listing(localpath, recursive=False, format=None):
     """List contents in a directory.
     """
     # ensure directory has trailing '/'
-    pathname = get_pathname()
+    pathname = request.fullpath
     if not pathname.endswith('/'):
         parts = request.urlparts
         new_parts = (parts[0], parts[1], quote(pathname) + '/', parts[3], parts[4])
@@ -291,7 +279,7 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, format=None):
     """List contents in a directory.
     """
     # ensure directory has trailing '/'
-    pathname = get_pathname()
+    pathname = request.fullpath
     if not pathname.endswith('/'):
         parts = request.urlparts
         new_parts = (parts[0], parts[1], quote(pathname) + '/', parts[3], parts[4])
