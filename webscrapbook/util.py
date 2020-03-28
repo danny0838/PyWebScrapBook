@@ -38,6 +38,21 @@ def is_nullhost(host):
     return False
 
 
+def is_localhost(host):
+    """Determine if given host is localhost equivalent.
+    """
+    if host in ('localhost', '127.0.0.1'):
+        return True
+
+    try:
+        if IPv6Address(host) == IPv6Address('::1'):
+            return True
+    except AddressValueError:
+        pass
+
+    return False
+
+
 def get_breadcrumbs(path, base='', topname='.', subarchivepath=None):
     """Generate (label, subpath, sep, is_last) tuples.
     """
