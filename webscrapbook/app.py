@@ -513,7 +513,7 @@ def handle_request(filepath):
     """
     # replace SCRIPT_NAME with the custom if set
     if config['app']['base']:
-        request.environ.set('SCRIPT_NAME', config['app']['base'])
+        request.environ['SCRIPT_NAME'] = config['app']['base']
 
     action = request.params.getunicode('a', encoding='UTF-8', default='view')
     action = request.params.getunicode('action', encoding='UTF-8', default=action)
