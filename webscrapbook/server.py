@@ -3,7 +3,6 @@
 """
 import os
 import time
-from ipaddress import IPv6Address, AddressValueError
 import webbrowser
 from threading import Thread
 
@@ -13,6 +12,7 @@ import bottle
 # this package
 from . import *
 from .app import init_app
+from .util import is_nullhost
 
 
 class WSBServer(bottle.ServerAdapter):
@@ -111,12 +111,8 @@ def serve(root, **kwargs):
     threads = config['server'].getint('threads')
     scheme = 'https' if ssl_on else 'http'
 
-    host2 = host3 = '[{}]'.format(host) if ':' in host else host
-    try:
-        if host == '0.0.0.0' or IPv6Address(host) == IPv6Address('::'):
-            host3 = 'localhost'
-    except AddressValueError:
-        pass
+    host2 = '[{}]'.format(host) if ':' in host else host
+    host3 = 'localhost' if is_nullhost(host) else host2
     port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
 
     # start server

@@ -11,6 +11,7 @@ import re
 import hashlib
 import time
 from urllib.parse import quote, unquote
+from ipaddress import IPv6Address, AddressValueError
 
 try:
     from secrets import token_urlsafe
@@ -21,6 +22,21 @@ except ImportError:
 #########################################################################
 # URL and string
 #########################################################################
+
+def is_nullhost(host):
+    """Determine if given host is 0.0.0.0 equivalent.
+    """
+    if host == '0.0.0.0':
+        return True
+
+    try:
+        if IPv6Address(host) == IPv6Address('::'):
+            return True
+    except AddressValueError:
+        pass
+
+    return False
+
 
 def get_breadcrumbs(path, base='', topname='.', subarchivepath=None):
     """Generate (label, subpath, sep, is_last) tuples.
