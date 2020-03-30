@@ -18,6 +18,7 @@ from zlib import adler32
 # dependency
 from flask import Flask
 from flask import request, Response, redirect, abort, render_template, send_from_directory, send_file, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.http import is_resource_modified
 from werkzeug.http import http_date
 import jinja2
@@ -63,6 +64,18 @@ def make_app(root=".", config=None):
 
     # main app instance
     app = Flask(__name__, root_path=runtime['root'])
+
+    xheaders = {
+            'x_for': config['app'].getint('allowed_x_for'),
+            'x_proto': config['app'].getint('allowed_x_proto'),
+            'x_host': config['app'].getint('allowed_x_host'),
+            'x_port': config['app'].getint('allowed_x_port'),
+            'x_prefix': config['app'].getint('allowed_x_prefix'),
+            }
+
+    if any(v for v in xheaders.values()):
+        app.wsgi_app = ProxyFix(app.wsgi_app, **xheaders)
+
     app.jinja_loader = jinja2.FileSystemLoader(runtime['templates'])
     app.jinja_env.globals.update({
             'os': os,

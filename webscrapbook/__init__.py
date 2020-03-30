@@ -96,6 +96,11 @@ class Config():
                 data.setdefault(sec, OrderedDict())[subsec] = OrderedDict(subsection)
 
         # type casting
+        data['app']['allowed_x_for'] = self._conf['app'].getint('allowed_x_for')
+        data['app']['allowed_x_proto'] = self._conf['app'].getint('allowed_x_proto')
+        data['app']['allowed_x_host'] = self._conf['app'].getint('allowed_x_host')
+        data['app']['allowed_x_port'] = self._conf['app'].getint('allowed_x_port')
+        data['app']['allowed_x_prefix'] = self._conf['app'].getint('allowed_x_prefix')
         data['server']['port'] = self._conf['server'].getint('port')
         data['server']['ssl_on'] = self._conf['server'].getboolean('ssl_on')
         data['server']['browse'] = self._conf['server'].getboolean('browse')
@@ -150,6 +155,11 @@ class Config():
         conf['app']['theme'] = 'default'
         conf['app']['root'] = '.'
         conf['app']['base'] = ''
+        conf['app']['allowed_x_for'] = '0'
+        conf['app']['allowed_x_proto'] = '0'
+        conf['app']['allowed_x_host'] = '0'
+        conf['app']['allowed_x_port'] = '0'
+        conf['app']['allowed_x_prefix'] = '0'
         conf['server'] = {}
         conf['server']['port'] = '8080'
         conf['server']['host'] = 'localhost'

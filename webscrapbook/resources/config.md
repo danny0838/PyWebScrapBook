@@ -95,6 +95,60 @@ value can be set to "/path/to/app" if an expected SCRIPT_NAME is not provided.
 (default: )
 
 
+#### `allowed_x_for`
+
+Number of values to trust for "X-Forwarded-For" header(s) when this app is
+run behind a reverse proxy.
+
+For example, if the app is served behind one reverse proxy that appends
+"X-Forwarded-For" header, set this value to 1 and the last value will be
+taken as the client address.
+
+(default: 0)
+
+
+#### `allowed_x_proto`
+
+Number of values to trust for "X-Forwarded-Proto" header(s) when this app is
+run behind a reverse proxy.
+
+By convention the header set by a reverse proxy is in an overwriting way.
+In most cases this value can be set to 1 if a trusted reverse proxy sets it,
+and 0 otherwise.
+
+(default: 0)
+
+
+#### `allowed_x_host`
+
+Number of values to trust for "X-Forwarded-Host" header(s) when this app is
+run behind a reverse proxy.
+
+See `allowed_x_proto` for convention of usage.
+
+(default: 0)
+
+
+#### `allowed_x_port`
+
+Number of values to trust for "X-Forwarded-Port" header(s) when this app is
+run behind a reverse proxy.
+
+See `allowed_x_proto` for convention of usage.
+
+(default: 0)
+
+
+#### `allowed_x_prefix`
+
+Number of values to trust for "X-Forwarded-Prefix" header(s) when this app is
+run behind a reverse proxy.
+
+See `allowed_x_proto` for convention of usage.
+
+(default: 0)
+
+
 ### [book] section(s)
 
 The book section(s) define scrapbooks for the application to handle. It can be
