@@ -56,3 +56,5 @@ Run below command for help about available commands:
 For documentation about configs, run:
 
     wsb help config
+
+For more useful ways to configure PyWebScrapBook alongside WebScrapBook, visit the documentation for [WebScrapBook](https://github.com/danny0838/webscrapbook/wiki/Backend).
