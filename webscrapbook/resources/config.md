@@ -86,10 +86,11 @@ one that contains the ".wsb" directory).
 #### `base`
 
 The base URL path the app is serving at. When this app is not served at root
-path, (e.g. https://your.site/path/to/app rather than https://your.site/),
-the server usually sets the SCRIPT_NAME environmental variable to get things
-work right; but sometimes the server may fail to do so, and this can be set
-to /path/to/app to get things work right.
+path, the upper app usually sets the SCRIPT_NAME environmental variable to get
+things work right. If it fails to do so, this value can be set for a fix.
+
+For example, the app is served under https://example.com/path/to/app, this
+value can be set to "/path/to/app" if an expected SCRIPT_NAME is not provided.
 
 (default: )
 
