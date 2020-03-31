@@ -520,20 +520,19 @@ def make_app(root=".", config=None):
             if format:
                 return http_error(400, "Action not supported.", format=format)
 
-            # show text-like files as plain text
-            if mimetype and (
-                    mimetype.startswith('text/') or
-                    mimetype.endswith('+xml') or
-                    mimetype.endswith('+json') or
-                    mimetype in ('application/javascript',)
-                    ):
-                mimetype = 'text/plain'
-
             if archivefile:
                 return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath,
                         mimetype, encoding)
 
-            return static_file(filepath, root=runtime['root'], mimetype=mimetype)
+            response, headers = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+
+            # show as inline plain text
+            # @TODO: Chromium (80) seems to ignore header mimetype for certain types
+            #        like image and zip
+            response.content_type = 'text/plain; charset=utf-8'
+            headers['Content-Disposition'] = 'inline'
+
+            return response, headers
 
         elif action in ('exec', 'browse'):
             if not is_local_access():
