@@ -608,12 +608,14 @@ def make_app(root=".", config=None):
                 except FileNotFoundError:
                     body = b''
 
+            encoding = query.get('e')
+            encoding = query.get('encoding', default=encoding)
+
             try:
-                body = body.decode('UTF-8')
-                is_utf8 = True
-            except UnicodeDecodeError:
-                body = body.decode('ISO-8859-1')
-                is_utf8 = False
+                body = body.decode(encoding or 'UTF-8')
+            except (LookupError, UnicodeDecodeError):
+                encoding = 'ISO-8859-1'
+                body = body.decode(encoding)
 
             body = render_template('edit.html',
                     sitename=runtime['name'],
@@ -621,7 +623,7 @@ def make_app(root=".", config=None):
                     base=request.script_root,
                     path=request.path,
                     body=body,
-                    is_utf8=is_utf8,
+                    encoding=encoding,
                     )
 
             return http_response(body, format=format)

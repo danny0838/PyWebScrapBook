@@ -12,8 +12,8 @@
 <noscript>
 <div class="error">Enable JavaScript or upgrade your browser to support JavaScript, so that the HTML editor can work.</div>
 </noscript>
-{%- if not is_utf8 %}
-<div class="warning">This file is decoded as ISO-8859-1, and will be encoded as UTF-8 when saved.</div>
+{%- if encoding %}
+<div class="warning">This file is decoded as {{ encoding }}, and will be encoded as UTF-8 when saved.</div>
 {%- endif %}
 </div>
 <textarea id="editor">{{ body }}</textarea>
