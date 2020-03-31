@@ -570,14 +570,19 @@ def make_app(root=".", config=None):
             if not format:
                 return http_error(400, "Action not supported.", format=format)
 
-            # slightly adjusted some value for client to better know the server
             data = config.dump_object()
-            data['app']['is_local'] = is_local_access()
-            data['app']['root'] = runtime['root']
+
+            # filter values for better security
+            data = {k:v for k, v in data.items() if k in ('app', 'book')}
+            data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme')}
+
+            # add and rewrite values for client to better know the server
             data['app']['base'] = request.script_root
+            data['app']['is_local'] = is_local_access()
             data['VERSION'] = __version__;
             data['WSB_DIR'] = WSB_DIR;
             data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG;
+
             return http_response(data, format=format)
 
         elif action == 'edit':
