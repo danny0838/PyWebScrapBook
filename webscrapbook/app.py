@@ -529,7 +529,9 @@ def make_app(root=".", config=None):
             # show as inline plain text
             # @TODO: Chromium (80) seems to ignore header mimetype for certain types
             #        like image and zip
-            response.content_type = 'text/plain; charset=utf-8'
+            encoding = query.get('e', 'utf-8')
+            encoding = query.get('encoding', default=encoding)
+            response.content_type = 'text/plain; charset=' + quote(encoding)
             headers['Content-Disposition'] = 'inline'
 
             return response, headers
