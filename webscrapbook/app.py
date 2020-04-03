@@ -786,7 +786,11 @@ def make_app(root=".", config=None):
                         file = request.files.get('upload')
                         if file is not None:
                             fp = zip.open(info, 'w', force_zip64=True)
-                            file.save(fp)
+                            stream = file.stream
+                            while True:
+                                s = stream.read(8192)
+                                if not s: break
+                                fp.write(s)
                             fp.close()
                         else:
                             bytes = query.get('text', '').encode('ISO-8859-1')
