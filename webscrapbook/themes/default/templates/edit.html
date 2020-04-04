@@ -16,11 +16,13 @@
 <div class="warning">This file is decoded as {{ encoding }}, and will be encoded as UTF-8 when saved.</div>
 {%- endif %}
 </div>
+<div id="wrapper">
 <textarea id="editor">{{ body }}</textarea>
 <div id="toolbar">
   <div>
     <input id="btn-save" type="button" value="SAVE" autocomplete="off">
     <input id="btn-exit" type="button" value="EXIT" autocomplete="off">
   </div>
+</div>
 </div>
 {% endblock %}
