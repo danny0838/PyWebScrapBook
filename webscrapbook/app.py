@@ -895,6 +895,9 @@ def make_app(root=".", config=None):
                             return http_error(500, "Unable to delete this directory.", format=format)
 
             elif action == 'move':
+                if archivefile:
+                    return http_error(400, "File is inside an archive file.", format=format)
+
                 if not os.path.lexists(localpath):
                     return http_error(404, "File does not exist.", format=format)
 
@@ -924,6 +927,9 @@ def make_app(root=".", config=None):
                     return http_error(500, 'Unable to move to target "{}".'.format(target), format=format)
 
             elif action == 'copy':
+                if archivefile:
+                    return http_error(400, "File is inside an archive file.", format=format)
+
                 if not os.path.lexists(localpath):
                     return http_error(404, "File does not exist.", format=format)
 
