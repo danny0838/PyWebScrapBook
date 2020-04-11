@@ -21,6 +21,7 @@ from flask import request, Response, redirect, abort, render_template, send_from
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.http import is_resource_modified
 from werkzeug.http import http_date
+from werkzeug.http import parse_options_header, dump_options_header
 import jinja2
 import commonmark
 
@@ -1004,13 +1005,21 @@ def make_app(root=".", config=None):
                         return redirect(new_url)
 
                 # show static file for other cases
-                return static_file(filepath, root=runtime['root'], mimetype=mimetype)
+                response = static_file(filepath, root=runtime['root'], mimetype=mimetype)
 
             # handle sub-archive path
             elif archivefile:
-                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype)
+                response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype)
 
-            return http_error(404)
+            else:
+                return http_error(404)
+
+            # don't include charset
+            m, p = parse_options_header(response.headers.get('Content-Type'))
+            if 'charset' in p: del p['charset']
+            response.headers.set('Content-Type', dump_options_header(m, p))
+
+            return response
 
         # unknown action
         else:
