@@ -1013,8 +1013,7 @@ def make_app(root=".", config=None):
             elif archivefile:
                 return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype)
 
-            # probably 404 not found here
-            return static_file(filepath, mimetype=mimetype)
+            return http_error(404)
 
         # unknown action
         else:
