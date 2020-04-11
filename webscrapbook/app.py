@@ -353,7 +353,7 @@ def make_app(root=".", config=None):
             return http_error(404, "File does not exist.")
 
 
-    def handle_subarchive_path(archivefile, subarchivepath, mimetype):
+    def handle_subarchive_path(archivefile, subarchivepath, mimetype=None):
         """Show content of a path in a zip file.
         """
         if not os.access(archivefile, os.R_OK):
