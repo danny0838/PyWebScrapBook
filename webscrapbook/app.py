@@ -353,7 +353,7 @@ def make_app(root=".", config=None):
             return http_error(404, "File does not exist.")
 
 
-    def handle_subarchive_path(archivefile, subarchivepath, mimetype, encoding):
+    def handle_subarchive_path(archivefile, subarchivepath, mimetype):
         """Show content of a path in a zip file.
         """
         if not os.access(archivefile, os.R_OK):
@@ -505,7 +505,7 @@ def make_app(root=".", config=None):
         localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/\\')))
         localtargetpath = os.path.realpath(localpath)
         archivefile, subarchivepath = get_archive_path(filepath, localpath)
-        mimetype, encoding = mimetypes.guess_type(localtargetpath)
+        mimetype, _ = mimetypes.guess_type(localtargetpath)
 
         # handle action
         if action == 'static':
@@ -521,8 +521,7 @@ def make_app(root=".", config=None):
                 return http_error(400, "Action not supported.", format=format)
 
             if archivefile:
-                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath,
-                        mimetype, encoding)
+                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype)
 
             response, headers = static_file(filepath, root=runtime['root'], mimetype=mimetype)
 
@@ -1009,8 +1008,7 @@ def make_app(root=".", config=None):
 
             # handle sub-archive path
             elif archivefile:
-                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath,
-                        mimetype, encoding)
+                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype)
 
             # probably 404 not found here
             return static_file(filepath, mimetype=mimetype)
