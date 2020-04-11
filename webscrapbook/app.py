@@ -353,7 +353,7 @@ def make_app(root=".", config=None):
             return http_error(404, "File does not exist.")
 
 
-    def handle_subarchive_path(archivefile, subarchivepath, mimetype=None):
+    def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True):
         """Show content of a path in a zip file.
         """
         if not os.access(archivefile, os.R_OK):
@@ -370,6 +370,8 @@ def make_app(root=".", config=None):
         except KeyError:
             # subarchivepath does not exist
             # possibility a missing directory entry?
+            if not list_directory:
+                return http_error(404)
             return handle_zip_directory_listing(zip, archivefile, subarchivepath)
 
         fh = zip.open(subarchivepath, 'r')
@@ -521,7 +523,7 @@ def make_app(root=".", config=None):
                 return http_error(400, "Action not supported.", format=format)
 
             if archivefile:
-                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype)
+                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
 
             response, headers = static_file(filepath, root=runtime['root'], mimetype=mimetype)
 
