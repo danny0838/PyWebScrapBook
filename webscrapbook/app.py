@@ -87,12 +87,10 @@ def make_app(root=".", config=None):
     def static_file(filepath, root=None, mimetype=None):
         """Wrap send_file for customized behaviors.
         """
-        result = send_from_directory(root or runtime['root'], filepath, mimetype=mimetype)
-        headers = {
-            'Cache-Control': 'no-cache',
-            'Accept-Ranges': 'bytes',
-            }
-        return result, headers
+        response = send_from_directory(root or runtime['root'], filepath, mimetype=mimetype)
+        response.headers.set('Accept-Ranges', 'bytes')
+        response.headers.set('Cache-Control', 'no-cache')
+        return response
 
 
     def http_response(body='', status=None, headers=None, format=None):
@@ -524,19 +522,18 @@ def make_app(root=".", config=None):
 
             if archivefile:
                 response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
-                headers = {}
             else:
-                response, headers = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+                response = static_file(filepath, root=runtime['root'], mimetype=mimetype)
 
             # show as inline plain text
             # @TODO: Chromium (80) seems to ignore header mimetype for certain types
             #        like image and zip
             encoding = query.get('e', 'utf-8')
             encoding = query.get('encoding', default=encoding)
-            response.content_type = 'text/plain; charset=' + quote(encoding)
-            headers['Content-Disposition'] = 'inline'
+            response.headers.set('Content-Type', 'text/plain; charset=' + quote(encoding))
+            response.headers.set('Content-Disposition', 'inline')
 
-            return response, headers
+            return response
 
         elif action in ('exec', 'browse'):
             if not is_local_access():
