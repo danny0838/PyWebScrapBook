@@ -523,9 +523,10 @@ def make_app(root=".", config=None):
                 return http_error(400, "Action not supported.", format=format)
 
             if archivefile:
-                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
-
-            response, headers = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+                response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
+                headers = {}
+            else:
+                response, headers = static_file(filepath, root=runtime['root'], mimetype=mimetype)
 
             # show as inline plain text
             # @TODO: Chromium (80) seems to ignore header mimetype for certain types
