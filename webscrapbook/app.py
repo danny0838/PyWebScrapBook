@@ -57,7 +57,7 @@ def make_app(root=".", config=None):
     runtime['statics'] = [os.path.join(t, 'static') for t in runtime['themes']]
     runtime['templates'] = [os.path.join(t, 'templates') for t in runtime['themes']]
 
-    runtime['tokens'] = os.path.join(runtime['root'], WSB_DIR, 'server', 'token')
+    runtime['tokens'] = os.path.join(runtime['root'], WSB_DIR, 'server', 'tokens')
     runtime['locks'] = os.path.join(runtime['root'], WSB_DIR, 'server', 'locks')
 
     # init token_handler
