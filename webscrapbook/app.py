@@ -57,8 +57,11 @@ def make_app(root=".", config=None):
     runtime['statics'] = [os.path.join(t, 'static') for t in runtime['themes']]
     runtime['templates'] = [os.path.join(t, 'templates') for t in runtime['themes']]
 
+    runtime['tokens'] = os.path.join(runtime['root'], WSB_DIR, 'server', 'token')
+    runtime['locks'] = os.path.join(runtime['root'], WSB_DIR, 'server', 'locks')
+
     # init token_handler
-    token_handler = util.TokenHandler(os.path.join(runtime['root'], WSB_DIR, 'server', 'token'))
+    token_handler = util.TokenHandler(runtime['tokens'])
 
     # main app instance
     app = Flask(__name__, root_path=runtime['root'])
@@ -681,8 +684,8 @@ def make_app(root=".", config=None):
                 if name is None:
                     return http_error(400, "Lock name is not specified.", format=format)
 
-                targetpath = os.path.normpath(os.path.join(runtime['root'], WSB_DIR, 'server', 'locks', name))
-                if not targetpath.startswith(os.path.join(runtime['root'], WSB_DIR, 'server', 'locks', '')):
+                targetpath = os.path.join(runtime['locks'], name)
+                if not targetpath.startswith(os.path.join(runtime['locks'], '')):
                     return http_error(400, 'Invalid lock name "{}".'.format(name), format=format)
 
             # handle action
