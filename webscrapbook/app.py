@@ -60,9 +60,6 @@ def make_app(root=".", config=None):
     # init token_handler
     token_handler = util.TokenHandler(os.path.join(runtime['root'], WSB_DIR, 'server', 'token'))
 
-    # init debugging logger
-    runtime['log'] = os.path.join(runtime['root'], WSB_DIR, 'server', 'logs', 'debug.log')
-
     # main app instance
     app = Flask(__name__, root_path=runtime['root'])
 
@@ -1025,14 +1022,5 @@ def make_app(root=".", config=None):
         else:
             return http_error(400, "Action not supported.", format=format)
 
-
-    def debug(*msg):
-        """Quick dirty logging for testing purpose.
-        """
-        os.makedirs(os.path.dirname(runtime['log']), exist_ok=True)
-        with open(runtime['log'], 'a', encoding='UTF-8') as f:
-            f.write(' '.join(str(s) for s in msg))
-            f.write('\n')
-            f.close()
 
     return app
