@@ -373,7 +373,7 @@ def make_app(root=".", config=None):
                 return http_error(404)
             return handle_zip_directory_listing(zip, archivefile, subarchivepath)
 
-        fh = zip.open(subarchivepath, 'r')
+        fh = zip.open(info, 'r')
 
         lm = info.date_time
         lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
