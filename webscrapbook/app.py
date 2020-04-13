@@ -349,6 +349,10 @@ def make_app(root=".", config=None):
                     )
             return http_response(body, headers=headers)
         except util.ZipDirNotFoundError:
+            # zip may not close automatically in such case
+            # (due to a raise in a generator?)
+            zip.close()
+
             return http_error(404, "File does not exist.")
 
 
