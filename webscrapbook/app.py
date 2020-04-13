@@ -347,6 +347,7 @@ def make_app(root=".", config=None):
                     subarchivepath=subarchivepath,
                     subentries=subentries,
                     )
+            zip.close()
             return http_response(body, headers=headers)
         except util.ZipDirNotFoundError:
             # zip may not close automatically in such case
@@ -374,7 +375,9 @@ def make_app(root=".", config=None):
             # subarchivepath does not exist
             # possibility a missing directory entry?
             if not list_directory:
+                zip.close()
                 return http_error(404)
+
             return handle_zip_directory_listing(zip, archivefile, subarchivepath)
 
         fh = zip.open(info, 'r')
