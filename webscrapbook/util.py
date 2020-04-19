@@ -494,7 +494,7 @@ class TokenHandler():
 
         try:
             expire = int(open(token_file, 'r', encoding='UTF-8').read())
-        except FileNotFoundError:
+        except (FileNotFoundError, IsADirectoryError):
             return False
 
         if now >= expire:
