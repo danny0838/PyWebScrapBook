@@ -246,10 +246,9 @@ def make_app(root=".", config=None):
         """List contents in a directory.
         """
         # ensure directory has trailing '/'
-        pathname = request.path
-        if not pathname.endswith('/'):
+        if not request.path.endswith('/'):
             parts = urlsplit(request.url)
-            new_parts = (parts[0], parts[1], quote(pathname) + '/', parts[3], parts[4])
+            new_parts = (parts[0], parts[1], parts[2] + '/', parts[3], parts[4])
             new_url = urlunsplit(new_parts)
             return redirect(new_url)
 
@@ -309,10 +308,9 @@ def make_app(root=".", config=None):
         """List contents in a directory.
         """
         # ensure directory has trailing '/'
-        pathname = request.path
-        if not pathname.endswith('/'):
+        if not request.path.endswith('/'):
             parts = urlsplit(request.url)
-            new_parts = (parts[0], parts[1], quote(pathname) + '/', parts[3], parts[4])
+            new_parts = (parts[0], parts[1], parts[2] + '/', parts[3], parts[4])
             new_url = urlunsplit(new_parts)
             return redirect(new_url)
 
