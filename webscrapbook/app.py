@@ -912,7 +912,13 @@ def make_app(root=".", config=None):
                             return http_error(500, "Unable to delete this file.", format=format)
                     elif os.path.isdir(localpath):
                         try:
-                            shutil.rmtree(localpath)
+                            try:
+                                # try rmdir for a possible windows directory junction,
+                                # which is not detected by os.path.islink
+                                os.rmdir(localpath)
+                            except OSError:
+                                # directory not empty
+                                shutil.rmtree(localpath)
                         except:
                             traceback.print_exc()
                             return http_error(500, "Unable to delete this directory.", format=format)
