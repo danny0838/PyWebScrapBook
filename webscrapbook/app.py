@@ -345,13 +345,8 @@ def make_app(root=".", config=None):
                     subarchivepath=subarchivepath,
                     subentries=subentries,
                     )
-            zip.close()
             return http_response(body, headers=headers)
         except util.ZipDirNotFoundError:
-            # zip may not close automatically in such case
-            # (due to a raise in a generator?)
-            zip.close()
-
             return http_error(404, "File does not exist.")
 
 
@@ -373,33 +368,34 @@ def make_app(root=".", config=None):
             # subarchivepath does not exist
             # possibility a missing directory entry?
             if not list_directory:
-                zip.close()
                 return http_error(404)
 
             return handle_zip_directory_listing(zip, archivefile, subarchivepath)
+        else:
+            fh = zip.open(info, 'r')
 
-        fh = zip.open(info, 'r')
+            lm = info.date_time
+            lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+            last_modified = http_date(lm)
 
-        lm = info.date_time
-        lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
-        last_modified = http_date(lm)
+            etag = "%s-%s-%s" % (
+                lm,
+                info.file_size,
+                adler32(archivefile.encode("utf-8")) & 0xFFFFFFFF,
+                )
 
-        etag = "%s-%s-%s" % (
-            lm,
-            info.file_size,
-            adler32(archivefile.encode("utf-8")) & 0xFFFFFFFF,
-            )
+            headers = {
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': 'no-cache',
+                'Last-Modified': last_modified,
+                'ETag': etag,
+                }
 
-        headers = {
-            'Accept-Ranges': 'bytes',
-            'Cache-Control': 'no-cache',
-            'Last-Modified': last_modified,
-            'ETag': etag,
-            }
-
-        response = Response(fh, headers=headers, mimetype=mimetype)
-        response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
-        return response
+            response = Response(fh, headers=headers, mimetype=mimetype)
+            response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
+            return response
+        finally:
+            zip.close()
 
 
     def handle_archive_viewing(localpath, mimetype):
