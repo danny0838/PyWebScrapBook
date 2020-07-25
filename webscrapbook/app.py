@@ -775,44 +775,58 @@ def make_app(root=".", config=None):
                         zip0 = zip = zipfile.ZipFile(archivefile, 'a')
 
                         try:
-                            info = zip.getinfo(subarchivepath)
-                        except KeyError:
-                            # subarchivepath does not exist
-                            info = zipfile.ZipInfo(subarchivepath, time.localtime())
-                        else:
-                            info.date_time = time.localtime()
-                            temp_path = archivefile + '.' + str(time_ns())
-                            zip = zipfile.ZipFile(temp_path, 'w')
+                            # if subarchivepath exists, open a new zip file for writing.
+                            try:
+                                info = zip.getinfo(subarchivepath)
+                            except KeyError:
+                                info = zipfile.ZipInfo(subarchivepath, time.localtime())
+                            else:
+                                info.date_time = time.localtime()
+                                temp_path = archivefile + '.' + str(time_ns())
+                                zip = zipfile.ZipFile(temp_path, 'w')
 
-                        file = request.files.get('upload')
-                        if file is not None:
-                            fp = zip.open(info, 'w', force_zip64=True)
-                            stream = file.stream
-                            while True:
-                                s = stream.read(8192)
-                                if not s: break
-                                fp.write(s)
-                            fp.close()
-                        else:
-                            bytes = query.get('text', '').encode('ISO-8859-1')
-                            zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                            try:
+                                # write to the zip file
+                                file = request.files.get('upload')
+                                if file is not None:
+                                    with zip.open(info, 'w', force_zip64=True) as fp:
+                                        stream = file.stream
+                                        while True:
+                                            s = stream.read(8192)
+                                            if not s: break
+                                            fp.write(s)
+                                        fp.close()
+                                else:
+                                    bytes = query.get('text', '').encode('ISO-8859-1')
+                                    zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
 
-                        if zip is not zip0:
-                            for info in zip0.infolist():
-                                if info.filename == subarchivepath: continue
-                                zip.writestr(info, zip0.read(info),
-                                        compress_type=info.compress_type,
-                                        compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                # copy zip0 content to zip
+                                if zip is not zip0:
+                                    for info in zip0.infolist():
+                                        if info.filename == subarchivepath:
+                                            continue
+                                        zip.writestr(info, zip0.read(info),
+                                                compress_type=info.compress_type,
+                                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                            except:
+                                # remove the generated zip file if writing fails
+                                if zip is not zip0:
+                                    zip.close()
+                                    os.remove(zip.filename)
 
+                                raise
+                            else:
+                                # replace zip0 with the generated zip file
+                                if zip is not zip0:
+                                    zip0.close()
+                                    zip.close()
+
+                                    temp_path = archivefile + '.' + str(time_ns())
+                                    os.rename(archivefile, temp_path)
+                                    os.rename(zip.filename, archivefile)
+                                    os.remove(temp_path)
+                        finally:
                             zip0.close()
-                            zip.close()
-
-                            temp_path = archivefile + '.' + str(time_ns())
-                            os.rename(archivefile, temp_path)
-                            os.rename(zip.filename, archivefile)
-                            os.remove(temp_path)
-                        else:
-                            zip.close()
                     except:
                         traceback.print_exc()
                         return http_error(500, "Unable to write to this ZIP file.", format=format)
@@ -846,28 +860,36 @@ def make_app(root=".", config=None):
                         temp_path = archivefile + '.' + str(time_ns())
                         zip = zipfile.ZipFile(temp_path, 'w')
 
-                        deleted = False
-                        for info in zip0.infolist():
-                            if (info.filename == subarchivepath or
-                                    info.filename.startswith(subarchivepath + '/')):
-                                deleted = True
-                                continue
+                        try:
+                            deleted = False
+                            for info in zip0.infolist():
+                                if (info.filename == subarchivepath or
+                                        info.filename.startswith(subarchivepath + '/')):
+                                    deleted = True
+                                    continue
 
-                            zip.writestr(info, zip0.read(info),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-
-                        zip0.close()
-                        zip.close()
-
-                        if not deleted:
+                                zip.writestr(info, zip0.read(info),
+                                        compress_type=info.compress_type,
+                                        compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                        except:
+                            # remove the generated zip file if writing fails
+                            zip.close()
                             os.remove(zip.filename)
-                            return http_error(404, "Entry does not exist in this ZIP file.", format=format)
 
-                        temp_path = archivefile + '.' + str(time_ns())
-                        os.rename(archivefile, temp_path)
-                        os.rename(zip.filename, archivefile)
-                        os.remove(temp_path)
+                            raise
+                        else:
+                            zip0.close()
+                            zip.close()
+
+                            if not deleted:
+                                os.remove(zip.filename)
+                                return http_error(404, "Entry does not exist in this ZIP file.", format=format)
+
+                            # replace zip0 with the generated zip file
+                            temp_path = archivefile + '.' + str(time_ns())
+                            os.rename(archivefile, temp_path)
+                            os.rename(zip.filename, archivefile)
+                            os.remove(temp_path)
                     except:
                         traceback.print_exc()
                         return http_error(500, "Unable to write to this ZIP file.", format=format)
