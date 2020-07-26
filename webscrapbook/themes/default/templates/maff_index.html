@@ -5,7 +5,7 @@
 <ul>
   {%- set root = os.path.basename(path) %}
   {%- for page in pages %}
-    {%- set url = (root + '!/' + page.indexfilename)|urlencode %}
+    {%- set url = quote_path(root + '!/' + page.indexfilename) %}
     {%- set label = page.indexfilename.partition('/')[0] %}
     {%- set title = page.title or '' %}
     <li><a href="{{ url }}" title="{{ title }}">{{ label }}</a></li>

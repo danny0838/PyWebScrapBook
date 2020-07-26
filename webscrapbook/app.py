@@ -11,6 +11,7 @@ import zipfile
 import time
 import hashlib
 import json
+import functools
 from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
 from pathlib import Path
 from zlib import adler32
@@ -35,6 +36,10 @@ try:
     from time import time_ns
 except ImportError:
     from .lib.shim.time import time_ns
+
+# see: https://url.spec.whatwg.org/#percent-encoded-bytes
+quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
+quote_path.__doc__ = "Escape reserved chars for the path part of a URL."
 
 
 def make_app(root=".", config=None):
@@ -82,6 +87,7 @@ def make_app(root=".", config=None):
             'os': os,
             'time': time,
             'util': util,
+            'quote_path': quote_path,
             })
 
 
@@ -248,8 +254,13 @@ def make_app(root=".", config=None):
         # ensure directory has trailing '/'
         if not request.path.endswith('/'):
             parts = urlsplit(request.url)
-            new_parts = (parts[0], parts[1], parts[2] + '/', parts[3], parts[4])
-            new_url = urlunsplit(new_parts)
+            new_url = urlunsplit((
+                parts.scheme,
+                parts.netloc,
+                quote_path(unquote(parts.path)) + '/',
+                parts.query,
+                parts.fragment,
+                ))
             return redirect(new_url)
 
         if not os.path.exists(localpath):
@@ -310,8 +321,13 @@ def make_app(root=".", config=None):
         # ensure directory has trailing '/'
         if not request.path.endswith('/'):
             parts = urlsplit(request.url)
-            new_parts = (parts[0], parts[1], parts[2] + '/', parts[3], parts[4])
-            new_url = urlunsplit(new_parts)
+            new_url = urlunsplit((
+                parts.scheme,
+                parts.netloc,
+                quote_path(unquote(parts.path)) + '/',
+                parts.query,
+                parts.fragment,
+                ))
             return redirect(new_url)
 
         stats = os.lstat(archivefile)
@@ -430,8 +446,13 @@ def make_app(root=".", config=None):
                 return list_maff_pages([])
 
         parts = urlsplit(request.url)
-        new_parts = (parts[0], parts[1], parts[2] + '!/' + quote(subpath), parts[3], parts[4])
-        new_url = urlunsplit(new_parts)
+        new_url = urlunsplit((
+            parts.scheme,
+            parts.netloc,
+            quote_path(unquote(parts.path)) + '!/' + quote_path(subpath),
+            parts.query,
+            parts.fragment,
+            ))
         return redirect(new_url)
 
 

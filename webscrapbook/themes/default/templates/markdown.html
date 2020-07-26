@@ -5,7 +5,7 @@
 <h1 id="header" class="breadcrumbs">
 {%- for label, subpath, sep, is_last in util.get_breadcrumbs(path, base, sitename) -%}
   {%- if not is_last -%}
-    <a href="{{ subpath|urlencode }}">{{ label }}</a>{{ sep }}
+    <a href="{{ quote_path(subpath) }}">{{ label }}</a>{{ sep }}
   {%- else -%}
     <a>{{ label }}</a>
   {%- endif -%}

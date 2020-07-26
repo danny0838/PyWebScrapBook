@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Index of {{ path }}{% endblock %}
 {% block links %}
-<link rel="stylesheet" type="text/css" href="{{ base|urlencode }}/index.css?a=static">
+<link rel="stylesheet" type="text/css" href="{{ quote_path(base) }}/index.css?a=static">
 {%- endblock %}
 {% block scripts %}
 <script src="{{ base }}/common.js?a=static"></script>
@@ -12,7 +12,7 @@
 <h1 id="header" class="breadcrumbs">
 {%- for label, subpath, sep, is_last in util.get_breadcrumbs(path, base, sitename, subarchivepath) -%}
   {%- if not loop.last -%}
-    <a href="{{ subpath|urlencode }}">{{ label }}</a>{{ sep }}
+    <a href="{{ quote_path(subpath) }}">{{ label }}</a>{{ sep }}
   {%- else -%}
     <a>{{ label }}</a>{{ sep }}
   {%- endif -%}
@@ -27,7 +27,7 @@
 <tbody>
 {%- for info in subentries %}
   {%- set filename = info.name %}
-  {%- set url = info.name|urlencode + ('/' if info.type == 'dir' else '') %}
+  {%- set url = quote_path(info.name) + ('/' if info.type == 'dir' else '') %}
   {%- set filetype = info.type %}
   {%- set size = info.size %}
   {%- set size_text = util.format_filesize(size) if size else '' %}
