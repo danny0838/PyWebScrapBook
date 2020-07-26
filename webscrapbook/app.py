@@ -1045,7 +1045,10 @@ def make_app(root=".", config=None):
 
             # don't include charset
             m, p = parse_options_header(response.headers.get('Content-Type'))
-            if 'charset' in p: del p['charset']
+            try:
+                del p['charset']
+            except KeyError:
+                pass
             response.headers.set('Content-Type', dump_options_header(m, p))
 
             return response
