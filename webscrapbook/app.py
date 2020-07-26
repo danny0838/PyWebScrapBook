@@ -841,8 +841,6 @@ def make_app(root=".", config=None):
                     try:
                         file = request.files.get('upload')
                         if file is not None:
-                            if os.path.lexists(localpath):
-                                os.remove(localpath)
                             file.save(localpath)
                         else:
                             bytes = query.get('text', '').encode('ISO-8859-1')
