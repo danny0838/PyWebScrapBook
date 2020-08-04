@@ -46,13 +46,11 @@ class Config():
 
     def __getitem__(self, key):
         if self._conf is None: self.load()  # lazy load
+        try:
+            return self._subsections[key]
+        except KeyError:
+            pass
         return self._conf[key]
-
-
-    @property
-    def subsections(self):
-        if self._conf is None: self.load()  # lazy load
-        return self._subsections
 
 
     def get(self, name):
@@ -61,7 +59,7 @@ class Config():
         if len(parts) == 3:
             sec, subsec, key = parts
             try:
-                return self.subsections[sec][subsec][key]
+                return self._subsections[sec][subsec][key]
             except KeyError:
                 pass
         elif len(parts) == 2:
@@ -91,7 +89,7 @@ class Config():
 
             data[section] = OrderedDict(self._conf[section])
 
-        for sec, section in self.subsections.items():
+        for sec, section in self._subsections.items():
             for subsec, subsection in section.items():
                 data.setdefault(sec, OrderedDict())[subsec] = OrderedDict(subsection)
 

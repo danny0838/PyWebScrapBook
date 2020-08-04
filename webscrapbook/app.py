@@ -204,14 +204,16 @@ def make_app(root=".", config=None):
             None if authorization passed, otherwise the header and body for authorization.
         """
         def get_permission():
-            if not len(config.subsections.get('auth', {})):
+            try:
+                auth_sections = config['auth']
+            except KeyError:
                 return 'all'
 
             auth = request.authorization or {}
             user = auth.get('username') or ''
             pw = auth.get('password') or ''
 
-            for _, entry in config.subsections['auth'].items():
+            for _, entry in auth_sections.items():
                 entry_user = entry.get('user', '')
                 entry_pw = entry.get('pw', '')
                 entry_pw_salt = entry.get('pw_salt', '')
