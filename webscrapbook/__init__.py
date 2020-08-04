@@ -50,7 +50,7 @@ class Config():
         return self._data[key]
 
 
-    def get(self, name):
+    def getname(self, name):
         if self._conf is None: self.load()  # lazy load
         parts = name.split('.')
         if len(parts) == 3:

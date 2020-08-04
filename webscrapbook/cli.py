@@ -121,7 +121,7 @@ def cmd_config(args):
 
     elif args['name']:
         config.load(args['root'])
-        value = config.get(args['name'])
+        value = config.getname(args['name'])
 
         if value is None:
             print('Error: Config entry "{}" does not exist'.format(args['name']), file=sys.stderr)
