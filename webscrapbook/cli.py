@@ -123,6 +123,7 @@ def cmd_config(args):
         if value is None:
             print('Error: Config entry "{}" does not exist'.format(args['name']), file=sys.stderr)
             sys.exit(1)
+            return
 
         print(value)
 
