@@ -33,11 +33,13 @@ Switch current working directory (CWD) to a directory you'd like to host.
 
 > In Windows, an additional command to change drive might be required. For example, if the directory to host is `D:\path\to\scrapbook` while the current drive is `C`, an additional command `D:` is requied besides `cd D:\path\to\scrapbook`.
 >
-> You can also use the shortcurt: `Shift + Right-click` on a folder and select `Open command window here`.
+> You can also use the shortcurt: `Shift + Right-click` on the desired folder and select `Open command window here` or `Open PowerShell window here`.
 
 Generate config files for the directory:
 
     wsb config -ba
+
+> This step can be skipped if you want PyWebScrapBook default data structure instead. See [doc wiki](https://github.com/danny0838/webscrapbook/wiki/Backend) for more details.
 
 Run `.wsb/serve.py` to start the server, or run below command from CLI:
 
@@ -57,4 +59,4 @@ For documentation about configs, run:
 
     wsb help config
 
-For more useful ways to configure PyWebScrapBook alongside WebScrapBook, visit the documentation for [WebScrapBook](https://github.com/danny0838/webscrapbook/wiki/Backend).
+For more useful ways to configure PyWebScrapBook alongside WebScrapBook, visit the documentation wiki for [WebScrapBook](https://github.com/danny0838/webscrapbook/wiki/Backend).
