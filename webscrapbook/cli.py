@@ -184,8 +184,8 @@ def view_archive_files(files):
     from urllib.request import pathname2url
 
     cache_prefix = config['browser']['cache_prefix']
-    cache_expire = config['browser'].getint('cache_expire') * 10 ** 9
-    use_jar = config['browser'].getboolean('use_jar')
+    cache_expire = config['browser']['cache_expire'] * 10 ** 9
+    use_jar = config['browser']['use_jar']
     browser = webbrowser.get(config['browser']['command'] or None)
 
     temp_dir = tempfile.gettempdir()

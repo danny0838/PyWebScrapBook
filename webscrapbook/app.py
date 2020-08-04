@@ -72,11 +72,11 @@ def make_app(root=".", config=None):
     app = Flask(__name__, root_path=runtime['root'])
 
     xheaders = {
-            'x_for': config['app'].getint('allowed_x_for'),
-            'x_proto': config['app'].getint('allowed_x_proto'),
-            'x_host': config['app'].getint('allowed_x_host'),
-            'x_port': config['app'].getint('allowed_x_port'),
-            'x_prefix': config['app'].getint('allowed_x_prefix'),
+            'x_for': config['app']['allowed_x_for'],
+            'x_proto': config['app']['allowed_x_proto'],
+            'x_host': config['app']['allowed_x_host'],
+            'x_port': config['app']['allowed_x_port'],
+            'x_prefix': config['app']['allowed_x_prefix'],
             }
 
     if any(v for v in xheaders.values()):

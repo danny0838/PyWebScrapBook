@@ -5,6 +5,7 @@ import sys
 import os
 from configparser import ConfigParser
 from collections import OrderedDict
+from copy import deepcopy
 import mimetypes
 import re
 
@@ -41,16 +42,12 @@ class Config():
     """
     def __init__(self):
         self._conf = None
-        self._subsections = OrderedDict()
+        self._data = None
 
 
     def __getitem__(self, key):
         if self._conf is None: self.load()  # lazy load
-        try:
-            return self._subsections[key]
-        except KeyError:
-            pass
-        return self._conf[key]
+        return self._data[key]
 
 
     def get(self, name):
@@ -59,7 +56,7 @@ class Config():
         if len(parts) == 3:
             sec, subsec, key = parts
             try:
-                return self._subsections[sec][subsec][key]
+                return self._conf['{} "{}"'.format(sec, subsec)][key]
             except KeyError:
                 pass
         elif len(parts) == 2:
@@ -80,34 +77,7 @@ class Config():
         """Dump configs as an object, with type casting.
         """
         if self._conf is None: self.load()  # lazy load
-
-        data = OrderedDict()
-        for section in self._conf.sections():
-            # remove [section "subsection"]
-            if re.search(r'\s*"[^"]*"\s*$', section):
-                continue
-
-            data[section] = OrderedDict(self._conf[section])
-
-        for sec, section in self._subsections.items():
-            for subsec, subsection in section.items():
-                data.setdefault(sec, OrderedDict())[subsec] = OrderedDict(subsection)
-
-        # type casting
-        data['app']['allowed_x_for'] = self._conf['app'].getint('allowed_x_for')
-        data['app']['allowed_x_proto'] = self._conf['app'].getint('allowed_x_proto')
-        data['app']['allowed_x_host'] = self._conf['app'].getint('allowed_x_host')
-        data['app']['allowed_x_port'] = self._conf['app'].getint('allowed_x_port')
-        data['app']['allowed_x_prefix'] = self._conf['app'].getint('allowed_x_prefix')
-        data['server']['port'] = self._conf['server'].getint('port')
-        data['server']['ssl_on'] = self._conf['server'].getboolean('ssl_on')
-        data['server']['browse'] = self._conf['server'].getboolean('browse')
-        data['browser']['cache_expire'] = self._conf['browser'].getint('cache_expire')
-        data['browser']['use_jar'] = self._conf['browser'].getboolean('use_jar')
-        for ss in data['book']:
-            data['book'][ss]['no_tree'] = self._conf['book "{}"'.format(ss)].getboolean('no_tree')
-
-        return data
+        return deepcopy(self._data)
 
 
     def load(self, root='.'):
@@ -187,13 +157,50 @@ class Config():
         load_config(os.path.join(root, WSB_DIR, WSB_LOCAL_CONFIG))
 
         # map subsections
-        for section in conf:
+        self._data = OrderedDict()
+        for section in conf.sections():
+            sectionobj = OrderedDict()
             m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
             if m:
                 sec, subsec = m.group(1), m.group(2) or ''
                 if sec in self.SUBSECTED:
-                    self._subsections.setdefault(sec, OrderedDict())[subsec] = conf[section]
+                    self._data.setdefault(sec, OrderedDict())[subsec] = sectionobj
+                    for key in conf[section]:
+                        try:
+                            sectionobj[key] = getattr(conf[section], self.TYPES[sec][None][key])(key)
+                        except KeyError:
+                            sectionobj[key] = conf[section][key]
+                    continue
+            self._data[section] = sectionobj
+            for key in conf[section]:
+                try:
+                    sectionobj[key] = getattr(conf[section], self.TYPES[section][key])(key)
+                except KeyError:
+                    sectionobj[key] = conf[section][key]
 
     SUBSECTED = ['book', 'auth']
+    TYPES = {
+        'app': {
+            'allowed_x_for': 'getint',
+            'allowed_x_proto': 'getint',
+            'allowed_x_host': 'getint',
+            'allowed_x_port': 'getint',
+            'allowed_x_prefix': 'getint',
+            },
+        'server': {
+            'port': 'getint',
+            'ssl_on': 'getboolean',
+            'browse': 'getboolean',
+            },
+        'browser': {
+            'cache_expire': 'getint',
+            'use_jar': 'getboolean',
+            },
+        'book': {
+            None: {
+                'no_tree': 'getboolean',
+                },
+            },
+        }
 
 config = Config()

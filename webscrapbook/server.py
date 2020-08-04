@@ -21,8 +21,8 @@ def serve(root, **kwargs):
 
     # set params
     host = config['server']['host'] or '127.0.0.1'
-    port = config['server'].getint('port')
-    ssl_on = config['server'].getboolean('ssl_on')
+    port = config['server']['port']
+    ssl_on = config['server']['ssl_on']
     ssl_key = config['server']['ssl_key'] if ssl_on else None
     ssl_cert = config['server']['ssl_cert'] if ssl_on else None
     scheme = 'https' if ssl_on else 'http'
@@ -58,7 +58,7 @@ def serve(root, **kwargs):
     thread.start()
 
     # launch the browser
-    if config['server'].getboolean('browse'):
+    if config['server']['browse']:
         base = config['app']['base'].rstrip('/')
         index = config['browser']['index'].lstrip('/')
         path = base + (('/' + index) if index else '')
