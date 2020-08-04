@@ -50,6 +50,11 @@ class Config():
         return self._data[key]
 
 
+    def __iter__(self):
+        if self._conf is None: self.load()  # lazy load
+        return iter(self._data)
+
+
     def getname(self, name):
         if self._conf is None: self.load()  # lazy load
         parts = name.split('.')
