@@ -260,7 +260,7 @@ def view():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--version', default=False, action='store_true',
+    parser.add_argument('--version', action='version', version='{} {}'.format(__package_name__, __version__),
         help="""show version information and exit""")
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")
@@ -318,8 +318,6 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
     args = vars(parser.parse_args())
     if args.get('func'):
         args['func'](args)
-    elif args.get('version'):
-        print('{} {}'.format(__package_name__, __version__))
     else:
         parser.parse_args(['-h'])
 
