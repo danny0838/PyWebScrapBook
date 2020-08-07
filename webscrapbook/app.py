@@ -173,7 +173,8 @@ def make_app(root=".", config=None):
           /path/to/fileordir.htz!/path/to/fileordir.htz
           ...
 
-        - Returns a tuple (archivefile, subarchivepath).
+        Returns:
+            a tuple (archivefile, subarchivepath).
         """
         if not os.path.lexists(localpath):
             for m in re.finditer(r'![/\\]', filepath, flags=re.I):
@@ -199,7 +200,8 @@ def make_app(root=".", config=None):
     def handle_authorization(action, format=None):
         """Check if authorized or not.
 
-        Return None if authorization passed, otherwise the header and body for authorization.
+        Returns:
+            None if authorization passed, otherwise the header and body for authorization.
         """
         def get_permission():
             if not len(config.subsections.get('auth', {})):

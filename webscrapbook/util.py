@@ -222,7 +222,8 @@ class ZipDirNotFoundError(Exception):
 def zip_file_info(zip, subpath, check_missing_dir=False):
     """Read basic file information from ZIP.
 
-    subpath: 'dir' and 'dir/' are both supported
+    Args:
+        subpath: 'dir' and 'dir/' are both supported
     """
     if not isinstance(zip, zipfile.ZipFile):
         zip = zipfile.ZipFile(zip)
