@@ -205,7 +205,7 @@ def format_filesize(bytes, si=False):
         thresh = 1024
         units =  ['B', 'KB','MB','GB','TB','PB','EB','ZB','YB']
 
-    e = math.floor(math.log(bytes) / math.log(thresh))
+    e = math.floor(math.log(max(1, bytes)) / math.log(thresh))
     e = min(e, len(units) - 1)
     n = bytes / math.pow(thresh, e)
     tpl = '{:.1f} {}' if (e >=1 and n < 10) else '{:.0f} {}'
