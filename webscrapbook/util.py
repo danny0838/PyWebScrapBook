@@ -170,9 +170,8 @@ def listdir(base, recursive=False):
     """Generates FileInfo(s) and omit invalid entries.
     """
     if not recursive:
-        for filename in os.listdir(base):
-            file = os.path.join(base, filename)
-            info = file_info(file)
+        for entry in os.scandir(base):
+            info = file_info(entry.path)
             if info.type is None: continue
             yield info
 
