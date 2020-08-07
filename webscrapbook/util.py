@@ -310,29 +310,28 @@ def parse_meta_refresh(file):
     """Retrieve meta refresh target from a file.
     """
     try:
-        context = etree.iterparse(file, html=True, events=('end',), tag='meta')
-    except:
+        with open(file, 'rb') as fh:
+            for event, elem in etree.iterparse(fh, html=True, events=('end',), tag='meta'):
+                if elem.attrib.get('http-equiv', '').lower() == 'refresh':
+                    time, _, content = elem.attrib.get('content', '').partition(';')
+
+                    try:
+                        time = int(time)
+                    except ValueError:
+                        time = 0
+
+                    m = re.match(r'^\s*url\s*=\s*(.*?)\s*$', content, flags=re.I)
+                    target = m.group(1) if m else None
+
+                    if time == 0 and target is not None:
+                        return MetaRefreshInfo(time=time, target=target)
+            
+                # clean up to save memory
+                elem.clear()
+                while elem.getprevious() is not None:
+                    del elem.getparent()[0]
+    except FileNotFoundError:
         pass
-    else:
-        for event, elem in context:
-            if elem.attrib.get('http-equiv', '').lower() == 'refresh':
-                time, _, content = elem.attrib.get('content', '').partition(';')
-
-                try:
-                    time = int(time)
-                except ValueError:
-                    time = 0
-
-                m = re.match(r'^\s*url\s*=\s*(.*?)\s*$', content, flags=re.I)
-                target = m.group(1) if m else None
-
-                if time == 0 and target is not None:
-                    return MetaRefreshInfo(time=time, target=target)
-        
-            # clean up to save memory
-            elem.clear()
-            while elem.getprevious() is not None:
-                del elem.getparent()[0]
 
     return MetaRefreshInfo(time=None, target=None)
 
