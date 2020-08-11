@@ -760,8 +760,11 @@ def make_app(root=".", config=None):
             elif action == 'unlock':
                 try:
                     os.rmdir(targetpath)
-                except:
+                except FileNotFoundError:
                     pass
+                except:
+                    traceback.print_exc()
+                    return http_error(500, 'Unable to remove lock "{}".'.format(name), format=format)
 
             elif action == 'mkdir':
                 if os.path.lexists(localpath) and not os.path.isdir(localpath):
