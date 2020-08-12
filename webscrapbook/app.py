@@ -847,7 +847,7 @@ def make_app(root=".", config=None):
                                     zip0.close()
                                     zip.close()
 
-                                    temp_path = archivefile + '.' + str(time_ns())
+                                    temp_path = archivefile + '.' + str(time_ns() + 1)
                                     os.rename(archivefile, temp_path)
                                     os.rename(zip.filename, archivefile)
                                     os.remove(temp_path)
@@ -910,7 +910,7 @@ def make_app(root=".", config=None):
                                 return http_error(404, "Entry does not exist in this ZIP file.", format=format)
 
                             # replace zip0 with the generated zip file
-                            temp_path = archivefile + '.' + str(time_ns())
+                            temp_path = archivefile + '.' + str(time_ns() + 1)
                             os.rename(archivefile, temp_path)
                             os.rename(zip.filename, archivefile)
                             os.remove(temp_path)
