@@ -18,7 +18,7 @@ setup(
     url=webscrapbook.__homepage__,
     license=webscrapbook.__license__,
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Operating System :: OS Independent",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
@@ -26,6 +26,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Framework :: Flask",
         "Natural Language :: English",
         "Topic :: Database",
         "Topic :: Internet",
@@ -33,12 +34,14 @@ setup(
     python_requires='~=3.6',
     install_requires=[
         'flask >= 1.1',
-        'werkzeug',
-        'jinja2',
-        'cryptography',
+        'werkzeug >= 1.0.0',
+        'jinja2 >= 2.10.1',
         'lxml >= 4.0',
         'commonmark >= 0.8',
         ],
+    extras_require={
+        "adhoc_ssl": ["cryptography"],
+        },
     packages=find_packages(),
     package_data={
         'webscrapbook': [

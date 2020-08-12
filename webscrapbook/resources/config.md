@@ -308,9 +308,7 @@ actually accessible from wide area network.
 
 Set true to enable HTTPS, and false otherwise.
 
-Set `ssl_key` and `ssl_cert` to define the certificate for SSL. If `ssl_on` is
-set while they're not, a temporary key will be auto-generated every time when
-the server starts.
+Set `ssl_key` and `ssl_cert` to define the certificate for SSL.
 
 A simple self-signed certificate can be generated using OpenSSL for testing
 purpose or for private usage, e.g.:
@@ -320,6 +318,11 @@ purpose or for private usage, e.g.:
       -x509 -days 365 -out domain.crt
 
 and use "domain.key" for ssl_key and "domain.crt" for ssl_cert.
+
+An "adhoc" certificate can be used by setting `ssl_on` with empty `ssl_key` and
+`ssl_cert`, and a temporary certificate will be auto-generated every time when
+the server starts. However, this feature requires extra dependency, which can
+be installed via `pip install webscrapbook[adhoc_ssl]`.
 
 (default: false)
 
