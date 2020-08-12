@@ -534,6 +534,9 @@ def make_app(root=".", config=None):
 
         # handle action
         if action == 'static':
+            if format:
+                return http_error(400, "Action not supported.", format=format)
+
             for i in runtime['statics']:
                 f = os.path.join(i, filepath)
                 if os.path.lexists(f):
