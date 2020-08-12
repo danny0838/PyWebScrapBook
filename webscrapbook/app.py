@@ -1006,13 +1006,13 @@ def make_app(root=".", config=None):
                 os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
                 try:
-                    shutil.copytree(localpath, targetpath)
-                except:
                     try:
+                        shutil.copytree(localpath, targetpath)
+                    except NotADirectoryError:
                         shutil.copy2(localpath, targetpath)
-                    except:
-                        traceback.print_exc()
-                        return http_error(500, 'Unable to copy to target "{}".'.format(target), format=format)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, 'Unable to copy to target "{}".'.format(target), format=format)
 
             if format:
                 return http_response('Command run successfully.', format=format)
