@@ -733,7 +733,7 @@ def make_app(root=".", config=None):
                     except FileExistsError:
                         t = time.time()
 
-                        if t >= check_expire:
+                        if t >= check_expire or not os.path.isdir(targetpath):
                             return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
 
                         try:
