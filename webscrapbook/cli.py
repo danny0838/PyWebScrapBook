@@ -163,6 +163,7 @@ def cmd_help(args):
 
 def cmd_view(args):
     """View archive file(s) in the browser."""
+    config.load(args['root'])
     view_archive_files(args['files'])
 
 
