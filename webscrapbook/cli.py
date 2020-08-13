@@ -52,9 +52,8 @@ def cmd_serve(args):
 def cmd_config(args):
     """Show, generate, or edit config."""
     if args['book']:
-        filename = WSB_LOCAL_CONFIG
-        fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
-        fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
+        fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_LOCAL_CONFIG))
+        fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
             print('Generating "{}"...'.format(fdst))
             try:
@@ -70,9 +69,8 @@ def cmd_config(args):
                 pass
 
         if args['all']:
-            filename = 'serve.py'
-            fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
-            fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
+            fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'serve.py'))
+            fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'serve.py'))
             if not os.path.isfile(fdst):
                 print('Generating "{}"...'.format(fdst))
                 try:
@@ -82,9 +80,8 @@ def cmd_config(args):
                     print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
                     sys.exit(1)
 
-            filename = 'app.py'
-            fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, filename))
-            fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', filename))
+            fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'app.py'))
+            fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'app.py'))
             if not os.path.isfile(fdst):
                 print('Generating "{}"...'.format(fdst))
                 try:
@@ -96,7 +93,7 @@ def cmd_config(args):
 
     elif args['user']:
         fdst = WSB_USER_CONFIG
-        fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', WSB_LOCAL_CONFIG))
+        fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
             print('Generating "{}"...'.format(fdst))
             try:
