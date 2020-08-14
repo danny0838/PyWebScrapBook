@@ -484,7 +484,8 @@ class TokenHandler():
             token_file = os.path.join(self.cache_dir, token)
 
         os.makedirs(os.path.dirname(token_file), exist_ok=True)
-        open(token_file, 'w', encoding='UTF-8').write(str(now + self.DEFAULT_EXPIRY))
+        with open(token_file, 'w', encoding='UTF-8') as f:
+            f.write(str(now + self.DEFAULT_EXPIRY))
 
         return token
 
@@ -492,7 +493,8 @@ class TokenHandler():
         token_file = os.path.join(self.cache_dir, token)
 
         try:
-            expire = int(open(token_file, 'r', encoding='UTF-8').read())
+            with open(token_file, 'r', encoding='UTF-8') as f:
+                expire = int(f.read())
         except (FileNotFoundError, IsADirectoryError):
             return False
 
@@ -519,7 +521,8 @@ class TokenHandler():
             for token_file in token_files:
                 token_file = os.path.join(self.cache_dir, token_file)
                 try:
-                    expire = int(open(token_file, 'r', encoding='UTF-8').read())
+                    with open(token_file, 'r', encoding='UTF-8') as f:
+                        expire = int(f.read())
                 except:
                     continue
                 if now >= expire:

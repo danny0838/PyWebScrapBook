@@ -4,7 +4,8 @@ from setuptools import setup, find_packages
 from inspect import cleandoc
 import webscrapbook
 
-long_description = open("README.md", encoding="utf-8").read()
+with open("README.md", encoding="utf-8") as f:
+    long_description = f.read()
 
 setup(
     name=webscrapbook.__package_name__,
