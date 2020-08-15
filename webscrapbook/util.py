@@ -514,12 +514,11 @@ class TokenHandler():
 
     def delete_expire(self, now=int(time.time())):
         try:
-            token_files = os.listdir(self.cache_dir)
+            token_files = os.scandir(self.cache_dir)
         except FileNotFoundError:
             pass
         else:
             for token_file in token_files:
-                token_file = os.path.join(self.cache_dir, token_file)
                 try:
                     with open(token_file, 'r', encoding='UTF-8') as f:
                         expire = int(f.read())
