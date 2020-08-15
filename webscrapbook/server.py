@@ -7,7 +7,7 @@ import webbrowser
 from threading import Thread
 
 # dependency
-from werkzeug.serving import WSGIRequestHandler
+from werkzeug.serving import WSGIRequestHandler, make_server
 
 # this package
 from . import *
@@ -20,7 +20,7 @@ def serve(root, **kwargs):
     config.load(root)
 
     # set params
-    host = config['server']['host'] or ''
+    host = config['server']['host'] or '127.0.0.1'
     port = config['server'].getint('port')
     ssl_on = config['server'].getboolean('ssl_on')
     ssl_key = config['server']['ssl_key']
@@ -39,12 +39,16 @@ def serve(root, **kwargs):
     print('Hit Ctrl-C to shutdown.')
 
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
-    thread = Thread(target=make_app(root, config).run, kwargs={
-        'host': host,
-        'port': port,
-        'ssl_context': ((ssl_cert, ssl_key) if ssl_cert and ssl_key
+    srv = make_server(
+        host=host,
+        port=port,
+        app=make_app(root, config),
+        threaded=True,
+        processes=1,
+        ssl_context=((ssl_cert, ssl_key) if ssl_cert and ssl_key
                 else 'adhoc' if ssl_on else None),
-        })
+        )
+    thread = Thread(target=srv.serve_forever)
     thread.daemon = True
     thread.start()
 
