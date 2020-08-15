@@ -37,7 +37,7 @@ def serve(root, **kwargs):
     host3 = 'localhost' if is_nullhost(host) else host2
     port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
 
-    # start server
+    # prepare server
     print('WebScrapBook server starting up...')
     print('Document Root: {}'.format(os.path.abspath(root)))
     print('Listening on {scheme}://{host}:{port}'.format(
@@ -54,10 +54,8 @@ def serve(root, **kwargs):
         ssl_context=((ssl_cert, ssl_key) if ssl_cert and ssl_key
                 else 'adhoc' if ssl_on else None),
         )
-    thread = Thread(target=srv.serve_forever, daemon=True)
-    thread.start()
 
-    # launch the browser
+    # launch browser
     if config['server']['browse']:
         base = config['app']['base'].rstrip('/')
         index = config['browser']['index'].lstrip('/')
@@ -70,13 +68,10 @@ def serve(root, **kwargs):
                 path=path,
                 )
 
-        browser = webbrowser.get(config['browser']['command'] or None)
-
         print('Launching browser at {url} ...'.format(url=url))
+        browser = webbrowser.get(config['browser']['command'] or None)
         thread = Thread(target=browser.open, args=[url], daemon=True)
         thread.start()
 
-    try:
-        while True: time.sleep(100)
-    except (KeyboardInterrupt, SystemExit):
-        print('Keyboard interrupt received, shutting down server.')
+    # start server
+    srv.serve_forever()
