@@ -1051,9 +1051,7 @@ def make_app(root=".", config=None):
     # runtime variables
     _runtime = {}
     _runtime['config'] = config
-    _runtime['root'] = config['app']['root']
-    if not os.path.isabs(_runtime['root']):
-        _runtime['root'] = os.path.abspath(os.path.join(root, _runtime['root']))
+    _runtime['root'] = os.path.abspath(os.path.join(root, config['app']['root']))
     _runtime['name'] = config['app']['name']
 
     # add path for themes
