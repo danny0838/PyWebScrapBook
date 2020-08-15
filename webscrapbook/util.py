@@ -474,7 +474,10 @@ class TokenHandler():
         self.cache_dir = cache_dir
         self.last_purge = 0
 
-    def acquire(self, now=int(time.time())):
+    def acquire(self, now=None):
+        if now is None:
+            now = int(time.time())
+
         self.check_delete_expire(now)
 
         token = token_urlsafe()
@@ -489,7 +492,10 @@ class TokenHandler():
 
         return token
 
-    def validate(self, token, now=int(time.time())):
+    def validate(self, token, now=None):
+        if now is None:
+            now = int(time.time())
+
         token_file = os.path.join(self.cache_dir, token)
 
         try:
@@ -512,7 +518,10 @@ class TokenHandler():
         except:
             pass
 
-    def delete_expire(self, now=int(time.time())):
+    def delete_expire(self, now=None):
+        if now is None:
+            now = int(time.time())
+
         try:
             token_files = os.scandir(self.cache_dir)
         except FileNotFoundError:
@@ -527,7 +536,10 @@ class TokenHandler():
                 if now >= expire:
                     os.remove(token_file)
 
-    def check_delete_expire(self, now=int(time.time())):
+    def check_delete_expire(self, now=None):
+        if now is None:
+            now = int(time.time())
+
         if now >= self.last_purge + self.PURGE_INTERVAL:
             self.last_purge = now
             self.delete_expire(now)
