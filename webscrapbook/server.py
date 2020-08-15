@@ -48,8 +48,7 @@ def serve(root, **kwargs):
         ssl_context=((ssl_cert, ssl_key) if ssl_cert and ssl_key
                 else 'adhoc' if ssl_on else None),
         )
-    thread = Thread(target=srv.serve_forever)
-    thread.daemon = True
+    thread = Thread(target=srv.serve_forever, daemon=True)
     thread.start()
 
     # launch the browser
@@ -68,8 +67,7 @@ def serve(root, **kwargs):
         browser = webbrowser.get(config['browser']['command'] or None)
 
         print('Launching browser at {url} ...'.format(url=url))
-        thread = Thread(target=browser.open, args=[url])
-        thread.daemon = True
+        thread = Thread(target=browser.open, args=[url], daemon=True)
         thread.start()
 
     try:
