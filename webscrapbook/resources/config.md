@@ -340,13 +340,6 @@ the root directory.
 (default: )
 
 
-#### `ssl_pw`
-
-The password for the SSL certificate.
-
-(default: )
-
-
 #### `browse`
 
 Set true to launch the browser when the server starts, and false otherwise.
