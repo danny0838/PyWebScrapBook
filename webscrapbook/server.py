@@ -27,6 +27,12 @@ def serve(root, **kwargs):
     ssl_cert = config['server']['ssl_cert'] if ssl_on else None
     scheme = 'https' if ssl_on else 'http'
 
+    if ssl_key:
+        ssl_key = os.path.abspath(os.path.join(root, ssl_key))
+
+    if ssl_cert:
+        ssl_cert = os.path.abspath(os.path.join(root, ssl_cert))
+
     host2 = '[{}]'.format(host) if ':' in host else host
     host3 = 'localhost' if is_nullhost(host) else host2
     port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
