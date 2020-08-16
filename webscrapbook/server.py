@@ -23,8 +23,8 @@ def serve(root, **kwargs):
     host = config['server']['host'] or '127.0.0.1'
     port = config['server'].getint('port')
     ssl_on = config['server'].getboolean('ssl_on')
-    ssl_key = config['server']['ssl_key']
-    ssl_cert = config['server']['ssl_cert']
+    ssl_key = config['server']['ssl_key'] if ssl_on else None
+    ssl_cert = config['server']['ssl_cert'] if ssl_on else None
     scheme = 'https' if ssl_on else 'http'
 
     host2 = '[{}]'.format(host) if ':' in host else host
