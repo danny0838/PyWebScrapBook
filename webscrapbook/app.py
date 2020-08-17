@@ -148,7 +148,7 @@ def get_archive_path(filepath, localpath):
 def is_local_access():
     """Determine if the client is in same device.
     """
-    server_host = request.host
+    server_host = request.host.partition(':')[0]
     client_host = request.remote_addr
     return util.is_localhost(server_host) or util.is_localhost(client_host) or server_host == client_host
 
