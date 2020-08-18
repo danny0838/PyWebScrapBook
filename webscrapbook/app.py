@@ -229,12 +229,6 @@ def handle_directory_listing(localpath, recursive=False, format=None):
     if not os.access(localpath, os.R_OK):
         return http_error(403, "You do not have permission to view this directory.", format=format)
 
-    # headers
-    headers = {}
-    headers['Cache-Control'] = 'no-store'
-    stats = os.stat(localpath)
-    headers['Last-Modified'] = http_date(stats.st_mtime)
-
     # output index
     subentries = util.listdir(localpath, recursive)
 
@@ -250,7 +244,7 @@ def handle_directory_listing(localpath, recursive=False, format=None):
 
                 yield json.dumps(data, ensure_ascii=False)
 
-        return http_response(gen(), format=format, headers=headers)
+        return http_response(gen(), format=format)
 
     elif format == 'json':
         data = []
@@ -261,7 +255,13 @@ def handle_directory_listing(localpath, recursive=False, format=None):
                     'size': entry.size,
                     'last_modified': entry.last_modified,
                     })
-        return http_response(data, format=format, headers=headers)
+        return http_response(data, format=format)
+
+    # headers
+    headers = {}
+    headers['Cache-Control'] = 'no-store'
+    stats = os.stat(localpath)
+    headers['Last-Modified'] = http_date(stats.st_mtime)
 
     body = render_template('index.html',
             sitename=runtime['name'],
