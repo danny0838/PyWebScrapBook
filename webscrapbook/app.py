@@ -560,7 +560,7 @@ def handle_request(filepath=''):
             recursive = query.get('recursive', type=bool)
             return handle_directory_listing(localtargetpath, recursive=recursive, format=format)
 
-        return http_error(400, "This is not a directory.", format=format)
+        return http_error(404, "Directory does not exist.", format=format)
 
     elif action == 'config':
         if not format:
