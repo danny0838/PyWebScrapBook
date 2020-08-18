@@ -275,7 +275,7 @@ def handle_directory_listing(localpath, recursive=False, format=None):
     return http_response(body, format=format, headers=headers)
 
 
-def handle_zip_directory_listing(zip, archivefile, subarchivepath, format=None):
+def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=False, format=None):
     """List contents in a directory.
     """
     # ensure directory has trailing '/'
@@ -307,7 +307,7 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, format=None):
         'ETag': etag,
         }
 
-    subentries = util.zip_listdir(zip, subarchivepath)
+    subentries = util.zip_listdir(zip, subarchivepath, recursive)
 
     if format == 'sse':
         def gen():
@@ -578,11 +578,12 @@ def handle_request(filepath=''):
         if not format:
             return http_error(400, "Action not supported.", format=format)
 
+        recursive = query.get('recursive', type=bool)
+
         if archivefile:
-            return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, format=format)
+            return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, recursive=recursive, format=format)
 
         if os.path.isdir(localpath):
-            recursive = query.get('recursive', type=bool)
             return handle_directory_listing(localtargetpath, recursive=recursive, format=format)
 
         return http_error(404, "Directory does not exist.", format=format)

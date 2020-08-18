@@ -219,7 +219,7 @@ class ZipDirNotFoundError(Exception):
     pass
 
 
-def zip_file_info(zip, subpath, check_missing_dir=False):
+def zip_file_info(zip, subpath, base=None, check_missing_dir=False):
     """Read basic file information from ZIP.
 
     Args:
@@ -229,7 +229,10 @@ def zip_file_info(zip, subpath, check_missing_dir=False):
         zip = zipfile.ZipFile(zip)
 
     subpath = subpath.rstrip('/')
-    basename = os.path.basename(subpath)
+    if base is None:
+        name = os.path.basename(subpath)
+    else:
+        name = subpath[len(base):]
 
     try:
         info = zip.getinfo(subpath)
@@ -238,7 +241,7 @@ def zip_file_info(zip, subpath, check_missing_dir=False):
     else:
         lm = info.date_time
         epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
-        return FileInfo(name=basename, type='file', size=info.file_size, last_modified=epoch)
+        return FileInfo(name=name, type='file', size=info.file_size, last_modified=epoch)
 
     try:
         info = zip.getinfo(subpath + '/')
@@ -247,18 +250,18 @@ def zip_file_info(zip, subpath, check_missing_dir=False):
     else:
         lm = info.date_time
         epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
-        return FileInfo(name=basename, type='dir', size=None, last_modified=epoch)
+        return FileInfo(name=name, type='dir', size=None, last_modified=epoch)
 
     if check_missing_dir:
         base = subpath + '/'
         for entry in zip.namelist():
             if entry.startswith(base):
-                return FileInfo(name=basename, type='dir', size=None, last_modified=None)
+                return FileInfo(name=name, type='dir', size=None, last_modified=None)
 
-    return FileInfo(name=basename, type=None, size=None, last_modified=None)
+    return FileInfo(name=name, type=None, size=None, last_modified=None)
 
 
-def zip_listdir(zip, subpath):
+def zip_listdir(zip, subpath, recursive=False):
     """Generates FileInfo(s) and omit invalid entries.
 
     Raise ZipDirNotFoundError if subpath does not exist. 
@@ -283,15 +286,21 @@ def zip_listdir(zip, subpath):
             dir_exist = True
             continue
 
-        subpath = filename[base_len:]
-        entry, _, _ = subpath.partition('/')
-        entries.setdefault(entry, True)
+        entry = filename[base_len:]
+        if not recursive:
+            entry, _, _ = entry.partition('/')
+            entries.setdefault(entry, True)
+        else:
+            parts = entry.rstrip('/').split('/')
+            for i in range(0, len(parts)):
+                entry = '/'.join(parts[0:i + 1])
+                entries.setdefault(entry, True)
 
     if not len(entries) and not dir_exist:
         raise ZipDirNotFoundError('Directory "{}/" does not exist in the zip.'.format(base))
 
     for entry in entries:
-        info = zip_file_info(zip, base + entry)
+        info = zip_file_info(zip, base + entry, base)
 
         if info.type is None:
             yield FileInfo(name=entry, type='dir', size=None, last_modified=None)
