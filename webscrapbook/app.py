@@ -275,7 +275,7 @@ def handle_directory_listing(localpath, recursive=False, format=None):
     return http_response(body, format=format, headers=headers)
 
 
-def handle_zip_directory_listing(zip, archivefile, subarchivepath):
+def handle_zip_directory_listing(zip, archivefile, subarchivepath, format=None):
     """List contents in a directory.
     """
     # ensure directory has trailing '/'
@@ -298,19 +298,41 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath):
         adler32(archivefile.encode("utf-8")) & 0xFFFFFFFF,
         )
 
+    if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
+        return http_response(status=304, format=format)
+
     headers = {
         'Cache-Control': 'no-cache',
-        }
-
-    if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
-        return http_response(status=304, headers=headers)
-
-    headers.update({
         'Last-Modified': last_modified,
         'ETag': etag,
-        })
+        }
 
     subentries = util.zip_listdir(zip, subarchivepath)
+
+    if format == 'sse':
+        def gen():
+            for entry in subentries:
+                data = {
+                    'name': entry.name,
+                    'type': entry.type,
+                    'size': entry.size,
+                    'last_modified': entry.last_modified,
+                    }
+
+                yield json.dumps(data, ensure_ascii=False)
+
+        return http_response(gen(), headers=headers, format=format)
+
+    elif format == 'json':
+        data = []
+        for entry in subentries:
+            data.append({
+                    'name': entry.name,
+                    'type': entry.type,
+                    'size': entry.size,
+                    'last_modified': entry.last_modified,
+                    })
+        return http_response(data, headers=headers, format=format)
 
     try:
         body = render_template('index.html',
@@ -555,6 +577,9 @@ def handle_request(filepath=''):
     elif action == 'list':
         if not format:
             return http_error(400, "Action not supported.", format=format)
+
+        if archivefile:
+            return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, format=format)
 
         if os.path.isdir(localpath):
             recursive = query.get('recursive', type=bool)
