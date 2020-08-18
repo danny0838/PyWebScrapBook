@@ -326,16 +326,27 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath):
         return http_error(404, "File does not exist.")
 
 
-def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True):
+def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True, format=None):
     """Show content of a path in a zip file.
     """
     if not os.access(archivefile, os.R_OK):
-        return http_error(403, "You do not have permission to access this file.")
+        return http_error(403, "You do not have permission to access this file.", format=format)
 
     try:
         zip = zipfile.ZipFile(archivefile)
     except:
-        return http_error(500, "Unable to open the ZIP file.")
+        return http_error(500, "Unable to open the ZIP file.", format=format)
+
+    if format:
+        info = util.zip_file_info(zip, subarchivepath)
+        data = {
+            'name': info.name,
+            'type': info.type,
+            'size': info.size,
+            'last_modified': info.last_modified,
+            'mime': mimetype,
+            }
+        return http_response(data, format=format)
 
     try:
         # KeyError is raised if subarchivepath does not exist
@@ -978,6 +989,9 @@ def handle_request(filepath=''):
     elif action == 'view':
         # show file information for other output formats
         if format:
+            if archivefile:
+                return handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, format=format)
+
             info = util.file_info(localpath)
             data = {
                 'name': info.name,
