@@ -9,7 +9,6 @@ import mimetypes
 import re
 import zipfile
 import time
-import hashlib
 import json
 import functools
 from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
@@ -18,7 +17,7 @@ from zlib import adler32
 
 # dependency
 import flask
-from flask import request, Response, redirect, abort, render_template, send_from_directory, send_file, jsonify
+from flask import request, Response, redirect, abort, render_template, send_from_directory
 from flask import current_app
 from werkzeug.local import LocalProxy
 from werkzeug.middleware.proxy_fix import ProxyFix

@@ -10,7 +10,6 @@ from threading import Thread
 from werkzeug.serving import WSGIRequestHandler, make_server
 
 # this package
-from . import *
 from . import Config
 from .app import make_app
 from .util import is_nullhost
