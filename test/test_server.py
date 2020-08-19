@@ -32,9 +32,8 @@ def tearDownModule():
     mocking.stop()
 
 class TestConfigServer(unittest.TestCase):
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_root(self, mock_make_server, mock_print):
+    def test_root(self, mock_make_server):
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -43,11 +42,10 @@ browse = false
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[1][0][0], 'Document Root: {}'.format(server_root))
+        self.assertEqual(mock_make_server.mock_calls[2][1][1], 'Document Root: {}'.format(server_root))
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_host_port1(self, mock_make_server, mock_print):
+    def test_host_port1(self, mock_make_server):
         # IPv4
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -59,11 +57,10 @@ browse = false
         server.serve(server_root)
         self.assertEqual(mock_make_server.call_args[1]['host'], '127.0.0.1')
         self.assertEqual(mock_make_server.call_args[1]['port'], 80)
-        self.assertEqual(mock_print.call_args_list[2][0][0], 'Listening on http://127.0.0.1:80')
+        self.assertEqual(mock_make_server.mock_calls[3][1][1], 'Listening on http://127.0.0.1:80')
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_host_port2(self, mock_make_server, mock_print):
+    def test_host_port2(self, mock_make_server):
         # IPv6 => with []
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -75,11 +72,10 @@ browse = false
         server.serve(server_root)
         self.assertEqual(mock_make_server.call_args[1]['host'], '::1')
         self.assertEqual(mock_make_server.call_args[1]['port'], 8000)
-        self.assertEqual(mock_print.call_args_list[2][0][0], 'Listening on http://[::1]:8000')
+        self.assertEqual(mock_make_server.mock_calls[3][1][1], 'Listening on http://[::1]:8000')
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_host_port3(self, mock_make_server, mock_print):
+    def test_host_port3(self, mock_make_server):
         # domain_name (the server will actually bind to the resolved IP.)
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -91,11 +87,10 @@ browse = false
         server.serve(server_root)
         self.assertEqual(mock_make_server.call_args[1]['host'], 'localhost')
         self.assertEqual(mock_make_server.call_args[1]['port'], 7357)
-        self.assertEqual(mock_print.call_args_list[2][0][0], 'Listening on http://localhost:7357')
+        self.assertEqual(mock_make_server.mock_calls[3][1][1], 'Listening on http://localhost:7357')
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_ssl1(self, mock_make_server, mock_print):
+    def test_ssl1(self, mock_make_server):
         # SSL off
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -110,9 +105,8 @@ browse = false
         server.serve(server_root)
         self.assertIs(mock_make_server.call_args[1]['ssl_context'], None)
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_ssl2(self, mock_make_server, mock_print):
+    def test_ssl2(self, mock_make_server):
         # SSL with an adhoc key
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -127,9 +121,8 @@ browse = false
         server.serve(server_root)
         self.assertEqual(mock_make_server.call_args[1]['ssl_context'], 'adhoc')
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_ssl3(self, mock_make_server, mock_print):
+    def test_ssl3(self, mock_make_server):
         # SSL with missing key => adhoc
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -144,9 +137,8 @@ browse = false
         server.serve(server_root)
         self.assertEqual(mock_make_server.call_args[1]['ssl_context'], 'adhoc')
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_ssl4(self, mock_make_server, mock_print):
+    def test_ssl4(self, mock_make_server):
         # SSL with missing cert => adhoc
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -161,9 +153,8 @@ browse = false
         server.serve(server_root)
         self.assertEqual(mock_make_server.call_args[1]['ssl_context'], 'adhoc')
 
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_ssl5(self, mock_make_server, mock_print):
+    def test_ssl5(self, mock_make_server):
         # SSL with key and cert
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -183,9 +174,8 @@ browse = false
 
 class TestConfigBrowser(unittest.TestCase):
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_command1(self, mock_make_server, mock_print, mock_browser):
+    def test_command1(self, mock_make_server, mock_browser):
         # server.browse = false
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -201,9 +191,8 @@ command =
         mock_browser.assert_not_called()
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_command2(self, mock_make_server, mock_print, mock_browser):
+    def test_command2(self, mock_make_server, mock_browser):
         # server.browse = true, browser.command not set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -219,9 +208,8 @@ command =
         mock_browser.assert_called_once_with(None)
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_command3(self, mock_make_server, mock_print, mock_browser):
+    def test_command3(self, mock_make_server, mock_browser):
         # server.browse = true, browser.command set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -236,9 +224,8 @@ command = "C:\Program Files\Mozilla Firefox\firefox.exe" %s &
         mock_browser.assert_called_once_with('"C:\Program Files\Mozilla Firefox\firefox.exe" %s &')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_host1(self, mock_make_server, mock_print, mock_browser):
+    def test_url_host1(self, mock_make_server, mock_browser):
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -253,12 +240,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][0][1], 'Launching browser at http://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_scheme1(self, mock_make_server, mock_print, mock_browser):
+    def test_url_scheme1(self, mock_make_server, mock_browser):
         # http
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -275,12 +261,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_scheme2(self, mock_make_server, mock_print, mock_browser):
+    def test_url_scheme2(self, mock_make_server, mock_browser):
         # https
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -297,12 +282,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at https://127.0.0.1:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at https://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_host1(self, mock_make_server, mock_print, mock_browser):
+    def test_url_host1(self, mock_make_server, mock_browser):
         # IPv4
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -318,12 +302,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_host2(self, mock_make_server, mock_print, mock_browser):
+    def test_url_host2(self, mock_make_server, mock_browser):
         # IPv6 => with []
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -339,12 +322,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://[::1]:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://[::1]:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_host3(self, mock_make_server, mock_print, mock_browser):
+    def test_url_host3(self, mock_make_server, mock_browser):
         # domain name
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -360,12 +342,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://localhost:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://localhost:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_host4(self, mock_make_server, mock_print, mock_browser):
+    def test_url_host4(self, mock_make_server, mock_browser):
         # null host (0.0.0.0) => localhost
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -381,12 +362,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://localhost:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://localhost:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_host5(self, mock_make_server, mock_print, mock_browser):
+    def test_url_host5(self, mock_make_server, mock_browser):
         # null host (::) => localhost
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -402,12 +382,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://localhost:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://localhost:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_port1(self, mock_make_server, mock_print, mock_browser):
+    def test_url_port1(self, mock_make_server, mock_browser):
         # normal port
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -424,12 +403,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_port2(self, mock_make_server, mock_print, mock_browser):
+    def test_url_port2(self, mock_make_server, mock_browser):
         # 80 for http
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -446,12 +424,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_port3(self, mock_make_server, mock_print, mock_browser):
+    def test_url_port3(self, mock_make_server, mock_browser):
         # 443 for https
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -468,12 +445,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at https://127.0.0.1 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at https://127.0.0.1 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_path1(self, mock_make_server, mock_print, mock_browser):
+    def test_url_path1(self, mock_make_server, mock_browser):
         # app.base not set, browser.index not set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -490,12 +466,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357 ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_path2(self, mock_make_server, mock_print, mock_browser):
+    def test_url_path2(self, mock_make_server, mock_browser):
         # app.base set, browser.index not set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -512,12 +487,11 @@ index =
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357/wsb ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/wsb ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_path3(self, mock_make_server, mock_print, mock_browser):
+    def test_url_path3(self, mock_make_server, mock_browser):
         # app.base not set, browser.index set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -534,12 +508,11 @@ index = index.html
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357/index.html ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/index.html ...')
 
     @mock.patch('webbrowser.get')
-    @mock.patch('builtins.print')
     @mock.patch('webscrapbook.server.make_server')
-    def test_url_path4(self, mock_make_server, mock_print, mock_browser):
+    def test_url_path4(self, mock_make_server, mock_browser):
         # app.base set, browser.index set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
@@ -556,7 +529,7 @@ index = index.html
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_print.call_args_list[4][0][0], 'Launching browser at http://127.0.0.1:7357/wsb/index.html ...')
+        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/wsb/index.html ...')
 
 if __name__ == '__main__':
     unittest.main()

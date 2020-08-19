@@ -37,12 +37,6 @@ def serve(root, **kwargs):
     port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
 
     # prepare server
-    print('WebScrapBook server starting up...')
-    print('Document Root: {}'.format(os.path.abspath(root)))
-    print('Listening on {scheme}://{host}:{port}'.format(
-            scheme=scheme, host=host2, port=port))
-    print('Hit Ctrl-C to shutdown.')
-
     srv = make_server(
         host=host,
         port=port,
@@ -53,6 +47,12 @@ def serve(root, **kwargs):
                 else 'adhoc' if ssl_on else None),
         request_handler=RequestHandler,
         )
+
+    srv.log('info', 'WebScrapBook server starting up...')
+    srv.log('info', 'Document Root: {}'.format(os.path.abspath(root)))
+    srv.log('info', 'Listening on {scheme}://{host}:{port}'.format(
+            scheme=scheme, host=host2, port=port))
+    srv.log('info', 'Hit Ctrl-C to shutdown.')
 
     # launch browser
     if config['server']['browse']:
@@ -67,7 +67,7 @@ def serve(root, **kwargs):
                 path=path,
                 )
 
-        print('Launching browser at {url} ...'.format(url=url))
+        srv.log('info', 'Launching browser at {url} ...'.format(url=url))
         browser = webbrowser.get(config['browser']['command'] or None)
         thread = Thread(target=browser.open, args=[url], daemon=True)
         thread.start()
