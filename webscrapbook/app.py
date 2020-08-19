@@ -486,547 +486,117 @@ def handle_markdown_output(filepath, filename):
     return http_response(body, headers=headers)
 
 
-@bp.route('/', methods=['GET', 'HEAD', 'POST'])
-@bp.route('/<path:filepath>', methods=['GET', 'HEAD', 'POST'])
-def handle_request(filepath=''):
-    """Handle an HTTP request (HEAD, GET, POST).
-    """
-    # replace SCRIPT_NAME with the custom if set
-    if runtime['config']['app']['base']:
-        request.environ['SCRIPT_NAME'] = runtime['config']['app']['base']
+class ActionHandler():
+    def _handle_action(self, action, *args, **kwargs):
+        handler = getattr(self, action, None) or self.unknown
+        return handler(*args, **kwargs)
 
-    query = request.values
+    def _handle_advanced(func):
+        """A decorator function that helps handling an advanced command.
 
-    action = query.get('a', default='view')
-    action = query.get('action', default=action)
+        - Verify POST method.
+        - Verify access token.
+        - Provide a default return value.
+        """
+        @functools.wraps(func)
+        def wrapper(self,
+                localpath,
+                query=None,
+                format=None,
+                *args, **kwargs):
+            # require POST method
+            if request.method != 'POST':
+                headers = {
+                    'Allow': 'POST',
+                    }
+                return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, headers=headers)
 
-    format = query.get('f')
-    format = query.get('format', default=format)
+            # validate and revoke token
+            token = query.get('token') or ''
 
-    # handle authorization
-    auth_result = handle_authorization(action=action, format=format)
-    if auth_result is not None:
-        return auth_result
+            if not runtime['token_handler'].validate(token):
+                return http_error(400, 'Invalid access token.', format=format)
 
-    # determine primary variables
-    #
-    # filepath: the URL path below app base (not percent encoded)
-    # localpath: the file system path corresponding to filepath
-    # localtargetpath: localpath with symbolic link resolved
-    # mimetype: the mimetype from localtargetpath
-    # archivefile: the file system path of the ZIP archive file, or None
-    # subarchivepath: the URL path below archivefile (not percent encoded)
-    localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/\\')))
-    localtargetpath = os.path.realpath(localpath)
-    archivefile, subarchivepath = get_archive_path(filepath, localpath)
-    mimetype, _ = mimetypes.guess_type(localtargetpath)
+            runtime['token_handler'].delete(token)
 
-    # handle action
-    if action == 'static':
-        if format:
-            return http_error(400, "Action not supported.", format=format)
+            rv = func(
+                self=self,
+                localpath=localpath,
+                query=query,
+                format=format,
+                *args, **kwargs)
 
-        for i in runtime['statics']:
-            f = os.path.join(i, filepath)
-            if os.path.lexists(f):
-                return static_file(filepath, root=i)
-        else:
-            return http_error(404)
+            if rv is not None:
+                return rv
 
-    elif action == 'source':
-        if format:
-            return http_error(400, "Action not supported.", format=format)
+            if format:
+                return http_response('Command run successfully.', format=format)
 
-        if archivefile:
-            response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
-        else:
-            response = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+            return http_response(status=204)
 
-        # show as inline plain text
-        # @TODO: Chromium (80) seems to ignore header mimetype for certain types
-        #        like image and zip
-        encoding = query.get('e', 'utf-8')
-        encoding = query.get('encoding', default=encoding)
-        response.headers.set('Content-Type', 'text/plain; charset=' + quote(encoding))
-        response.headers.set('Content-Disposition', 'inline')
+        return wrapper
 
-        return response
+    def _handle_lock(func):
+        """A decorator function that helps handling the lock.
 
-    elif action in ('exec', 'browse'):
-        if not is_local_access():
-            return http_error(400, "Command can only run on local device.", format=format)
-
-        if not os.path.lexists(localpath):
-            return http_error(404, "File does not exist.", format=format)
-
-        if action == 'browse':
-            util.view_in_explorer(localpath)
-
-        elif action == 'exec':
-            util.launch(localpath)
-
-        if format:
-            return http_response('Command run successfully.', format=format)
-
-        return http_response(status=204)
-
-    elif action == 'token':
-        return http_response(runtime['token_handler'].acquire(), format=format)
-
-    elif action == 'list':
-        if not format:
-            return http_error(400, "Action not supported.", format=format)
-
-        recursive = query.get('recursive', type=bool)
-
-        if archivefile:
-            return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, recursive=recursive, format=format)
-
-        if os.path.isdir(localpath):
-            return handle_directory_listing(localtargetpath, recursive=recursive, format=format)
-
-        return http_error(404, "Directory does not exist.", format=format)
-
-    elif action == 'config':
-        if not format:
-            return http_error(400, "Action not supported.", format=format)
-
-        data = runtime['config'].dump_object()
-
-        # filter values for better security
-        data = {k:v for k, v in data.items() if k in ('app', 'book')}
-        data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme')}
-
-        # add and rewrite values for client to better know the server
-        data['app']['base'] = request.script_root
-        data['app']['is_local'] = is_local_access()
-        data['VERSION'] = __version__;
-        data['WSB_DIR'] = WSB_DIR;
-        data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG;
-
-        return http_response(data, format=format)
-
-    elif action == 'edit':
-        if format:
-            return http_error(400, "Action not supported.", format=format)
-
-        if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            return http_error(400, "Found a non-file here.", format=format)
-
-        if archivefile:
-            with zipfile.ZipFile(archivefile, 'r') as zip:
-                try:
-                    info = zip.getinfo(subarchivepath)
-                except:
-                    body = b''
-                else:
-                    body = zip.read(info)
-        else:
-            try:
-                with open(localpath, 'rb') as f:
-                    body = f.read()
-            except FileNotFoundError:
-                body = b''
-
-        encoding = query.get('e')
-        encoding = query.get('encoding', default=encoding)
-
-        try:
-            body = body.decode(encoding or 'UTF-8')
-        except (LookupError, UnicodeDecodeError):
-            encoding = 'ISO-8859-1'
-            body = body.decode(encoding)
-
-        body = render_template('edit.html',
-                sitename=runtime['name'],
-                is_local=is_local_access(),
-                base=request.script_root,
-                path=request.path,
-                body=body,
-                encoding=encoding,
-                )
-
-        return http_response(body, format=format)
-
-    elif action == 'editx':
-        if format:
-            return http_error(400, "Action not supported.", format=format)
-
-        if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            return http_error(400, "Found a non-file here.", format=format)
-
-        if not mimetype in ("text/html", "application/xhtml+xml"):
-            return http_error(400, "This is not an HTML file.", format=format)
-
-        if archivefile:
-            with zipfile.ZipFile(archivefile, 'r') as zip:
-                try:
-                    info = zip.getinfo(subarchivepath)
-                except:
-                    return http_error(404, "File does not exist.", format=format)
-        else:
-            if not os.path.lexists(localpath):
-                return http_error(404, "File does not exist.", format=format)
-
-        body = render_template('editx.html',
-                sitename=runtime['name'],
-                is_local=is_local_access(),
-                base=request.script_root,
-                path=request.path,
-                )
-
-        return http_response(body, format=format)
-
-    elif action in ('lock', 'unlock', 'mkdir', 'save', 'delete', 'move', 'copy'):
-        if request.method != 'POST':
-            headers = {
-                'Allow': 'POST',
-                }
-            return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, headers=headers)
-
-        # validate and revoke token
-        token = query.get('token') or ''
-
-        if not runtime['token_handler'].validate(token):
-            return http_error(400, 'Invalid access token.', format=format)
-
-        runtime['token_handler'].delete(token)
-
-        # validate localpath
-        if action not in ('lock', 'unlock'):
-            if os.path.abspath(localpath) == runtime['root']:
-                return http_error(403, "Unable to operate the root directory.", format=format)
-
-        # validate targetpath
-        if action in ('lock', 'unlock'):
+        - Verify lock name.
+        - Verify targetpath.
+        """
+        @functools.wraps(func)
+        def wrapper(self, query=None, format=None, *args, **kwargs):
+            # verify name
             name = query.get('name')
             if name is None:
                 return http_error(400, "Lock name is not specified.", format=format)
 
+            # validate targetpath
             targetpath = os.path.join(runtime['locks'], name)
             if not targetpath.startswith(os.path.join(runtime['locks'], '')):
                 return http_error(400, 'Invalid lock name "{}".'.format(name), format=format)
 
-        # handle action
+            return func(
+                self=self,
+                name=name,
+                targetpath=targetpath,
+                query=query,
+                format=format,
+                *args, **kwargs)
 
-        # action lock
-        # name: name of the lock file.
-        # chkt: recheck until the lock file not exist or fail out when time out.
-        # chks: how long to treat the lock file as stale.
-        if action == 'lock':
-            check_stale = query.get('chks', 300, type=int)
-            check_timeout = query.get('chkt', 5, type=int)
-            check_expire = time.time() + check_timeout
-            check_delta = min(check_timeout, 0.1)
+        return wrapper
 
-            while True:
-                try:
-                    os.makedirs(targetpath)
-                except FileExistsError:
-                    t = time.time()
+    def _handle_writing(func):
+        """A decorator function that helps handling a writing action.
+        """
+        @functools.wraps(func)
+        def wrapper(self, localpath, format=None, *args, **kwargs):
+            if os.path.abspath(localpath) == runtime['root']:
+                return http_error(403, "Unable to operate the root directory.", format=format)
 
-                    if t >= check_expire or not os.path.isdir(targetpath):
-                        return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
+            return func(
+                self=self,
+                localpath=localpath,
+                format=format,
+                *args, **kwargs)
 
-                    try:
-                        lock_expire = os.stat(targetpath).st_mtime + check_stale
-                    except FileNotFoundError:
-                        # Lock removed by another process during the short interval.
-                        # Try acquire again.
-                        continue
+        return wrapper
 
-                    if t >= lock_expire:
-                        # Lock expired. Touch rather than remove and make for atomicity.
-                        try:
-                            Path(targetpath).touch()
-                        except:
-                            traceback.print_exc()
-                            return http_error(500, 'Unable to regenerate stale lock "{}".'.format(name), format=format)
-                        else:
-                            break
+    def unknown(self, format=None, *args, **kwargs):
+        """Default handler for an undefined action"""
+        return http_error(400, "Action not supported.", format=format)
 
-                    time.sleep(check_delta)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, 'Unable to create lock "{}".'.format(name), format=format)
-                else:
-                    break
+    def view(self,
+            filepath,
+            localpath,
+            localtargetpath,
+            archivefile=None,
+            subarchivepath=None,
+            mimetype=None,
+            format=None,
+            *args, **kwargs):
+        """Show the content of a file or list a directory.
 
-        elif action == 'unlock':
-            try:
-                os.rmdir(targetpath)
-            except FileNotFoundError:
-                pass
-            except:
-                traceback.print_exc()
-                return http_error(500, 'Unable to remove lock "{}".'.format(name), format=format)
-
-        elif action == 'mkdir':
-            if os.path.lexists(localpath) and not os.path.isdir(localpath):
-                return http_error(400, "Found a non-directory here.", format=format)
-
-            if archivefile:
-                try:
-                    with zipfile.ZipFile(archivefile, 'a') as zip:
-                        subarchivepath = subarchivepath + '/'
-                        try:
-                            info = zip.getinfo(subarchivepath)
-                        except KeyError:
-                            # subarchivepath does not exist
-                            info = zipfile.ZipInfo(subarchivepath, time.localtime())
-                            zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to write to this ZIP file.", format=format)
-
-            else:
-                try:
-                    os.makedirs(localpath, exist_ok=True)
-                except OSError:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to create a directory here.", format=format)
-
-        elif action == 'save':
-            if os.path.lexists(localpath) and not os.path.isfile(localpath):
-                return http_error(400, "Found a non-file here.", format=format)
-
-            if archivefile:
-                try:
-                    temp_writing_file = None
-
-                    with zipfile.ZipFile(archivefile, 'a') as zip0:
-                        # if subarchivepath exists, open a new zip file for writing.
-                        try:
-                            info = zip0.getinfo(subarchivepath)
-                        except KeyError:
-                            info = zipfile.ZipInfo(subarchivepath, time.localtime())
-                        else:
-                            info.date_time = time.localtime()
-                            temp_writing_file = archivefile + '.' + str(time_ns())
-
-                        try:
-                            with zipfile.ZipFile(temp_writing_file, 'w') if temp_writing_file else zip0 as zip:
-                                # write to the zip file
-                                file = request.files.get('upload')
-                                if file is not None:
-                                    with zip.open(info, 'w', force_zip64=True) as fh:
-                                        stream = file.stream
-                                        while True:
-                                            s = stream.read(8192)
-                                            if not s: break
-                                            fh.write(s)
-                                else:
-                                    bytes = query.get('text', '').encode('ISO-8859-1')
-                                    try:
-                                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-                                    except TypeError:
-                                        # compresslevel is supported since Python 3.7
-                                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
-
-                                # copy zip content
-                                if temp_writing_file:
-                                    for info in zip0.infolist():
-                                        if info.filename == subarchivepath:
-                                            continue
-
-                                        try:
-                                            zip.writestr(info, zip0.read(info),
-                                                    compress_type=info.compress_type,
-                                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                                        except TypeError:
-                                            # compresslevel is supported since Python 3.7
-                                            zip.writestr(info, zip0.read(info),
-                                                    compress_type=info.compress_type)
-
-                        except:
-                            # remove the generated zip file if writing fails
-                            if temp_writing_file:
-                                try:
-                                    os.remove(temp_writing_file)
-                                except FileNotFoundError:
-                                    pass
-
-                            raise
-
-                    # replace zip0 with the generated zip file
-                    if temp_writing_file:
-                        temp_renaming_file = archivefile + '.' + str(time_ns() + 1)
-                        os.rename(archivefile, temp_renaming_file)
-                        os.rename(temp_writing_file, archivefile)
-                        os.remove(temp_renaming_file)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to write to this ZIP file.", format=format)
-
-            else:
-                try:
-                    os.makedirs(os.path.dirname(localpath), exist_ok=True)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to write to this path.", format=format)
-
-                try:
-                    file = request.files.get('upload')
-                    if file is not None:
-                        file.save(localpath)
-                    else:
-                        bytes = query.get('text', '').encode('ISO-8859-1')
-                        with open(localpath, 'wb') as f:
-                            f.write(bytes)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to write to this file.", format=format)
-
-        elif action == 'delete':
-            if archivefile:
-                try:
-                    temp_writing_file = archivefile + '.' + str(time_ns())
-                    deleted = False
-
-                    with zipfile.ZipFile(archivefile, 'r') as zip0:
-                        try:
-                            # copy zip content
-                            with zipfile.ZipFile(temp_writing_file, 'w') as zip:
-                                for info in zip0.infolist():
-                                    if (info.filename == subarchivepath or
-                                            info.filename.startswith(subarchivepath + '/')):
-                                        deleted = True
-                                        continue
-
-                                    try:
-                                        zip.writestr(info, zip0.read(info),
-                                                compress_type=info.compress_type,
-                                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                                    except TypeError:
-                                        # compresslevel is supported since Python 3.7
-                                        zip.writestr(info, zip0.read(info),
-                                                compress_type=info.compress_type)
-                        except:
-                            # remove the generated zip file if writing fails
-                            try:
-                                os.remove(temp_writing_file)
-                            except FileNotFoundError:
-                                pass
-
-                            raise
-
-                    # fail since nothing is deleted
-                    if not deleted:
-                        os.remove(temp_writing_file)
-                        return http_error(404, "Entry does not exist in this ZIP file.", format=format)
-
-                    # replace zip0 with the generated zip file
-                    temp_renaming_file = archivefile + '.' + str(time_ns() + 1)
-                    os.rename(archivefile, temp_renaming_file)
-                    os.rename(temp_writing_file, archivefile)
-                    os.remove(temp_renaming_file)
-                except:
-                    traceback.print_exc()
-                    return http_error(500, "Unable to write to this ZIP file.", format=format)
-
-            else:
-                if not os.path.lexists(localpath):
-                    return http_error(404, "File does not exist.", format=format)
-
-                if os.path.islink(localpath):
-                    try:
-                        os.remove(localpath)
-                    except:
-                        traceback.print_exc()
-                        return http_error(500, "Unable to delete this link.", format=format)
-                elif os.path.isfile(localpath):
-                    try:
-                        os.remove(localpath)
-                    except:
-                        traceback.print_exc()
-                        return http_error(500, "Unable to delete this file.", format=format)
-                elif os.path.isdir(localpath):
-                    try:
-                        try:
-                            # try rmdir for a possible windows directory junction,
-                            # which is not detected by os.path.islink
-                            os.rmdir(localpath)
-                        except OSError:
-                            # directory not empty
-                            shutil.rmtree(localpath)
-                    except:
-                        traceback.print_exc()
-                        return http_error(500, "Unable to delete this directory.", format=format)
-
-        elif action == 'move':
-            if archivefile:
-                return http_error(400, "File is inside an archive file.", format=format)
-
-            if not os.path.lexists(localpath):
-                return http_error(404, "File does not exist.", format=format)
-
-            target = query.get('target')
-
-            if target is None:
-                return http_error(400, 'Target is not specified.', format=format)
-
-            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
-
-            if not targetpath.startswith(os.path.join(runtime['root'], '')):
-                return http_error(403, "Unable to operate beyond the root directory.", format=format)
-
-            if os.path.lexists(targetpath):
-                return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-
-            ta, tsa = get_archive_path(target, targetpath)
-            if ta:
-                return http_error(400, "Move target is inside an archive file.", format=format)
-
-            os.makedirs(os.path.dirname(targetpath), exist_ok=True)
-
-            try:
-                os.rename(localpath, targetpath)
-            except:
-                traceback.print_exc()
-                return http_error(500, 'Unable to move to target "{}".'.format(target), format=format)
-
-        elif action == 'copy':
-            if archivefile:
-                return http_error(400, "File is inside an archive file.", format=format)
-
-            if not os.path.lexists(localpath):
-                return http_error(404, "File does not exist.", format=format)
-
-            target = query.get('target')
-
-            if target is None:
-                return http_error(400, 'Target is not specified.', format=format)
-
-            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
-
-            if not targetpath.startswith(os.path.join(runtime['root'], '')):
-                return http_error(403, "Unable to operate beyond the root directory.", format=format)
-
-            if os.path.lexists(targetpath):
-                return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-
-            ta, tsa = get_archive_path(target, targetpath)
-            if ta:
-                return http_error(400, "Copy target is inside an archive file.", format=format)
-
-            os.makedirs(os.path.dirname(targetpath), exist_ok=True)
-
-            try:
-                try:
-                    shutil.copytree(localpath, targetpath)
-                except NotADirectoryError:
-                    shutil.copy2(localpath, targetpath)
-            except:
-                traceback.print_exc()
-                return http_error(500, 'Unable to copy to target "{}".'.format(target), format=format)
-
-        if format:
-            return http_response('Command run successfully.', format=format)
-
-        return http_response(status=204)
-
-    # "view" or undefined actions
-    elif action == 'view':
+        If formatted, show information of the file or directory.
+        """
         # show file information for other output formats
         if format:
             if archivefile:
@@ -1086,9 +656,622 @@ def handle_request(filepath=''):
 
         return response
 
-    # unknown action
-    else:
-        return http_error(400, "Action not supported.", format=format)
+    def source(self,
+            filepath,
+            archivefile=None,
+            subarchivepath=None,
+            mimetype=None,
+            query=None,
+            format=None,
+            *args, **kwargs):
+        """Show file content as plain text."""
+        if format:
+            return http_error(400, "Action not supported.", format=format)
+
+        if archivefile:
+            response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
+        else:
+            response = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+
+        # show as inline plain text
+        # @TODO: Chromium (80) seems to ignore header mimetype for certain types
+        #        like image and zip
+        encoding = query.get('e', 'utf-8')
+        encoding = query.get('encoding', default=encoding)
+        response.headers.set('Content-Type', 'text/plain; charset=' + quote(encoding))
+        response.headers.set('Content-Disposition', 'inline')
+
+        return response
+
+    def list(self,
+            localpath,
+            localtargetpath,
+            archivefile=None,
+            subarchivepath=None,
+            query=None,
+            format=None,
+            *args, **kwargs):
+        """List entries in a directory."""
+        if not format:
+            return http_error(400, "Action not supported.", format=format)
+
+        recursive = query.get('recursive', type=bool)
+
+        if archivefile:
+            return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, recursive=recursive, format=format)
+
+        if os.path.isdir(localpath):
+            return handle_directory_listing(localtargetpath, recursive=recursive, format=format)
+
+        return http_error(404, "Directory does not exist.", format=format)
+
+    def static(self,
+            filepath,
+            format=None,
+            *args, **kwargs):
+        """Show a static file of the current theme."""
+        if format:
+            return http_error(400, "Action not supported.", format=format)
+
+        for i in runtime['statics']:
+            f = os.path.join(i, filepath)
+            if os.path.lexists(f):
+                return static_file(filepath, root=i)
+        else:
+            return http_error(404)
+
+    def edit(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            query=None,
+            format=None,
+            *args, **kwargs):
+        """Simple text editor for a file."""
+        if format:
+            return http_error(400, "Action not supported.", format=format)
+
+        if os.path.lexists(localpath) and not os.path.isfile(localpath):
+            return http_error(400, "Found a non-file here.", format=format)
+
+        if archivefile:
+            with zipfile.ZipFile(archivefile, 'r') as zip:
+                try:
+                    info = zip.getinfo(subarchivepath)
+                except:
+                    body = b''
+                else:
+                    body = zip.read(info)
+        else:
+            try:
+                with open(localpath, 'rb') as f:
+                    body = f.read()
+            except FileNotFoundError:
+                body = b''
+
+        encoding = query.get('e')
+        encoding = query.get('encoding', default=encoding)
+
+        try:
+            body = body.decode(encoding or 'UTF-8')
+        except (LookupError, UnicodeDecodeError):
+            encoding = 'ISO-8859-1'
+            body = body.decode(encoding)
+
+        body = render_template('edit.html',
+                sitename=runtime['name'],
+                is_local=is_local_access(),
+                base=request.script_root,
+                path=request.path,
+                body=body,
+                encoding=encoding,
+                )
+
+        return http_response(body, format=format)
+
+    def editx(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            mimetype=None,
+            format=None,
+            *args, **kwargs):
+        """HTML editor for a file."""
+        if format:
+            return http_error(400, "Action not supported.", format=format)
+
+        if os.path.lexists(localpath) and not os.path.isfile(localpath):
+            return http_error(400, "Found a non-file here.", format=format)
+
+        if not mimetype in ("text/html", "application/xhtml+xml"):
+            return http_error(400, "This is not an HTML file.", format=format)
+
+        if archivefile:
+            with zipfile.ZipFile(archivefile, 'r') as zip:
+                try:
+                    info = zip.getinfo(subarchivepath)
+                except:
+                    return http_error(404, "File does not exist.", format=format)
+        else:
+            if not os.path.lexists(localpath):
+                return http_error(404, "File does not exist.", format=format)
+
+        body = render_template('editx.html',
+                sitename=runtime['name'],
+                is_local=is_local_access(),
+                base=request.script_root,
+                path=request.path,
+                )
+
+        return http_response(body, format=format)
+
+    def exec(self, localpath, format=None, *args, **kwargs):
+        """Launch a file or directory."""
+        if not is_local_access():
+            return http_error(400, "Command can only run on local device.", format=format)
+
+        if not os.path.lexists(localpath):
+            return http_error(404, "File does not exist.", format=format)
+
+        util.launch(localpath)
+
+        if format:
+            return http_response('Command run successfully.', format=format)
+
+        return http_response(status=204)
+
+    def browse(self, localpath, format=None, *args, **kwargs):
+        """Open a file or directory in the file browser."""
+        if not is_local_access():
+            return http_error(400, "Command can only run on local device.", format=format)
+
+        if not os.path.lexists(localpath):
+            return http_error(404, "File does not exist.", format=format)
+
+        util.view_in_explorer(localpath)
+
+        if format:
+            return http_response('Command run successfully.', format=format)
+
+        return http_response(status=204)
+
+    def config(self, format=None, *args, **kwargs):
+        """Show server config."""
+        if not format:
+            return http_error(400, "Action not supported.", format=format)
+
+        data = runtime['config'].dump_object()
+
+        # filter values for better security
+        data = {k:v for k, v in data.items() if k in ('app', 'book')}
+        data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme')}
+
+        # add and rewrite values for client to better know the server
+        data['app']['base'] = request.script_root
+        data['app']['is_local'] = is_local_access()
+        data['VERSION'] = __version__;
+        data['WSB_DIR'] = WSB_DIR;
+        data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG;
+
+        return http_response(data, format=format)
+
+    def token(self, format=None, *args, **kwargs):
+        """Acquire a token and return its name."""
+        return http_response(runtime['token_handler'].acquire(), format=format)
+
+    @_handle_advanced
+    @_handle_lock
+    def lock(self, name, targetpath, query=None, format=None, *args, **kwargs):
+        """Acquire a lock for the given name.
+
+        URL params:
+        - chkt: recheck until the lock file not exist or fail out when time out.
+        - chks: how long to treat the lock file as stale.
+        """
+        check_stale = query.get('chks', 300, type=int)
+        check_timeout = query.get('chkt', 5, type=int)
+        check_expire = time.time() + check_timeout
+        check_delta = min(check_timeout, 0.1)
+
+        while True:
+            try:
+                os.makedirs(targetpath)
+            except FileExistsError:
+                t = time.time()
+
+                if t >= check_expire or not os.path.isdir(targetpath):
+                    return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
+
+                try:
+                    lock_expire = os.stat(targetpath).st_mtime + check_stale
+                except FileNotFoundError:
+                    # Lock removed by another process during the short interval.
+                    # Try acquire again.
+                    continue
+
+                if t >= lock_expire:
+                    # Lock expired. Touch rather than remove and make for atomicity.
+                    try:
+                        Path(targetpath).touch()
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, 'Unable to regenerate stale lock "{}".'.format(name), format=format)
+                    else:
+                        break
+
+                time.sleep(check_delta)
+            except:
+                traceback.print_exc()
+                return http_error(500, 'Unable to create lock "{}".'.format(name), format=format)
+            else:
+                break
+
+    @_handle_advanced
+    @_handle_lock
+    def unlock(self, name, targetpath, format=None, *args, **kwargs):
+        """Release a lock for the given name."""
+        try:
+            os.rmdir(targetpath)
+        except FileNotFoundError:
+            pass
+        except:
+            traceback.print_exc()
+            return http_error(500, 'Unable to remove lock "{}".'.format(name), format=format)
+
+    @_handle_advanced
+    @_handle_writing
+    def mkdir(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            format=None,
+            *args, **kwargs):
+        """Create a directory."""
+        if os.path.lexists(localpath) and not os.path.isdir(localpath):
+            return http_error(400, "Found a non-directory here.", format=format)
+
+        if archivefile:
+            try:
+                with zipfile.ZipFile(archivefile, 'a') as zip:
+                    subarchivepath = subarchivepath + '/'
+                    try:
+                        info = zip.getinfo(subarchivepath)
+                    except KeyError:
+                        # subarchivepath does not exist
+                        info = zipfile.ZipInfo(subarchivepath, time.localtime())
+                        zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this ZIP file.", format=format)
+
+        else:
+            try:
+                os.makedirs(localpath, exist_ok=True)
+            except OSError:
+                traceback.print_exc()
+                return http_error(500, "Unable to create a directory here.", format=format)
+
+    @_handle_advanced
+    @_handle_writing
+    def save(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            query=None,
+            format=None,
+            *args, **kwargs):
+        """Write a file with provided text or uploaded stream."""
+        if os.path.lexists(localpath) and not os.path.isfile(localpath):
+            return http_error(400, "Found a non-file here.", format=format)
+
+        if archivefile:
+            try:
+                temp_writing_file = None
+
+                with zipfile.ZipFile(archivefile, 'a') as zip0:
+                    # if subarchivepath exists, open a new zip file for writing.
+                    try:
+                        info = zip0.getinfo(subarchivepath)
+                    except KeyError:
+                        info = zipfile.ZipInfo(subarchivepath, time.localtime())
+                    else:
+                        info.date_time = time.localtime()
+                        temp_writing_file = archivefile + '.' + str(time_ns())
+
+                    try:
+                        with zipfile.ZipFile(temp_writing_file, 'w') if temp_writing_file else zip0 as zip:
+                            # write to the zip file
+                            file = request.files.get('upload')
+                            if file is not None:
+                                with zip.open(info, 'w', force_zip64=True) as fh:
+                                    stream = file.stream
+                                    while True:
+                                        s = stream.read(8192)
+                                        if not s: break
+                                        fh.write(s)
+                            else:
+                                bytes = query.get('text', '').encode('ISO-8859-1')
+                                try:
+                                    zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                                except TypeError:
+                                    # compresslevel is supported since Python 3.7
+                                    zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
+
+                            # copy zip content
+                            if temp_writing_file:
+                                for info in zip0.infolist():
+                                    if info.filename == subarchivepath:
+                                        continue
+
+                                    try:
+                                        zip.writestr(info, zip0.read(info),
+                                                compress_type=info.compress_type,
+                                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                    except TypeError:
+                                        # compresslevel is supported since Python 3.7
+                                        zip.writestr(info, zip0.read(info),
+                                                compress_type=info.compress_type)
+                    except:
+                        # remove the generated zip file if writing fails
+                        if temp_writing_file:
+                            try:
+                                os.remove(temp_writing_file)
+                            except FileNotFoundError:
+                                pass
+
+                        raise
+
+                # replace zip0 with the generated zip file
+                if temp_writing_file:
+                    temp_renaming_file = archivefile + '.' + str(time_ns() + 1)
+                    os.rename(archivefile, temp_renaming_file)
+                    os.rename(temp_writing_file, archivefile)
+                    os.remove(temp_renaming_file)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this ZIP file.", format=format)
+
+        else:
+            try:
+                os.makedirs(os.path.dirname(localpath), exist_ok=True)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this path.", format=format)
+
+            try:
+                file = request.files.get('upload')
+                if file is not None:
+                    file.save(localpath)
+                else:
+                    bytes = query.get('text', '').encode('ISO-8859-1')
+                    with open(localpath, 'wb') as f:
+                        f.write(bytes)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this file.", format=format)
+
+    @_handle_advanced
+    @_handle_writing
+    def delete(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            format=None,
+            *args, **kwargs):
+        """Delete a file or directory."""
+        if archivefile:
+            try:
+                temp_writing_file = archivefile + '.' + str(time_ns())
+                deleted = False
+
+                with zipfile.ZipFile(archivefile, 'r') as zip0:
+                    try:
+                        # copy zip content
+                        with zipfile.ZipFile(temp_writing_file, 'w') as zip:
+                            for info in zip0.infolist():
+                                if (info.filename == subarchivepath or
+                                        info.filename.startswith(subarchivepath + '/')):
+                                    deleted = True
+                                    continue
+
+                                try:
+                                    zip.writestr(info, zip0.read(info),
+                                            compress_type=info.compress_type,
+                                            compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                except TypeError:
+                                    # compresslevel is supported since Python 3.7
+                                    zip.writestr(info, zip0.read(info),
+                                            compress_type=info.compress_type)
+                    except:
+                        # remove the generated zip file if writing fails
+                        try:
+                            os.remove(temp_writing_file)
+                        except FileNotFoundError:
+                            pass
+
+                        raise
+
+                # fail since nothing is deleted
+                if not deleted:
+                    os.remove(temp_writing_file)
+                    return http_error(404, "Entry does not exist in this ZIP file.", format=format)
+
+                # replace zip0 with the generated zip file
+                temp_renaming_file = archivefile + '.' + str(time_ns() + 1)
+                os.rename(archivefile, temp_renaming_file)
+                os.rename(temp_writing_file, archivefile)
+                os.remove(temp_renaming_file)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this ZIP file.", format=format)
+
+        else:
+            if not os.path.lexists(localpath):
+                return http_error(404, "File does not exist.", format=format)
+
+            if os.path.islink(localpath):
+                try:
+                    os.remove(localpath)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to delete this link.", format=format)
+            elif os.path.isfile(localpath):
+                try:
+                    os.remove(localpath)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to delete this file.", format=format)
+            elif os.path.isdir(localpath):
+                try:
+                    try:
+                        # try rmdir for a possible windows directory junction,
+                        # which is not detected by os.path.islink
+                        os.rmdir(localpath)
+                    except OSError:
+                        # directory not empty
+                        shutil.rmtree(localpath)
+                except:
+                    traceback.print_exc()
+                    return http_error(500, "Unable to delete this directory.", format=format)
+
+    @_handle_advanced
+    @_handle_writing
+    def move(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            query=None,
+            format=None,
+            *args, **kwargs):
+        """Move a file or directory."""
+        if archivefile:
+            return http_error(400, "File is inside an archive file.", format=format)
+
+        if not os.path.lexists(localpath):
+            return http_error(404, "File does not exist.", format=format)
+
+        target = query.get('target')
+
+        if target is None:
+            return http_error(400, 'Target is not specified.', format=format)
+
+        targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
+
+        if not targetpath.startswith(os.path.join(runtime['root'], '')):
+            return http_error(403, "Unable to operate beyond the root directory.", format=format)
+
+        if os.path.lexists(targetpath):
+            return http_error(400, 'Found something at target "{}".'.format(target), format=format)
+
+        ta, tsa = get_archive_path(target, targetpath)
+        if ta:
+            return http_error(400, "Move target is inside an archive file.", format=format)
+
+        os.makedirs(os.path.dirname(targetpath), exist_ok=True)
+
+        try:
+            os.rename(localpath, targetpath)
+        except:
+            traceback.print_exc()
+            return http_error(500, 'Unable to move to target "{}".'.format(target), format=format)
+
+    @_handle_advanced
+    @_handle_writing
+    def copy(self,
+            localpath,
+            archivefile=None,
+            subarchivepath=None,
+            query=None,
+            format=None,
+            *args, **kwargs):
+        """Copy a file or directory."""
+        if archivefile:
+            return http_error(400, "File is inside an archive file.", format=format)
+
+        if not os.path.lexists(localpath):
+            return http_error(404, "File does not exist.", format=format)
+
+        target = query.get('target')
+
+        if target is None:
+            return http_error(400, 'Target is not specified.', format=format)
+
+        targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
+
+        if not targetpath.startswith(os.path.join(runtime['root'], '')):
+            return http_error(403, "Unable to operate beyond the root directory.", format=format)
+
+        if os.path.lexists(targetpath):
+            return http_error(400, 'Found something at target "{}".'.format(target), format=format)
+
+        ta, tsa = get_archive_path(target, targetpath)
+        if ta:
+            return http_error(400, "Copy target is inside an archive file.", format=format)
+
+        os.makedirs(os.path.dirname(targetpath), exist_ok=True)
+
+        try:
+            try:
+                shutil.copytree(localpath, targetpath)
+            except NotADirectoryError:
+                shutil.copy2(localpath, targetpath)
+        except:
+            traceback.print_exc()
+            return http_error(500, 'Unable to copy to target "{}".'.format(target), format=format)
+
+    _handle_advanced = staticmethod(_handle_advanced)
+    _handle_lock = staticmethod(_handle_lock)
+    _handle_writing = staticmethod(_handle_writing)
+
+action_handler = ActionHandler()
+
+
+@bp.route('/', methods=['GET', 'HEAD', 'POST'])
+@bp.route('/<path:filepath>', methods=['GET', 'HEAD', 'POST'])
+def handle_request(filepath=''):
+    """Handle an HTTP request (HEAD, GET, POST).
+    """
+    # replace SCRIPT_NAME with the custom if set
+    if runtime['config']['app']['base']:
+        request.environ['SCRIPT_NAME'] = runtime['config']['app']['base']
+
+    query = request.values
+
+    action = query.get('a', default='view')
+    action = query.get('action', default=action)
+
+    format = query.get('f')
+    format = query.get('format', default=format)
+
+    # handle authorization
+    auth_result = handle_authorization(action=action, format=format)
+    if auth_result is not None:
+        return auth_result
+
+    # determine primary variables
+    #
+    # filepath: the URL path below app base (not percent encoded)
+    # localpath: the file system path corresponding to filepath
+    # localtargetpath: localpath with symbolic link resolved
+    # mimetype: the mimetype from localtargetpath
+    # archivefile: the file system path of the ZIP archive file, or None
+    # subarchivepath: the URL path below archivefile (not percent encoded)
+    localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/\\')))
+    localtargetpath = os.path.realpath(localpath)
+    archivefile, subarchivepath = get_archive_path(filepath, localpath)
+    mimetype, _ = mimetypes.guess_type(localtargetpath)
+
+    return action_handler._handle_action(
+        action=action,
+        filepath=filepath,
+        localpath=localpath,
+        localtargetpath=localtargetpath,
+        archivefile=archivefile,
+        subarchivepath=subarchivepath,
+        mimetype=mimetype,
+        query=query,
+        format=format,
+        )
 
 
 def make_app(root=".", config=None):
