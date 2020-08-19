@@ -580,6 +580,49 @@ class ActionHandler():
 
         return wrapper
 
+    def _handle_renaming(func):
+        """A decorator function that helps handling a move/copy action.
+        """
+        @functools.wraps(func)
+        def wrapper(self,
+                localpath,
+                archivefile=None,
+                subarchivepath=None,
+                query=None,
+                format=None,
+                *args, **kwargs):
+            if archivefile:
+                return http_error(400, "File is inside an archive file.", format=format)
+
+            if not os.path.lexists(localpath):
+                return http_error(404, "File does not exist.", format=format)
+
+            target = query.get('target')
+
+            if target is None:
+                return http_error(400, 'Target is not specified.', format=format)
+
+            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
+
+            if not targetpath.startswith(os.path.join(runtime['root'], '')):
+                return http_error(403, "Unable to operate beyond the root directory.", format=format)
+
+            if os.path.lexists(targetpath):
+                return http_error(400, 'Found something at target "{}".'.format(target), format=format)
+
+            ta, tsa = get_archive_path(target, targetpath)
+            if ta:
+                return http_error(400, "Target is inside an archive file.", format=format)
+
+            return func(
+                self=self,
+                localpath=localpath,
+                targetpath=targetpath,
+                format=format,
+                *args, **kwargs)
+
+        return wrapper
+
     def unknown(self, format=None, *args, **kwargs):
         """Default handler for an undefined action"""
         return http_error(400, "Action not supported.", format=format)
@@ -1136,37 +1179,13 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_writing
+    @_handle_renaming
     def move(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
-            query=None,
+            targetpath,
             format=None,
             *args, **kwargs):
         """Move a file or directory."""
-        if archivefile:
-            return http_error(400, "File is inside an archive file.", format=format)
-
-        if not os.path.lexists(localpath):
-            return http_error(404, "File does not exist.", format=format)
-
-        target = query.get('target')
-
-        if target is None:
-            return http_error(400, 'Target is not specified.', format=format)
-
-        targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
-
-        if not targetpath.startswith(os.path.join(runtime['root'], '')):
-            return http_error(403, "Unable to operate beyond the root directory.", format=format)
-
-        if os.path.lexists(targetpath):
-            return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-
-        ta, tsa = get_archive_path(target, targetpath)
-        if ta:
-            return http_error(400, "Move target is inside an archive file.", format=format)
-
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
         try:
@@ -1177,37 +1196,13 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_writing
+    @_handle_renaming
     def copy(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
-            query=None,
+            targetpath,
             format=None,
             *args, **kwargs):
         """Copy a file or directory."""
-        if archivefile:
-            return http_error(400, "File is inside an archive file.", format=format)
-
-        if not os.path.lexists(localpath):
-            return http_error(404, "File does not exist.", format=format)
-
-        target = query.get('target')
-
-        if target is None:
-            return http_error(400, 'Target is not specified.', format=format)
-
-        targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
-
-        if not targetpath.startswith(os.path.join(runtime['root'], '')):
-            return http_error(403, "Unable to operate beyond the root directory.", format=format)
-
-        if os.path.lexists(targetpath):
-            return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-
-        ta, tsa = get_archive_path(target, targetpath)
-        if ta:
-            return http_error(400, "Copy target is inside an archive file.", format=format)
-
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
         try:
@@ -1222,6 +1217,7 @@ class ActionHandler():
     _handle_advanced = staticmethod(_handle_advanced)
     _handle_lock = staticmethod(_handle_lock)
     _handle_writing = staticmethod(_handle_writing)
+    _handle_renaming = staticmethod(_handle_renaming)
 
 action_handler = ActionHandler()
 

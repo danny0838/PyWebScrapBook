@@ -2411,7 +2411,7 @@ class TestMove(unittest.TestCase):
                 })
 
             self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Move target is inside an archive file.')
+            self.assertEqual(r.data.decode('UTF-8'), 'Target is inside an archive file.')
 
 class TestCopy(unittest.TestCase):
     def setUp(self):
@@ -2677,7 +2677,7 @@ class TestCopy(unittest.TestCase):
                 })
 
             self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Copy target is inside an archive file.')
+            self.assertEqual(r.data.decode('UTF-8'), 'Target is inside an archive file.')
 
 class TestUnknown(unittest.TestCase):
     def test_unknown(self):
