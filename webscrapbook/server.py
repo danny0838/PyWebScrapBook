@@ -43,7 +43,6 @@ def serve(root, **kwargs):
             scheme=scheme, host=host2, port=port))
     print('Hit Ctrl-C to shutdown.')
 
-    WSGIRequestHandler.protocol_version = "HTTP/1.1"
     srv = make_server(
         host=host,
         port=port,
@@ -52,6 +51,7 @@ def serve(root, **kwargs):
         processes=1,
         ssl_context=((ssl_cert, ssl_key) if ssl_cert and ssl_key
                 else 'adhoc' if ssl_on else None),
+        request_handler=RequestHandler,
         )
 
     # launch browser
@@ -74,3 +74,7 @@ def serve(root, **kwargs):
 
     # start server
     srv.serve_forever()
+
+
+class RequestHandler(WSGIRequestHandler):
+    protocol_version = "HTTP/1.1"
