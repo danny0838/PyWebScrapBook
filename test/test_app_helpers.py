@@ -131,12 +131,12 @@ class TestFunctions(unittest.TestCase):
                 with zipfile.ZipFile(tempfile, 'w') as zip:
                     pass
 
-                self.assertEqual(wsbapp.get_archive_path('entry.zip'), (None, None))
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!'), (None, None))
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/'), (tempfile, ''))
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir'), (tempfile, 'subdir'))
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir/'), (tempfile, 'subdir'))
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/index.html'), (tempfile, 'index.html'))
+                self.assertEqual(wsbapp.get_archive_path('entry.zip'), [os.path.join(root, 'entry.zip')])
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!'), [os.path.join(root, 'entry.zip!')])
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/'), [os.path.join(root, 'entry.zip'), ''])
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir'), [os.path.join(root, 'entry.zip'), 'subdir'])
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir/'), [os.path.join(root, 'entry.zip'), 'subdir'])
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/index.html'), [os.path.join(root, 'entry.zip'), 'index.html'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -162,7 +162,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (None, None))
+                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -187,7 +187,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (None, None))
+                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -210,7 +210,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (os.path.join(root, 'entry.zip!', 'entry1.zip'), ''))
+                    [os.path.join(root, 'entry.zip!', 'entry1.zip'), ''])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -231,7 +231,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (None, None))
+                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -253,7 +253,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (None, None))
+                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -273,7 +273,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (os.path.join(root, 'entry.zip'), 'entry1.zip!'))
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -293,7 +293,7 @@ class TestFunctions(unittest.TestCase):
 
                 self.assertEqual(
                     wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    (None, None))
+                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -303,6 +303,295 @@ class TestFunctions(unittest.TestCase):
                     pass
                 try:
                     os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+    def test_get_archive_path3(self):
+        """Handle recursive sub-archive path."""
+        # entry1.zip!/entry2.zip!/ >
+        # entry1.zip!/entry2.zip >
+        # entry1.zip!/ >
+        # entry1.zip entry2.zip!/ >
+        # entry1.zip entry2.zip >
+        # entry1.zip >
+        # other
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            # entry1.zip!/entry2.zip!/ > entry1.zip!/entry2.zip
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.writestr('entry1.zip!/entry2.zip!/', '')
+
+                    buf2 = io.BytesIO()
+                    with zipfile.ZipFile(buf2, 'w') as zip2:
+                        pass
+                    zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+                    zip.writestr('entry1.zip!/', '')
+
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip!/entry2.zip!/ > entry1.zip!/entry2.zip
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.writestr('entry1.zip!/entry2.zip!/.gitkeep', '')
+
+                    buf2 = io.BytesIO()
+                    with zipfile.ZipFile(buf2, 'w') as zip2:
+                        pass
+                    zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+                    zip.writestr('entry1.zip!/', '')
+
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip!/entry2.zip > entry1.zip!/
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf2 = io.BytesIO()
+                    with zipfile.ZipFile(buf2, 'w') as zip2:
+                        pass
+                    zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+                    zip.writestr('entry1.zip!/', '')
+
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip', ''])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip!/ > entry1.zip entry2.zip!/
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.writestr('entry1.zip!/entry2.zip', 'non-zip')
+
+                    zip.writestr('entry1.zip!/', '')
+
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip!/ > entry1.zip entry2.zip!/
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.writestr('entry1.zip!/', '')
+
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip!/ > entry1.zip entry2.zip!/
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.writestr('entry1.zip!/.gitkeep', '')
+
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!/', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip!/.gitkeep', '')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip entry2.zip > entry1.zip
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w'):
+                            pass
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip', ''])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # entry1.zip
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('entry2.zip', 'non-zip')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # other
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.writestr('entry1.zip', 'non-zip')
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # other
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
+                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+            finally:
+                try:
+                    os.remove(tempfile)
                 except FileNotFoundError:
                     pass
 
