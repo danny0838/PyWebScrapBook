@@ -122,25 +122,22 @@ def get_archive_path(filepath):
     """Parse archive file path and the sub-archive path.
 
     - Priority:
-      /path/to/fileordir.htz!
-      /path/to/fileordir.htz
-      /path/to/fileordir.htz!/path/to/fileordir.htz!
-      /path/to/fileordir.htz!/path/to/fileordir.htz
-      ...
+      entry.zip!/entry1.zip!/ = entry.zip!/entry1.zip! >
+      entry.zip!/entry1.zip >
+      entry.zip!/ = entry.zip! >
+      entry.zip
 
     Returns:
         a tuple (archivefile, subarchivepath).
     """
-    localpath = os.path.join(runtime['root'], filepath.strip('/'))
-    if not os.path.lexists(localpath):
-        for m in re.finditer(r'!/', filepath, flags=re.I):
-            archivefile = os.path.normpath(os.path.join(runtime['root'], filepath[:m.start(0)].strip('/')))
-            if os.path.isdir(archivefile + '!'):
-                return (None, None)
+    for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
+        archivefile = os.path.normpath(os.path.join(runtime['root'], filepath[:m.start(0)].strip('/')))
+        if os.path.lexists(archivefile + '!'):
+            break
 
-            if zipfile.is_zipfile(archivefile):
-                subarchivepath = filepath[m.end(0):].rstrip('/')
-                return (archivefile, subarchivepath)
+        if zipfile.is_zipfile(archivefile):
+            subarchivepath = filepath[m.end(0):].rstrip('/')
+            return (archivefile, subarchivepath)
 
     return (None, None)
 
