@@ -118,7 +118,7 @@ def http_error(status=500, body=None, headers=None, format=None):
         return abort(status)
 
 
-def get_archive_path(filepath, localpath):
+def get_archive_path(filepath):
     """Parse archive file path and the sub-archive path.
 
     - Priority:
@@ -131,6 +131,7 @@ def get_archive_path(filepath, localpath):
     Returns:
         a tuple (archivefile, subarchivepath).
     """
+    localpath = os.path.join(runtime['root'], filepath.strip('/'))
     if not os.path.lexists(localpath):
         for m in re.finditer(r'!/', filepath, flags=re.I):
             archivefile = os.path.join(runtime['root'], filepath[:m.start(0)].strip('/'))
@@ -602,7 +603,7 @@ class ActionHandler():
             if os.path.lexists(targetpath):
                 return http_error(400, 'Found something at target "{}".'.format(target), format=format)
 
-            ta, tsa = get_archive_path(target, targetpath)
+            ta, tsa = get_archive_path(target)
             if ta:
                 return http_error(400, "Target is inside an archive file.", format=format)
 
@@ -1248,7 +1249,7 @@ def handle_request(filepath=''):
     # subarchivepath: the URL path below archivefile (not percent encoded)
     localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/')))
     localtargetpath = os.path.realpath(localpath)
-    archivefile, subarchivepath = get_archive_path(filepath, localpath)
+    archivefile, subarchivepath = get_archive_path(filepath)
     mimetype, _ = mimetypes.guess_type(localtargetpath)
 
     return action_handler._handle_action(
