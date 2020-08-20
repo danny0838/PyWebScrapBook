@@ -2,6 +2,7 @@ from unittest import mock
 import unittest
 import sys
 import os
+import shutil
 import io
 import zipfile
 from flask import current_app
@@ -64,6 +65,191 @@ class TestFunctions(unittest.TestCase):
                 base_url='http://example.com',
                 environ_base={'REMOTE_ADDR': '192.168.0.100'}):
             self.assertFalse(wsbapp.is_local_access())
+
+    def test_get_archive_path1(self):
+        """Basic logit for a sub-archive path."""
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    pass
+
+                self.assertEqual(wsbapp.get_archive_path('entry.zip'), (None, None))
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!'), (None, None))
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/'), (tempfile, ''))
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir'), (tempfile, 'subdir'))
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir/'), (tempfile, 'subdir'))
+                self.assertEqual(wsbapp.get_archive_path('entry.zip!/index.html'), (tempfile, 'index.html'))
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+    def test_get_archive_path2(self):
+        """Handle conflicting file or directory."""
+        # entry.zip!/entry1.zip!/ = entry.zip!/entry1.zip! >
+        # entry.zip!/entry1.zip >
+        # entry.zip!/ = entry.zip! >
+        # entry.zip
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            # entry.zip!/entry1.zip!/ > entry.zip!/entry1.zip
+            try:
+                os.makedirs(os.path.join(root, 'entry.zip!', 'entry1.zip!'), exist_ok=True)
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w') as zip:
+                    pass
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (None, None))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+            # entry.zip!/entry1.zip! > entry.zip!/entry1.zip
+            try:
+                os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+                with open(os.path.join(root, 'entry.zip!', 'entry1.zip!'), 'w') as f:
+                    pass
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w') as zip:
+                    pass
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (None, None))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+            # entry.zip!/entry1.zip > entry.zip!/
+            try:
+                os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w') as zip:
+                    pass
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (os.path.join(root, 'entry.zip!', 'entry1.zip'), ''))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+            # entry.zip!/ > entry.zip
+            try:
+                os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (None, None))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+            # entry.zip! > entry.zip
+            try:
+                with open(os.path.join(root, 'entry.zip!'), 'w') as f:
+                    pass
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (None, None))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+            # entry.zip
+            try:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (os.path.join(root, 'entry.zip'), 'entry1.zip!'))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
+
+            # other
+            try:
+                with open(os.path.join(root, 'entry.zip'), 'w') as f:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
+                    (None, None))
+            finally:
+                try:
+                    shutil.rmtree(os.path.join(root, 'entry.zip!'))
+                except NotADirectoryError:
+                    os.remove(os.path.join(root, 'entry.zip!'))
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.remove(os.path.join(root, 'entry.zip'))
+                except FileNotFoundError:
+                    pass
 
     @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
     def test_get_permission1(self, mock_encrypt):
