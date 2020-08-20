@@ -152,52 +152,51 @@ def is_local_access():
     return util.is_localhost(server_host) or util.is_localhost(client_host) or server_host == client_host
 
 
-def verify_authorization(action):
+def get_permission(auth):
+    """Get effective permission of the current logged in user.
+    """
+    try:
+        auth_sections = runtime['config']['auth']
+    except KeyError:
+        return 'all'
+
+    auth = auth or {}
+    user = auth.get('username') or ''
+    pw = auth.get('password') or ''
+
+    for _, entry in auth_sections.items():
+        entry_user = entry.get('user', '')
+        entry_pw = entry.get('pw', '')
+        entry_pw_salt = entry.get('pw_salt', '')
+        entry_pw_type = entry.get('pw_type', '')
+        entry_permission = entry.get('permission', 'all')
+        if (user == entry_user and
+                util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
+            return entry_permission
+
+    return ''
+
+
+def verify_authorization(perm, action):
     """Check if authorized or not.
     """
-    def get_permission():
-        try:
-            auth_sections = runtime['config']['auth']
-        except KeyError:
-            return 'all'
+    if perm == 'all':
+        return True
 
-        auth = request.authorization or {}
-        user = auth.get('username') or ''
-        pw = auth.get('password') or ''
-
-        for _, entry in auth_sections.items():
-            entry_user = entry.get('user', '')
-            entry_pw = entry.get('pw', '')
-            entry_pw_salt = entry.get('pw_salt', '')
-            entry_pw_type = entry.get('pw_type', '')
-            entry_permission = entry.get('permission', 'all')
-            if (user == entry_user and
-                    util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
-                return entry_permission
-
-        return ''
-
-    def check_permission(permission):
-        if permission == 'all':
+    elif perm == 'read':
+        if action in {'token', 'lock', 'unlock', 'mkdir', 'save', 'delete', 'move', 'copy'}:
+            return False
+        else:
             return True
 
-        elif permission == 'read':
-            if action in ('token', 'lock', 'unlock', 'mkdir', 'save', 'delete', 'move', 'copy'):
-                return False
-            else:
-                return True
-
-        elif permission == 'view':
-            if action in ('view', 'source', 'static'):
-                return True
-            else:
-                return False
-
+    elif perm == 'view':
+        if action in {'view', 'source', 'static'}:
+            return True
         else:
             return False
 
-    perm = get_permission()
-    return check_permission(perm)
+    else:
+        return False
 
 
 def handle_directory_listing(localpath, recursive=False, format=None):
@@ -1233,7 +1232,8 @@ def handle_request(filepath=''):
     format = query.get('format', default=format)
 
     # handle authorization
-    if not verify_authorization(action):
+    perm = get_permission(request.authorization)
+    if not verify_authorization(perm, action):
         response = http_error(401, "You are not authorized.", format=format)
         response.www_authenticate.set_basic("Authentication required.")
         return response
