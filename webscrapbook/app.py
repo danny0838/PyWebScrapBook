@@ -132,8 +132,8 @@ def get_archive_path(filepath, localpath):
         a tuple (archivefile, subarchivepath).
     """
     if not os.path.lexists(localpath):
-        for m in re.finditer(r'![/\\]', filepath, flags=re.I):
-            archivefile = os.path.join(runtime['root'], filepath[:m.start(0)].strip('/\\'))
+        for m in re.finditer(r'!/', filepath, flags=re.I):
+            archivefile = os.path.join(runtime['root'], filepath[:m.start(0)].strip('/'))
             if os.path.isdir(archivefile + '!'):
                 return (None, None)
 
@@ -1246,7 +1246,7 @@ def handle_request(filepath=''):
     # mimetype: the mimetype from localtargetpath
     # archivefile: the file system path of the ZIP archive file, or None
     # subarchivepath: the URL path below archivefile (not percent encoded)
-    localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/\\')))
+    localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/')))
     localtargetpath = os.path.realpath(localpath)
     archivefile, subarchivepath = get_archive_path(filepath, localpath)
     mimetype, _ = mimetypes.guess_type(localtargetpath)
