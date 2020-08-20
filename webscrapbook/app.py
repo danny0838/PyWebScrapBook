@@ -152,11 +152,8 @@ def is_local_access():
     return util.is_localhost(server_host) or util.is_localhost(client_host) or server_host == client_host
 
 
-def handle_authorization(action, format=None):
+def verify_authorization(action):
     """Check if authorized or not.
-
-    Returns:
-        None if authorization passed, otherwise the header and body for authorization.
     """
     def get_permission():
         try:
@@ -200,11 +197,7 @@ def handle_authorization(action, format=None):
             return False
 
     perm = get_permission()
-
-    if not check_permission(perm):
-        response = http_error(401, "You are not authorized.", format=format)
-        response.www_authenticate.set_basic("Authentication required.")
-        return response
+    return check_permission(perm)
 
 
 def handle_directory_listing(localpath, recursive=False, format=None):
@@ -1240,9 +1233,10 @@ def handle_request(filepath=''):
     format = query.get('format', default=format)
 
     # handle authorization
-    auth_result = handle_authorization(action=action, format=format)
-    if auth_result is not None:
-        return auth_result
+    if not verify_authorization(action):
+        response = http_error(401, "You are not authorized.", format=format)
+        response.www_authenticate.set_basic("Authentication required.")
+        return response
 
     # determine primary variables
     #
