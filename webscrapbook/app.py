@@ -134,7 +134,7 @@ def get_archive_path(filepath):
     localpath = os.path.join(runtime['root'], filepath.strip('/'))
     if not os.path.lexists(localpath):
         for m in re.finditer(r'!/', filepath, flags=re.I):
-            archivefile = os.path.join(runtime['root'], filepath[:m.start(0)].strip('/'))
+            archivefile = os.path.normpath(os.path.join(runtime['root'], filepath[:m.start(0)].strip('/')))
             if os.path.isdir(archivefile + '!'):
                 return (None, None)
 
