@@ -643,21 +643,21 @@ class ActionHandler():
 
         # handle directory
         if os.path.isdir(localpath):
-            return handle_directory_listing(localtargetpath)
+            return handle_directory_listing(localpath)
 
         # handle file
         elif os.path.isfile(localpath):
             # view archive file
             if mimetype in ("application/html+zip", "application/x-maff"):
-                return handle_archive_viewing(localtargetpath, mimetype)
+                return handle_archive_viewing(localpath, mimetype)
 
             # view markdown
             if mimetype == "text/markdown":
-                return handle_markdown_output(filepath, localtargetpath)
+                return handle_markdown_output(filepath, localpath)
 
             # convert meta refresh to 302 redirect
             if localtargetpath.lower().endswith('.htm'):
-                target = util.parse_meta_refresh(localtargetpath).target
+                target = util.parse_meta_refresh(localpath).target
 
                 if target is not None:
                     # Keep several chars as javascript encodeURI do,
@@ -714,7 +714,6 @@ class ActionHandler():
 
     def list(self,
             localpath,
-            localtargetpath,
             archivefile=None,
             subarchivepath=None,
             query=None,
@@ -730,7 +729,7 @@ class ActionHandler():
             return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, recursive=recursive, format=format)
 
         if os.path.isdir(localpath):
-            return handle_directory_listing(localtargetpath, recursive=recursive, format=format)
+            return handle_directory_listing(localpath, recursive=recursive, format=format)
 
         return http_error(404, "Directory does not exist.", format=format)
 
