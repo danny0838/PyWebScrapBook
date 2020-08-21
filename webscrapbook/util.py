@@ -3,6 +3,7 @@
 """
 import sys, os
 import subprocess
+import collections
 from collections import namedtuple
 from lxml import etree
 import zipfile
@@ -17,6 +18,64 @@ try:
     from secrets import token_urlsafe
 except ImportError:
     from .lib.shim.secrets import token_urlsafe
+
+
+#########################################################################
+# Abstract classes
+#########################################################################
+
+class frozendict(collections.abc.Mapping):
+    """Implementation of a frozen dict, which is hashable if all values
+       are hashable.
+    """
+    def __init__(self, *args, **kwargs):
+        self._d = dict(*args, **kwargs)
+        self._hash = None
+
+    def __repr__(self):
+        return '{}({})'.format(type(self).__name__, self._d.__repr__())
+
+    def __iter__(self):
+        return iter(self._d)
+
+    def __len__(self):
+        return len(self._d)
+
+    def __getitem__(self, key):
+        return self._d[key]
+
+    def __reversed__(self):
+        try:
+            return reversed(self._d)
+        except TypeError:
+            # reversed(dict) not supported in Python < 3.8
+            # shim via reversing a list
+            return reversed(list(self._d))
+
+    def __hash__(self):
+        if self._hash is None:
+            self._hash = hash(frozenset(self.items()))
+        return self._hash
+
+    def copy(self):
+        return self.__class__(self._d.copy())
+
+
+#########################################################################
+# Objects handling
+#########################################################################
+
+def make_hashable(obj):
+    if isinstance(obj, collections.abc.Hashable):
+        return obj
+    elif isinstance(obj, collections.abc.Set):
+        return frozenset(make_hashable(v) for v in obj)
+    elif isinstance(obj, collections.abc.Sequence):
+        return tuple(make_hashable(v) for v in obj)
+    elif isinstance(obj, collections.abc.Mapping):
+        return frozendict((k, make_hashable(v)) for k, v in obj.items())
+    else:
+        raise TypeError("unable to make '{}' hashable".format(type(obj).__name__))
 
 
 #########################################################################
