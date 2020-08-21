@@ -10,12 +10,13 @@ from base64 import b64encode
 from functools import partial
 from flask import request
 from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
-from webscrapbook.app import make_app
+from webscrapbook.app import make_app, action_handler
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_config')
 server_config = os.path.join(server_root, WSB_DIR, WSB_LOCAL_CONFIG)
 
+all_actions = [attr for attr in dir(action_handler) if not attr.startswith('_')]
 mocking = None
 
 def setUpModule():
@@ -421,25 +422,73 @@ class TestAuth(unittest.TestCase):
         credentials = b64encode('{}:{}'.format(user, password).encode('utf-8')).decode('utf-8')
         return {'Authorization': 'Basic {}'.format(credentials)}
 
-    def simple_auth_check(self, response):
-        self.assertRegex(response.headers['WWW-Authenticate'], r'Basic realm="([^"]*)"')
+    def simple_auth_check(self, response, bool=True):
+        if bool:
+            self.assertRegex(response.headers['WWW-Authenticate'], r'Basic realm="([^"]*)"')
+        else:
+            with self.assertRaises(KeyError):
+                response.headers['WWW-Authenticate']
 
-    def test_basic(self):
+    @mock.patch('webscrapbook.app.ActionHandler._handle_action', return_value='')
+    @mock.patch('webscrapbook.app.get_permission')
+    def test_get_permission(self, mock_perm, *_):
+        """Check if HTTP authorization info is passed to get_permission()."""
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            for method in ('HEAD', 'GET', 'POST'):
+                for auth in (None, ('', ''), ('user', ''), ('', 'pass'), ('user', 'pass')):
+                    with self.subTest(method=method, auth=auth):
+                        if auth is None:
+                            headers = None
+                            expected = None
+                        else:
+                            user, pw = auth
+                            headers = self.simple_auth_headers(user, pw)
+                            expected = {'username': user, 'password': pw}
+
+                        mock_perm.reset_mock()
+                        c.open('/', method=method, headers=headers)
+                        mock_perm.assert_called_with(expected)
+
+    @mock.patch('webscrapbook.app.ActionHandler._handle_action', return_value='')
+    @mock.patch('webscrapbook.app.verify_authorization')
+    def test_verify_authorization(self, mock_auth, *_):
+        """Check if action is passed to verify_authorization()."""
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            for method in ('HEAD', 'GET', 'POST'):
+                for action in [None, *all_actions]:
+                    with self.subTest(method=method, action=action):
+                        if action is None:
+                            query = None
+                            expected = 'view'
+                        else:
+                            query = {'a': action}
+                            expected = action
+
+                        mock_auth.reset_mock()
+                        c.open('/', method=method, query_string=query)
+                        self.assertEqual(mock_auth.call_args[0][1], expected)
+
+    def test_request(self):
+        """Random request challanges."""
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""\
-[auth "user"]
-user = user
-pw = pass
-pw_salt = 
+[auth "anony"]
+user =
+pw = salt
+pw_salt = salt
 pw_type = plain
-permission = all
+permission = view
 
 [auth "user1"]
 user = user1
 pw = pass1salt
 pw_salt = salt
 pw_type = plain
-permission = all
+permission = read
 
 [auth "user2"]
 user = user2
@@ -452,120 +501,16 @@ permission = all
         app = make_app(server_root)
         app.testing = True
         with app.test_client() as c:
-            get = partial(c.get)
-
-            # no auth input
-            r = get('/')
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            # anonymous
-            r = get('/', headers=self.simple_auth_headers('', ''))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            r = get('/', headers=self.simple_auth_headers('', 'pass'))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            # unknown
-            r = get('/', headers=self.simple_auth_headers('nonexist', ''))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            r = get('/', headers=self.simple_auth_headers('nonexist', 'pass'))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            # user
-            r = get('/', headers=self.simple_auth_headers('user', 'pass'))
-            self.assertEqual(r.status_code, 200)
-
-            r = get('/', headers=self.simple_auth_headers('user', ''))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            r = get('/', headers=self.simple_auth_headers('user', 'passsalt'))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            r = get('/', headers=self.simple_auth_headers('user', 'pass1'))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            # user1
-            r = get('/', headers=self.simple_auth_headers('user1', 'pass1'))
-            self.assertEqual(r.status_code, 200)
-
-            r = get('/', headers=self.simple_auth_headers('user1', 'pass'))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            # user2
-            r = get('/', headers=self.simple_auth_headers('user2', 'pass2'))
-            self.assertEqual(r.status_code, 200)
-
-            r = get('/', headers=self.simple_auth_headers('user2', 'pass'))
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-    def test_permission(self):
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
-[auth "user1"]
-user = user1
-pw = passsalt
-pw_salt = salt
-pw_type = plain
-permission = all
-
-[auth "user2"]
-user = user2
-pw = passsalt
-pw_salt = salt
-pw_type = plain
-permission = read
-
-[auth "user3"]
-user = user3
-pw = passsalt
-pw_salt = salt
-pw_type = plain
-permission = view
-
-[auth "user4"]
-user = user4
-pw = passsalt
-pw_salt = salt
-pw_type = plain
-permission =
-""")
-
-        app = make_app(server_root)
-        app.testing = True
-        with app.test_client() as c:
             try:
-                # no auth input
+                # no auth input = anonymous
                 get = partial(c.get)
                 post = partial(c.post)
 
                 r = get('/')
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/index.html', query_string={'a': 'source'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/common.css', query_string={'a': 'static'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
+                self.assertEqual(r.status_code, 200)
+                self.simple_auth_check(r, False)
 
                 r = get('/', query_string={'a': 'config', 'f': 'json'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/', query_string={'a': 'list', 'f': 'json'})
                 self.assertEqual(r.status_code, 401)
                 self.simple_auth_check(r)
 
@@ -573,168 +518,41 @@ permission =
                 self.assertEqual(r.status_code, 401)
                 self.simple_auth_check(r)
 
-                r = post('/temp/test.txt', data={
-                    'token': token(get),
-                    'a': 'save',
-                    'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
-                    })
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                # user1 - all
-                get = partial(c.get, headers=self.simple_auth_headers('user1', 'pass'), buffered=True)
-                post = partial(c.post, headers=self.simple_auth_headers('user1', 'pass'))
-
-                r = get('/')
-                self.assertEqual(r.status_code, 200)
+                # user1 - read
+                get = partial(c.get, headers=self.simple_auth_headers('user1', 'pass1'), buffered=True)
+                post = partial(c.post, headers=self.simple_auth_headers('user1', 'pass1'))
 
                 r = get('/index.html', query_string={'a': 'source'})
                 self.assertEqual(r.status_code, 200)
-
-                r = get('/common.css', query_string={'a': 'static'})
-                self.assertEqual(r.status_code, 200)
-
-                r = get('/', query_string={'a': 'config', 'f': 'json'})
-                self.assertEqual(r.status_code, 200)
+                self.simple_auth_check(r, False)
 
                 r = get('/', query_string={'a': 'list', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
-
-                r = get('/', query_string={'a': 'token'})
-                self.assertEqual(r.status_code, 200)
-
-                r = post('/', data={
-                    'token': token(get),
-                    'a': 'lock',
-                    'name': 'test',
-                    })
-                self.assertEqual(r.status_code, 204)
-
-                r = post('/', data={
-                    'token': token(get),
-                    'a': 'unlock',
-                    'name': 'test',
-                    })
-                self.assertEqual(r.status_code, 204)
-
-                r = post('/temp/subdir', data={
-                    'token': token(get),
-                    'a': 'mkdir',
-                    })
-                self.assertEqual(r.status_code, 204)
-
-                r = post('/temp/test.txt', data={
-                    'token': token(get),
-                    'a': 'save',
-                    'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
-                    })
-                self.assertEqual(r.status_code, 204)
-
-                r = post('/temp/test.txt', data={
-                    'token': token(get),
-                    'a': 'delete',
-                    })
-                self.assertEqual(r.status_code, 204)
-
-                # user2 - read
-                get = partial(c.get, headers=self.simple_auth_headers('user2', 'pass'), buffered=True)
-                post = partial(c.post, headers=self.simple_auth_headers('user2', 'pass'))
-
-                r = get('/')
-                self.assertEqual(r.status_code, 200)
-
-                r = get('/index.html', query_string={'a': 'source'})
-                self.assertEqual(r.status_code, 200)
-
-                r = get('/common.css', query_string={'a': 'static'})
-                self.assertEqual(r.status_code, 200)
-
-                r = get('/', query_string={'a': 'config', 'f': 'json'})
-                self.assertEqual(r.status_code, 200)
-
-                r = get('/', query_string={'a': 'list', 'f': 'json'})
-                self.assertEqual(r.status_code, 200)
+                self.simple_auth_check(r, False)
 
                 r = get('/', query_string={'a': 'token'})
                 self.assertEqual(r.status_code, 401)
                 self.simple_auth_check(r)
 
-                r = post('/temp/test.txt', data={
-                    'token': token(get),
-                    'a': 'save',
-                    'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
-                    })
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                # user3 - view
-                get = partial(c.get, headers=self.simple_auth_headers('user3', 'pass'), buffered=True)
-                post = partial(c.post, headers=self.simple_auth_headers('user3', 'pass'))
-
-                r = get('/')
-                self.assertEqual(r.status_code, 200)
-
-                r = get('/index.html', query_string={'a': 'source'})
-                self.assertEqual(r.status_code, 200)
+                # user2 - all
+                get = partial(c.get, headers=self.simple_auth_headers('user2', 'pass2'), buffered=True)
+                post = partial(c.post, headers=self.simple_auth_headers('user2', 'pass2'))
 
                 r = get('/common.css', query_string={'a': 'static'})
                 self.assertEqual(r.status_code, 200)
+                self.simple_auth_check(r, False)
 
                 r = get('/', query_string={'a': 'config', 'f': 'json'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/', query_string={'a': 'list', 'f': 'json'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/', query_string={'a': 'token'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
+                self.assertEqual(r.status_code, 200)
+                self.simple_auth_check(r, False)
 
                 r = post('/temp/test.txt', data={
                     'token': token(get),
                     'a': 'save',
                     'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                     })
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                # user4 - none
-                get = partial(c.get, headers=self.simple_auth_headers('user4', 'pass'))
-                post = partial(c.post, headers=self.simple_auth_headers('user4', 'pass'))
-
-                r = get('/')
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/index.html', query_string={'a': 'source'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/common.css', query_string={'a': 'static'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/', query_string={'a': 'config', 'f': 'json'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/', query_string={'a': 'list', 'f': 'json'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = get('/', query_string={'a': 'token'})
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
-
-                r = post('/temp/test.txt', data={
-                    'token': token(get),
-                    'a': 'save',
-                    'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
-                    })
-                self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
+                self.assertEqual(r.status_code, 204)
+                self.simple_auth_check(r, False)
             finally:
                 try:
                     shutil.rmtree(os.path.join(server_root, 'temp'))
@@ -742,52 +560,6 @@ permission =
                     os.remove(os.path.join(server_root, 'temp'))
                 except FileNotFoundError:
                     pass
-
-    def test_anonymous(self):
-        # Check if no input works same as empty user and password.
-        # Check if permission for an anonymous user works.
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
-[auth "anonymous"]
-user =
-pw =
-pw_salt =
-pw_type = plain
-permission = view
-""")
-
-        app = make_app(server_root)
-        app.testing = True
-        with app.test_client() as c:
-            # no auth input
-            get = partial(c.get)
-            post = partial(c.post)
-
-            r = get('/')
-            self.assertEqual(r.status_code, 200)
-
-            r = get('/', query_string={'a': 'config', 'f': 'json'})
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            r = get('/', query_string={'a': 'token'})
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            # anonymous
-            get = partial(get, headers=self.simple_auth_headers('', ''))
-            post = partial(post, headers=self.simple_auth_headers('', ''))
-
-            r = get('/')
-            self.assertEqual(r.status_code, 200)
-
-            r = get('/', query_string={'a': 'config', 'f': 'json'})
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
-
-            r = get('/', query_string={'a': 'token'})
-            self.assertEqual(r.status_code, 401)
-            self.simple_auth_check(r)
 
 if __name__ == '__main__':
     unittest.main()
