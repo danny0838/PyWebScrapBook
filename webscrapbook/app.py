@@ -1102,7 +1102,7 @@ def make_app(root=".", config=None):
     _runtime['token_handler'] = util.TokenHandler(_runtime['tokens'])
 
     # main app instance
-    app = flask.Flask(__name__, root_path=_runtime['root'])
+    app = flask.Flask(__name__, instance_path=_runtime['root'])
     app.register_blueprint(bp)
     app.config['WEBSCRAPBOOK_RUNTIME'] = _runtime
 
