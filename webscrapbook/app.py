@@ -24,6 +24,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.http import is_resource_modified
 from werkzeug.http import http_date
 from werkzeug.http import parse_options_header, dump_options_header
+from werkzeug.utils import cached_property
 import jinja2
 import commonmark
 
@@ -475,6 +476,40 @@ def handle_markdown_output(filename):
             )
 
     return http_response(body, headers=headers)
+
+
+class Request(flask.Request):
+    """Subclassed Request object for more useful properties.
+    """
+    @cached_property
+    def localpath(self):
+        """Corresponding filesystem path of the requested path."""
+        return os.path.normpath(os.path.join(runtime['root'], self.path.strip('/')))
+
+    @cached_property
+    def localrealpath(self):
+        """Like localpath, but with symlinks resolved."""
+        return os.path.realpath(self.localpath)
+
+    @cached_property
+    def localmimetype(self):
+        """Mimetype of the requested path."""
+        mimetype, _ = mimetypes.guess_type(self.localrealpath)
+        return mimetype
+
+    @cached_property
+    def action(self):
+        """Shortcut of the requested action."""
+        rv = request.values.get('a', default='view')
+        rv = request.values.get('action', default=rv)
+        return rv
+
+    @cached_property
+    def format(self):
+        """Shortcut of the requested format."""
+        rv = request.values.get('f')
+        rv = request.values.get('format', default=rv)
+        return rv
 
 
 class ActionHandler():
@@ -1220,18 +1255,10 @@ def handle_request(filepath=''):
     if runtime['config']['app']['base']:
         request.environ['SCRIPT_NAME'] = runtime['config']['app']['base']
 
-    query = request.values
-
-    action = query.get('a', default='view')
-    action = query.get('action', default=action)
-
-    format = query.get('f')
-    format = query.get('format', default=format)
-
     # handle authorization
     perm = get_permission(request.authorization)
-    if not verify_authorization(perm, action):
-        response = http_error(401, "You are not authorized.", format=format)
+    if not verify_authorization(perm, request.action):
+        response = http_error(401, "You are not authorized.", format=request.format)
         response.www_authenticate.set_basic("Authentication required.")
         return response
 
@@ -1243,21 +1270,21 @@ def handle_request(filepath=''):
     # mimetype: the mimetype from localtargetpath
     # archivefile: the file system path of the ZIP archive file, or None
     # subarchivepath: the URL path below archivefile (not percent encoded)
-    localpath = os.path.abspath(os.path.join(runtime['root'], filepath.strip('/')))
-    localtargetpath = os.path.realpath(localpath)
+    localpath = request.localpath
+    localtargetpath = request.localrealpath
     archivefile, subarchivepath = get_archive_path(filepath)
     mimetype, _ = mimetypes.guess_type(localtargetpath)
 
     return action_handler._handle_action(
-        action=action,
+        action=request.action,
         filepath=filepath,
         localpath=localpath,
         localtargetpath=localtargetpath,
         archivefile=archivefile,
         subarchivepath=subarchivepath,
         mimetype=mimetype,
-        query=query,
-        format=format,
+        query=request.values,
+        format=request.format,
         )
 
 
@@ -1289,6 +1316,7 @@ def make_app(root=".", config=None):
     # main app instance
     app = flask.Flask(__name__, instance_path=_runtime['root'])
     app.register_blueprint(bp)
+    app.request_class = Request
     app.config['WEBSCRAPBOOK_RUNTIME'] = _runtime
 
     xheaders = {

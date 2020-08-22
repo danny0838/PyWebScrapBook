@@ -5,7 +5,7 @@ import os
 import shutil
 import io
 import zipfile
-from flask import current_app
+from flask import current_app, request
 import webscrapbook
 from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
 from webscrapbook import app as wsbapp
@@ -396,6 +396,39 @@ class TestFunctions(unittest.TestCase):
         app = wsbapp.make_app(root, config)
         with app.app_context():
             self.assertEqual(current_app.config['WEBSCRAPBOOK_RUNTIME']['config']['app']['name'], 'mywsb2')
+
+class TestRequest(unittest.TestCase):
+    def test_action(self):
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.test_client() as c:
+            r = c.get('/index.html')
+            self.assertEqual(request.action, 'view')
+
+            r = c.get('/index.html', query_string={'action': 'source'})
+            self.assertEqual(request.action, 'source')
+
+            r = c.get('/index.html', query_string={'a': 'source'})
+            self.assertEqual(request.action, 'source')
+
+            r = c.get('/index.html', query_string={'a': 'source', 'action': 'static'})
+            self.assertEqual(request.action, 'static')
+
+    def test_format(self):
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.test_client() as c:
+            r = c.get('/index.html')
+            self.assertEqual(request.format, None)
+
+            r = c.get('/index.html', query_string={'format': 'json'})
+            self.assertEqual(request.format, 'json')
+
+            r = c.get('/index.html', query_string={'f': 'json'})
+            self.assertEqual(request.format, 'json')
+
+            r = c.get('/index.html', query_string={'f': 'json', 'format': 'sse'})
+            self.assertEqual(request.format, 'sse')
 
 if __name__ == '__main__':
     unittest.main()
