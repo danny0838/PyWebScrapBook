@@ -89,7 +89,7 @@ def http_response(body='', status=None, headers=None, format=None):
         body = wrapper(body)
 
     else:
-        return http_error(400, 'Output format "{}" is not supported.'.format(format), format=format)
+        return http_error(400, 'Output format "{}" is not supported.'.format(format))
 
     return Response(body, status, headers, mimetype=mimetype)
 
