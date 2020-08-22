@@ -439,7 +439,7 @@ def handle_archive_viewing(localpath, mimetype):
     return redirect(new_url)
 
 
-def handle_markdown_output(filepath, filename):
+def handle_markdown_output(filename):
     """Output processed markdown.
     """
     stats = os.stat(filename)
@@ -619,7 +619,6 @@ class ActionHandler():
         return http_error(400, "Action not supported.", format=format)
 
     def view(self,
-            filepath,
             localpath,
             localtargetpath,
             archivefile=None,
@@ -658,7 +657,7 @@ class ActionHandler():
 
             # view markdown
             if mimetype == "text/markdown":
-                return handle_markdown_output(filepath, localpath)
+                return handle_markdown_output(localpath)
 
             # convert meta refresh to 302 redirect
             if localtargetpath.lower().endswith('.htm'):
