@@ -748,7 +748,7 @@ class ActionHandler():
 
         for i in runtime['statics']:
             f = os.path.join(i, filepath)
-            if os.path.lexists(f):
+            if os.path.isfile(f):
                 return static_file(filepath, root=i)
         else:
             return http_error(404)
