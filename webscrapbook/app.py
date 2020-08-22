@@ -513,9 +513,19 @@ class Request(flask.Request):
 
 
 class ActionHandler():
-    def _handle_action(self, action, *args, **kwargs):
-        handler = getattr(self, action, None) or self.unknown
-        return handler(*args, **kwargs)
+    def _handle_action(self):
+        handler = getattr(self, request.action, None) or self.unknown
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
+        return handler(
+            filepath=request.path.lstrip('/'),
+            localpath=request.localpath,
+            localtargetpath=request.localrealpath,
+            archivefile=archivefile,
+            subarchivepath=subarchivepath,
+            mimetype=request.localmimetype,
+            query=request.values,
+            format=request.format,
+            )
 
     def _handle_advanced(func):
         """A decorator function that helps handling an advanced command.
@@ -1262,30 +1272,7 @@ def handle_request(filepath=''):
         response.www_authenticate.set_basic("Authentication required.")
         return response
 
-    # determine primary variables
-    #
-    # filepath: the URL path below app base (not percent encoded)
-    # localpath: the file system path corresponding to filepath
-    # localtargetpath: localpath with symbolic link resolved
-    # mimetype: the mimetype from localtargetpath
-    # archivefile: the file system path of the ZIP archive file, or None
-    # subarchivepath: the URL path below archivefile (not percent encoded)
-    localpath = request.localpath
-    localtargetpath = request.localrealpath
-    archivefile, subarchivepath = get_archive_path(filepath)
-    mimetype, _ = mimetypes.guess_type(localtargetpath)
-
-    return action_handler._handle_action(
-        action=request.action,
-        filepath=filepath,
-        localpath=localpath,
-        localtargetpath=localtargetpath,
-        archivefile=archivefile,
-        subarchivepath=subarchivepath,
-        mimetype=mimetype,
-        query=request.values,
-        format=request.format,
-        )
+    return action_handler._handle_action()
 
 
 def make_app(root=".", config=None):
