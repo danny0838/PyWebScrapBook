@@ -17,7 +17,7 @@ from zlib import adler32
 
 # dependency
 import flask
-from flask import request, Response, redirect, abort, render_template, send_from_directory
+from flask import request, Response, redirect, abort, render_template
 from flask import current_app
 from werkzeug.local import LocalProxy
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -42,10 +42,15 @@ bp = flask.Blueprint('default', __name__)
 runtime = LocalProxy(lambda: current_app.config['WEBSCRAPBOOK_RUNTIME'])
 
 
-def static_file(filepath, root=None, mimetype=None):
-    """Wrap send_file for customized behaviors.
+def static_file(filename, mimetype=None):
+    """Output the specified file to the client.
+
+    Args:
+        filename: absolute path of the file to output.
     """
-    response = send_from_directory(root or runtime['root'], filepath, mimetype=mimetype)
+    if not os.path.isfile(filename):
+        return http_error(404)
+    response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
     return response
@@ -666,7 +671,7 @@ class ActionHandler():
                     return redirect(new_url)
 
             # show static file for other cases
-            response = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+            response = static_file(localpath, mimetype=mimetype)
 
         # handle sub-archive path
         elif archivefile:
@@ -686,7 +691,7 @@ class ActionHandler():
         return response
 
     def source(self,
-            filepath,
+            localpath,
             archivefile=None,
             subarchivepath=None,
             mimetype=None,
@@ -700,7 +705,7 @@ class ActionHandler():
         if archivefile:
             response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
         else:
-            response = static_file(filepath, root=runtime['root'], mimetype=mimetype)
+            response = static_file(localpath, mimetype=mimetype)
 
         # show as inline plain text
         # @TODO: Chromium (80) seems to ignore header mimetype for certain types
@@ -744,7 +749,7 @@ class ActionHandler():
         for i in runtime['statics']:
             f = os.path.join(i, filepath)
             if os.path.isfile(f):
-                return static_file(filepath, root=i)
+                return static_file(f)
         else:
             return http_error(404)
 
