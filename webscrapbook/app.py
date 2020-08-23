@@ -515,13 +515,10 @@ class Request(flask.Request):
 class ActionHandler():
     def _handle_action(self):
         handler = getattr(self, request.action, None) or self.unknown
-        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
         return handler(
             filepath=request.path.lstrip('/'),
             localpath=request.localpath,
             localtargetpath=request.localrealpath,
-            archivefile=archivefile,
-            subarchivepath=subarchivepath,
             mimetype=request.localmimetype,
             query=request.values,
             format=request.format,
@@ -622,11 +619,11 @@ class ActionHandler():
         @functools.wraps(func)
         def wrapper(self,
                 localpath,
-                archivefile=None,
-                subarchivepath=None,
                 query=None,
                 format=None,
                 *args, **kwargs):
+            archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
+
             if archivefile:
                 return http_error(400, "File is inside an archive file.", format=format)
 
@@ -666,8 +663,6 @@ class ActionHandler():
     def view(self,
             localpath,
             localtargetpath,
-            archivefile=None,
-            subarchivepath=None,
             mimetype=None,
             format=None,
             *args, **kwargs):
@@ -675,6 +670,8 @@ class ActionHandler():
 
         If formatted, show information of the file or directory.
         """
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
+
         # show file information for other output formats
         if format:
             if archivefile:
@@ -736,8 +733,6 @@ class ActionHandler():
 
     def source(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             mimetype=None,
             query=None,
             format=None,
@@ -745,6 +740,8 @@ class ActionHandler():
         """Show file content as plain text."""
         if format:
             return http_error(400, "Action not supported.", format=format)
+
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
             response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
@@ -763,8 +760,6 @@ class ActionHandler():
 
     def list(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             query=None,
             format=None,
             *args, **kwargs):
@@ -773,6 +768,7 @@ class ActionHandler():
             return http_error(400, "Action not supported.", format=format)
 
         recursive = query.get('recursive', type=bool)
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
             return handle_zip_directory_listing(os.path.realpath(archivefile), os.path.realpath(archivefile), subarchivepath, recursive=recursive, format=format)
@@ -799,8 +795,6 @@ class ActionHandler():
 
     def edit(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             query=None,
             format=None,
             *args, **kwargs):
@@ -810,6 +804,8 @@ class ActionHandler():
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
+
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
             with zipfile.ZipFile(archivefile, 'r') as zip:
@@ -848,8 +844,6 @@ class ActionHandler():
 
     def editx(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             mimetype=None,
             format=None,
             *args, **kwargs):
@@ -862,6 +856,8 @@ class ActionHandler():
 
         if not mimetype in ("text/html", "application/xhtml+xml"):
             return http_error(400, "This is not an HTML file.", format=format)
+
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
             with zipfile.ZipFile(archivefile, 'r') as zip:
@@ -999,13 +995,13 @@ class ActionHandler():
     @_handle_writing
     def mkdir(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             format=None,
             *args, **kwargs):
         """Create a directory."""
         if os.path.lexists(localpath) and not os.path.isdir(localpath):
             return http_error(400, "Found a non-directory here.", format=format)
+
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
             try:
@@ -1032,14 +1028,14 @@ class ActionHandler():
     @_handle_writing
     def save(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             query=None,
             format=None,
             *args, **kwargs):
         """Write a file with provided text or uploaded stream."""
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
+
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
             try:
@@ -1131,11 +1127,11 @@ class ActionHandler():
     @_handle_writing
     def delete(self,
             localpath,
-            archivefile=None,
-            subarchivepath=None,
             format=None,
             *args, **kwargs):
         """Delete a file or directory."""
+        archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
+
         if archivefile:
             try:
                 temp_writing_file = archivefile + '.' + str(time_ns())
