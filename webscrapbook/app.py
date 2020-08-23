@@ -516,7 +516,6 @@ class ActionHandler():
     def _handle_action(self):
         handler = getattr(self, request.action, None) or self.unknown
         return handler(
-            filepath=request.path.lstrip('/'),
             localpath=request.localpath,
             mimetype=request.localmimetype,
             format=request.format,
@@ -770,13 +769,13 @@ class ActionHandler():
         return http_error(404, "Directory does not exist.", format=format)
 
     def static(self,
-            filepath,
             format=None,
             *args, **kwargs):
         """Show a static file of the current theme."""
         if format:
             return http_error(400, "Action not supported.", format=format)
 
+        filepath = request.path.strip('/')
         for i in runtime['statics']:
             f = os.path.join(i, filepath)
             if os.path.isfile(f):
