@@ -515,9 +515,7 @@ class Request(flask.Request):
 class ActionHandler():
     def _handle_action(self):
         handler = getattr(self, request.action, None) or self.unknown
-        return handler(
-            format=request.format,
-            )
+        return handler()
 
     def _handle_advanced(func):
         """A decorator function that helps handling an advanced command.
@@ -528,8 +526,9 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self,
-                format=None,
                 *args, **kwargs):
+            format = request.format
+
             # require POST method
             if request.method != 'POST':
                 headers = {
@@ -547,7 +546,6 @@ class ActionHandler():
 
             rv = func(
                 self=self,
-                format=format,
                 *args, **kwargs)
 
             if rv is not None:
@@ -567,7 +565,9 @@ class ActionHandler():
         - Verify targetpath.
         """
         @functools.wraps(func)
-        def wrapper(self, format=None, *args, **kwargs):
+        def wrapper(self, *args, **kwargs):
+            format = request.format
+
             # verify name
             name = request.values.get('name')
             if name is None:
@@ -582,7 +582,6 @@ class ActionHandler():
                 self=self,
                 name=name,
                 targetpath=targetpath,
-                format=format,
                 *args, **kwargs)
 
         return wrapper
@@ -591,13 +590,14 @@ class ActionHandler():
         """A decorator function that helps handling a writing action.
         """
         @functools.wraps(func)
-        def wrapper(self, format=None, *args, **kwargs):
+        def wrapper(self, *args, **kwargs):
+            format = request.format
+
             if os.path.abspath(request.localpath) == runtime['root']:
                 return http_error(403, "Unable to operate the root directory.", format=format)
 
             return func(
                 self=self,
-                format=format,
                 *args, **kwargs)
 
         return wrapper
@@ -607,8 +607,8 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self,
-                format=None,
                 *args, **kwargs):
+            format = request.format
             archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
             if archivefile:
@@ -637,17 +637,16 @@ class ActionHandler():
             return func(
                 self=self,
                 targetpath=targetpath,
-                format=format,
                 *args, **kwargs)
 
         return wrapper
 
-    def unknown(self, format=None, *args, **kwargs):
+    def unknown(self, *args, **kwargs):
         """Default handler for an undefined action"""
+        format = request.format
         return http_error(400, "Action not supported.", format=format)
 
     def view(self,
-            format=None,
             *args, **kwargs):
         """Show the content of a file or list a directory.
 
@@ -656,6 +655,7 @@ class ActionHandler():
         localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
         mimetype = request.localmimetype
+        format = request.format
 
         # show file information for other output formats
         if format:
@@ -717,9 +717,10 @@ class ActionHandler():
         return response
 
     def source(self,
-            format=None,
             *args, **kwargs):
         """Show file content as plain text."""
+        format = request.format
+
         if format:
             return http_error(400, "Action not supported.", format=format)
 
@@ -743,9 +744,10 @@ class ActionHandler():
         return response
 
     def list(self,
-            format=None,
             *args, **kwargs):
         """List entries in a directory."""
+        format = request.format
+
         if not format:
             return http_error(400, "Action not supported.", format=format)
 
@@ -762,9 +764,10 @@ class ActionHandler():
         return http_error(404, "Directory does not exist.", format=format)
 
     def static(self,
-            format=None,
             *args, **kwargs):
         """Show a static file of the current theme."""
+        format = request.format
+
         if format:
             return http_error(400, "Action not supported.", format=format)
 
@@ -777,9 +780,10 @@ class ActionHandler():
             return http_error(404)
 
     def edit(self,
-            format=None,
             *args, **kwargs):
         """Simple text editor for a file."""
+        format = request.format
+
         if format:
             return http_error(400, "Action not supported.", format=format)
 
@@ -826,9 +830,10 @@ class ActionHandler():
         return http_response(body, format=format)
 
     def editx(self,
-            format=None,
             *args, **kwargs):
         """HTML editor for a file."""
+        format = request.format
+
         if format:
             return http_error(400, "Action not supported.", format=format)
 
@@ -863,8 +868,10 @@ class ActionHandler():
 
         return http_response(body, format=format)
 
-    def exec(self, format=None, *args, **kwargs):
+    def exec(self, *args, **kwargs):
         """Launch a file or directory."""
+        format = request.format
+
         if not is_local_access():
             return http_error(400, "Command can only run on local device.", format=format)
 
@@ -880,8 +887,10 @@ class ActionHandler():
 
         return http_response(status=204)
 
-    def browse(self, format=None, *args, **kwargs):
+    def browse(self, *args, **kwargs):
         """Open a file or directory in the file browser."""
+        format = request.format
+
         if not is_local_access():
             return http_error(400, "Command can only run on local device.", format=format)
 
@@ -897,8 +906,10 @@ class ActionHandler():
 
         return http_response(status=204)
 
-    def config(self, format=None, *args, **kwargs):
+    def config(self, *args, **kwargs):
         """Show server config."""
+        format = request.format
+
         if not format:
             return http_error(400, "Action not supported.", format=format)
 
@@ -917,19 +928,21 @@ class ActionHandler():
 
         return http_response(data, format=format)
 
-    def token(self, format=None, *args, **kwargs):
+    def token(self, *args, **kwargs):
         """Acquire a token and return its name."""
+        format = request.format
         return http_response(runtime['token_handler'].acquire(), format=format)
 
     @_handle_advanced
     @_handle_lock
-    def lock(self, name, targetpath, format=None, *args, **kwargs):
+    def lock(self, name, targetpath, *args, **kwargs):
         """Acquire a lock for the given name.
 
         URL params:
         - chkt: recheck until the lock file not exist or fail out when time out.
         - chks: how long to treat the lock file as stale.
         """
+        format = request.format
         check_stale = request.values.get('chks', 300, type=int)
         check_timeout = request.values.get('chkt', 5, type=int)
         check_expire = time.time() + check_timeout
@@ -970,8 +983,10 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_lock
-    def unlock(self, name, targetpath, format=None, *args, **kwargs):
+    def unlock(self, name, targetpath, *args, **kwargs):
         """Release a lock for the given name."""
+        format = request.format
+
         try:
             os.rmdir(targetpath)
         except FileNotFoundError:
@@ -983,9 +998,9 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     def mkdir(self,
-            format=None,
             *args, **kwargs):
         """Create a directory."""
+        format = request.format
         localpath = request.localpath
 
         if os.path.lexists(localpath) and not os.path.isdir(localpath):
@@ -1017,9 +1032,9 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     def save(self,
-            format=None,
             *args, **kwargs):
         """Write a file with provided text or uploaded stream."""
+        format = request.format
         localpath = request.localpath
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
@@ -1116,9 +1131,9 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     def delete(self,
-            format=None,
             *args, **kwargs):
         """Delete a file or directory."""
+        format = request.format
         localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
@@ -1202,9 +1217,9 @@ class ActionHandler():
     @_handle_renaming
     def move(self,
             targetpath,
-            format=None,
             *args, **kwargs):
         """Move a file or directory."""
+        format = request.format
         localpath = request.localpath
 
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
@@ -1220,9 +1235,9 @@ class ActionHandler():
     @_handle_renaming
     def copy(self,
             targetpath,
-            format=None,
             *args, **kwargs):
         """Copy a file or directory."""
+        format = request.format
         localpath = request.localpath
 
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
