@@ -265,7 +265,7 @@ def verify_authorization(perm, action):
             return True
 
     elif perm == 'view':
-        if action in {'view', 'source', 'static'}:
+        if action in {'view', 'info', 'source', 'static'}:
             return True
         else:
             return False
@@ -705,24 +705,14 @@ class ActionHandler():
 
         If formatted, show information of the file or directory.
         """
-        localpaths = request.localpaths
-        mimetype = request.localmimetype
         format = request.format
 
-        # show file information for other output formats
+        # info for other output formats
         if format:
-            if len(localpaths) > 1:
-                return handle_subarchive_path(localpaths[0], localpaths[1], mimetype, format=format)
+            return self.info()
 
-            info = util.file_info(localpaths[0])
-            data = {
-                'name': info.name,
-                'type': info.type,
-                'size': info.size,
-                'last_modified': info.last_modified,
-                'mime': mimetype,
-                }
-            return http_response(data, format=format)
+        localpaths = request.localpaths
+        mimetype = request.localmimetype
 
         # handle sub-archive path
         if len(localpaths) > 1:
@@ -795,6 +785,31 @@ class ActionHandler():
         response.headers.set('Content-Disposition', 'inline')
 
         return response
+
+    def info(self, *args, **kwargs):
+        """Show information of a path."""
+        format = request.format
+
+        if not format:
+            return http_error(400, "Action not supported.", format=format)
+
+        localpaths = request.localpaths
+        mimetype = request.localmimetype
+
+        if len(localpaths) > 1:
+            with open_archive_path(localpaths) as zip:
+                info = util.zip_file_info(zip, localpaths[-1])
+        else:
+            info = util.file_info(localpaths[0])
+
+        data = {
+            'name': info.name,
+            'type': info.type,
+            'size': info.size,
+            'last_modified': info.last_modified,
+            'mime': mimetype,
+            }
+        return http_response(data, format=format)
 
     def list(self, *args, **kwargs):
         """List entries in a directory."""

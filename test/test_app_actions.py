@@ -343,131 +343,115 @@ class TestView(unittest.TestCase):
             r = c.get('/nonexist')
             mock_error.assert_called_once_with(404)
 
-    def test_json_directory(self):
+    @mock.patch('webscrapbook.app.ActionHandler.info', return_value='')
+    def test_json(self, mock_info):
         with app.test_client() as c:
-            r = c.get('/subdir', query_string={'f': 'json'})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': {
-                    'name': 'subdir',
-                    'type': 'dir',
-                    'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
-                    'mime': None,
-                    },
-                })
+            r = c.get('/', query_string={'f': 'json'})
+            mock_info.assert_called_once_with()
 
-            r = c.get('/subdir/', query_string={'f': 'json'})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': {
-                    'name': 'subdir',
-                    'type': 'dir',
-                    'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
-                    'mime': None,
-                    },
-                })
-
-    def test_json_file_normal(self):
+class TestInfo(unittest.TestCase):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
+        """Require format."""
         with app.test_client() as c:
-            r = c.get('/index.html', query_string={'f': 'json'})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': {
-                    'name': 'index.html',
-                    'type': 'file',
-                    'size': os.stat(os.path.join(server_root, 'index.html')).st_size,
-                    'last_modified': os.stat(os.path.join(server_root, 'index.html')).st_mtime,
-                    'mime': 'text/html',
-                    },
-                })
+            r = c.get('/', query_string={'a': 'info'})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format=None)
 
-    def test_json_file_htz(self):
-        zip_filename = os.path.join(server_root, 'archive.htz')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
+        with app.test_client() as c, mock.patch('webscrapbook.util.file_info', side_effect=PermissionError('Forbidden')):
+            r = c.get('/index.html', query_string={'a': 'info', 'f': 'json'})
+            mock_error.assert_called_once_with(403, format='json')
 
-            with app.test_client() as c:
-                r = c.get('/archive.htz', query_string={'f': 'json'})
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/json')
-                self.assertEqual(r.json, {
-                    'success': True,
-                    'data': {
-                        'name': 'archive.htz',
-                        'type': 'file',
-                        'size': os.stat(os.path.join(server_root, 'archive.htz')).st_size,
-                        'last_modified': os.stat(os.path.join(server_root, 'archive.htz')).st_mtime,
-                        'mime': 'application/html+zip',
-                        },
-                    })
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-
-    def test_json_file_maff(self):
-        zip_filename = os.path.join(server_root, 'archive.maff')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('19870101/index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
-
-            with app.test_client() as c:
-                r = c.get('/archive.maff', query_string={'f': 'json'})
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/json')
-                self.assertEqual(r.json, {
-                    'success': True,
-                    'data': {
-                        'name': 'archive.maff',
-                        'type': 'file',
-                        'size': os.stat(os.path.join(server_root, 'archive.maff')).st_size,
-                        'last_modified': os.stat(os.path.join(server_root, 'archive.maff')).st_mtime,
-                        'mime': 'application/x-maff',
-                        },
-                    })
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-
-    def test_json_file_zip(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check2(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
-
-            with app.test_client() as c:
-                r = c.get('/archive.zip', query_string={'f': 'json'})
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/json')
-                self.assertEqual(r.json, {
-                    'success': True,
-                    'data': {
-                        'name': 'archive.zip',
-                        'type': 'file',
-                        'size': os.stat(os.path.join(server_root, 'archive.zip')).st_size,
-                        'last_modified': os.stat(os.path.join(server_root, 'archive.zip')).st_mtime,
-                        'mime': 'application/x-zip-compressed',
-                        },
-                    })
+                pass
+            with app.test_client() as c, mock.patch('webscrapbook.app.open_archive_path', side_effect=PermissionError('Forbidden')):
+                r = c.get('/archive.zip!/', query_string={'a': 'info', 'f': 'json'})
+                mock_error.assert_called_once_with(403, format='json')
         finally:
             try:
                 os.remove(zip_filename)
             except FileNotFoundError:
                 pass
 
-    def test_json_file_zip_subdir(self):
+    def test_directory(self):
+        with app.test_client() as c:
+            r = c.get('/subdir', query_string={'a': 'info', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
+                    'mime': None,
+                    },
+                })
+
+            r = c.get('/subdir/', query_string={'a': 'info', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
+                    'mime': None,
+                    },
+                })
+
+    def test_file(self):
+        files = [
+            {'filename': 'index.html', 'mime': 'text/html'},
+            {'filename': 'index.md', 'mime': 'text/markdown'},
+            {'filename': 'archive.htz', 'mime': 'application/html+zip'},
+            {'filename': 'archive.maff', 'mime': 'application/x-maff'},
+            {'filename': 'archive.zip', 'mime': 'application/x-zip-compressed'},
+            ]
+
+        for file in files:
+            filename = file['filename']
+            mime = file['mime']
+            with self.subTest(filename=filename, mime=mime):
+                file_path = os.path.join(server_root, filename)
+                url_path = '/' + filename
+                iszip = os.path.splitext(file_path)[1] in ('.zip', '.htz', '.maff')
+                if iszip:
+                    with zipfile.ZipFile(file_path, 'w') as zh:
+                        pass
+                stat = os.stat(file_path)
+
+                try:
+                    with app.test_client() as c:
+                        r = c.get(url_path, query_string={'a': 'info', 'f': 'json'})
+                        self.assertEqual(r.status_code, 200)
+                        self.assertEqual(r.headers['Content-Type'], 'application/json')
+                        self.assertEqual(r.json, {
+                            'success': True,
+                            'data': {
+                                'name': filename,
+                                'type': 'file',
+                                'size': stat.st_size,
+                                'last_modified': stat.st_mtime,
+                                'mime': mime,
+                                },
+                            })
+                finally:
+                    if iszip:
+                        try:
+                            os.remove(file_path)
+                        except FileNotFoundError:
+                            pass
+
+    def test_file_zip(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -475,8 +459,14 @@ class TestView(unittest.TestCase):
                 zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', (1987, 1, 2, 0, 0, 0)), 'Hello World! 你好')
                 zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 3, 0, 0, 0)), 'Hello World! 你好嗎')
 
+                buf1 = io.BytesIO()
+                with zipfile.ZipFile(buf1, 'w') as zh1:
+                    zh1.writestr(zipfile.ZipInfo('index.html', (1987, 1, 5, 0, 0, 0)), 'ABC')
+                zh.writestr(zipfile.ZipInfo('entry1.zip', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
+
             with app.test_client() as c:
-                r = c.get('/archive.zip!/explicit_dir', query_string={'f': 'json'})
+                # directory
+                r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'info', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
                 self.assertEqual(r.json, {
@@ -490,8 +480,23 @@ class TestView(unittest.TestCase):
                         },
                     })
 
-            with app.test_client() as c:
-                r = c.get('/archive.zip!/implicit_dir', query_string={'f': 'json'})
+                # directory (slash)
+                r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'info', 'f': 'json'})
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': {
+                        'name': 'explicit_dir',
+                        'type': 'dir',
+                        'size': None,
+                        'last_modified': 536428800,
+                        'mime': None,
+                        },
+                    })
+
+                # directory (implicit)
+                r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'info', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
                 self.assertEqual(r.json, {
@@ -504,20 +509,24 @@ class TestView(unittest.TestCase):
                         'mime': None,
                         },
                     })
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
 
-    def test_json_file_zip_subfile(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                # directory (implicit, slash)
+                r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'info', 'f': 'json'})
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': {
+                        'name': 'implicit_dir',
+                        'type': None,
+                        'size': None,
+                        'last_modified': None,
+                        'mime': None,
+                        },
+                    })
 
-            with app.test_client() as c:
-                r = c.get('/archive.zip!/index.html', query_string={'f': 'json'})
+                # file
+                r = c.get('/archive.zip!/explicit_dir/index.html', query_string={'a': 'info', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
                 self.assertEqual(r.json, {
@@ -526,7 +535,37 @@ class TestView(unittest.TestCase):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': 536428800,
+                        'last_modified': 536515200,
+                        'mime': 'text/html',
+                        },
+                    })
+
+                # nested directory
+                r = c.get('/archive.zip!/entry1.zip!/', query_string={'a': 'info', 'f': 'json'})
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': {
+                        'name': '',
+                        'type': None,
+                        'size': None,
+                        'last_modified': None,
+                        'mime': None,
+                        },
+                    })
+
+                # nested file
+                r = c.get('/archive.zip!/entry1.zip!/index.html', query_string={'a': 'info', 'f': 'json'})
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': {
+                        'name': 'index.html',
+                        'type': 'file',
+                        'size': 3,
+                        'last_modified': 536774400,
                         'mime': 'text/html',
                         },
                     })
@@ -536,25 +575,9 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    def test_json_file_markdown(self):
+    def test_nonexist(self):
         with app.test_client() as c:
-            r = c.get('/index.md', query_string={'f': 'json'})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': {
-                    'name': 'index.md',
-                    'type': 'file',
-                    'size': os.stat(os.path.join(server_root, 'index.md')).st_size,
-                    'last_modified': os.stat(os.path.join(server_root, 'index.md')).st_mtime,
-                    'mime': 'text/markdown',
-                    },
-                })
-
-    def test_json_nonexist(self):
-        with app.test_client() as c:
-            r = c.get('/nonexist', query_string={'f': 'json'})
+            r = c.get('/nonexist', query_string={'a': 'info', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {

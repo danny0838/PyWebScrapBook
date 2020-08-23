@@ -613,6 +613,10 @@ class TestFunctions(unittest.TestCase):
                 with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zip:
                     with zip.open('subdir/index.html') as f:
                         self.assertEqual(f.read().decode('UTF-8'), 'Hello World!')
+
+                with self.assertRaises(ValueError):
+                    with wsbapp.open_archive_path([tempfile]) as zip:
+                        pass
             finally:
                 try:
                     os.remove(tempfile)
@@ -706,7 +710,7 @@ class TestFunctions(unittest.TestCase):
             self.assertEqual(mock_encrypt.call_args_list[1][0], ('pass1', 'salt', 'plain'))
 
     def test_verify_authorization(self):
-        for action in {'view', 'source', 'static'}:
+        for action in {'view', 'info', 'source', 'static'}:
             with self.subTest(action=action):
                 self.assertFalse(wsbapp.verify_authorization('', action))
                 self.assertTrue(wsbapp.verify_authorization('view', action))
