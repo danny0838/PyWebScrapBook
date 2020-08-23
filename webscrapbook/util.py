@@ -219,7 +219,7 @@ class ZipDirNotFoundError(Exception):
     pass
 
 
-def zip_file_info(zip, subpath, base=None, check_missing_dir=False):
+def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
     """Read basic file information from ZIP.
 
     Args:
@@ -252,7 +252,7 @@ def zip_file_info(zip, subpath, base=None, check_missing_dir=False):
         epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
         return FileInfo(name=name, type='dir', size=None, last_modified=epoch)
 
-    if check_missing_dir:
+    if check_implicit_dir:
         base = subpath + '/'
         for entry in zip.namelist():
             if entry.startswith(base):
