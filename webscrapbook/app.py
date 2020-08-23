@@ -37,6 +37,7 @@ from . import __version__
 from . import Config
 from . import util
 from ._compat.time import time_ns
+from ._compat.contextlib import nullcontext
 
 # see: https://url.spec.whatwg.org/#percent-encoded-bytes
 quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
@@ -374,8 +375,12 @@ def handle_directory_listing(localpath, recursive=False, format=None):
     return http_response(body, format=format, headers=headers)
 
 
-def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=False, format=None):
-    """List contents in a directory.
+def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
+    """List contents in a directory in a ZIP.
+
+    Args:
+        paths: [path-to-zip-file, subpath1, subpath2, ...]
+        zip: an opened zipfile.ZipFile object for faster reading
     """
     # ensure directory has trailing '/'
     if not request.path.endswith('/'):
@@ -389,12 +394,12 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=Fal
             ))
         return redirect(new_url)
 
-    stats = os.lstat(archivefile)
+    stats = os.lstat(paths[0])
     last_modified = http_date(stats.st_mtime)
     etag = "%s-%s-%s" % (
         stats.st_mtime,
         stats.st_size,
-        adler32(archivefile.encode("utf-8")) & 0xFFFFFFFF,
+        adler32(paths[0].encode("utf-8")) & 0xFFFFFFFF,
         )
 
     if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
@@ -406,7 +411,8 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=Fal
         'ETag': etag,
         }
 
-    subentries = util.zip_listdir(zip, subarchivepath, recursive)
+    with nullcontext(zip) if zip else open_archive_path(paths) as zip:
+        subentries = util.zip_listdir(zip, paths[-1], recursive)
 
     if format == 'sse':
         def gen():
@@ -439,7 +445,7 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=Fal
                 is_local=is_local_access(),
                 base=request.script_root,
                 path=request.path,
-                subarchivepath=subarchivepath,
+                subarchivepath=paths[1],
                 subentries=subentries,
                 )
         return http_response(body, headers=headers)
@@ -464,7 +470,7 @@ def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_dire
         if not list_directory:
             return http_error(404)
 
-        return handle_zip_directory_listing(zip, archivefile, subarchivepath)
+        return handle_zip_directory_listing([archivefile, subarchivepath], zip)
     else:
         fh = zip.open(info, 'r')
 
@@ -851,7 +857,7 @@ class ActionHandler():
         localpaths = request.localpaths
 
         if len(localpaths) > 1:
-            return handle_zip_directory_listing(localpaths[0], localpaths[0], localpaths[1], recursive=recursive, format=format)
+            return handle_zip_directory_listing(localpaths, recursive=recursive, format=format)
 
         if os.path.isdir(localpaths[0]):
             return handle_directory_listing(localpaths[0], recursive=recursive, format=format)

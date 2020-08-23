@@ -715,6 +715,11 @@ class TestList(unittest.TestCase):
                 zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 3, 0, 0, 0)), 'Hello World! 你好嗎')
                 zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', (1987, 1, 3, 1, 0, 0)), 'Hello World!')
 
+                buf1 = io.BytesIO()
+                with zipfile.ZipFile(buf1, 'w') as zh1:
+                    zh1.writestr(zipfile.ZipInfo('index.html', (1987, 1, 5, 0, 0, 0)), 'ABC')
+                zh.writestr(zipfile.ZipInfo('entry1.zip', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
+
             with app.test_client() as c:
                 # explicit dir (no slash)
                 r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'list', 'f': 'json'})
@@ -818,6 +823,24 @@ class TestList(unittest.TestCase):
                     'If-Modified-Since': lm,
                     })
                 self.assertEqual(r.status_code, 304)
+
+                # nested directory
+                r = c.get('/archive.zip!/entry1.zip!/', query_string={'a': 'list', 'f': 'json'})
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                data = r.json
+                self.assertTrue(data['success'])
+                self.assertEqual(set(make_hashable(data['data'])), {
+                    frozendict({
+                        'name': 'index.html',
+                        'type': 'file',
+                        'size': 3,
+                        'last_modified': 536774400,
+                        }),
+                    })
         finally:
             try:
                 os.remove(zip_filename)
