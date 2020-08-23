@@ -511,6 +511,11 @@ class Request(flask.Request):
         return os.path.normpath(os.path.join(runtime['root'], self.path.strip('/')))
 
     @cached_property
+    def localpaths(self):
+        """Like localpath, but with ZIP subpaths resolved."""
+        return get_archive_path(self.path)
+
+    @cached_property
     def localrealpath(self):
         """Like localpath, but with symlinks resolved."""
         return os.path.realpath(self.localpath)
@@ -623,12 +628,12 @@ class ActionHandler():
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             format = request.format
-            archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
+            localpaths = request.localpaths
 
-            if len(subarchivepath):
+            if len(localpaths) > 1:
                 return http_error(400, "File is inside an archive file.", format=format)
 
-            if not os.path.lexists(request.localpath):
+            if not os.path.lexists(localpaths[0]):
                 return http_error(404, "File does not exist.", format=format)
 
             target = request.values.get('target')
@@ -636,19 +641,18 @@ class ActionHandler():
             if target is None:
                 return http_error(400, 'Target is not specified.', format=format)
 
-            targetpath = os.path.normpath(os.path.join(runtime['root'], target.strip('/')))
+            targetpaths = get_archive_path(target)
 
-            if not targetpath.startswith(os.path.join(runtime['root'], '')):
+            if not targetpaths[0].startswith(os.path.join(runtime['root'], '')):
                 return http_error(403, "Unable to operate beyond the root directory.", format=format)
 
-            if os.path.lexists(targetpath):
-                return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-
-            ta, *tsa = get_archive_path(target)
-            if len(tsa):
+            if len(targetpaths) > 1:
                 return http_error(400, "Target is inside an archive file.", format=format)
 
-            return func(self, sourcepath=request.localpath, targetpath=targetpath, *args, **kwargs)
+            if os.path.lexists(targetpaths[0]):
+                return http_error(400, 'Found something at target "{}".'.format(target), format=format)
+
+            return func(self, sourcepath=localpaths[0], targetpath=targetpaths[0], *args, **kwargs)
 
         return wrapper
 
@@ -662,17 +666,16 @@ class ActionHandler():
 
         If formatted, show information of the file or directory.
         """
-        localpath = request.localpath
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
+        localpaths = request.localpaths
         mimetype = request.localmimetype
         format = request.format
 
         # show file information for other output formats
         if format:
-            if len(subarchivepath):
-                return handle_subarchive_path(archivefile, subarchivepath[0], mimetype, format=format)
+            if len(localpaths) > 1:
+                return handle_subarchive_path(localpaths[0], localpaths[1], mimetype, format=format)
 
-            info = util.file_info(localpath)
+            info = util.file_info(localpaths[0])
             data = {
                 'name': info.name,
                 'type': info.type,
@@ -682,39 +685,42 @@ class ActionHandler():
                 }
             return http_response(data, format=format)
 
-        # handle directory
-        if os.path.isdir(localpath):
-            return handle_directory_listing(localpath)
-
-        # handle file
-        elif os.path.isfile(localpath):
-            # view archive file
-            if mimetype in ("application/html+zip", "application/x-maff"):
-                return handle_archive_viewing(localpath, mimetype)
-
-            # view markdown
-            if mimetype == "text/markdown":
-                return handle_markdown_output(localpath)
-
-            # convert meta refresh to 302 redirect
-            if request.localrealpath.lower().endswith('.htm'):
-                target = util.parse_meta_refresh(localpath).target
-
-                if target is not None:
-                    # Keep several chars as javascript encodeURI do,
-                    # plus "%" as target may have already been escaped.
-                    new_url = urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%"))
-                    return redirect(new_url)
-
-            # show static file for other cases
-            response = static_file(localpath, mimetype=mimetype)
-
         # handle sub-archive path
-        elif len(subarchivepath):
-            response = handle_subarchive_path(archivefile, subarchivepath[0], mimetype)
+        if len(localpaths) > 1:
+            response = handle_subarchive_path(localpaths[0], localpaths[1], mimetype)
 
         else:
-            return http_error(404)
+            localpath = localpaths[0]
+
+            # handle directory
+            if os.path.isdir(localpath):
+                return handle_directory_listing(localpath)
+
+            # handle file
+            elif os.path.isfile(localpath):
+                # view archive file
+                if mimetype in ("application/html+zip", "application/x-maff"):
+                    return handle_archive_viewing(localpath, mimetype)
+
+                # view markdown
+                if mimetype == "text/markdown":
+                    return handle_markdown_output(localpath)
+
+                # convert meta refresh to 302 redirect
+                if request.localrealpath.lower().endswith('.htm'):
+                    target = util.parse_meta_refresh(localpath).target
+
+                    if target is not None:
+                        # Keep several chars as javascript encodeURI do,
+                        # plus "%" as target may have already been escaped.
+                        new_url = urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%"))
+                        return redirect(new_url)
+
+                # show static file for other cases
+                response = static_file(localpath, mimetype=mimetype)
+
+            else:
+                return http_error(404)
 
         # don't include charset
         m, p = parse_options_header(response.headers.get('Content-Type'))
@@ -733,14 +739,13 @@ class ActionHandler():
         if format:
             return http_error(400, "Action not supported.", format=format)
 
-        localpath = request.localpath
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
+        localpaths = request.localpaths
         mimetype = request.localmimetype
 
-        if len(subarchivepath):
-            response = handle_subarchive_path(archivefile, subarchivepath[0], mimetype, list_directory=False)
+        if len(localpaths) > 1:
+            response = handle_subarchive_path(localpaths[0], localpaths[1], mimetype, list_directory=False)
         else:
-            response = static_file(localpath, mimetype=mimetype)
+            response = static_file(localpaths[0], mimetype=mimetype)
 
         # show as inline plain text
         # @TODO: Chromium (80) seems to ignore header mimetype for certain types
@@ -760,14 +765,13 @@ class ActionHandler():
             return http_error(400, "Action not supported.", format=format)
 
         recursive = request.values.get('recursive', type=bool)
-        localpath = request.localpath
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
+        localpaths = request.localpaths
 
-        if len(subarchivepath):
-            return handle_zip_directory_listing(archivefile, archivefile, subarchivepath[0], recursive=recursive, format=format)
+        if len(localpaths) > 1:
+            return handle_zip_directory_listing(localpaths[0], localpaths[0], localpaths[1], recursive=recursive, format=format)
 
-        if os.path.isdir(localpath):
-            return handle_directory_listing(localpath, recursive=recursive, format=format)
+        if os.path.isdir(localpaths[0]):
+            return handle_directory_listing(localpaths[0], recursive=recursive, format=format)
 
         return http_error(404, "Directory does not exist.", format=format)
 
@@ -793,17 +797,16 @@ class ActionHandler():
         if format:
             return http_error(400, "Action not supported.", format=format)
 
-        localpath = request.localpath
+        localpaths = request.localpaths
+        localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
 
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
-
-        if len(subarchivepath):
-            with zipfile.ZipFile(archivefile, 'r') as zip:
+        if len(localpaths) > 1:
+            with zipfile.ZipFile(localpaths[0], 'r') as zip:
                 try:
-                    info = zip.getinfo(subarchivepath[0])
+                    info = zip.getinfo(localpaths[1])
                 except:
                     body = b''
                 else:
@@ -842,22 +845,19 @@ class ActionHandler():
         if format:
             return http_error(400, "Action not supported.", format=format)
 
-        localpath = request.localpath
+        localpaths = request.localpaths
+        localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
 
-        mimetype = request.localmimetype
-
-        if not mimetype in ("text/html", "application/xhtml+xml"):
+        if not request.localmimetype in ("text/html", "application/xhtml+xml"):
             return http_error(400, "This is not an HTML file.", format=format)
 
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
-
-        if len(subarchivepath):
-            with zipfile.ZipFile(archivefile, 'r') as zip:
+        if len(localpaths) > 1:
+            with zipfile.ZipFile(localpaths[0], 'r') as zip:
                 try:
-                    info = zip.getinfo(subarchivepath[0])
+                    info = zip.getinfo(localpaths[1])
                 except:
                     return http_error(404, format=format)
         else:
@@ -1005,28 +1005,29 @@ class ActionHandler():
     def mkdir(self, *args, **kwargs):
         """Create a directory."""
         format = request.format
-        localpath = request.localpath
+        localpaths = request.localpaths
 
-        if os.path.lexists(localpath) and not os.path.isdir(localpath):
-            return http_error(400, "Found a non-directory here.", format=format)
-
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
-
-        if len(subarchivepath):
+        if len(localpaths) > 1:
+            archivefile, subarchivepath, *_ = localpaths
             try:
                 with zipfile.ZipFile(archivefile, 'a') as zip:
-                    subarchivepath[0] = subarchivepath[0] + '/'
+                    subarchivepath = subarchivepath + '/'
                     try:
-                        info = zip.getinfo(subarchivepath[0])
+                        info = zip.getinfo(subarchivepath)
                     except KeyError:
                         # subarchivepath does not exist
-                        info = zipfile.ZipInfo(subarchivepath[0], time.localtime())
+                        info = zipfile.ZipInfo(subarchivepath, time.localtime())
                         zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
             except:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
         else:
+            localpath = localpaths[0]
+
+            if os.path.lexists(localpath) and not os.path.isdir(localpath):
+                return http_error(400, "Found a non-directory here.", format=format)
+
             try:
                 os.makedirs(localpath, exist_ok=True)
             except OSError:
@@ -1038,23 +1039,19 @@ class ActionHandler():
     def save(self, *args, **kwargs):
         """Write a file with provided text or uploaded stream."""
         format = request.format
-        localpath = request.localpath
+        localpaths = request.localpaths
 
-        if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            return http_error(400, "Found a non-file here.", format=format)
-
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
-
-        if len(subarchivepath):
+        if len(localpaths) > 1:
+            archivefile, subarchivepath, *_ = localpaths
             try:
                 temp_writing_file = None
 
                 with zipfile.ZipFile(archivefile, 'a') as zip0:
                     # if subarchivepath exists, open a new zip file for writing.
                     try:
-                        info = zip0.getinfo(subarchivepath[0])
+                        info = zip0.getinfo(subarchivepath)
                     except KeyError:
-                        info = zipfile.ZipInfo(subarchivepath[0], time.localtime())
+                        info = zipfile.ZipInfo(subarchivepath, time.localtime())
                     else:
                         info.date_time = time.localtime()
                         temp_writing_file = archivefile + '.' + str(time_ns())
@@ -1081,7 +1078,7 @@ class ActionHandler():
                             # copy zip content
                             if temp_writing_file:
                                 for info in zip0.infolist():
-                                    if info.filename == subarchivepath[0]:
+                                    if info.filename == subarchivepath:
                                         continue
 
                                     try:
@@ -1113,6 +1110,11 @@ class ActionHandler():
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
         else:
+            localpath = localpaths[0]
+
+            if os.path.lexists(localpath) and not os.path.isfile(localpath):
+                return http_error(400, "Found a non-file here.", format=format)
+
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
             except:
@@ -1136,10 +1138,10 @@ class ActionHandler():
     def delete(self, *args, **kwargs):
         """Delete a file or directory."""
         format = request.format
-        localpath = request.localpath
-        archivefile, *subarchivepath = get_archive_path(request.path.lstrip('/'))
+        localpaths = request.localpaths
 
-        if len(subarchivepath):
+        if len(localpaths) > 1:
+            archivefile, subarchivepath, *_ = localpaths
             try:
                 temp_writing_file = archivefile + '.' + str(time_ns())
                 deleted = False
@@ -1149,8 +1151,8 @@ class ActionHandler():
                         # copy zip content
                         with zipfile.ZipFile(temp_writing_file, 'w') as zip:
                             for info in zip0.infolist():
-                                if (info.filename == subarchivepath[0] or
-                                        info.filename.startswith(subarchivepath[0] + '/')):
+                                if (info.filename == subarchivepath or
+                                        info.filename.startswith(subarchivepath + '/')):
                                     deleted = True
                                     continue
 
@@ -1186,6 +1188,8 @@ class ActionHandler():
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
         else:
+            localpath = localpaths[0]
+
             if not os.path.lexists(localpath):
                 return http_error(404, "File does not exist.", format=format)
 
