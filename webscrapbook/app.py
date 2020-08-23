@@ -624,7 +624,7 @@ class ActionHandler():
             if ta:
                 return http_error(400, "Target is inside an archive file.", format=format)
 
-            return func(self, targetpath=targetpath, *args, **kwargs)
+            return func(self, sourcepath=request.localpath, targetpath=targetpath, *args, **kwargs)
 
         return wrapper
 
@@ -1193,15 +1193,14 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     @_handle_renaming
-    def move(self, targetpath, *args, **kwargs):
+    def move(self, sourcepath, targetpath, *args, **kwargs):
         """Move a file or directory."""
         format = request.format
-        localpath = request.localpath
 
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
         try:
-            os.rename(localpath, targetpath)
+            os.rename(sourcepath, targetpath)
         except:
             traceback.print_exc()
             return http_error(500, 'Unable to move to the target.', format=format)
@@ -1209,18 +1208,17 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     @_handle_renaming
-    def copy(self, targetpath, *args, **kwargs):
+    def copy(self, sourcepath, targetpath, *args, **kwargs):
         """Copy a file or directory."""
         format = request.format
-        localpath = request.localpath
 
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
         try:
             try:
-                shutil.copytree(localpath, targetpath)
+                shutil.copytree(sourcepath, targetpath)
             except NotADirectoryError:
-                shutil.copy2(localpath, targetpath)
+                shutil.copy2(sourcepath, targetpath)
         except:
             traceback.print_exc()
             return http_error(500, 'Unable to copy to the target.', format=format)
