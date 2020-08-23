@@ -214,9 +214,6 @@ def handle_directory_listing(localpath, recursive=False, format=None):
             ))
         return redirect(new_url)
 
-    if not os.path.exists(localpath):
-        return http_error(404, "Directory does not exist.", format=format)
-
     if not os.access(localpath, os.R_OK):
         return http_error(403, "You do not have permission to view this directory.", format=format)
 
