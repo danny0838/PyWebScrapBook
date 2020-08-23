@@ -518,7 +518,6 @@ class ActionHandler():
         return handler(
             filepath=request.path.lstrip('/'),
             localpath=request.localpath,
-            localtargetpath=request.localrealpath,
             mimetype=request.localmimetype,
             query=request.values,
             format=request.format,
@@ -662,7 +661,6 @@ class ActionHandler():
 
     def view(self,
             localpath,
-            localtargetpath,
             mimetype=None,
             format=None,
             *args, **kwargs):
@@ -702,7 +700,7 @@ class ActionHandler():
                 return handle_markdown_output(localpath)
 
             # convert meta refresh to 302 redirect
-            if localtargetpath.lower().endswith('.htm'):
+            if request.localrealpath.lower().endswith('.htm'):
                 target = util.parse_meta_refresh(localpath).target
 
                 if target is not None:
