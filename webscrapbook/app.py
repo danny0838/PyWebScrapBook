@@ -516,7 +516,6 @@ class ActionHandler():
     def _handle_action(self):
         handler = getattr(self, request.action, None) or self.unknown
         return handler(
-            localpath=request.localpath,
             mimetype=request.localmimetype,
             format=request.format,
             )
@@ -530,7 +529,6 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self,
-                localpath,
                 format=None,
                 *args, **kwargs):
             # require POST method
@@ -550,7 +548,6 @@ class ActionHandler():
 
             rv = func(
                 self=self,
-                localpath=localpath,
                 format=format,
                 *args, **kwargs)
 
@@ -595,13 +592,12 @@ class ActionHandler():
         """A decorator function that helps handling a writing action.
         """
         @functools.wraps(func)
-        def wrapper(self, localpath, format=None, *args, **kwargs):
-            if os.path.abspath(localpath) == runtime['root']:
+        def wrapper(self, format=None, *args, **kwargs):
+            if os.path.abspath(request.localpath) == runtime['root']:
                 return http_error(403, "Unable to operate the root directory.", format=format)
 
             return func(
                 self=self,
-                localpath=localpath,
                 format=format,
                 *args, **kwargs)
 
@@ -612,7 +608,6 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self,
-                localpath,
                 format=None,
                 *args, **kwargs):
             archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
@@ -620,7 +615,7 @@ class ActionHandler():
             if archivefile:
                 return http_error(400, "File is inside an archive file.", format=format)
 
-            if not os.path.lexists(localpath):
+            if not os.path.lexists(request.localpath):
                 return http_error(404, "File does not exist.", format=format)
 
             target = request.values.get('target')
@@ -642,7 +637,6 @@ class ActionHandler():
 
             return func(
                 self=self,
-                localpath=localpath,
                 targetpath=targetpath,
                 format=format,
                 *args, **kwargs)
@@ -654,7 +648,6 @@ class ActionHandler():
         return http_error(400, "Action not supported.", format=format)
 
     def view(self,
-            localpath,
             mimetype=None,
             format=None,
             *args, **kwargs):
@@ -662,6 +655,7 @@ class ActionHandler():
 
         If formatted, show information of the file or directory.
         """
+        localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         # show file information for other output formats
@@ -724,7 +718,6 @@ class ActionHandler():
         return response
 
     def source(self,
-            localpath,
             mimetype=None,
             format=None,
             *args, **kwargs):
@@ -732,6 +725,7 @@ class ActionHandler():
         if format:
             return http_error(400, "Action not supported.", format=format)
 
+        localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
@@ -750,7 +744,6 @@ class ActionHandler():
         return response
 
     def list(self,
-            localpath,
             format=None,
             *args, **kwargs):
         """List entries in a directory."""
@@ -758,6 +751,7 @@ class ActionHandler():
             return http_error(400, "Action not supported.", format=format)
 
         recursive = request.values.get('recursive', type=bool)
+        localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
@@ -784,12 +778,13 @@ class ActionHandler():
             return http_error(404)
 
     def edit(self,
-            localpath,
             format=None,
             *args, **kwargs):
         """Simple text editor for a file."""
         if format:
             return http_error(400, "Action not supported.", format=format)
+
+        localpath = request.localpath
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
@@ -832,13 +827,14 @@ class ActionHandler():
         return http_response(body, format=format)
 
     def editx(self,
-            localpath,
             mimetype=None,
             format=None,
             *args, **kwargs):
         """HTML editor for a file."""
         if format:
             return http_error(400, "Action not supported.", format=format)
+
+        localpath = request.localpath
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
@@ -867,10 +863,12 @@ class ActionHandler():
 
         return http_response(body, format=format)
 
-    def exec(self, localpath, format=None, *args, **kwargs):
+    def exec(self, format=None, *args, **kwargs):
         """Launch a file or directory."""
         if not is_local_access():
             return http_error(400, "Command can only run on local device.", format=format)
+
+        localpath = request.localpath
 
         if not os.path.lexists(localpath):
             return http_error(404, "File does not exist.", format=format)
@@ -882,10 +880,12 @@ class ActionHandler():
 
         return http_response(status=204)
 
-    def browse(self, localpath, format=None, *args, **kwargs):
+    def browse(self, format=None, *args, **kwargs):
         """Open a file or directory in the file browser."""
         if not is_local_access():
             return http_error(400, "Command can only run on local device.", format=format)
+
+        localpath = request.localpath
 
         if not os.path.lexists(localpath):
             return http_error(404, "File does not exist.", format=format)
@@ -983,10 +983,11 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     def mkdir(self,
-            localpath,
             format=None,
             *args, **kwargs):
         """Create a directory."""
+        localpath = request.localpath
+
         if os.path.lexists(localpath) and not os.path.isdir(localpath):
             return http_error(400, "Found a non-directory here.", format=format)
 
@@ -1016,10 +1017,11 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     def save(self,
-            localpath,
             format=None,
             *args, **kwargs):
         """Write a file with provided text or uploaded stream."""
+        localpath = request.localpath
+
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
 
@@ -1114,10 +1116,10 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     def delete(self,
-            localpath,
             format=None,
             *args, **kwargs):
         """Delete a file or directory."""
+        localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
@@ -1199,11 +1201,12 @@ class ActionHandler():
     @_handle_writing
     @_handle_renaming
     def move(self,
-            localpath,
             targetpath,
             format=None,
             *args, **kwargs):
         """Move a file or directory."""
+        localpath = request.localpath
+
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
         try:
@@ -1216,11 +1219,12 @@ class ActionHandler():
     @_handle_writing
     @_handle_renaming
     def copy(self,
-            localpath,
             targetpath,
             format=None,
             *args, **kwargs):
         """Copy a file or directory."""
+        localpath = request.localpath
+
         os.makedirs(os.path.dirname(targetpath), exist_ok=True)
 
         try:
