@@ -60,6 +60,45 @@ def static_file(filename, mimetype=None):
     return response
 
 
+def zip_static_file(zip, subpath, mimetype=None):
+    """Output the specified file in a ZIP to the client.
+
+    Args:
+        zip: an opened zipfile.ZipFile
+        subpath: str or zipfile.ZipInfo
+    """
+    if not isinstance(subpath, zipfile.ZipInfo):
+        try:
+            info = zip.getinfo(subpath)
+        except KeyError:
+            return http_error(404)
+    else:
+        info = subpath
+
+    fh = zip.open(info, 'r')
+
+    lm = info.date_time
+    lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+    last_modified = http_date(lm)
+
+    etag = "%s-%s-%s" % (
+        lm,
+        info.file_size,
+        adler32(info.filename.encode("utf-8")) & 0xFFFFFFFF,
+        )
+
+    headers = {
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'no-cache',
+        'Last-Modified': last_modified,
+        'ETag': etag,
+        }
+
+    response = Response(fh, headers=headers, mimetype=mimetype)
+    response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
+    return response
+
+
 def http_response(body='', status=None, headers=None, format=None):
     """Handle formatted response.
 
@@ -761,7 +800,8 @@ class ActionHandler():
         mimetype = request.localmimetype
 
         if len(localpaths) > 1:
-            response = handle_subarchive_path(localpaths[0], localpaths[1], mimetype, list_directory=False)
+            with open_archive_path(localpaths) as zip:
+                response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
         else:
             response = static_file(localpaths[0], mimetype=mimetype)
 
