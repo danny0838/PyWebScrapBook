@@ -408,24 +408,13 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=Fal
         return http_error(404)
 
 
-def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True, format=None):
+def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True):
     """Show content of a path in a zip file.
     """
     try:
         zip = zipfile.ZipFile(archivefile)
     except:
-        return http_error(500, "Unable to open the ZIP file.", format=format)
-
-    if format:
-        info = util.zip_file_info(zip, subarchivepath)
-        data = {
-            'name': info.name,
-            'type': info.type,
-            'size': info.size,
-            'last_modified': info.last_modified,
-            'mime': mimetype,
-            }
-        return http_response(data, format=format)
+        return http_error(500, "Unable to open the ZIP file.")
 
     try:
         # KeyError is raised if subarchivepath does not exist
