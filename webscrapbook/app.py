@@ -519,7 +519,6 @@ class ActionHandler():
             filepath=request.path.lstrip('/'),
             localpath=request.localpath,
             mimetype=request.localmimetype,
-            query=request.values,
             format=request.format,
             )
 
@@ -533,7 +532,6 @@ class ActionHandler():
         @functools.wraps(func)
         def wrapper(self,
                 localpath,
-                query=None,
                 format=None,
                 *args, **kwargs):
             # require POST method
@@ -544,7 +542,7 @@ class ActionHandler():
                 return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, headers=headers)
 
             # validate and revoke token
-            token = query.get('token') or ''
+            token = request.values.get('token') or ''
 
             if not runtime['token_handler'].validate(token):
                 return http_error(400, 'Invalid access token.', format=format)
@@ -554,7 +552,6 @@ class ActionHandler():
             rv = func(
                 self=self,
                 localpath=localpath,
-                query=query,
                 format=format,
                 *args, **kwargs)
 
@@ -575,9 +572,9 @@ class ActionHandler():
         - Verify targetpath.
         """
         @functools.wraps(func)
-        def wrapper(self, query=None, format=None, *args, **kwargs):
+        def wrapper(self, format=None, *args, **kwargs):
             # verify name
-            name = query.get('name')
+            name = request.values.get('name')
             if name is None:
                 return http_error(400, "Lock name is not specified.", format=format)
 
@@ -590,7 +587,6 @@ class ActionHandler():
                 self=self,
                 name=name,
                 targetpath=targetpath,
-                query=query,
                 format=format,
                 *args, **kwargs)
 
@@ -618,7 +614,6 @@ class ActionHandler():
         @functools.wraps(func)
         def wrapper(self,
                 localpath,
-                query=None,
                 format=None,
                 *args, **kwargs):
             archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
@@ -629,7 +624,7 @@ class ActionHandler():
             if not os.path.lexists(localpath):
                 return http_error(404, "File does not exist.", format=format)
 
-            target = query.get('target')
+            target = request.values.get('target')
 
             if target is None:
                 return http_error(400, 'Target is not specified.', format=format)
@@ -732,7 +727,6 @@ class ActionHandler():
     def source(self,
             localpath,
             mimetype=None,
-            query=None,
             format=None,
             *args, **kwargs):
         """Show file content as plain text."""
@@ -749,8 +743,8 @@ class ActionHandler():
         # show as inline plain text
         # @TODO: Chromium (80) seems to ignore header mimetype for certain types
         #        like image and zip
-        encoding = query.get('e', 'utf-8')
-        encoding = query.get('encoding', default=encoding)
+        encoding = request.values.get('e', 'utf-8')
+        encoding = request.values.get('encoding', default=encoding)
         response.headers.set('Content-Type', 'text/plain; charset=' + quote(encoding))
         response.headers.set('Content-Disposition', 'inline')
 
@@ -758,14 +752,13 @@ class ActionHandler():
 
     def list(self,
             localpath,
-            query=None,
             format=None,
             *args, **kwargs):
         """List entries in a directory."""
         if not format:
             return http_error(400, "Action not supported.", format=format)
 
-        recursive = query.get('recursive', type=bool)
+        recursive = request.values.get('recursive', type=bool)
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
 
         if archivefile:
@@ -793,7 +786,6 @@ class ActionHandler():
 
     def edit(self,
             localpath,
-            query=None,
             format=None,
             *args, **kwargs):
         """Simple text editor for a file."""
@@ -820,8 +812,8 @@ class ActionHandler():
             except FileNotFoundError:
                 body = b''
 
-        encoding = query.get('e')
-        encoding = query.get('encoding', default=encoding)
+        encoding = request.values.get('e')
+        encoding = request.values.get('encoding', default=encoding)
 
         try:
             body = body.decode(encoding or 'UTF-8')
@@ -932,15 +924,15 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_lock
-    def lock(self, name, targetpath, query=None, format=None, *args, **kwargs):
+    def lock(self, name, targetpath, format=None, *args, **kwargs):
         """Acquire a lock for the given name.
 
         URL params:
         - chkt: recheck until the lock file not exist or fail out when time out.
         - chks: how long to treat the lock file as stale.
         """
-        check_stale = query.get('chks', 300, type=int)
-        check_timeout = query.get('chkt', 5, type=int)
+        check_stale = request.values.get('chks', 300, type=int)
+        check_timeout = request.values.get('chkt', 5, type=int)
         check_expire = time.time() + check_timeout
         check_delta = min(check_timeout, 0.1)
 
@@ -1026,7 +1018,6 @@ class ActionHandler():
     @_handle_writing
     def save(self,
             localpath,
-            query=None,
             format=None,
             *args, **kwargs):
         """Write a file with provided text or uploaded stream."""
@@ -1061,7 +1052,7 @@ class ActionHandler():
                                         if not s: break
                                         fh.write(s)
                             else:
-                                bytes = query.get('text', '').encode('ISO-8859-1')
+                                bytes = request.values.get('text', '').encode('ISO-8859-1')
                                 try:
                                     zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
                                 except TypeError:
@@ -1114,7 +1105,7 @@ class ActionHandler():
                 if file is not None:
                     file.save(localpath)
                 else:
-                    bytes = query.get('text', '').encode('ISO-8859-1')
+                    bytes = request.values.get('text', '').encode('ISO-8859-1')
                     with open(localpath, 'wb') as f:
                         f.write(bytes)
             except:
