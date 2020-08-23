@@ -595,6 +595,30 @@ class TestFunctions(unittest.TestCase):
                 except FileNotFoundError:
                     pass
 
+    def test_open_archive_path(self):
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            tempfile = os.path.join(root, 'entry.zip')
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        buf11 = io.BytesIO()
+                        with zipfile.ZipFile(buf11, 'w') as zip2:
+                            zip2.writestr('subdir/index.html', 'Hello World!')
+                        zip1.writestr('entry2.zip', buf11.getvalue())
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zip:
+                    with zip.open('subdir/index.html') as f:
+                        self.assertEqual(f.read().decode('UTF-8'), 'Hello World!')
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
     @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
     def test_get_permission1(self, mock_encrypt):
         """Return corresponding permission for the matched user and '' for unmatched."""

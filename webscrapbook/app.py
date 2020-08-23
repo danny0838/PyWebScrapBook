@@ -15,6 +15,7 @@ import functools
 from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
 from pathlib import Path
 from zlib import adler32
+from contextlib import contextmanager
 
 # dependency
 import flask
@@ -183,6 +184,44 @@ def get_archive_path(filepath):
                 return rv
 
     return [os.path.normpath(os.path.join(runtime['root'], filepath.strip('/')))]
+
+
+@contextmanager
+def open_archive_path(paths):
+    """Open the innermost zip.
+
+    Args:
+        paths: [path-to-zip-file, subpath1, subpath2, ...]
+    """
+    last = len(paths) - 1
+    if last < 1:
+        raise ValueError('length of paths must > 1')
+
+    stack = []
+    try:
+        zip = zipfile.ZipFile(paths[0])
+        stack.append(zip)
+        for i in range(1, last):
+            f = zip.open(paths[i])
+
+            # opened zip file is not seekable in Python < 3.7,
+            # copy to a buffer for seeking.
+            if not f.seekable():
+                ff = io.BytesIO()
+                while True:
+                    b = f.read(8192)
+                    if not b: break
+                    ff.write(b)
+                f.close()
+                f = ff
+
+            stack.append(f)
+            zip = zipfile.ZipFile(f)
+            stack.append(zip)
+        yield zip
+    finally:
+        for f in reversed(stack):
+            f.close()
 
 
 def is_local_access():
