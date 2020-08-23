@@ -214,9 +214,6 @@ def handle_directory_listing(localpath, recursive=False, format=None):
             ))
         return redirect(new_url)
 
-    if not os.access(localpath, os.R_OK):
-        return http_error(403, "You do not have permission to view this directory.", format=format)
-
     # output index
     subentries = util.listdir(localpath, recursive)
 
@@ -339,9 +336,6 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=Fal
 def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True, format=None):
     """Show content of a path in a zip file.
     """
-    if not os.access(archivefile, os.R_OK):
-        return http_error(403, "You do not have permission to access this file.", format=format)
-
     try:
         zip = zipfile.ZipFile(archivefile)
     except:
@@ -408,9 +402,6 @@ def handle_archive_viewing(localpath, mimetype):
                 path=request.path,
                 pages=pages,
                 )
-
-    if not os.access(localpath, os.R_OK):
-        return http_error(403, "You do not have permission to access this file.")
 
     if mimetype == "application/html+zip":
         subpath = "index.html"
@@ -511,8 +502,11 @@ class Request(flask.Request):
 
 class ActionHandler():
     def _handle_action(self, action):
-        handler = getattr(self, action, None) or self.unknown
-        return handler()
+        try:
+            handler = getattr(self, action, None) or self.unknown
+            return handler()
+        except PermissionError:
+            return http_error(403, 'You are not allowed to access this resource.', format=request.format)
 
     def _handle_advanced(func):
         """A decorator function that helps handling an advanced command.

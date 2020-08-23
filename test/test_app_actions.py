@@ -47,6 +47,12 @@ def token(c):
     return c.get('/', query_string={'a': 'token'}).data.decode('UTF-8')
 
 class TestView(unittest.TestCase):
+    def test_permission_check(self):
+        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+            r = c.get('/index.html')
+            self.assertEqual(r.status_code, 403)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_directory(self, mock_template):
         with app.test_client() as c:
@@ -562,6 +568,13 @@ class TestView(unittest.TestCase):
                 })
 
 class TestList(unittest.TestCase):
+    def test_permission_check(self):
+        with app.test_client() as c, mock.patch('os.scandir', side_effect=PermissionError('Forbidden')):
+            r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
+            self.assertEqual(r.status_code, 403)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json,  {'error': {'status': 403, 'message': 'You are not allowed to access this resource.'}})
+
     def test_format_check(self):
         """Require format."""
         with app.test_client() as c:
@@ -883,6 +896,12 @@ class TestSource(unittest.TestCase):
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
 
+    def test_permission_check(self):
+        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+            r = c.get('/index.html', query_string={'a': 'source'})
+            self.assertEqual(r.status_code, 403)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+
     def test_file_normal(self):
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'source'}, buffered=True)
@@ -1113,6 +1132,12 @@ class TestStatic(unittest.TestCase):
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
 
+    def test_permission_check(self):
+        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+            r = c.get('/index.css', query_string={'a': 'static'})
+            self.assertEqual(r.status_code, 403)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+
     def test_file(self):
         with app.test_client() as c:
             r = c.get('/index.css', query_string={'a': 'static'}, buffered=True)
@@ -1194,6 +1219,12 @@ class TestEdit(unittest.TestCase):
             self.assertEqual(r.status_code, 400)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
+
+    def test_permission_check(self):
+        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+            r = c.get('/temp.html', query_string={'a': 'edit'})
+            self.assertEqual(r.status_code, 403)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_file_utf8(self, mock_template):
@@ -1295,7 +1326,22 @@ class TestEditx(unittest.TestCase):
             self.assertEqual(r.status_code, 400)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
-    
+
+    def test_permission_check(self):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+                r = c.get('/archive.zip!/index.html', query_string={'a': 'editx'})
+                self.assertEqual(r.status_code, 403)
+                self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_file(self, mock_template):
         with app.test_client() as c:
