@@ -516,7 +516,6 @@ class ActionHandler():
     def _handle_action(self):
         handler = getattr(self, request.action, None) or self.unknown
         return handler(
-            mimetype=request.localmimetype,
             format=request.format,
             )
 
@@ -648,7 +647,6 @@ class ActionHandler():
         return http_error(400, "Action not supported.", format=format)
 
     def view(self,
-            mimetype=None,
             format=None,
             *args, **kwargs):
         """Show the content of a file or list a directory.
@@ -657,6 +655,7 @@ class ActionHandler():
         """
         localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
+        mimetype = request.localmimetype
 
         # show file information for other output formats
         if format:
@@ -718,7 +717,6 @@ class ActionHandler():
         return response
 
     def source(self,
-            mimetype=None,
             format=None,
             *args, **kwargs):
         """Show file content as plain text."""
@@ -727,6 +725,7 @@ class ActionHandler():
 
         localpath = request.localpath
         archivefile, subarchivepath = get_archive_path(request.path.lstrip('/'))
+        mimetype = request.localmimetype
 
         if archivefile:
             response = handle_subarchive_path(os.path.realpath(archivefile), subarchivepath, mimetype, list_directory=False)
@@ -827,7 +826,6 @@ class ActionHandler():
         return http_response(body, format=format)
 
     def editx(self,
-            mimetype=None,
             format=None,
             *args, **kwargs):
         """HTML editor for a file."""
@@ -838,6 +836,8 @@ class ActionHandler():
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
             return http_error(400, "Found a non-file here.", format=format)
+
+        mimetype = request.localmimetype
 
         if not mimetype in ("text/html", "application/xhtml+xml"):
             return http_error(400, "This is not an HTML file.", format=format)
