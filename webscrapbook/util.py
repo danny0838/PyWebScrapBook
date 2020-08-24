@@ -14,6 +14,7 @@ import time
 from urllib.parse import quote, unquote
 from ipaddress import IPv6Address, AddressValueError
 from secrets import token_urlsafe
+from ._compat.contextlib import nullcontext
 
 
 #########################################################################
@@ -279,40 +280,39 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
     """Read basic file information from ZIP.
 
     Args:
+        zip: path, file-like object, or zipfile.ZipFile
         subpath: 'dir' and 'dir/' are both supported
     """
-    if not isinstance(zip, zipfile.ZipFile):
-        zip = zipfile.ZipFile(zip)
-
     subpath = subpath.rstrip('/')
     if base is None:
         name = os.path.basename(subpath)
     else:
         name = subpath[len(base):]
 
-    try:
-        info = zip.getinfo(subpath)
-    except KeyError:
-        pass
-    else:
-        lm = info.date_time
-        epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
-        return FileInfo(name=name, type='file', size=info.file_size, last_modified=epoch)
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+        try:
+            info = zh.getinfo(subpath)
+        except KeyError:
+            pass
+        else:
+            lm = info.date_time
+            epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+            return FileInfo(name=name, type='file', size=info.file_size, last_modified=epoch)
 
-    try:
-        info = zip.getinfo(subpath + '/')
-    except KeyError:
-        pass
-    else:
-        lm = info.date_time
-        epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
-        return FileInfo(name=name, type='dir', size=None, last_modified=epoch)
+        try:
+            info = zh.getinfo(subpath + '/')
+        except KeyError:
+            pass
+        else:
+            lm = info.date_time
+            epoch = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+            return FileInfo(name=name, type='dir', size=None, last_modified=epoch)
 
-    if check_implicit_dir:
-        base = subpath + '/'
-        for entry in zip.namelist():
-            if entry.startswith(base):
-                return FileInfo(name=name, type='dir', size=None, last_modified=None)
+        if check_implicit_dir:
+            base = subpath + '/'
+            for entry in zh.namelist():
+                if entry.startswith(base):
+                    return FileInfo(name=name, type='dir', size=None, last_modified=None)
 
     return FileInfo(name=name, type=None, size=None, last_modified=None)
 
@@ -325,43 +325,45 @@ def zip_listdir(zip, subpath, recursive=False):
     NOTE: It is possible that entry mydir/ does not exist while
     mydir/foo.bar exists. Check for matching subentries to make sure whether
     the directory exists.
-    """
-    if not isinstance(zip, zipfile.ZipFile):
-        zip = zipfile.ZipFile(zip)
 
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+    """
     base = subpath.rstrip('/')
     if base: base += '/'
     base_len = len(base)
     dir_exist = not base
     entries = {}
-    for filename in zip.namelist():
-        if not filename.startswith(base):
-            continue
 
-        if filename == base:
-            dir_exist = True
-            continue
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+        for filename in zh.namelist():
+            if not filename.startswith(base):
+                continue
 
-        entry = filename[base_len:]
-        if not recursive:
-            entry, _, _ = entry.partition('/')
-            entries.setdefault(entry, True)
-        else:
-            parts = entry.rstrip('/').split('/')
-            for i in range(0, len(parts)):
-                entry = '/'.join(parts[0:i + 1])
+            if filename == base:
+                dir_exist = True
+                continue
+
+            entry = filename[base_len:]
+            if not recursive:
+                entry, _, _ = entry.partition('/')
                 entries.setdefault(entry, True)
+            else:
+                parts = entry.rstrip('/').split('/')
+                for i in range(0, len(parts)):
+                    entry = '/'.join(parts[0:i + 1])
+                    entries.setdefault(entry, True)
 
-    if not len(entries) and not dir_exist:
-        raise ZipDirNotFoundError('Directory "{}/" does not exist in the zip.'.format(base))
+        if not len(entries) and not dir_exist:
+            raise ZipDirNotFoundError('Directory "{}/" does not exist in the zip.'.format(base))
 
-    for entry in entries:
-        info = zip_file_info(zip, base + entry, base)
+        for entry in entries:
+            info = zip_file_info(zh, base + entry, base)
 
-        if info.type is None:
-            yield FileInfo(name=entry, type='dir', size=None, last_modified=None)
-        else:
-            yield info
+            if info.type is None:
+                yield FileInfo(name=entry, type='dir', size=None, last_modified=None)
+            else:
+                yield info
 
 
 #########################################################################
