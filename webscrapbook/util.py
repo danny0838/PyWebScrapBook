@@ -409,14 +409,17 @@ def parse_meta_refresh(file):
 
 MaffPageInfo = namedtuple('MaffPageInfo', ['title', 'originalurl', 'archivetime', 'indexfilename', 'charset'])
 
-def get_maff_pages(file):
+def get_maff_pages(zip):
     """Get a list of pages (MaffPageInfo).
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
     """
     pages = []
-    with zipfile.ZipFile(file) as zip:
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
         # get top folders and their content files
         topdirs = {}
-        for entry in zip.namelist():
+        for entry in zh.namelist():
             topdir, sep, p = entry.partition('/')
             topdir = topdirs.setdefault(topdir + sep, [])
             if p: topdir.append(entry)
@@ -425,7 +428,7 @@ def get_maff_pages(file):
         for topdir in topdirs:
             rdf = topdir + 'index.rdf'
             try:
-                with zip.open(rdf, 'r') as f:
+                with zh.open(rdf, 'r') as f:
                     meta = parse_maff_index_rdf(f)
                     f.close()
             except:

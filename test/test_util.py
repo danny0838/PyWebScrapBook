@@ -417,6 +417,13 @@ class TestUtils(unittest.TestCase):
                 (None, None, None, 'webpage2/index.html', None),
                 (None, None, None, 'webpage3/index.svg', None),
                 ])
+
+            with zipfile.ZipFile(maff_filename, 'r') as zh:
+                self.assertEqual(util.get_maff_pages(zh), [
+                    ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'webpage1/index.html', 'UTF-8'),
+                    (None, None, None, 'webpage2/index.html', None),
+                    (None, None, None, 'webpage3/index.svg', None),
+                    ])
         finally:
             try:
                 os.remove(maff_filename)
