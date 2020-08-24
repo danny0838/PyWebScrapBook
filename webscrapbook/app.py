@@ -773,13 +773,12 @@ class ActionHandler():
             return http_error(400, "Action not supported.", format=format)
 
         localpaths = request.localpaths
-        mimetype = request.localmimetype
 
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zip:
-                response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
+                response = zip_static_file(zip, localpaths[-1])
         else:
-            response = static_file(localpaths[0], mimetype=mimetype)
+            response = static_file(localpaths[0])
 
         # show as inline plain text
         # @TODO: Chromium (80) seems to ignore header mimetype for certain types
