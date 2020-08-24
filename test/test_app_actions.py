@@ -48,10 +48,25 @@ def token(c):
 
 class TestView(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_permission_check(self, mock_error):
+    def test_permission_check1(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/index.html')
             mock_error.assert_called_once_with(403, format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check2(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+                r = c.get('/archive.zip!/')
+                mock_error.assert_called_once_with(403, format=None)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_directory(self, mock_template):
@@ -593,10 +608,25 @@ class TestInfo(unittest.TestCase):
 
 class TestList(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_permission_check(self, mock_error):
+    def test_permission_check1(self, mock_error):
         with app.test_client() as c, mock.patch('os.scandir', side_effect=PermissionError('Forbidden')):
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
             mock_error.assert_called_once_with(403, format='json')
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check2(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+                r = c.get('/archive.zip!/', query_string={'a': 'list', 'f': 'json'})
+                mock_error.assert_called_once_with(403, format='json')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_format_check(self, mock_error):
@@ -914,10 +944,25 @@ class TestSource(unittest.TestCase):
             mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_permission_check(self, mock_error):
+    def test_permission_check1(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/index.html', query_string={'a': 'source'})
             mock_error.assert_called_once_with(403, format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check2(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+                r = c.get('/archive.zip!/', query_string={'a': 'source'})
+                mock_error.assert_called_once_with(403, format=None)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
 
     def test_file_normal(self):
         with app.test_client() as c:
@@ -1248,9 +1293,17 @@ class TestEdit(unittest.TestCase):
             mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_permission_check(self, mock_error):
+    def test_permission_check1(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/temp.html', query_string={'a': 'edit'})
+            mock_error.assert_called_once_with(403, format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check2(self, mock_error):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+        with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+            r = c.get('/temp.maff!/index.html', query_string={'a': 'edit'})
             mock_error.assert_called_once_with(403, format=None)
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
