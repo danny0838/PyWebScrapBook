@@ -363,6 +363,27 @@ class TestUtils(unittest.TestCase):
             util.parse_meta_refresh(os.path.join(root_dir, 'test_util', 'parse_meta_refresh', 'refresh2.html')),
             (0, 'target.html')
             )
+        self.assertEqual(
+            util.parse_meta_refresh(os.path.join(root_dir, 'test_util', 'parse_meta_refresh', 'nonexist.html')),
+            (None, None)
+            )
+
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
+
+            with zipfile.ZipFile(zip_filename, 'r') as zh:
+                with zh.open('refresh.html') as f:
+                    self.assertEqual(
+                        util.parse_meta_refresh(f),
+                        (0, 'target.html')
+                        )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
 
     def test_parse_maff_index_rdf(self):
         maff_filename = os.path.join(root_dir, 'test_util', 'tempfile.maff')

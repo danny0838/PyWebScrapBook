@@ -375,9 +375,19 @@ MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target'])
 
 def parse_meta_refresh(file):
     """Retrieve meta refresh target from a file.
+
+    Args:
+        file: str, path-like, or file-like object
     """
     try:
-        with open(file, 'rb') as fh:
+        fh = open(file, 'rb')
+    except TypeError:
+        fh = file
+    except FileNotFoundError:
+        fh = None
+
+    if fh:
+        try:
             for event, elem in etree.iterparse(fh, html=True, events=('end',), tag='meta'):
                 if elem.attrib.get('http-equiv', '').lower() == 'refresh':
                     time, _, content = elem.attrib.get('content', '').partition(';')
@@ -392,13 +402,14 @@ def parse_meta_refresh(file):
 
                     if time == 0 and target is not None:
                         return MetaRefreshInfo(time=time, target=target)
-            
+
                 # clean up to save memory
                 elem.clear()
                 while elem.getprevious() is not None:
                     del elem.getparent()[0]
-    except FileNotFoundError:
-        pass
+        finally:
+            if fh != file:
+                fh.close()
 
     return MetaRefreshInfo(time=None, target=None)
 
