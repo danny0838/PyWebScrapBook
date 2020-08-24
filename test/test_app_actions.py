@@ -85,7 +85,7 @@ class TestView(unittest.TestCase):
                 is_local=True,
                 base='',
                 path='/subdir/',
-                subarchivepath=None,
+                pathparts=['/subdir'],
                 subentries={
                     ('file.txt', 'file', 3, os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime),
                     ('sub', 'dir', None, os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime),
@@ -242,7 +242,7 @@ class TestView(unittest.TestCase):
                     is_local=True,
                     base='',
                     path='/archive.zip!/',
-                    subarchivepath='',
+                    pathparts=['/archive.zip', ''],
                     subentries={
                         ('index.html', 'file', 19, 536428800),
                         },
@@ -328,6 +328,7 @@ class TestView(unittest.TestCase):
                     is_local=True,
                     base='',
                     path='/index.md',
+                    pathparts=['/index.md'],
                     content='<h2>Header</h2>\n<p>Hello 你好</p>\n',
                     )
 

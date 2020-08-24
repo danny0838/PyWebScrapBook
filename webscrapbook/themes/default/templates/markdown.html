@@ -3,7 +3,7 @@
 {% block content %}
 <header>
 <h1 id="header" class="breadcrumbs">
-{%- for label, subpath, sep, is_last in get_breadcrumbs(path, base, sitename) -%}
+{%- for label, subpath, sep, is_last in get_breadcrumbs(pathparts, base, sitename) -%}
   {%- if not is_last -%}
     <a href="{{ quote_path(subpath) }}">{{ label }}</a>{{ sep }}
   {%- else -%}

@@ -10,7 +10,7 @@
 {% block content %}
 <header>
 <h1 id="header" class="breadcrumbs">
-{%- for label, subpath, sep, is_last in get_breadcrumbs(path, base, sitename, subarchivepath) -%}
+{%- for label, subpath, sep, is_last in get_breadcrumbs(pathparts, base, sitename) -%}
   {%- if not loop.last -%}
     <a href="{{ quote_path(subpath) }}">{{ label }}</a>{{ sep }}
   {%- else -%}
@@ -20,7 +20,7 @@
 </h1>
 </header>
 <main>
-<table id="data-table" data-sitename="{{ sitename }}" data-base="{{ base }}" data-path="{{ path }}" data-subarchivepath="{{ subarchivepath or '' }}">
+<table id="data-table" data-sitename="{{ sitename }}" data-base="{{ base }}" data-path="{{ path }}">
 <thead>
   <tr><th><a hidden>Directory</a></th><th><a>Name</a></th><th class="detail"><a>Last modified</a></th><th class="detail"><a>Size</a></th></tr>
 </thead>

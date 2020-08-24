@@ -369,7 +369,7 @@ def handle_directory_listing(localpath, recursive=False, format=None):
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
-            subarchivepath=None,
+            pathparts=request.paths,
             subentries=subentries,
             )
 
@@ -446,7 +446,7 @@ def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
                 is_local=is_local_access(),
                 base=request.script_root,
                 path=request.path,
-                subarchivepath=paths[1],
+                pathparts=request.paths,
                 subentries=subentries,
                 )
         return http_response(body, headers=headers)
@@ -525,6 +525,7 @@ def handle_markdown_output(filename):
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
+            pathparts=request.paths,
             content=commonmark.commonmark(body),
             )
 

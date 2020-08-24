@@ -109,36 +109,37 @@ def is_localhost(host):
     return False
 
 
-def get_breadcrumbs(path, base='', topname='.', subarchivepath=None):
+def get_breadcrumbs(paths, base='', topname='.'):
     """Generate (label, subpath, sep, is_last) tuples.
     """
     base = base.rstrip('/') + '/'
-    subpathfull = path.strip('/')
+    paths = paths.copy()
+    paths[0] = paths[0].strip('/')
 
-    if subarchivepath is None:
-        # /path/to/directory/
-        archivepath = None
-    elif subarchivepath == "":
-        # /path/to/archive.ext!/
-        archivepath = subpathfull
-    else:
-        # /path/to/archive.ext!/subarchivepath/
-        archivepath = subpathfull[0:-(len(subarchivepath) + 1)]
-
-    if subpathfull:
-        yield (topname, base, '/', False)
-        subpaths = []
-        parts = subpathfull.split('/');
-        parts_len = len(parts)
-        for idx, part in enumerate(parts):
-            subpaths.append(part)
-            subpath = '/'.join(subpaths)
-            if subpath == archivepath:
-                yield (part[:-1], base + subpath + '/', '!/', idx == parts_len - 1)
-            else:
-                yield (part, base + subpath + '/', '/', idx == parts_len - 1)
-    else:
+    if not paths[0]:
         yield (topname, base, '/', True)
+        return
+
+    yield (topname, base, '/', False)
+
+    # handle zip root, which is something like /archive.zip!/
+    is_zip_root = False
+    if paths[-1] == '':
+        paths.pop()
+        is_zip_root = True
+
+    paths_max = len(paths) - 1
+    pathlist = []
+    for path_idx, path in enumerate(paths):
+        pathlist.append([])
+        parts = path.split('/')
+        parts_max = len(parts) - 1
+        for part_idx, part in enumerate(parts):
+            pathlist[-1].append(part)
+            subpath = '!/'.join('/'.join(p) for p in pathlist)
+            sep = '!/' if part_idx == parts_max and (path_idx < paths_max or is_zip_root) else '/'
+            is_last = path_idx == paths_max and part_idx == parts_max
+            yield (part, base + subpath + sep, sep, is_last)
 
 
 #########################################################################
