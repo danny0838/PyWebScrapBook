@@ -333,7 +333,7 @@ def handle_zip_directory_listing(zip, archivefile, subarchivepath, recursive=Fal
                 )
         return http_response(body, headers=headers)
     except util.ZipDirNotFoundError:
-        return http_error(404, "File does not exist.")
+        return http_error(404)
 
 
 def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True, format=None):
@@ -832,10 +832,10 @@ class ActionHandler():
                 try:
                     info = zip.getinfo(subarchivepath)
                 except:
-                    return http_error(404, "File does not exist.", format=format)
+                    return http_error(404, format=format)
         else:
             if not os.path.lexists(localpath):
-                return http_error(404, "File does not exist.", format=format)
+                return http_error(404, format=format)
 
         body = render_template('editx.html',
                 sitename=runtime['name'],
