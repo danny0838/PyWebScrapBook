@@ -230,7 +230,7 @@ class TestView(unittest.TestCase):
             with app.test_client() as c:
                 r = c.get('/archive.zip!/', buffered=True)
                 self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'text/html')
+                self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
                 self.assertEqual(r.headers['Cache-Control'], 'no-cache')
                 self.assertIsNotNone(r.headers['Last-Modified'])
                 self.assertIsNotNone(r.headers['ETag'])

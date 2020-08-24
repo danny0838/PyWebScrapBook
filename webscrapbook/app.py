@@ -453,51 +453,6 @@ def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
         return http_error(404)
 
 
-def handle_subarchive_path(archivefile, subarchivepath, mimetype=None, list_directory=True):
-    """Show content of a path in a zip file.
-    """
-    try:
-        zip = zipfile.ZipFile(archivefile)
-    except:
-        return http_error(500, "Unable to open the ZIP file.")
-
-    try:
-        # KeyError is raised if subarchivepath does not exist
-        info = zip.getinfo(subarchivepath)
-    except KeyError:
-        # subarchivepath does not exist
-        # possibility a missing directory entry?
-        if not list_directory:
-            return http_error(404)
-
-        return handle_zip_directory_listing([archivefile, subarchivepath], zip)
-    else:
-        fh = zip.open(info, 'r')
-
-        lm = info.date_time
-        lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
-        last_modified = http_date(lm)
-
-        etag = "%s-%s-%s" % (
-            lm,
-            info.file_size,
-            adler32(archivefile.encode("utf-8")) & 0xFFFFFFFF,
-            )
-
-        headers = {
-            'Accept-Ranges': 'bytes',
-            'Cache-Control': 'no-cache',
-            'Last-Modified': last_modified,
-            'ETag': etag,
-            }
-
-        response = Response(fh, headers=headers, mimetype=mimetype)
-        response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
-        return response
-    finally:
-        zip.close()
-
-
 def handle_archive_viewing(localpath, mimetype):
     """Handle direct visit of HTZ/MAFF file.
     """
@@ -748,10 +703,16 @@ class ActionHandler():
         localpaths = request.localpaths
         mimetype = request.localmimetype
 
-        # handle sub-archive path
         if len(localpaths) > 1:
-            response = handle_subarchive_path(localpaths[0], localpaths[1], mimetype)
-
+            with open_archive_path(localpaths) as zip:
+                try:
+                    info = zip.getinfo(localpaths[-1])
+                except KeyError:
+                    # subarchivepath does not exist
+                    # possibility a missing directory entry?
+                    return handle_zip_directory_listing(localpaths, zip)
+                else:
+                    response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
         else:
             localpath = localpaths[0]
 
