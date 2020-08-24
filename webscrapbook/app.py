@@ -21,6 +21,7 @@ from flask import request, Response, redirect, abort, render_template
 from flask import current_app
 from werkzeug.local import LocalProxy
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.http import is_resource_modified
 from werkzeug.http import http_date
 from werkzeug.http import parse_options_header, dump_options_header
@@ -95,29 +96,32 @@ def http_response(body='', status=None, headers=None, format=None):
     return Response(body, status, headers, mimetype=mimetype)
 
 
-def http_error(status=500, body=None, headers=None, format=None):
+def http_error(status=500, description=None, format=None, *args, **kwargs):
     """Handle formatted error response.
     """
     # expect body to be a JSON-serializable object
     if format == 'json':
         mimetype = 'application/json'
 
+        try:
+            abort(status, description=description, *args, **kwargs)
+        except Exception as e:
+            headers = e.get_headers()
+            description = e.description
+
         body = {
             'error': {
                 'status': status,
-                'message': body,
+                'message': description,
                 },
             }
 
         body = json.dumps(body, ensure_ascii=False)
-    else:
-        mimetype = None
 
-    if body:
-        return Response(body, status, headers, mimetype=mimetype)
+        return Response(body, status, headers=headers, mimetype=mimetype)
+
     else:
-        # @TODO: abort does not support headers and mimetype
-        return abort(status)
+        return abort(status, description=description, *args, **kwargs)
 
 
 def get_archive_path(filepath):
@@ -506,7 +510,7 @@ class ActionHandler():
             handler = getattr(self, action, None) or self.unknown
             return handler()
         except PermissionError:
-            return http_error(403, 'You are not allowed to access this resource.', format=request.format)
+            return http_error(403, format=request.format)
 
     def _handle_advanced(func):
         """A decorator function that helps handling an advanced command.
@@ -521,10 +525,7 @@ class ActionHandler():
 
             # require POST method
             if request.method != 'POST':
-                headers = {
-                    'Allow': 'POST',
-                    }
-                return http_error(405, 'Method "{}" not allowed.'.format(request.method), format=format, headers=headers)
+                return http_error(405, format=format, valid_methods=['POST'])
 
             # validate and revoke token
             token = request.values.get('token') or ''
@@ -1234,9 +1235,9 @@ def handle_request(filepath=''):
     # handle authorization
     perm = get_permission(request.authorization)
     if not verify_authorization(perm, request.action):
-        response = http_error(401, "You are not authorized.", format=request.format)
-        response.www_authenticate.set_basic("Authentication required.")
-        return response
+        auth = WWWAuthenticate()
+        auth.set_basic('Authentication required.')
+        return http_error(401, 'You are not authorized.', format=request.format, www_authenticate=auth)
 
     return action_handler._handle_action(request.action)
 

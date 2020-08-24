@@ -10,7 +10,7 @@ import shutil
 import zipfile
 import json
 from functools import partial
-from flask import request
+from flask import request, Response
 import webscrapbook
 from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
 from webscrapbook.app import make_app
@@ -47,11 +47,11 @@ def token(c):
     return c.get('/', query_string={'a': 'token'}).data.decode('UTF-8')
 
 class TestView(unittest.TestCase):
-    def test_permission_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/index.html')
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+            mock_error.assert_called_once_with(403, format=None)
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_directory(self, mock_template):
@@ -337,10 +337,11 @@ class TestView(unittest.TestCase):
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/index.html')
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.get('/nonexist')
-            self.assertEqual(r.status_code, 404)
+            mock_error.assert_called_once_with(404)
 
     def test_json_directory(self):
         with app.test_client() as c:
@@ -568,20 +569,18 @@ class TestView(unittest.TestCase):
                 })
 
 class TestList(unittest.TestCase):
-    def test_permission_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
         with app.test_client() as c, mock.patch('os.scandir', side_effect=PermissionError('Forbidden')):
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json,  {'error': {'status': 403, 'message': 'You are not allowed to access this resource.'}})
+            mock_error.assert_called_once_with(403, format='json')
 
-    def test_format_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
         """Require format."""
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'list'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'],'text/html; charset=utf-8')
-            self.assertEqual(r.data.decode('UTF-8'), 'Action not supported.')
+            mock_error.assert_called_once_with(400, 'Action not supported.', format=None)
 
     def test_directory(self):
         with app.test_client() as c:
@@ -641,19 +640,17 @@ class TestList(unittest.TestCase):
                     }),
                 })
 
-    def test_file(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file(self, mock_error):
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'list', 'f': 'json'})
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 404, 'message': 'Directory does not exist.'}})
+            mock_error.assert_called_once_with(404, 'Directory does not exist.', format='json')
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.get('/nonexist', query_string={'a': 'list', 'f': 'json'})
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 404, 'message': 'Directory does not exist.'}})
+            mock_error.assert_called_once_with(404, 'Directory does not exist.', format='json')
 
     def test_zip(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
@@ -808,19 +805,17 @@ class TestList(unittest.TestCase):
                     os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime) in data)
             self.assertTrue(data.endswith('\n\nevent: complete\ndata: \n\n'))
 
-    def test_sse_file(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_sse_file(self, mock_error):
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'list', 'f': 'sse'})
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-            self.assertEqual(r.data.decode('UTF-8'), 'Directory does not exist.')
+            mock_error.assert_called_once_with(404, 'Directory does not exist.', format='sse')
 
-    def test_sse_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_sse_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.get('/nonexist', query_string={'a': 'list', 'f': 'sse'})
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-            self.assertEqual(r.data.decode('UTF-8'), 'Directory does not exist.')
+            mock_error.assert_called_once_with(404, 'Directory does not exist.', format='sse')
 
     def test_sse_zip(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
@@ -888,19 +883,18 @@ class TestList(unittest.TestCase):
                 pass
 
 class TestSource(unittest.TestCase):
-    def test_format_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
         """No format."""
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'source', 'f': 'json'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
-    def test_permission_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/index.html', query_string={'a': 'source'})
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+            mock_error.assert_called_once_with(403, format=None)
 
     def test_file_normal(self):
         with app.test_client() as c:
@@ -1021,19 +1015,23 @@ class TestSource(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=big5')
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.get('/nonexist', query_string={'a': 'source'}, buffered=True)
-            self.assertEqual(r.status_code, 404)
+            mock_error.assert_called_once_with(404)
 
-    def test_directory(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_directory(self, mock_error):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'source'})
-            self.assertEqual(r.status_code, 404)
+            mock_error.assert_called_once_with(404)
+
+        mock_error.reset_mock()
 
         with app.test_client() as c:
             r = c.get('/subdir/', query_string={'a': 'source'})
-            self.assertEqual(r.status_code, 404)
+            mock_error.assert_called_once_with(404)
 
     def test_file_zip_subfile(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
@@ -1079,7 +1077,8 @@ class TestSource(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    def test_file_zip_subdir(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_zip_subdir(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1089,26 +1088,33 @@ class TestSource(unittest.TestCase):
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'source'}, buffered=True)
-                self.assertEqual(r.status_code, 404)
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'source'}, buffered=True)
-                self.assertEqual(r.status_code, 404)
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'source'}, buffered=True)
-                self.assertEqual(r.status_code, 404)
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'source'}, buffered=True)
-                self.assertEqual(r.status_code, 404)
+                mock_error.assert_called_once_with(404)
         finally:
             try:
                 os.remove(zip_filename)
             except FileNotFoundError:
                 pass
 
-    def test_file_zip_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_zip_nonexist(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1116,7 +1122,7 @@ class TestSource(unittest.TestCase):
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/nonexist', query_string={'a': 'source'}, buffered=True)
-                self.assertEqual(r.status_code, 404)
+                mock_error.assert_called_once_with(404)
         finally:
             try:
                 os.remove(zip_filename)
@@ -1124,19 +1130,18 @@ class TestSource(unittest.TestCase):
                 pass
 
 class TestStatic(unittest.TestCase):
-    def test_format_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
         """No format."""
         with app.test_client() as c:
             r = c.get('/index.css', query_string={'a': 'static', 'f': 'json'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
-    def test_permission_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/index.css', query_string={'a': 'static'})
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+            mock_error.assert_called_once_with(403, format=None)
 
     def test_file(self):
         with app.test_client() as c:
@@ -1151,19 +1156,19 @@ class TestStatic(unittest.TestCase):
             css = r.data.decode('UTF-8').replace('\r\n', '\n')
             self.assertTrue('#data-table' in css)
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.get('/nonexist', query_string={'a': 'static'})
-            self.assertEqual(r.status_code, 404)
+            mock_error.assert_called_once_with(404)
 
 class TestConfig(unittest.TestCase):
-    def test_format_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
         """Require format."""
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'config'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'],'text/html; charset=utf-8')
-            self.assertEqual(r.data.decode('UTF-8'), 'Action not supported.')
+            mock_error.assert_called_once_with(400, 'Action not supported.', format=None)
 
     def test_config(self):
         with app.test_client() as c:
@@ -1209,22 +1214,21 @@ class TestEdit(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_format_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
         """No format."""
         with open(self.test_file, 'wb') as fh:
             fh.write('你好𧌒蟲'.encode('UTF-8'))
 
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'edit', 'f': 'json'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
-    def test_permission_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
         with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             r = c.get('/temp.html', query_string={'a': 'edit'})
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+            mock_error.assert_called_once_with(403, format=None)
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_file_utf8(self, mock_template):
@@ -1319,23 +1323,22 @@ class TestEdit(unittest.TestCase):
                 )
 
 class TestEditx(unittest.TestCase):
-    def test_format_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
         """No format."""
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'editx', 'f': 'json'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
-    def test_permission_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 pass
             with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
                 r = c.get('/archive.zip!/index.html', query_string={'a': 'editx'})
-                self.assertEqual(r.status_code, 403)
-                self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+                mock_error.assert_called_once_with(403, format=None)
         finally:
             try:
                 os.remove(zip_filename)
@@ -1451,7 +1454,8 @@ class TestLock(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         with app.test_client() as c:
             r = c.get('/', query_string={
@@ -1460,11 +1464,10 @@ class TestLock(unittest.TestCase):
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
-            self.assertFalse(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
 
-    def test_token_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         with app.test_client() as c:
             r = c.post('/', data={
@@ -1472,20 +1475,17 @@ class TestLock(unittest.TestCase):
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
-            self.assertFalse(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
-    def test_params_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_params_check(self, mock_error):
         """Require name."""
         with app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
                 })
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Lock name is not specified.')
-            self.assertFalse(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(400, 'Lock name is not specified.', format=None)
 
     def test_normal(self):
         with app.test_client() as c:
@@ -1498,7 +1498,8 @@ class TestLock(unittest.TestCase):
             self.assertEqual(r.status_code, 204)
             self.assertTrue(os.path.isdir(self.lock))
 
-    def test_directory_existed(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_directory_existed(self, mock_error):
         os.makedirs(self.lock, exist_ok=True)
 
         with app.test_client() as c:
@@ -1509,9 +1510,7 @@ class TestLock(unittest.TestCase):
                 'chkt': 0,
                 })
 
-            self.assertEqual(r.status_code, 500)
-            self.assertEqual(r.data.decode('UTF-8'), 'Unable to acquire lock "test".')
-            self.assertTrue(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(500, 'Unable to acquire lock "test".', format=None)
 
     def test_directory_staled(self):
         os.makedirs(self.lock, exist_ok=True)
@@ -1527,7 +1526,8 @@ class TestLock(unittest.TestCase):
             self.assertEqual(r.status_code, 204)
             self.assertTrue(os.path.isdir(self.lock))
 
-    def test_file_existed(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_existed(self, mock_error):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
         with open(self.lock, 'w') as f:
             pass
@@ -1540,9 +1540,7 @@ class TestLock(unittest.TestCase):
                 'chkt': 0,
                 })
 
-            self.assertEqual(r.status_code, 500)
-            self.assertEqual(r.data.decode('UTF-8'), 'Unable to acquire lock "test".')
-            self.assertTrue(os.path.isfile(self.lock))
+            mock_error.assert_called_once_with(500, 'Unable to acquire lock "test".', format=None)
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
@@ -1556,7 +1554,8 @@ class TestUnlock(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         os.makedirs(self.lock, exist_ok=True)
 
@@ -1567,11 +1566,10 @@ class TestUnlock(unittest.TestCase):
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
-            self.assertTrue(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
 
-    def test_token_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         os.makedirs(self.lock, exist_ok=True)
 
@@ -1581,11 +1579,10 @@ class TestUnlock(unittest.TestCase):
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
-            self.assertTrue(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
-    def test_params_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_params_check(self, mock_error):
         """Require name."""
         os.makedirs(self.lock, exist_ok=True)
 
@@ -1595,9 +1592,7 @@ class TestUnlock(unittest.TestCase):
                 'a': 'unlock',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Lock name is not specified.')
-            self.assertTrue(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(400, 'Lock name is not specified.', format=None)
 
     def test_normal(self):
         os.makedirs(self.lock, exist_ok=True)
@@ -1623,7 +1618,8 @@ class TestUnlock(unittest.TestCase):
             self.assertFalse(os.path.exists(self.lock))
 
     @mock.patch('sys.stderr', new_callable=io.StringIO)
-    def test_unremovable(self, mock_stderr):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_unremovable(self, mock_error, mock_stderr):
         os.makedirs(self.lock, exist_ok=True)
         with open(os.path.join(self.lock, 'temp.txt'), 'w') as f:
             pass
@@ -1635,13 +1631,12 @@ class TestUnlock(unittest.TestCase):
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 500)
-            self.assertEqual(r.data.decode('UTF-8'), 'Unable to remove lock "test".')
-            self.assertTrue(os.path.isdir(self.lock))
+            mock_error.assert_called_once_with(500, 'Unable to remove lock "test".', format=None)
             self.assertNotEqual(mock_stderr.getvalue(), '')
 
     @mock.patch('sys.stderr', new_callable=io.StringIO)
-    def test_unremovable2(self, mock_stderr):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_unremovable2(self, mock_error, mock_stderr):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
         with open(self.lock, 'w') as f:
             pass
@@ -1653,9 +1648,7 @@ class TestUnlock(unittest.TestCase):
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 500)
-            self.assertEqual(r.data.decode('UTF-8'), 'Unable to remove lock "test".')
-            self.assertTrue(os.path.isfile(self.lock))
+            mock_error.assert_called_once_with(500, 'Unable to remove lock "test".', format=None)
             self.assertNotEqual(mock_stderr.getvalue(), '')
 
 class TestMkdir(unittest.TestCase):
@@ -1675,7 +1668,8 @@ class TestMkdir(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         with app.test_client() as c:
             r = c.get('/temp', query_string={
@@ -1683,20 +1677,17 @@ class TestMkdir(unittest.TestCase):
                 'a': 'mkdir',
                 })
 
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
-            self.assertFalse(os.path.isdir(self.test_dir))
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
 
-    def test_token_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         with app.test_client() as c:
             r = c.post('/temp', data={
                 'a': 'mkdir',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
-            self.assertFalse(os.path.isdir(self.test_dir))
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
     def test_directory(self):
         with app.test_client() as c:
@@ -1730,7 +1721,8 @@ class TestMkdir(unittest.TestCase):
             self.assertEqual(r.status_code, 204)
             self.assertTrue(os.path.isdir(self.test_dir))
 
-    def test_nondirectory_existed(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nondirectory_existed(self, mock_error):
         with open(self.test_dir, 'w') as f:
             pass
 
@@ -1740,9 +1732,7 @@ class TestMkdir(unittest.TestCase):
                 'a': 'mkdir',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found a non-directory here.')
-            self.assertTrue(os.path.isfile(self.test_dir))
+            mock_error.assert_called_once_with(400, 'Found a non-directory here.', format=None)
 
     def test_zip_directory(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -1807,7 +1797,8 @@ class TestSave(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         os.makedirs(self.test_dir, exist_ok=True)
 
@@ -1817,11 +1808,11 @@ class TestSave(unittest.TestCase):
                 'a': 'save',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
-            self.assertFalse(os.path.isfile(self.test_file))
 
-    def test_token_check(self):
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         os.makedirs(self.test_dir, exist_ok=True)
 
@@ -1830,9 +1821,8 @@ class TestSave(unittest.TestCase):
                 'a': 'save',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
-            self.assertFalse(os.path.isfile(self.test_file))
+
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
     def test_save_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -1879,7 +1869,8 @@ class TestSave(unittest.TestCase):
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
 
-    def test_save_nonfile_existed(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_save_nonfile_existed(self, mock_error):
         os.makedirs(self.test_file, exist_ok=True)
 
         with app.test_client() as c:
@@ -1889,9 +1880,7 @@ class TestSave(unittest.TestCase):
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found a non-file here.')
-            self.assertFalse(os.path.isfile(self.test_file))
+            mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
 
     def test_save_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -1985,7 +1974,8 @@ class TestSave(unittest.TestCase):
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
 
-    def test_upload_nonfile_existed(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_upload_nonfile_existed(self, mock_error):
         os.makedirs(self.test_file, exist_ok=True)
 
         with app.test_client() as c:
@@ -1995,9 +1985,7 @@ class TestSave(unittest.TestCase):
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found a non-file here.')
-            self.assertFalse(os.path.isfile(self.test_file))
+            mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
 
     def test_upload_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2067,7 +2055,8 @@ class TestDelete(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         os.makedirs(self.test_dir, exist_ok=True)
         with open(self.test_file, 'w', encoding='UTF-8') as f:
@@ -2079,11 +2068,10 @@ class TestDelete(unittest.TestCase):
                 'a': 'delete',
                 })
 
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
-            self.assertTrue(os.path.isfile(self.test_file))
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
 
-    def test_token_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         os.makedirs(self.test_dir, exist_ok=True)
         with open(self.test_file, 'w', encoding='UTF-8') as f:
@@ -2094,9 +2082,7 @@ class TestDelete(unittest.TestCase):
                 'a': 'delete',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
-            self.assertTrue(os.path.isfile(self.test_file))
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
     def test_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -2138,16 +2124,15 @@ class TestDelete(unittest.TestCase):
             self.assertEqual(r.status_code, 204)
             self.assertFalse(os.path.isfile(self.test_dir))
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.post('/temp', data={
                 'token': token(c),
                 'a': 'delete',
                 })
 
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.data.decode('UTF-8'), 'File does not exist.')
-            self.assertFalse(os.path.exists(self.test_dir))
+            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
 
     def test_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2216,7 +2201,8 @@ class TestDelete(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
 
-    def test_zip_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_nonexist(self, mock_error):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('file.txt', 'dummy')
 
@@ -2226,8 +2212,7 @@ class TestDelete(unittest.TestCase):
                 'a': 'delete',
                 })
 
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.data.decode('UTF-8'), 'Entry does not exist in this ZIP file.')
+            mock_error.assert_called_once_with(404, 'Entry does not exist in this ZIP file.', format=None)
 
 class TestMove(unittest.TestCase):
     def setUp(self):
@@ -2250,7 +2235,8 @@ class TestMove(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         with app.test_client() as c:
             r = c.get('/temp/subdir/test.txt', query_string={
@@ -2258,10 +2244,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
 
-    def test_token_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -2269,10 +2255,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
-    def test_params_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_params_check(self, mock_error):
         """Require target."""
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -2280,10 +2266,10 @@ class TestMove(unittest.TestCase):
                 'a': 'move',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Target is not specified.')
+            mock_error.assert_called_once_with(400, 'Target is not specified.', format=None)
 
-    def test_path_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_path_check(self, mock_error):
         """Target must not beyond the root directory."""
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -2292,8 +2278,7 @@ class TestMove(unittest.TestCase):
                 'target': '../test_app_actions1/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.data.decode('UTF-8'), 'Unable to operate beyond the root directory.')
+            mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format=None)
 
     def test_file(self):
         stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
@@ -2345,19 +2330,19 @@ class TestMove(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')))
             self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')), stat2)
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.post('/temp/nonexist', data={
                 'token': token(c),
                 'a': 'move',
                 'target': '/temp/subdir2',
                 })
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.data.decode('UTF-8'), 'File does not exist.')
-            self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'nonexist')))
-            self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'subdir2')))
 
-    def test_file_to_file(self):
+            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_to_file(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
@@ -2371,12 +2356,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2/test2.txt".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
 
-    def test_file_to_dir(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_to_dir(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
         stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
@@ -2388,12 +2371,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/subdir2',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
 
-    def test_dir_to_dir(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_dir_to_dir(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         stat = os.stat(os.path.join(self.test_dir, 'subdir'))
         stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
@@ -2405,12 +2386,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/subdir2',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
 
-    def test_dir_to_file(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_dir_to_file(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
@@ -2424,12 +2403,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2/test2.txt".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
 
-    def test_source_in_zip(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_source_in_zip(self, mock_error):
         """No ZIP support."""
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('subdir/index.html', 'ABC 你好')
@@ -2441,10 +2418,10 @@ class TestMove(unittest.TestCase):
                 'target': '/temp/index.html',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'File is inside an archive file.')
+            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format=None)
 
-    def test_target_in_zip(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_target_in_zip(self, mock_error):
         """No ZIP support."""
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
@@ -2456,8 +2433,7 @@ class TestMove(unittest.TestCase):
                 'target': '/temp.maff!/test.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Target is inside an archive file.')
+            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format=None)
 
 class TestCopy(unittest.TestCase):
     def setUp(self):
@@ -2480,7 +2456,8 @@ class TestCopy(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_method_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
         """Require POST."""
         with app.test_client() as c:
             r = c.get('/temp/subdir/test.txt', query_string={
@@ -2489,10 +2466,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 405)
-            self.assertEqual(r.data.decode('UTF-8'), 'Method "GET" not allowed.')
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
 
-    def test_token_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
         """Require token."""
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -2500,10 +2477,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Invalid access token.')
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
 
-    def test_params_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_params_check(self, mock_error):
         """Require target."""
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -2511,10 +2488,10 @@ class TestCopy(unittest.TestCase):
                 'a': 'copy',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Target is not specified.')
+            mock_error.assert_called_once_with(400, 'Target is not specified.', format=None)
 
-    def test_path_check(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_path_check(self, mock_error):
         """Target must not beyond the root directory."""
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -2523,8 +2500,7 @@ class TestCopy(unittest.TestCase):
                 'target': '../test_app_actions1/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(r.data.decode('UTF-8'), 'Unable to operate beyond the root directory.')
+            mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format=None)
 
     def test_file(self):
         with app.test_client() as c:
@@ -2610,7 +2586,8 @@ class TestCopy(unittest.TestCase):
             with open(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt'), 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
         with app.test_client() as c:
             r = c.post('/temp/nonexist', data={
                 'token': token(c),
@@ -2618,12 +2595,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2',
                 })
 
-            self.assertEqual(r.status_code, 404)
-            self.assertEqual(r.data.decode('UTF-8'), 'File does not exist.')
-            self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'nonexist')))
-            self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'subdir2')))
+            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
 
-    def test_file_to_file(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_to_file(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
@@ -2637,12 +2612,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2/test2.txt".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
 
-    def test_file_to_dir(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_to_dir(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
         stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
@@ -2654,12 +2627,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
 
-    def test_dir_to_dir(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_dir_to_dir(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         stat = os.stat(os.path.join(self.test_dir, 'subdir'))
         stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
@@ -2671,12 +2642,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
 
-    def test_dir_to_file(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_dir_to_file(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
@@ -2690,12 +2659,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Found something at target "/temp/subdir2/test2.txt".')
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir')), stat)
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt')), stat2)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
 
-    def test_source_in_zip(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_source_in_zip(self, mock_error):
         """No ZIP support."""
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('subdir/index.html', 'ABC 你好')
@@ -2707,10 +2674,10 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp/index.html',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'File is inside an archive file.')
+            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format=None)
 
-    def test_target_in_zip(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_target_in_zip(self, mock_error):
         """No ZIP support."""
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
@@ -2722,23 +2689,20 @@ class TestCopy(unittest.TestCase):
                 'target': '/temp.maff!/test.txt',
                 })
 
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.data.decode('UTF-8'), 'Target is inside an archive file.')
+            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format=None)
 
 class TestUnknown(unittest.TestCase):
-    def test_unknown(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_unknown(self, mock_error):
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'unkonwn'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-            self.assertEqual(r.data.decode('UTF-8'), 'Action not supported.')
+            mock_error.assert_called_once_with(400, 'Action not supported.', format=None)
 
-    def test_unknown_json(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_unknown_json(self, mock_error):
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'unkonwn', 'f': 'json'})
-            self.assertEqual(r.status_code, 400)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {'error': {'status': 400, 'message': 'Action not supported.'}})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
 
 if __name__ == '__main__':
     unittest.main()
