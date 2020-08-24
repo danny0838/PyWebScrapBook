@@ -454,8 +454,11 @@ def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
         return http_error(404)
 
 
-def handle_archive_viewing(localpath, mimetype):
+def handle_archive_viewing(paths, mimetype):
     """Handle direct visit of HTZ/MAFF file.
+
+    Args:
+        paths: [path-to-zip-file, subpath1, subpath2, ...]
     """
     def list_maff_pages(pages):
         """List available web pages in a MAFF file.
@@ -471,7 +474,12 @@ def handle_archive_viewing(localpath, mimetype):
     if mimetype == "application/html+zip":
         subpath = "index.html"
     else:
-        pages = util.get_maff_pages(localpath)
+        if len(paths) > 1:
+            with open_archive_path(paths) as zip:
+                with zip.open(paths[-1]) as zh:
+                    pages = util.get_maff_pages(zh)
+        else:
+            pages = util.get_maff_pages(paths[-1])
 
         if len(pages) > 1:
             # multiple index files
@@ -722,6 +730,10 @@ class ActionHandler():
                     # possibility a missing directory entry?
                     return handle_zip_directory_listing(localpaths, zip)
                 else:
+                    # view archive file
+                    if mimetype in ("application/html+zip", "application/x-maff"):
+                        return handle_archive_viewing(localpaths, mimetype)
+
                     response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
         else:
             localpath = localpaths[0]
@@ -734,7 +746,7 @@ class ActionHandler():
             elif os.path.isfile(localpath):
                 # view archive file
                 if mimetype in ("application/html+zip", "application/x-maff"):
-                    return handle_archive_viewing(localpath, mimetype)
+                    return handle_archive_viewing(localpaths, mimetype)
 
                 # view markdown
                 if mimetype == "text/markdown":

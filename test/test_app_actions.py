@@ -312,6 +312,35 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_file_zip_subfile_nested(self):
+        zip_filename = os.path.join(server_root, 'archive.htz')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                buf1 = io.BytesIO()
+                with zipfile.ZipFile(buf1, 'w') as zh1:
+                    zh1.writestr(zipfile.ZipInfo('index.html', (1987, 1, 5, 0, 0, 0)), 'Hello World')
+                zh.writestr(zipfile.ZipInfo('entry1.htz', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
+
+            with app.test_client() as c:
+                r = c.get('/archive.htz!/entry1.htz')
+                self.assertEqual(r.status_code, 302)
+                self.assertEqual(r.headers['Location'], 'http://localhost/archive.htz!/entry1.htz!/index.html')
+
+                r = c.get('/archive.htz!/entry1.htz!/index.html')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'text/html')
+                self.assertEqual(r.headers['Content-Length'], '11')
+                self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                self.assertEqual(r.data.decode('UTF-8'), 'Hello World')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_file_markdown(self):
         with app.test_client() as c:
             with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
