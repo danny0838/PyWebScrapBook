@@ -274,6 +274,13 @@ class TestUtils(unittest.TestCase):
                 util.zip_file_info(zip_filename, 'nonexist/'),
                 ('nonexist', None, None, None)
                 )
+
+            # take zipfile.ZipFile
+            with zipfile.ZipFile(zip_filename, 'r') as zip:
+                self.assertEqual(
+                    util.zip_file_info(zip, 'file.txt'),
+                    ('file.txt', 'file', 6, 536428800)
+                    )
         finally:
             try:
                 os.remove(zip_filename)
@@ -333,6 +340,14 @@ class TestUtils(unittest.TestCase):
 
             with self.assertRaises(util.ZipDirNotFoundError):
                 set(util.zip_listdir(zip_filename, 'file.txt'))
+
+            # take zipfile.ZipFile
+            with zipfile.ZipFile(zip_filename, 'r') as zip:
+                self.assertEqual(set(util.zip_listdir(zip, '')), {
+                    ('folder', 'dir', None, 567964800),
+                    ('implicit_folder', 'dir', None, None),
+                    ('file.txt', 'file', 6, 536428800),
+                    })
         finally:
             try:
                 os.remove(zip_filename)
