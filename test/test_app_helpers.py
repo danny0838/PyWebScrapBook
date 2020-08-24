@@ -131,12 +131,12 @@ class TestFunctions(unittest.TestCase):
                 with zipfile.ZipFile(tempfile, 'w') as zip:
                     pass
 
-                self.assertEqual(wsbapp.get_archive_path('entry.zip'), [os.path.join(root, 'entry.zip')])
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!'), [os.path.join(root, 'entry.zip!')])
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/'), [os.path.join(root, 'entry.zip'), ''])
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir'), [os.path.join(root, 'entry.zip'), 'subdir'])
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/subdir/'), [os.path.join(root, 'entry.zip'), 'subdir'])
-                self.assertEqual(wsbapp.get_archive_path('entry.zip!/index.html'), [os.path.join(root, 'entry.zip'), 'index.html'])
+                self.assertEqual(wsbapp.get_archive_path('/entry.zip'), ['/entry.zip'])
+                self.assertEqual(wsbapp.get_archive_path('/entry.zip!'), ['/entry.zip!'])
+                self.assertEqual(wsbapp.get_archive_path('/entry.zip!/'), ['/entry.zip', ''])
+                self.assertEqual(wsbapp.get_archive_path('/entry.zip!/subdir'), ['/entry.zip', 'subdir'])
+                self.assertEqual(wsbapp.get_archive_path('/entry.zip!/subdir/'), ['/entry.zip', 'subdir'])
+                self.assertEqual(wsbapp.get_archive_path('/entry.zip!/index.html'), ['/entry.zip', 'index.html'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -161,8 +161,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip!/entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -186,8 +186,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip!/entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -209,8 +209,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip!', 'entry1.zip'), ''])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip!/entry1.zip', ''])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -230,8 +230,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip!/entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -252,8 +252,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip!/entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -272,8 +272,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip', 'entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -292,8 +292,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/'),
-                    [os.path.join(root, 'entry.zip!', 'entry1.zip!')])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/'),
+                    ['/entry.zip!/entry1.zip!'])
             finally:
                 try:
                     shutil.rmtree(os.path.join(root, 'entry.zip!'))
@@ -341,8 +341,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -372,8 +372,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -401,8 +401,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip', ''])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip', ''])
             finally:
                 try:
                     os.remove(tempfile)
@@ -427,8 +427,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -451,8 +451,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -475,8 +475,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -497,8 +497,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip', 'entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -519,8 +519,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip', 'entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -540,8 +540,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip', ''])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip', 'entry2.zip', ''])
             finally:
                 try:
                     os.remove(tempfile)
@@ -557,8 +557,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip', 'entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -572,8 +572,8 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', 'non-zip')
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)
@@ -587,8 +587,8 @@ class TestFunctions(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    wsbapp.get_archive_path('entry.zip!/entry1.zip!/entry2.zip!/'),
-                    [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'])
+                    wsbapp.get_archive_path('/entry.zip!/entry1.zip!/entry2.zip!/'),
+                    ['/entry.zip', 'entry1.zip!/entry2.zip!'])
             finally:
                 try:
                     os.remove(tempfile)

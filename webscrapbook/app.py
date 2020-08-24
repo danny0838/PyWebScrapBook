@@ -180,7 +180,8 @@ def get_archive_path(filepath):
         or [path-to-zip-file, subpath1, subpath2, ...]
     """
     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
-        archivefile = os.path.normpath(os.path.join(runtime['root'], filepath[:m.start(0)].strip('/')))
+        archivepath = filepath[:m.start(0)].rstrip('/')
+        archivefile = os.path.normpath(os.path.join(runtime['root'], archivepath.lstrip('/')))
         conflicting = archivefile + '!'
         if os.path.lexists(conflicting):
             break
@@ -195,12 +196,12 @@ def get_archive_path(filepath):
             with zip as zip:
                 def get_subpath(zp, filepath):
                     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
-                        archivefile = filepath[:m.start(0)]
-                        conflicting = archivefile + '!/'
+                        archivepath = filepath[:m.start(0)]
+                        conflicting = archivepath + '!/'
                         if any(i.startswith(conflicting) for i in zp.namelist()):
                             break
                         try:
-                            with zp.open(archivefile, 'r') as f:
+                            with zp.open(archivepath, 'r') as f:
                                 # opened zip file is not seekable in Python < 3.7,
                                 # copy to a buffer for seeking.
                                 if not f.seekable():
@@ -212,18 +213,18 @@ def get_archive_path(filepath):
                                     f = ff
 
                                 with zipfile.ZipFile(f, 'r') as zip:
-                                    rv.append(archivefile)
+                                    rv.append(archivepath)
                                     get_subpath(zip, filepath[m.end(0):])
                                     return
                         except (KeyError, zipfile.BadZipFile):
                             pass
                     rv.append(filepath.rstrip('/'))
 
-                rv = [archivefile]
+                rv = [archivepath]
                 get_subpath(zip, filepath[m.end(0):])
                 return rv
 
-    return [os.path.normpath(os.path.join(runtime['root'], filepath.strip('/')))]
+    return [filepath.rstrip('/')]
 
 
 @contextmanager
@@ -534,6 +535,11 @@ class Request(flask.Request):
     """Subclassed Request object for more useful properties.
     """
     @cached_property
+    def paths(self):
+        """Like request.path, but with ZIP subpaths resolved."""
+        return get_archive_path(self.path)
+
+    @cached_property
     def localpath(self):
         """Corresponding filesystem path of the requested path."""
         return os.path.normpath(os.path.join(runtime['root'], self.path.strip('/')))
@@ -541,7 +547,9 @@ class Request(flask.Request):
     @cached_property
     def localpaths(self):
         """Like localpath, but with ZIP subpaths resolved."""
-        return get_archive_path(self.path)
+        paths = self.paths.copy()
+        paths[0] = os.path.normpath(os.path.join(runtime['root'], paths[0].lstrip('/')))
+        return paths
 
     @cached_property
     def localrealpath(self):
@@ -670,6 +678,7 @@ class ActionHandler():
                 return http_error(400, 'Target is not specified.', format=format)
 
             targetpaths = get_archive_path(target)
+            targetpaths[0] = os.path.normpath(os.path.join(runtime['root'], targetpaths[0].lstrip('/')))
 
             if not targetpaths[0].startswith(os.path.join(runtime['root'], '')):
                 return http_error(403, "Unable to operate beyond the root directory.", format=format)
