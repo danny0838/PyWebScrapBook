@@ -1307,7 +1307,8 @@ def make_app(root=".", config=None):
     app.jinja_env.globals.update({
             'os': os,
             'time': time,
-            'util': util,
+            'get_breadcrumbs': util.get_breadcrumbs,
+            'format_filesize': util.format_filesize,
             'quote_path': quote_path,
             })
 

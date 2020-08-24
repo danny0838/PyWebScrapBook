@@ -10,7 +10,7 @@
 {% block content %}
 <header>
 <h1 id="header" class="breadcrumbs">
-{%- for label, subpath, sep, is_last in util.get_breadcrumbs(path, base, sitename, subarchivepath) -%}
+{%- for label, subpath, sep, is_last in get_breadcrumbs(path, base, sitename, subarchivepath) -%}
   {%- if not loop.last -%}
     <a href="{{ quote_path(subpath) }}">{{ label }}</a>{{ sep }}
   {%- else -%}
@@ -30,7 +30,7 @@
   {%- set url = quote_path(info.name) + ('/' if info.type == 'dir' else '') %}
   {%- set filetype = info.type %}
   {%- set size = info.size %}
-  {%- set size_text = util.format_filesize(size) if size else '' %}
+  {%- set size_text = format_filesize(size) if size else '' %}
   {%- set lm = info.last_modified %}
   {%- set lm_text = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(lm)) %}
   <tr class="{{ filetype }}"><td data-sort="{{ filename }}"><a class="icon {{ filetype }}" title="{{ filename }}"></a><td data-sort="{{ filename }}"><a href="{{ url }}">{{ filename }}</a></td><td class="detail" data-sort="{{ lm or '' }}">{{ lm_text }}</td><td class="detail" data-sort="{{ size or '' }}">{{ size_text }}</td></tr>
