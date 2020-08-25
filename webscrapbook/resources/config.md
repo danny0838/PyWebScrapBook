@@ -3,8 +3,8 @@
 WebScrapBook has 3 levels of configuration:
 
 * default: written in the source code
-* user: at "~/.wsbconfig"
-* book: at "<book>/.wsb/config.ini"
+* user: at `~/.wsbconfig`
+* book: at `<book>/.wsb/config.ini`
 
 with the latters overwriting the formers.
 

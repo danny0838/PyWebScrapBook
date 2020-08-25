@@ -23,7 +23,7 @@ Run below command from CLI to install (or upgrade to) the latest version:
 
     python -m pip install -U webscrapbook
 
-After installation, `wsb` or `webscrapbook` will be available from the CLI.
+After installation, `wsb`, `webscrapbook`, and `wsbview` will be available from the CLI.
 
 ### Host a scrapbook
 
@@ -58,5 +58,7 @@ Run below command for help about available commands:
 For documentation about configs, run:
 
     wsb help config
+
+or read [online](https://github.com/danny0838/PyWebScrapBook/blob/master/webscrapbook/resources/config.md).
 
 For more useful ways to configure PyWebScrapBook alongside WebScrapBook, visit the documentation wiki for [WebScrapBook](https://github.com/danny0838/webscrapbook/wiki/Backend).
