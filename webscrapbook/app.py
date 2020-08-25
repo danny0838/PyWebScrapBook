@@ -392,18 +392,15 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
                     })
         return http_response(data, headers=headers, format=format)
 
-    try:
-        body = render_template('index.html',
-                sitename=runtime['name'],
-                is_local=is_local_access(),
-                base=request.script_root,
-                path=request.path,
-                pathparts=request.paths,
-                subentries=subentries,
-                )
-        return http_response(body, headers=headers)
-    except util.ZipDirNotFoundError:
-        return http_error(404)
+    body = render_template('index.html',
+            sitename=runtime['name'],
+            is_local=is_local_access(),
+            base=request.script_root,
+            path=request.path,
+            pathparts=request.paths,
+            subentries=subentries,
+            )
+    return http_response(body, headers=headers)
 
 
 def handle_archive_viewing(paths, mimetype):
