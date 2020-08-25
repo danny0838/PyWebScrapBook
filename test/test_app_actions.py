@@ -341,6 +341,40 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_zip_nonexist(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist')
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist/')
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist.txt')
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist.txt/')
+                mock_error.assert_called_once_with(404)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_file_markdown(self):
         with app.test_client() as c:
             with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:

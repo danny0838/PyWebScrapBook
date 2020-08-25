@@ -367,6 +367,36 @@ def zip_listdir(zip, subpath, recursive=False):
                 yield info
 
 
+def zip_hasdir(zip, subpath):
+    """Check if a directory exists in the ZIP.
+
+    NOTE: It is possible that entry mydir/ does not exist while
+    mydir/foo.bar exists. Check for matching subentries to make sure whether
+    the directory exists.
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+    """
+    base = subpath.rstrip('/') + '/'
+    if base == '/':
+        return True
+
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+        # if directory entry exists, we are done
+        try:
+            zh.getinfo(base)
+            return True
+        except KeyError:
+            pass
+
+        # otherwise, look for an implicit directory
+        for path in zh.namelist():
+            if path.startswith(base):
+                return True
+
+    return False
+
+
 #########################################################################
 # HTML manipulation
 #########################################################################

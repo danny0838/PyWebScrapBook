@@ -679,7 +679,9 @@ class ActionHandler():
                     info = zip.getinfo(localpaths[-1])
                 except KeyError:
                     # subarchivepath does not exist
-                    # possibility a missing directory entry?
+                    if not util.zip_hasdir(zip, localpaths[-1]):
+                        return http_error(404)
+
                     return handle_directory_listing(localpaths, zip)
                 else:
                     # view archive file

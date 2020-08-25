@@ -383,6 +383,31 @@ class TestUtils(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_zip_hasdir(self):
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('file.txt', '123456')
+                zh.writestr('folder/', '')
+                zh.writestr('folder/.gitkeep', '123')
+                zh.writestr('implicit_folder/.gitkeep', '1234')
+
+            self.assertTrue(util.zip_hasdir(zip_filename, ''))
+            self.assertTrue(util.zip_hasdir(zip_filename, '/'))
+            self.assertFalse(util.zip_hasdir(zip_filename, 'file.txt'))
+            self.assertFalse(util.zip_hasdir(zip_filename, 'file.txt/'))
+            self.assertTrue(util.zip_hasdir(zip_filename, 'folder'))
+            self.assertTrue(util.zip_hasdir(zip_filename, 'folder/'))
+            self.assertTrue(util.zip_hasdir(zip_filename, 'implicit_folder'))
+            self.assertTrue(util.zip_hasdir(zip_filename, 'implicit_folder/'))
+            self.assertFalse(util.zip_hasdir(zip_filename, 'implicit_folder/.gitkeep'))
+            self.assertFalse(util.zip_hasdir(zip_filename, 'implicit_folder/.gitkeep/'))
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_parse_meta_refresh(self):
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(root_dir, 'test_util', 'parse_meta_refresh', 'refresh1.html')),
