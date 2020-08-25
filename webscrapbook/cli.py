@@ -14,11 +14,7 @@ from . import __package_name__, __version__
 from . import *
 from . import server
 from . import util
-
-try:
-    from time import time_ns
-except ImportError:
-    from .lib.shim.time import time_ns
+from ._compat.time import time_ns
 
 
 def get_umask():

@@ -32,11 +32,7 @@ from . import *
 from . import __version__
 from . import Config
 from . import util
-
-try:
-    from time import time_ns
-except ImportError:
-    from .lib.shim.time import time_ns
+from ._compat.time import time_ns
 
 # see: https://url.spec.whatwg.org/#percent-encoded-bytes
 quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
