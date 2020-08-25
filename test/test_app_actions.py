@@ -1396,6 +1396,28 @@ class TestExec(unittest.TestCase):
             self.assertEqual(r.status_code, 204)
             mock_exec.assert_called_once_with(os.path.join(server_root, 'index.html'))
 
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
+        with app.test_client() as c:
+            r = c.get('/nonexist.file', query_string={'a': 'exec'})
+            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.htz')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('index.html', 'Hello World!')
+
+            with app.test_client() as c:
+                r = c.get('/archive.htz!/index.html', query_string={'a': 'exec'})
+                mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
 class TestBrowse(unittest.TestCase):
     @mock.patch('webscrapbook.util.view_in_explorer')
     def test_directory(self, mock_browse):
@@ -1410,6 +1432,28 @@ class TestBrowse(unittest.TestCase):
             r = c.get('/index.html', query_string={'a': 'browse'})
             self.assertEqual(r.status_code, 204)
             mock_browse.assert_called_once_with(os.path.join(server_root, 'index.html'))
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
+        with app.test_client() as c:
+            r = c.get('/nonexist.file', query_string={'a': 'browse'})
+            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.htz')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('index.html', 'Hello World!')
+
+            with app.test_client() as c:
+                r = c.get('/archive.htz!/index.html', query_string={'a': 'browse'})
+                mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
 
 class TestToken(unittest.TestCase):
     def test_token(self):
