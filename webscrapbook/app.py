@@ -1137,11 +1137,11 @@ class ActionHandler():
 
         elif len(localpaths) > 1:
             archivefile, subarchivepath, *_ = localpaths
+            temp_writing_file = None
+            writing = False
             try:
-                temp_writing_file = None
-
                 with zipfile.ZipFile(archivefile, 'a') as zip0:
-                    # if subarchivepath exists, open a new zip file for writing.
+                    # if subarchivepath exists, open a temp zip file for writing.
                     try:
                         info = zip0.getinfo(subarchivepath)
                     except KeyError:
@@ -1150,58 +1150,60 @@ class ActionHandler():
                         info.date_time = time.localtime()
                         temp_writing_file = archivefile + '.' + str(time_ns())
 
-                    try:
-                        with zipfile.ZipFile(temp_writing_file, 'w') if temp_writing_file else zip0 as zip:
-                            # write to the zip file
-                            file = request.files.get('upload')
-                            if file is not None:
-                                with zip.open(info, 'w', force_zip64=True) as fh:
-                                    stream = file.stream
-                                    while True:
-                                        s = stream.read(8192)
-                                        if not s: break
-                                        fh.write(s)
-                            else:
-                                bytes = request.values.get('text', '').encode('ISO-8859-1')
+                    with zipfile.ZipFile(temp_writing_file, 'w') if temp_writing_file else zip0 as zip:
+                        # write to the zip file
+                        file = request.files.get('upload')
+                        if file is not None:
+                            with zip.open(info, 'w', force_zip64=True) as fh:
+                                stream = file.stream
+                                while True:
+                                    s = stream.read(8192)
+                                    if not s: break
+                                    fh.write(s)
+                        else:
+                            bytes = request.values.get('text', '').encode('ISO-8859-1')
+                            try:
+                                zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                            except TypeError:
+                                # compresslevel is supported since Python 3.7
+                                zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
+
+                        # copy zip content
+                        if temp_writing_file:
+                            for info in zip0.infolist():
+                                if info.filename == subarchivepath:
+                                    continue
+
                                 try:
-                                    zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                                    zip.writestr(info, zip0.read(info),
+                                            compress_type=info.compress_type,
+                                            compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
                                 except TypeError:
                                     # compresslevel is supported since Python 3.7
-                                    zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
+                                    zip.writestr(info, zip0.read(info),
+                                            compress_type=info.compress_type)
 
-                            # copy zip content
-                            if temp_writing_file:
-                                for info in zip0.infolist():
-                                    if info.filename == subarchivepath:
-                                        continue
-
-                                    try:
-                                        zip.writestr(info, zip0.read(info),
-                                                compress_type=info.compress_type,
-                                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                                    except TypeError:
-                                        # compresslevel is supported since Python 3.7
-                                        zip.writestr(info, zip0.read(info),
-                                                compress_type=info.compress_type)
-                    except:
-                        # remove the generated zip file if writing fails
-                        if temp_writing_file:
-                            try:
-                                os.remove(temp_writing_file)
-                            except FileNotFoundError:
-                                pass
-
-                        raise
-
-                # replace zip0 with the generated zip file
+                # overwrite the original zip file
                 if temp_writing_file:
-                    temp_renaming_file = archivefile + '.' + str(time_ns() + 1)
-                    os.rename(archivefile, temp_renaming_file)
-                    os.rename(temp_writing_file, archivefile)
-                    os.remove(temp_renaming_file)
+                    # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
+                    with open(archivefile, 'r+b') as fw, open(temp_writing_file, 'r+b') as fr:
+                        writing = True
+                        fw.truncate()
+                        while True:
+                            bytes = fr.read(8192)
+                            if not bytes: break
+                            fw.write(bytes)
+                        writing = False
             except:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
+            finally:
+                # remove temp file
+                if temp_writing_file and not writing:
+                    try:
+                        os.remove(temp_writing_file)
+                    except FileNotFoundError:
+                        pass
 
         else:
             localpath = localpaths[0]
@@ -1239,50 +1241,52 @@ class ActionHandler():
 
         elif len(localpaths) > 1:
             archivefile, subarchivepath, *_ = localpaths
+            temp_writing_file = archivefile + '.' + str(time_ns())
+            deleted = False
+            writing = False
             try:
-                temp_writing_file = archivefile + '.' + str(time_ns())
-                deleted = False
-
                 with zipfile.ZipFile(archivefile, 'r') as zip0:
-                    try:
-                        # copy zip content
-                        with zipfile.ZipFile(temp_writing_file, 'w') as zip:
-                            for info in zip0.infolist():
-                                if (info.filename == subarchivepath or
-                                        info.filename.startswith(subarchivepath + '/')):
-                                    deleted = True
-                                    continue
+                    # copy zip content
+                    with zipfile.ZipFile(temp_writing_file, 'w') as zip:
+                        for info in zip0.infolist():
+                            if (info.filename == subarchivepath or
+                                    info.filename.startswith(subarchivepath + '/')):
+                                deleted = True
+                                continue
 
-                                try:
-                                    zip.writestr(info, zip0.read(info),
-                                            compress_type=info.compress_type,
-                                            compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                                except TypeError:
-                                    # compresslevel is supported since Python 3.7
-                                    zip.writestr(info, zip0.read(info),
-                                            compress_type=info.compress_type)
-                    except:
-                        # remove the generated zip file if writing fails
-                        try:
-                            os.remove(temp_writing_file)
-                        except FileNotFoundError:
-                            pass
-
-                        raise
+                            try:
+                                zip.writestr(info, zip0.read(info),
+                                        compress_type=info.compress_type,
+                                        compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                            except TypeError:
+                                # compresslevel is supported since Python 3.7
+                                zip.writestr(info, zip0.read(info),
+                                        compress_type=info.compress_type)
 
                 # fail since nothing is deleted
                 if not deleted:
-                    os.remove(temp_writing_file)
                     return http_error(404, "Entry does not exist in this ZIP file.", format=format)
 
-                # replace zip0 with the generated zip file
-                temp_renaming_file = archivefile + '.' + str(time_ns() + 1)
-                os.rename(archivefile, temp_renaming_file)
-                os.rename(temp_writing_file, archivefile)
-                os.remove(temp_renaming_file)
+                # overwrite the original zip file
+                # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
+                with open(archivefile, 'r+b') as fw, open(temp_writing_file, 'r+b') as fr:
+                    writing = True
+                    fw.truncate()
+                    while True:
+                        bytes = fr.read(8192)
+                        if not bytes: break
+                        fw.write(bytes)
+                    writing = False
             except:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
+            finally:
+                # remove temp file
+                if not writing:
+                    try:
+                        os.remove(temp_writing_file)
+                    except FileNotFoundError:
+                        pass
 
         else:
             localpath = localpaths[0]
