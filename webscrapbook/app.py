@@ -675,11 +675,16 @@ class ActionHandler():
                 try:
                     info = zip.getinfo(localpaths[-1])
                 except KeyError:
-                    # subarchivepath does not exist
-                    if not util.zip_hasdir(zip, localpaths[-1]):
-                        return http_error(404)
-
-                    return handle_directory_listing(localpaths, zip)
+                    # File does not exist.  List directory only when URL
+                    # suffixed with "/", as it's not a common operation,
+                    # and it's costy to check for directory existence in
+                    # a ZIP.
+                    if request.path.endswith('/'):
+                        try:
+                            return handle_directory_listing(localpaths, zip, redirect_slash=False)
+                        except util.ZipDirNotFoundError:
+                            return http_error(404)
+                    return http_error(404)
                 else:
                     # view archive file
                     if mimetype in ("application/html+zip", "application/x-maff"):

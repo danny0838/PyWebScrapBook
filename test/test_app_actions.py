@@ -268,6 +268,23 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_zip_subdir_noslash(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)), '')
+                zh.writestr(zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/subdir', buffered=True)
+                mock_error.assert_called_once_with(404)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_file_zip_subfile(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
