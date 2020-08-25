@@ -1095,7 +1095,10 @@ class ActionHandler():
         format = request.format
         localpaths = request.localpaths
 
-        if len(localpaths) > 1:
+        if len(localpaths) > 2:
+            return http_error(500, "Writing in a nested ZIP file is not supported.", format=format)
+
+        elif len(localpaths) > 1:
             archivefile, subarchivepath, *_ = localpaths
             try:
                 with zipfile.ZipFile(archivefile, 'a') as zip:
@@ -1129,7 +1132,10 @@ class ActionHandler():
         format = request.format
         localpaths = request.localpaths
 
-        if len(localpaths) > 1:
+        if len(localpaths) > 2:
+            return http_error(500, "Writing in a nested ZIP file is not supported.", format=format)
+
+        elif len(localpaths) > 1:
             archivefile, subarchivepath, *_ = localpaths
             try:
                 temp_writing_file = None
@@ -1228,7 +1234,10 @@ class ActionHandler():
         format = request.format
         localpaths = request.localpaths
 
-        if len(localpaths) > 1:
+        if len(localpaths) > 2:
+            return http_error(500, "Writing in a nested ZIP file is not supported.", format=format)
+
+        elif len(localpaths) > 1:
             archivefile, subarchivepath, *_ = localpaths
             try:
                 temp_writing_file = archivefile + '.' + str(time_ns())
