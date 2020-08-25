@@ -405,6 +405,51 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_zip_markdown(self):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('index.md', (1987, 1, 1, 0, 0, 0)), '## Header\n\nHello 你好')
+
+            with app.test_client() as c:
+                with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
+                    r = c.get('/archive.zip!/index.md', buffered=True)
+                    self.assertEqual(r.status_code, 200)
+                    self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+                    self.assertNotEqual(r.headers['Content-Length'], '23')
+                    self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                    self.assertIsNotNone(r.headers['Last-Modified'])
+                    self.assertIsNotNone(r.headers['ETag'])
+                    self.assertIsNone(r.headers.get('Accept-Ranges'))
+                    mock_template.assert_called_once_with('markdown.html',
+                        sitename='WebScrapBook',
+                        is_local=True,
+                        base='',
+                        path='/archive.zip!/index.md',
+                        pathparts=['/archive.zip', 'index.md'],
+                        content='<h2>Header</h2>\n<p>Hello 你好</p>\n',
+                        )
+
+                etag = r.headers['ETag']
+                lm =  r.headers['Last-Modified']
+
+                # 304 for etag
+                r = c.get('/archive.zip!/index.md', headers={
+                    'If-None-Match': etag,
+                    }, buffered=True)
+                self.assertEqual(r.status_code, 304)
+
+                # 304 for last-modified
+                r = c.get('/archive.zip!/index.md', headers={
+                    'If-Modified-Since': lm,
+                    }, buffered=True)
+                self.assertEqual(r.status_code, 304)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_zip_nonexist(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')

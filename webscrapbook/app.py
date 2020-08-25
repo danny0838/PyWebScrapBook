@@ -450,32 +450,60 @@ def handle_archive_viewing(paths, mimetype):
     return redirect(new_url)
 
 
-def handle_markdown_output(filename):
+def handle_markdown_output(paths, zip=None):
     """Output processed markdown.
+
+    Args:
+        paths: [path-to-zip-file, subpath1, subpath2, ...]
+        zip: an opened zipfile.ZipFile object for faster reading
     """
-    stats = os.stat(filename)
-    last_modified = http_date(stats.st_mtime)
-    etag = "%s-%s-%s" % (
-        stats.st_mtime,
-        stats.st_size,
-        adler32(filename.encode("utf-8")) & 0xFFFFFFFF,
-        )
+    if len(paths) > 1:
+        if zip:
+            context = nullcontext(zip)
+        else:
+            context = open_archive_path(paths)
+    else:
+        context = nullcontext(None)
 
-    headers = {
-        'Cache-Control': 'no-cache',
-        }
+    with context as zip:
+        # calculate last-modified time and etag
+        if zip:
+            info = zip.getinfo(paths[-1])
 
-    if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
-        return http_response(status=304, headers=headers)
+            lm = info.date_time
+            lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+            last_modified = http_date(lm)
 
-    headers.update({
-        'Last-Modified': last_modified,
-        'ETag': etag,
-        })
+            etag = "%s-%s-%s" % (
+                lm,
+                info.file_size,
+                adler32(info.filename.encode("utf-8")) & 0xFFFFFFFF,
+                )
+        else:
+            stats = os.stat(paths[0])
+            last_modified = http_date(stats.st_mtime)
+            etag = "%s-%s-%s" % (
+                stats.st_mtime,
+                stats.st_size,
+                adler32(paths[0].encode("utf-8")) & 0xFFFFFFFF,
+                )
 
-    # output processed content
-    with open(filename, 'r', encoding='UTF-8') as f:
-        body = f.read()
+        if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
+            return http_response(status=304)
+
+        headers = {
+            'Cache-Control': 'no-cache',
+            'Last-Modified': last_modified,
+            'ETag': etag,
+            }
+
+        # prepare content
+        if zip:
+            with zip.open(info) as f:
+                body = f.read().decode('UTF-8')
+        else:
+            with open(paths[0], 'r', encoding='UTF-8') as f:
+                body = f.read()
     
     body = render_template('markdown.html',
             sitename=runtime['name'],
@@ -690,6 +718,10 @@ class ActionHandler():
                     if mimetype in ("application/html+zip", "application/x-maff"):
                         return handle_archive_viewing(localpaths, mimetype)
 
+                    # view markdown
+                    if mimetype == "text/markdown":
+                        return handle_markdown_output(localpaths, zip)
+
                     response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
         else:
             localpath = localpaths[0]
@@ -706,7 +738,7 @@ class ActionHandler():
 
                 # view markdown
                 if mimetype == "text/markdown":
-                    return handle_markdown_output(localpath)
+                    return handle_markdown_output(localpaths)
 
                 # convert meta refresh to 302 redirect
                 if request.localrealpath.lower().endswith('.htm'):
