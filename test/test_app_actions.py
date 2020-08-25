@@ -2223,6 +2223,94 @@ class TestMkdir(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
 
+class TestMkzip(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = os.path.join(server_root, 'temp')
+        self.test_zip = os.path.join(server_root, 'temp', 'test.zip')
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.test_dir)
+        except NotADirectoryError:
+            os.remove(self.test_dir)
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
+        """Require POST."""
+        with app.test_client() as c:
+            r = c.get('/temp', query_string={
+                'token': token(c),
+                'a': 'mkzip',
+                })
+
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_token_check(self, mock_error):
+        """Require token."""
+        with app.test_client() as c:
+            r = c.post('/temp', data={
+                'a': 'mkzip',
+                })
+
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+
+    def test_nonexist(self):
+        os.makedirs(self.test_dir, exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip', data={
+                'token': token(c),
+                'a': 'mkzip',
+                })
+
+            self.assertEqual(r.status_code, 204)
+            self.assertTrue(os.path.isfile(self.test_zip))
+            self.assertTrue(zipfile.is_zipfile(self.test_zip))
+
+    def test_file(self):
+        os.makedirs(self.test_dir, exist_ok=True)
+        with open(self.test_zip, 'w', encoding='UTF-8') as f:
+            f.write('test')
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip', data={
+                'token': token(c),
+                'a': 'mkzip',
+                })
+
+            self.assertEqual(r.status_code, 204)
+            self.assertTrue(os.path.isfile(self.test_zip))
+            self.assertTrue(zipfile.is_zipfile(self.test_zip))
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonfile(self, mock_error):
+        os.makedirs(self.test_zip, exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip', data={
+                'token': token(c),
+                'a': 'mkzip',
+                })
+
+            mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip(self, mock_error):
+        os.makedirs(self.test_dir, exist_ok=True)
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip!/entry.zip', data={
+                'token': token(c),
+                'a': 'mkzip',
+                })
+
+            mock_error.assert_called_once_with(500, 'Writing in a ZIP file is not supported.', format=None)
+
 class TestSave(unittest.TestCase):
     def setUp(self):
         self.test_dir = os.path.join(server_root, 'temp')

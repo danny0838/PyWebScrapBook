@@ -300,7 +300,7 @@ def verify_authorization(perm, action):
         return True
 
     elif perm == 'read':
-        if action in {'token', 'lock', 'unlock', 'mkdir', 'save', 'delete', 'move', 'copy'}:
+        if action in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy'}:
             return False
         else:
             return True
@@ -1125,6 +1125,37 @@ class ActionHandler():
                 traceback.print_exc()
                 return http_error(500, "Unable to create a directory here.", format=format)
 
+
+    @_handle_advanced
+    @_handle_writing
+    def mkzip(self, *args, **kwargs):
+        """Create a zip file."""
+        format = request.format
+        localpaths = request.localpaths
+
+        if len(localpaths) > 1:
+            return http_error(500, "Writing in a ZIP file is not supported.", format=format)
+
+        else:
+            localpath = localpaths[0]
+
+            if os.path.lexists(localpath) and not os.path.isfile(localpath):
+                return http_error(400, "Found a non-file here.", format=format)
+
+            try:
+                os.makedirs(os.path.dirname(localpath), exist_ok=True)
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this path.", format=format)
+
+            try:
+                with zipfile.ZipFile(localpath, 'w') as f:
+                    pass
+            except:
+                traceback.print_exc()
+                return http_error(500, "Unable to write to this file.", format=format)
+
+
     @_handle_advanced
     @_handle_writing
     def save(self, *args, **kwargs):
@@ -1228,6 +1259,7 @@ class ActionHandler():
             except:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this file.", format=format)
+
 
     @_handle_advanced
     @_handle_writing
