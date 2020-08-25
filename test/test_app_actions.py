@@ -92,7 +92,7 @@ class TestView(unittest.TestCase):
                     },
                 )
 
-    def test_file_normal(self):
+    def test_file(self):
         with app.test_client() as c:
             r = c.get('/index.html', buffered=True)
             self.assertEqual(r.status_code, 200)
@@ -130,7 +130,7 @@ class TestView(unittest.TestCase):
             self.assertEqual(r.status_code, 206)
             self.assertEqual(r.data.decode('UTF-8').replace('\r\n', '\n'), '<!DOCTYPE html>')
 
-    def test_file_htz(self):
+    def test_htz(self):
         zip_filename = os.path.join(server_root, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -146,7 +146,7 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    def test_file_maff(self):
+    def test_maff(self):
         zip_filename = os.path.join(server_root, 'archive.maff')
         try:
             # 1 page
@@ -199,7 +199,7 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    def test_file_zip(self):
+    def test_zip(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -220,8 +220,55 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_markdown(self):
+        with app.test_client() as c:
+            with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
+                r = c.get('/index.md')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+                self.assertNotEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'index.md')).st_size))
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                self.assertIsNone(r.headers.get('Accept-Ranges'))
+                mock_template.assert_called_once_with('markdown.html',
+                    sitename='WebScrapBook',
+                    is_local=True,
+                    base='',
+                    path='/index.md',
+                    pathparts=['/index.md'],
+                    content='<h2>Header</h2>\n<p>Hello 你好</p>\n',
+                    )
+
+            etag = r.headers['ETag']
+            lm =  r.headers['Last-Modified']
+
+            # 304 for etag
+            r = c.get('/index.md', headers={
+                'If-None-Match': etag,
+                }, buffered=True)
+            self.assertEqual(r.status_code, 304)
+
+            # 304 for last-modified
+            r = c.get('/index.md', headers={
+                'If-Modified-Since': lm,
+                }, buffered=True)
+            self.assertEqual(r.status_code, 304)
+
+    def test_meta_refresh(self):
+        with app.test_client() as c:
+            r = c.get('/refresh.htm')
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.headers['Location'], 'http://localhost/index.html')
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
+        with app.test_client() as c:
+            r = c.get('/nonexist')
+            mock_error.assert_called_once_with(404)
+
     @mock.patch('webscrapbook.app.render_template', return_value='')
-    def test_file_zip_subdir(self, mock_template):
+    def test_zip_subdir(self, mock_template):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -269,7 +316,7 @@ class TestView(unittest.TestCase):
                 pass
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_file_zip_subdir_noslash(self, mock_error):
+    def test_zip_subdir_noslash(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -285,7 +332,7 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    def test_file_zip_subfile(self):
+    def test_zip_subfile(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -329,7 +376,7 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    def test_file_zip_subfile_nested(self):
+    def test_zip_subfile_nested(self):
         zip_filename = os.path.join(server_root, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -391,53 +438,6 @@ class TestView(unittest.TestCase):
                 os.remove(zip_filename)
             except FileNotFoundError:
                 pass
-
-    def test_file_markdown(self):
-        with app.test_client() as c:
-            with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
-                r = c.get('/index.md')
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-                self.assertNotEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'index.md')).st_size))
-                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
-                self.assertIsNotNone(r.headers['Last-Modified'])
-                self.assertIsNotNone(r.headers['ETag'])
-                self.assertIsNone(r.headers.get('Accept-Ranges'))
-                mock_template.assert_called_once_with('markdown.html',
-                    sitename='WebScrapBook',
-                    is_local=True,
-                    base='',
-                    path='/index.md',
-                    pathparts=['/index.md'],
-                    content='<h2>Header</h2>\n<p>Hello 你好</p>\n',
-                    )
-
-            etag = r.headers['ETag']
-            lm =  r.headers['Last-Modified']
-
-            # 304 for etag
-            r = c.get('/index.md', headers={
-                'If-None-Match': etag,
-                }, buffered=True)
-            self.assertEqual(r.status_code, 304)
-
-            # 304 for last-modified
-            r = c.get('/index.md', headers={
-                'If-Modified-Since': lm,
-                }, buffered=True)
-            self.assertEqual(r.status_code, 304)
-
-    def test_file_meta_refresh(self):
-        with app.test_client() as c:
-            r = c.get('/refresh.htm')
-            self.assertEqual(r.status_code, 302)
-            self.assertEqual(r.headers['Location'], 'http://localhost/index.html')
-
-    @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_nonexist(self, mock_error):
-        with app.test_client() as c:
-            r = c.get('/nonexist')
-            mock_error.assert_called_once_with(404)
 
     @mock.patch('webscrapbook.app.ActionHandler.info', return_value='')
     def test_json(self, mock_info):
