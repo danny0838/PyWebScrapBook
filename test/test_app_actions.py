@@ -911,6 +911,40 @@ class TestList(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_nonexist(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist', query_string={'a': 'list', 'f': 'json'})
+                mock_error.assert_called_once_with(404, 'Directory does not exist.', format='json')
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist/', query_string={'a': 'list', 'f': 'json'})
+                mock_error.assert_called_once_with(404, 'Directory does not exist.', format='json')
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist.txt', query_string={'a': 'list', 'f': 'json'})
+                mock_error.assert_called_once_with(404, 'Directory does not exist.', format='json')
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist.txt/', query_string={'a': 'list', 'f': 'json'})
+                mock_error.assert_called_once_with(404, 'Directory does not exist.', format='json')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_sse_directory(self):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse'})

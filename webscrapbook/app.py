@@ -793,7 +793,11 @@ class ActionHandler():
         localpaths = request.localpaths
 
         if len(localpaths) > 1:
-            return handle_directory_listing(localpaths, recursive=recursive, format=format)
+            with open_archive_path(localpaths) as zip:
+                if not util.zip_hasdir(zip, localpaths[-1]):
+                    return http_error(404, "Directory does not exist.", format=format)
+
+                return handle_directory_listing(localpaths, zip, recursive=recursive, format=format)
 
         if os.path.isdir(localpaths[0]):
             return handle_directory_listing(localpaths, recursive=recursive, format=format)
