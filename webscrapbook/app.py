@@ -395,7 +395,7 @@ def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
             ))
         return redirect(new_url)
 
-    stats = os.lstat(paths[0])
+    stats = os.stat(paths[0])
     last_modified = http_date(stats.st_mtime)
     etag = "%s-%s-%s" % (
         stats.st_mtime,
