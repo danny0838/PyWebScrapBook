@@ -722,6 +722,18 @@ class ActionHandler():
                     if mimetype == "text/markdown":
                         return handle_markdown_output(localpaths, zip)
 
+                    # convert meta refresh to 302 redirect
+                    if localpaths[-1].lower().endswith('.htm'):
+                        with zip.open(info) as fh:
+                            target = util.parse_meta_refresh(fh).target
+
+                        if target is not None:
+                            # Keep several chars as javascript encodeURI do,
+                            # plus "%" as target may have already been escaped.
+                            new_url = urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%"))
+                            return redirect(new_url)
+
+                    # show static file for other cases
                     response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
         else:
             localpath = localpaths[0]

@@ -450,6 +450,23 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    # @FIXME: fix "%21" back to "!"
+    def test_zip_meta_refresh(self):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('refresh.htm', (1987, 1, 1, 0, 0, 0)), '<meta http-equiv="refresh" content="0;url=index.html">')
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/refresh.htm', buffered=True)
+                self.assertEqual(r.status_code, 302)
+                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip%21/index.html')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_zip_nonexist(self, mock_error):
         zip_filename = os.path.join(server_root, 'archive.zip')
