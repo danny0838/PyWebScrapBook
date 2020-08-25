@@ -702,8 +702,24 @@ class TestList(unittest.TestCase):
     def test_directory(self):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'json'})
-            self.assertEqual(r.status_code, 302)
-            self.assertEqual(r.headers['Location'], 'http://localhost/subdir/?a=list&f=json')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            data = r.json
+            self.assertTrue(data['success'])
+            self.assertEqual(set(make_hashable(data['data'])), {
+                frozendict({
+                    'name': 'file.txt',
+                    'type': 'file',
+                    'size': 3,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
+                    }),
+                frozendict({
+                    'name': 'sub',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
+                    }),
+                })
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
@@ -728,8 +744,30 @@ class TestList(unittest.TestCase):
     def test_directory_recursive(self):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'json', 'recursive': 1})
-            self.assertEqual(r.status_code, 302)
-            self.assertEqual(r.headers['Location'], 'http://localhost/subdir/?a=list&f=json&recursive=1')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            data = r.json
+            self.assertTrue(data['success'])
+            self.assertEqual(set(make_hashable(data['data'])), {
+                frozendict({
+                    'name': 'file.txt',
+                    'type': 'file',
+                    'size': 3,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
+                    }),
+                frozendict({
+                    'name': 'sub',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
+                    }),
+                frozendict({
+                    'name': 'sub/subfile.txt',
+                    'type': 'file',
+                    'size': 6,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
+                    }),
+                })
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json', 'recursive': 1})
             self.assertEqual(r.status_code, 200)
@@ -787,8 +825,27 @@ class TestList(unittest.TestCase):
             with app.test_client() as c:
                 # explicit dir (no slash)
                 r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'list', 'f': 'json'})
-                self.assertEqual(r.status_code, 302)
-                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip!/explicit_dir/?a=list&f=json')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                data = r.json
+                self.assertTrue(data['success'])
+                self.assertEqual(set(make_hashable(data['data'])), {
+                    frozendict({
+                        'name': 'index.html',
+                        'type': 'file',
+                        'size': 19,
+                        'last_modified': 536515200,
+                        }),
+                    frozendict({
+                        'name': 'subdir',
+                        'type': 'dir',
+                        'size': None,
+                        'last_modified': 536518800,
+                        }),
+                    })
 
                 # explicit dir
                 r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'list', 'f': 'json'})
@@ -816,8 +873,27 @@ class TestList(unittest.TestCase):
 
                 # implicit dir (no slash)
                 r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'list', 'f': 'json'})
-                self.assertEqual(r.status_code, 302)
-                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip!/implicit_dir/?a=list&f=json')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                data = r.json
+                self.assertTrue(data['success'])
+                self.assertEqual(set(make_hashable(data['data'])), {
+                    frozendict({
+                        'name': 'index.html',
+                        'type': 'file',
+                        'size': 22,
+                        'last_modified': 536601600,
+                        }),
+                    frozendict({
+                        'name': 'subdir',
+                        'type': 'dir',
+                        'size': None,
+                        'last_modified': None,
+                        }),
+                    })
 
                 # implicit dir
                 r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'list', 'f': 'json'})
@@ -948,8 +1024,14 @@ class TestList(unittest.TestCase):
     def test_sse_directory(self):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse'})
-            self.assertEqual(r.status_code, 302)
-            self.assertEqual(r.headers['Location'], 'http://localhost/subdir/?a=list&f=sse')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            data = r.data.decode('UTF-8')
+            self.assertTrue('data: {{"name": "file.txt", "type": "file", "size": 3, "last_modified": {}}}\n\n'.format(
+                    os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime) in data)
+            self.assertTrue('data: {{"name": "sub", "type": "dir", "size": null, "last_modified": {}}}\n\n'.format(
+                    os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime) in data)
+            self.assertTrue(data.endswith('\n\nevent: complete\ndata: \n\n'))
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse'})
             self.assertEqual(r.status_code, 200)
@@ -964,8 +1046,16 @@ class TestList(unittest.TestCase):
     def test_sse_directory_recursive(self):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
-            self.assertEqual(r.status_code, 302)
-            self.assertEqual(r.headers['Location'], 'http://localhost/subdir/?a=list&f=sse&recursive=1')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            data = r.data.decode('UTF-8')
+            self.assertTrue('data: {{"name": "file.txt", "type": "file", "size": 3, "last_modified": {}}}\n\n'.format(
+                    os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime) in data)
+            self.assertTrue('data: {{"name": "sub", "type": "dir", "size": null, "last_modified": {}}}\n\n'.format(
+                    os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime) in data)
+            self.assertTrue('data: {{"name": "sub/subfile.txt", "type": "file", "size": 6, "last_modified": {}}}\n\n'.format(
+                    os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime) in data)
+            self.assertTrue(data.endswith('\n\nevent: complete\ndata: \n\n'))
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
             self.assertEqual(r.status_code, 200)
@@ -1004,8 +1094,15 @@ class TestList(unittest.TestCase):
             with app.test_client() as c:
                 # explicit dir (no slash)
                 r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
-                self.assertEqual(r.status_code, 302)
-                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip!/explicit_dir/?a=list&f=sse')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                data = r.data.decode('UTF-8')
+                self.assertTrue('data: {"name": "index.html", "type": "file", "size": 19, "last_modified": 536515200}\n\n' in data)
+                self.assertTrue('data: {"name": "subdir", "type": "dir", "size": null, "last_modified": 536518800}\n\n' in data)
+                self.assertTrue(data.endswith('\n\nevent: complete\ndata: \n\n'))
 
                 # explicit dir
                 r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1021,8 +1118,15 @@ class TestList(unittest.TestCase):
 
                 # implicit dir (no slash)
                 r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
-                self.assertEqual(r.status_code, 302)
-                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip!/implicit_dir/?a=list&f=sse')
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+                data = r.data.decode('UTF-8')
+                self.assertTrue('data: {"name": "index.html", "type": "file", "size": 22, "last_modified": 536601600}\n\n' in data)
+                self.assertTrue('data: {"name": "subdir", "type": "dir", "size": null, "last_modified": null}\n\n' in data)
+                self.assertTrue(data.endswith('\n\nevent: complete\ndata: \n\n'))
 
                 # implicit dir
                 r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'list', 'f': 'sse'}, buffered=True)

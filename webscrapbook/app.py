@@ -315,7 +315,7 @@ def verify_authorization(perm, action):
         return False
 
 
-def handle_directory_listing(paths, zip=None, recursive=False, format=None):
+def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=False, format=None):
     """List contents in a directory.
 
     Args:
@@ -323,7 +323,7 @@ def handle_directory_listing(paths, zip=None, recursive=False, format=None):
         zip: an opened zipfile.ZipFile object for faster reading
     """
     # ensure directory has trailing '/'
-    if not request.path.endswith('/'):
+    if redirect_slash and not request.path.endswith('/'):
         parts = urlsplit(request.url)
         new_url = urlunsplit((
             parts.scheme,
@@ -793,14 +793,13 @@ class ActionHandler():
         localpaths = request.localpaths
 
         if len(localpaths) > 1:
-            with open_archive_path(localpaths) as zip:
-                if not util.zip_hasdir(zip, localpaths[-1]):
-                    return http_error(404, "Directory does not exist.", format=format)
-
-                return handle_directory_listing(localpaths, zip, recursive=recursive, format=format)
+            try:
+                return handle_directory_listing(localpaths, redirect_slash=False, recursive=recursive, format=format)
+            except util.ZipDirNotFoundError:
+                return http_error(404, "Directory does not exist.", format=format)
 
         if os.path.isdir(localpaths[0]):
-            return handle_directory_listing(localpaths, recursive=recursive, format=format)
+            return handle_directory_listing(localpaths, redirect_slash=False, recursive=recursive, format=format)
 
         return http_error(404, "Directory does not exist.", format=format)
 
