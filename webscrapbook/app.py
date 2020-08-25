@@ -315,69 +315,8 @@ def verify_authorization(perm, action):
         return False
 
 
-def handle_directory_listing(localpath, recursive=False, format=None):
+def handle_directory_listing(paths, zip=None, recursive=False, format=None):
     """List contents in a directory.
-    """
-    # ensure directory has trailing '/'
-    if not request.path.endswith('/'):
-        parts = urlsplit(request.url)
-        new_url = urlunsplit((
-            parts.scheme,
-            parts.netloc,
-            quote_path(unquote(parts.path)) + '/',
-            parts.query,
-            parts.fragment,
-            ))
-        return redirect(new_url)
-
-    # output index
-    subentries = util.listdir(localpath, recursive)
-
-    if format == 'sse':
-        def gen():
-            for entry in subentries:
-                data = {
-                    'name': entry.name,
-                    'type': entry.type,
-                    'size': entry.size,
-                    'last_modified': entry.last_modified,
-                    }
-
-                yield json.dumps(data, ensure_ascii=False)
-
-        return http_response(gen(), format=format)
-
-    elif format == 'json':
-        data = []
-        for entry in subentries:
-            data.append({
-                    'name': entry.name,
-                    'type': entry.type,
-                    'size': entry.size,
-                    'last_modified': entry.last_modified,
-                    })
-        return http_response(data, format=format)
-
-    # headers
-    headers = {}
-    headers['Cache-Control'] = 'no-store'
-    stats = os.stat(localpath)
-    headers['Last-Modified'] = http_date(stats.st_mtime)
-
-    body = render_template('index.html',
-            sitename=runtime['name'],
-            is_local=is_local_access(),
-            base=request.script_root,
-            path=request.path,
-            pathparts=request.paths,
-            subentries=subentries,
-            )
-
-    return http_response(body, format=format, headers=headers)
-
-
-def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
-    """List contents in a directory in a ZIP.
 
     Args:
         paths: [path-to-zip-file, subpath1, subpath2, ...]
@@ -395,25 +334,38 @@ def handle_zip_directory_listing(paths, zip=None, recursive=False, format=None):
             ))
         return redirect(new_url)
 
-    stats = os.stat(paths[0])
-    last_modified = http_date(stats.st_mtime)
-    etag = "%s-%s-%s" % (
-        stats.st_mtime,
-        stats.st_size,
-        adler32(paths[0].encode("utf-8")) & 0xFFFFFFFF,
-        )
+    # prepare index
+    if len(paths) > 1:
+        # support 304 if zip not modified
+        stats = os.stat(paths[0])
+        last_modified = http_date(stats.st_mtime)
+        etag = "%s-%s-%s" % (
+            stats.st_mtime,
+            stats.st_size,
+            adler32(paths[0].encode("utf-8")) & 0xFFFFFFFF,
+            )
 
-    if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
-        return http_response(status=304, format=format)
+        if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
+            return http_response(status=304, format=format)
 
-    headers = {
-        'Cache-Control': 'no-cache',
-        'Last-Modified': last_modified,
-        'ETag': etag,
-        }
+        headers = {
+            'Cache-Control': 'no-cache',
+            'Last-Modified': last_modified,
+            'ETag': etag,
+            }
 
-    with nullcontext(zip) if zip else open_archive_path(paths) as zip:
-        subentries = util.zip_listdir(zip, paths[-1], recursive)
+        with nullcontext(zip) if zip else open_archive_path(paths) as zip:
+            subentries = util.zip_listdir(zip, paths[-1], recursive)
+
+    else:
+        # disallow cache to reflect any content file change
+        stats = os.stat(paths[0])
+        headers = {
+            'Cache-Control': 'no-store',
+            'Last-Modified': http_date(stats.st_mtime),
+            }
+
+        subentries = util.listdir(paths[0], recursive)
 
     if format == 'sse':
         def gen():
@@ -728,7 +680,7 @@ class ActionHandler():
                 except KeyError:
                     # subarchivepath does not exist
                     # possibility a missing directory entry?
-                    return handle_zip_directory_listing(localpaths, zip)
+                    return handle_directory_listing(localpaths, zip)
                 else:
                     # view archive file
                     if mimetype in ("application/html+zip", "application/x-maff"):
@@ -740,7 +692,7 @@ class ActionHandler():
 
             # handle directory
             if os.path.isdir(localpath):
-                return handle_directory_listing(localpath)
+                return handle_directory_listing(localpaths)
 
             # handle file
             elif os.path.isfile(localpath):
@@ -839,10 +791,10 @@ class ActionHandler():
         localpaths = request.localpaths
 
         if len(localpaths) > 1:
-            return handle_zip_directory_listing(localpaths, recursive=recursive, format=format)
+            return handle_directory_listing(localpaths, recursive=recursive, format=format)
 
         if os.path.isdir(localpaths[0]):
-            return handle_directory_listing(localpaths[0], recursive=recursive, format=format)
+            return handle_directory_listing(localpaths, recursive=recursive, format=format)
 
         return http_error(404, "Directory does not exist.", format=format)
 
