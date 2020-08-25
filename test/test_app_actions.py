@@ -1702,6 +1702,27 @@ class TestEdit(unittest.TestCase):
                 encoding=None,
                 )
 
+    @mock.patch('webscrapbook.app.render_template', return_value='')
+    def test_zip_nested(self, mock_template):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('index.html', 'Hello World! 你好')
+            zh.writestr('19870101/index.htz', buf1.getvalue())
+
+        with app.test_client() as c:
+            r = c.get('/temp.maff!/19870101/index.htz!/index.html', query_string={'a': 'edit'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+            mock_template.assert_called_once_with('edit.html',
+                sitename='WebScrapBook',
+                is_local=True,
+                base='',
+                path='/temp.maff!/19870101/index.htz!/index.html',
+                body='Hello World! 你好',
+                encoding=None,
+                )
+
 class TestEditx(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_format_check(self, mock_error):

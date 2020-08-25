@@ -878,9 +878,9 @@ class ActionHandler():
             return http_error(400, "Found a non-file here.", format=format)
 
         if len(localpaths) > 1:
-            with zipfile.ZipFile(localpaths[0], 'r') as zip:
+            with open_archive_path(localpaths) as zip:
                 try:
-                    info = zip.getinfo(localpaths[1])
+                    info = zip.getinfo(localpaths[-1])
                 except:
                     body = b''
                 else:
@@ -929,9 +929,9 @@ class ActionHandler():
             return http_error(400, "This is not an HTML file.", format=format)
 
         if len(localpaths) > 1:
-            with zipfile.ZipFile(localpaths[0], 'r') as zip:
+            with open_archive_path(localpaths) as zip:
                 try:
-                    info = zip.getinfo(localpaths[1])
+                    info = zip.getinfo(localpaths[-1])
                 except:
                     return http_error(404, format=format)
         else:
