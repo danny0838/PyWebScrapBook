@@ -30,7 +30,7 @@ setup(
         "Topic :: Database",
         "Topic :: Internet",
         ],
-    python_requires='~=3.5',
+    python_requires='~=3.6',
     install_requires=[
         'flask >= 1.1',
         'werkzeug',

@@ -13,7 +13,7 @@ import hashlib
 import time
 from urllib.parse import quote, unquote
 from ipaddress import IPv6Address, AddressValueError
-from ._compat.secrets import token_urlsafe
+from secrets import token_urlsafe
 
 
 #########################################################################
