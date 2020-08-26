@@ -817,7 +817,11 @@ def handle_request(filepath=''):
                                             fh.write(s)
                                 else:
                                     bytes = query.get('text', '').encode('ISO-8859-1')
-                                    zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                                    try:
+                                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                                    except TypeError:
+                                        # compresslevel is supported since Python 3.7
+                                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
 
                                 # copy zip content
                                 if temp_writing_file:
@@ -825,9 +829,15 @@ def handle_request(filepath=''):
                                         if info.filename == subarchivepath:
                                             continue
 
-                                        zip.writestr(info, zip0.read(info),
-                                                compress_type=info.compress_type,
-                                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                        try:
+                                            zip.writestr(info, zip0.read(info),
+                                                    compress_type=info.compress_type,
+                                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                        except TypeError:
+                                            # compresslevel is supported since Python 3.7
+                                            zip.writestr(info, zip0.read(info),
+                                                    compress_type=info.compress_type)
+
                         except:
                             # remove the generated zip file if writing fails
                             if temp_writing_file:
@@ -883,9 +893,14 @@ def handle_request(filepath=''):
                                         deleted = True
                                         continue
 
-                                    zip.writestr(info, zip0.read(info),
-                                            compress_type=info.compress_type,
-                                            compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                    try:
+                                        zip.writestr(info, zip0.read(info),
+                                                compress_type=info.compress_type,
+                                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                    except TypeError:
+                                        # compresslevel is supported since Python 3.7
+                                        zip.writestr(info, zip0.read(info),
+                                                compress_type=info.compress_type)
                         except:
                             # remove the generated zip file if writing fails
                             try:
