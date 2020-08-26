@@ -321,6 +321,18 @@ purpose or for private usage, e.g.:
 
 and use "domain.key" for ssl_key and "domain.crt" for ssl_cert.
 
+To use ad hoc TLS certificates, `cryptograpy` package should be installed
+directly or as an extra option with
+
+    python -m pip install -U webscrapbook[adhoc_ssl]
+
+Prior to 1.0 version `werkzeug` package required `pyopenssl`
+for the same purpose (that has `cryptography` as transitive
+dependency). If you prefer that particular version, likely you know
+how to satisfy the dependency. Alternatively do
+
+    python -m pip install webscrapbook[adhoc_ssl_werkzeug_0_x]
+
 (default: false)
 
 

@@ -38,6 +38,10 @@ setup(
         'lxml >= 4.0',
         'commonmark >= 0.8',
         ],
+    extras_require={
+        "adhoc_ssl": ["cryptography"],
+        "adhoc_ssl_werkzeug_0_x": ["pyopenssl"],  # that requires cryptography
+        },
     packages=find_packages(),
     package_data={
         'webscrapbook': [
