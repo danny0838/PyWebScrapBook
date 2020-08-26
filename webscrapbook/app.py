@@ -60,6 +60,7 @@ def static_file(filename, mimetype=None):
     response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
+    response.headers.set('Content-Security-Policy', "connect-src 'none';")
     return response
 
 
@@ -95,6 +96,7 @@ def zip_static_file(zip, subpath, mimetype=None):
         'Cache-Control': 'no-cache',
         'Last-Modified': last_modified,
         'ETag': etag,
+        'Content-Security-Policy': "connect-src 'none';",
         }
 
     response = Response(fh, headers=headers, mimetype=mimetype)
@@ -541,6 +543,7 @@ def handle_markdown_output(paths, zip=None):
             'Cache-Control': 'no-cache',
             'Last-Modified': last_modified,
             'ETag': etag,
+            'Content-Security-Policy': "connect-src 'none';",
             }
 
         # prepare content
