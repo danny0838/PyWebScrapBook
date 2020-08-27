@@ -28,16 +28,15 @@ def get_umask():
 def fcopy(fsrc, fdst):
     """Copy a script file to target
 
+    - Auto generate ancestor directories.
     - Use universal linefeed.
     - Set last modified time to current time.
     """
     os.makedirs(os.path.dirname(os.path.abspath(fdst)), exist_ok=True)
-    with open(fsrc, 'r', encoding='UTF-8') as f:
-        content = f.read()
-        f.close()
-    with open(fdst, 'w', encoding='UTF-8') as f:
-        f.write(content)
-        f.close()
+    with open(fsrc, 'r', encoding='UTF-8') as fr:
+        with open(fdst, 'w', encoding='UTF-8') as fw:
+            for line in fr:
+                fw.write(line)
 
 
 def cmd_serve(args):
