@@ -188,43 +188,45 @@ def view_archive_files(files):
     temp_dir = tempfile.gettempdir()
     urls = []
 
-    for file in files:
+    for file in dict.fromkeys(os.path.normcase(os.path.abspath(file)) for file in files):
         mime, _ = mimetypes.guess_type(file)
         if not mime in ("application/html+zip", "application/x-maff"):
             continue
 
         if use_jar:
-            base_url = 'jar:file:' + pathname2url(os.path.abspath(file)) + '!/'
+            base_url = 'jar:file:' + pathname2url(file) + '!/'
             if mime == "application/html+zip":
                 urls.append(base_url + 'index.html')
             elif mime == "application/x-maff":
-                urls.extend([base_url + f.indexfilename for f in util.get_maff_pages(file)])
+                urls.extend(base_url + f.indexfilename for f in util.get_maff_pages(file))
             continue
 
         # extract zip contents to dest_dir if not done yet
         hash = util.checksum(file)
         dest_prefix = cache_prefix + hash + '_'
-        for entry in os.listdir(temp_dir):
-            if entry.startswith(dest_prefix):
-                dest_dir = os.path.join(temp_dir, entry)
+        with os.scandir(temp_dir) as entries:
+            for entry in entries:
+                if not entry.name.startswith(dest_prefix):
+                    continue
+
+                dest_dir = entry.path
 
                 # update atime
                 atime = time_ns()
-                stat = os.stat(dest_dir)
-                os.utime(dest_dir, ns=(atime, stat.st_mtime_ns))
+                stat = os.stat(entry)
+                os.utime(entry, ns=(atime, stat.st_mtime_ns))
                 break
-        else:
-            dest_dir = tempfile.mkdtemp(prefix=dest_prefix)
-            with zipfile.ZipFile(file) as zip:
-                zip.extractall(dest_dir)
-                zip.close()
+            else:
+                dest_dir = tempfile.mkdtemp(prefix=dest_prefix)
+                with zipfile.ZipFile(file) as zip:
+                    zip.extractall(dest_dir)
 
         # get URL of every index page
         base_url = 'file:' + pathname2url(dest_dir) + '/'
         if mime == "application/html+zip":
             urls.append(base_url + 'index.html')
         elif mime == "application/x-maff":
-            urls.extend([base_url + f.indexfilename for f in util.get_maff_pages(file)])
+            urls.extend(base_url + f.indexfilename for f in util.get_maff_pages(file))
 
     # open pages in the browser
     for url in urls:
@@ -233,16 +235,20 @@ def view_archive_files(files):
     # remove stale caches
     if not use_jar:
         t = time_ns()
-        for entry in os.listdir(temp_dir):
-            if entry.startswith(cache_prefix):
-                cache_dir = os.path.join(temp_dir, entry)
-                atime = os.stat(cache_dir).st_atime_ns
-                if t > atime + cache_expire:
-                    # cache may be created by another user and undeletable
-                    try:
-                        shutil.rmtree(cache_dir)
-                    except:
-                        traceback.print_exc()
+        with os.scandir(temp_dir) as entries:
+            for entry in entries:
+                if not entry.name.startswith(cache_prefix):
+                    continue
+
+                atime = os.stat(entry).st_atime_ns
+                if t <= atime + cache_expire:
+                    continue
+
+                # cache may be created by another user and undeletable
+                try:
+                    shutil.rmtree(entry)
+                except:
+                    traceback.print_exc()
 
 
 def view():
