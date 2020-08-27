@@ -48,7 +48,7 @@ def tearDownModule():
     mocking.stop()
 
 def token(c):
-    return c.get('/', query_string={'a': 'token'}).data.decode('UTF-8')
+    return c.post('/', data={'a': 'token'}).data.decode('UTF-8')
 
 class TestActions(unittest.TestCase):
     def rmtree_error_handler(self, func, path, ex):
@@ -2005,9 +2005,16 @@ class TestBrowse(unittest.TestCase):
                 pass
 
 class TestToken(unittest.TestCase):
-    def test_token(self):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_method_check(self, mock_error):
+        """Require POST."""
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'token'})
+            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+
+    def test_token(self):
+        with app.test_client() as c:
+            r = c.post('/', data={'a': 'token'})
             try:
                 self.assertEqual(r.status_code, 200)
                 token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
@@ -2020,7 +2027,7 @@ class TestToken(unittest.TestCase):
 
     def test_token_json(self):
         with app.test_client() as c:
-            r = c.get('/', query_string={'a': 'token', 'f': 'json'})
+            r = c.post('/', data={'a': 'token', 'f': 'json'})
             try:
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')

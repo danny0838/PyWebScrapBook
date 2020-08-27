@@ -73,7 +73,7 @@ const utils = {
       xhr = await utils.xhr({
         url: url + '?a=token&f=json',
         responseType: 'json',
-        method: "GET",
+        method: "POST",
       });
     } catch (ex) {
       throw new Error('Unable to connect to backend server.');

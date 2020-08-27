@@ -557,7 +557,7 @@ permission = all
                 self.simple_auth_check(r, False)
 
                 r = post('/temp/test.txt', data={
-                    'token': token(get),
+                    'token': token(post),
                     'a': 'save',
                     'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                     })

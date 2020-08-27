@@ -1083,6 +1083,11 @@ class ActionHandler():
     def token(self, *args, **kwargs):
         """Acquire a token and return its name."""
         format = request.format
+
+        # require POST method
+        if request.method != 'POST':
+            return http_error(405, format=format, valid_methods=['POST'])
+
         return http_response(runtime['token_handler'].acquire(), format=format)
 
     @_handle_advanced
