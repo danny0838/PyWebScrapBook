@@ -225,10 +225,11 @@ def listdir(base, recursive=False):
     """Generates FileInfo(s) and omit invalid entries.
     """
     if not recursive:
-        for entry in os.scandir(base):
-            info = file_info(entry.path)
-            if info.type is None: continue
-            yield info
+        with os.scandir(base) as entries:
+            for entry in entries:
+                info = file_info(entry.path)
+                if info.type is None: continue
+                yield info
 
     else:
         for root, dirs, files in os.walk(base):
