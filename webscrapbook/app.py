@@ -156,19 +156,14 @@ def is_local_access():
     return util.is_localhost(server_host) or util.is_localhost(client_host) or server_host == client_host
 
 
-def get_permission(auth):
-    """Get effective permission of the current logged in user.
+def get_permission(auth_info, auth_config):
+    """Calculate effective permission from provided auth info and config.
     """
-    try:
-        auth_sections = runtime['config']['auth']
-    except KeyError:
-        return 'all'
-
-    auth = auth or {}
+    auth = auth_info or {}
     user = auth.get('username') or ''
     pw = auth.get('password') or ''
 
-    for _, entry in auth_sections.items():
+    for _, entry in auth_config.items():
         entry_user = entry.get('user', '')
         entry_pw = entry.get('pw', '')
         entry_pw_salt = entry.get('pw_salt', '')
@@ -1236,7 +1231,13 @@ def handle_before_request():
         request.environ['SCRIPT_NAME'] = unquote(runtime['config']['app']['base']).encode('UTF-8').decode('ISO-8859-1')
 
     # handle authorization
-    perm = get_permission(request.authorization)
+    try:
+        auth_config = runtime['config']['auth']
+    except KeyError:
+        # auth not required
+        return
+
+    perm = get_permission(request.authorization, auth_config)
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
         auth.set_basic('Authentication required.')

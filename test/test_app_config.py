@@ -433,6 +433,16 @@ class TestAuth(unittest.TestCase):
     @mock.patch('webscrapbook.app.get_permission')
     def test_get_permission(self, mock_perm, *_):
         """Check if HTTP authorization info is passed to get_permission()."""
+        with open(server_config, 'w', encoding='UTF-8') as f:
+            f.write("""\
+[auth "anony"]
+user =
+pw = salt
+pw_salt = salt
+pw_type = plain
+permission = view
+""")
+
         app = make_app(server_root)
         app.testing = True
         with app.test_client() as c:
@@ -449,7 +459,7 @@ class TestAuth(unittest.TestCase):
 
                         mock_perm.reset_mock()
                         c.open('/', method=method, headers=headers)
-                        mock_perm.assert_called_with(expected)
+                        self.assertEqual(mock_perm.call_args[0][0], expected)
 
     @mock.patch('webscrapbook.app.ActionHandler._handle_action', return_value='')
     @mock.patch('webscrapbook.app.verify_authorization')
