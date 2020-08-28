@@ -513,8 +513,8 @@ class Request(flask.Request):
 
 
 class ActionHandler():
-    def _handle_action(self):
-        handler = getattr(self, request.action, None) or self.unknown
+    def _handle_action(self, action):
+        handler = getattr(self, action, None) or self.unknown
         return handler()
 
     def _handle_advanced(func):
@@ -1247,7 +1247,7 @@ def handle_request(filepath=''):
         response.www_authenticate.set_basic("Authentication required.")
         return response
 
-    return action_handler._handle_action()
+    return action_handler._handle_action(request.action)
 
 
 def make_app(root=".", config=None):
