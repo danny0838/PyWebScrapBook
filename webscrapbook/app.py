@@ -1230,7 +1230,9 @@ def handle_request(filepath=''):
     """
     # replace SCRIPT_NAME with the custom if set
     if runtime['config']['app']['base']:
-        request.environ['SCRIPT_NAME'] = runtime['config']['app']['base']
+        # Flask treats SCRIPT_NAME in the same way as PATH_INFO, which is an
+        # IRI string decoded as ISO-8859-1 according to WSGI standard).
+        request.environ['SCRIPT_NAME'] = unquote(runtime['config']['app']['base']).encode('UTF-8').decode('ISO-8859-1')
 
     # handle authorization
     perm = get_permission(request.authorization)
