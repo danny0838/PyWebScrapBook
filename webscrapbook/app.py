@@ -17,11 +17,12 @@ from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
 from pathlib import Path
 from zlib import adler32
 from contextlib import contextmanager
+from secrets import token_bytes
 
 # dependency
 import flask
 from flask import request, Response, redirect, abort, render_template
-from flask import current_app
+from flask import current_app, session
 from werkzeug.local import LocalProxy
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.datastructures import WWWAuthenticate
@@ -1570,7 +1571,29 @@ def handle_before_request():
         # auth not required
         return
 
-    id, perm = get_permission(request.authorization, auth_config)
+    # if request authorization is provided, use it
+    # otherwise try to read from session
+    auth = request.authorization
+    if auth:
+        id, perm = get_permission(auth, auth_config)
+    else:
+        sid = session.get('auth_id')
+        try:
+            perm = runtime['config']['auth'][sid].get('permission', 'all')
+        except KeyError:
+            id, perm = get_permission(auth, auth_config)
+
+            # clear if session becomes invalid and no new log in
+            if sid and not id:
+                session.clear()
+        else:
+            id = sid
+
+    # store auth id in session
+    if id:
+        session['auth_id'] = id
+        session.permanent = True
+
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
         auth.set_basic('Authentication required.')
@@ -1606,15 +1629,36 @@ def make_app(root=".", config=None):
 
     _runtime['tokens'] = os.path.join(_runtime['root'], WSB_DIR, 'server', 'tokens')
     _runtime['locks'] = os.path.join(_runtime['root'], WSB_DIR, 'server', 'locks')
+    _runtime['sessions'] = os.path.join(_runtime['root'], WSB_DIR, 'server', 'sessions')
 
     # init token_handler
     _runtime['token_handler'] = util.TokenHandler(_runtime['tokens'])
+
+    # load or generate a session key if auth is defined
+    try:
+        auth_sections = _runtime['config']['auth']
+    except KeyError:
+        session_key = None
+        pass
+    else:
+        os.makedirs(os.path.dirname(_runtime['sessions']), exist_ok=True)
+        try:
+            with open(_runtime['sessions'], 'rb') as f:
+                session_key = f.read()
+            assert len(session_key) >= 32
+        except (FileNotFoundError, AssertionError):
+            session_key = token_bytes(128)
+            with open(_runtime['sessions'], 'wb') as f:
+                f.write(session_key)
 
     # main app instance
     app = flask.Flask(__name__, instance_path=_runtime['root'])
     app.register_blueprint(bp)
     app.request_class = Request
     app.config['WEBSCRAPBOOK_RUNTIME'] = _runtime
+    app.config['SECRET_KEY'] = session_key
+    app.config['SESSION_COOKIE_NAME'] = 'wsbsession'
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
     xheaders = {
             'x_for': config['app']['allowed_x_for'],

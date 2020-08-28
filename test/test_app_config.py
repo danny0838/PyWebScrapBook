@@ -444,19 +444,19 @@ permission = view
 
         app = make_app(server_root)
         app.testing = True
-        with app.test_client() as c:
-            for method in ('HEAD', 'GET', 'POST'):
-                for auth in (None, ('', ''), ('user', ''), ('', 'pass'), ('user', 'pass')):
-                    with self.subTest(method=method, auth=auth):
-                        if auth is None:
-                            headers = None
-                            expected = None
-                        else:
-                            user, pw = auth
-                            headers = self.simple_auth_headers(user, pw)
-                            expected = {'username': user, 'password': pw}
+        for method in ('HEAD', 'GET', 'POST'):
+            for auth in (None, ('', ''), ('user', ''), ('', 'pass'), ('user', 'pass')):
+                with self.subTest(method=method, auth=auth):
+                    if auth is None:
+                        headers = None
+                        expected = None
+                    else:
+                        user, pw = auth
+                        headers = self.simple_auth_headers(user, pw)
+                        expected = {'username': user, 'password': pw}
 
-                        mock_perm.reset_mock()
+                    mock_perm.reset_mock()
+                    with app.test_client() as c:
                         c.open('/', method=method, headers=headers)
                         self.assertEqual(mock_perm.call_args[0][0], expected)
 
@@ -465,20 +465,128 @@ permission = view
         """Check if action is passed to verify_authorization()."""
         app = make_app(server_root)
         app.testing = True
-        with app.test_client() as c:
-            for method in ('HEAD', 'GET', 'POST'):
-                for action in [None, *all_actions]:
-                    with self.subTest(method=method, action=action):
-                        if action is None:
-                            query = None
-                            expected = 'view'
-                        else:
-                            query = {'a': action}
-                            expected = action
+        for method in ('HEAD', 'GET', 'POST'):
+            for action in [None, *all_actions]:
+                with self.subTest(method=method, action=action):
+                    if action is None:
+                        query = None
+                        expected = 'view'
+                    else:
+                        query = {'a': action}
+                        expected = action
 
-                        mock_auth.reset_mock()
+                    mock_auth.reset_mock()
+                    with app.test_client() as c:
                         c.open('/', method=method, query_string=query)
                         self.assertEqual(mock_auth.call_args[0][1], expected)
+
+    def test_session(self, *_):
+        """Check if session is used for repeated request."""
+        with open(server_config, 'w', encoding='UTF-8') as f:
+            f.write("""\
+[auth "id1"]
+user = user1
+pw = pass1salt
+pw_salt = salt
+pw_type = plain
+permission = view
+
+[auth "id2"]
+user = user2
+pw = pass2salt
+pw_salt = salt
+pw_type = plain
+permission = read
+""")
+
+        # check if no session for anonymous
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('', ''))
+            self.assertEqual(r.status_code, 401)
+            self.simple_auth_check(r)
+            self.assertIsNone(r.headers.get('Set-Cookie'))
+
+        # check if no session for invalid user
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('nonexist', ''))
+            self.assertEqual(r.status_code, 401)
+            self.simple_auth_check(r)
+            self.assertIsNone(r.headers.get('Set-Cookie'))
+
+        # check if session is reused
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('user1', 'pass1'))
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/')
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/', query_string={'a': 'config', 'f': 'json'})
+            self.assertEqual(r.status_code, 401)
+            self.simple_auth_check(r, True)
+
+        # check if session is overwritten if another auth is provided
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('user1', 'pass1'))
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/', headers=self.simple_auth_headers('user2', 'pass2'))
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/', query_string={'a': 'config', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+        # check if session is kept if another invalid auth is provided
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('user1', 'pass1'))
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/', headers=self.simple_auth_headers('nonexist', 'pass'))
+            self.assertEqual(r.status_code, 401)
+            self.simple_auth_check(r, True)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/')
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+        # check if session is cleared when invalidated by config change
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('user1', 'pass1'))
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            with mock.patch.dict(app.config['WEBSCRAPBOOK_RUNTIME']['config']['auth'], {}, clear=True):
+                r = c.open('/')
+                self.assertEqual(r.status_code, 401)
+                self.simple_auth_check(r, True)
+                self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/')
+            self.assertEqual(r.status_code, 401)
+            self.simple_auth_check(r, True)
+            self.assertIsNone(r.headers.get('Set-Cookie'))
+
 
     def test_request(self):
         """Random request challanges."""
@@ -508,9 +616,9 @@ permission = all
 
         app = make_app(server_root)
         app.testing = True
-        with app.test_client() as c:
-            try:
-                # no auth input = anonymous
+        try:
+            # no auth input = anonymous
+            with app.test_client() as c:
                 get = partial(c.get)
                 post = partial(c.post)
 
@@ -526,11 +634,12 @@ permission = all
                 self.assertEqual(r.status_code, 401)
                 self.simple_auth_check(r)
 
-                # user1 - read
-                get = partial(c.get, headers=self.simple_auth_headers('user1', 'pass1'), buffered=True)
-                post = partial(c.post, headers=self.simple_auth_headers('user1', 'pass1'))
+            # user1 - read
+            with app.test_client() as c:
+                get = partial(c.get, buffered=True)
+                post = partial(c.post)
 
-                r = get('/index.html', query_string={'a': 'source'})
+                r = get('/index.html', query_string={'a': 'source'}, headers=self.simple_auth_headers('user1', 'pass1'))
                 self.assertEqual(r.status_code, 200)
                 self.simple_auth_check(r, False)
 
@@ -540,13 +649,13 @@ permission = all
 
                 r = get('/', query_string={'a': 'token'})
                 self.assertEqual(r.status_code, 401)
-                self.simple_auth_check(r)
 
-                # user2 - all
-                get = partial(c.get, headers=self.simple_auth_headers('user2', 'pass2'), buffered=True)
-                post = partial(c.post, headers=self.simple_auth_headers('user2', 'pass2'))
+            # user2 - all
+            with app.test_client() as c:
+                get = partial(c.get, buffered=True)
+                post = partial(c.post)
 
-                r = get('/common.css', query_string={'a': 'static'})
+                r = get('/common.css', query_string={'a': 'static'}, headers=self.simple_auth_headers('user2', 'pass2'))
                 self.assertEqual(r.status_code, 200)
                 self.simple_auth_check(r, False)
 
@@ -561,13 +670,13 @@ permission = all
                     })
                 self.assertEqual(r.status_code, 204)
                 self.simple_auth_check(r, False)
-            finally:
-                try:
-                    shutil.rmtree(os.path.join(server_root, 'temp'))
-                except NotADirectoryError:
-                    os.remove(os.path.join(server_root, 'temp'))
-                except FileNotFoundError:
-                    pass
+        finally:
+            try:
+                shutil.rmtree(os.path.join(server_root, 'temp'))
+            except NotADirectoryError:
+                os.remove(os.path.join(server_root, 'temp'))
+            except FileNotFoundError:
+                pass
 
 if __name__ == '__main__':
     unittest.main()
