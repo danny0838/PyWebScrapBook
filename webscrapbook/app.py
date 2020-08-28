@@ -321,12 +321,15 @@ def is_local_access():
 
 def get_permission(auth_info, auth_config):
     """Calculate effective permission from provided auth info and config.
+
+    Returns:
+        a tuple (id, permission), where id is None if user is anonymous.
     """
     auth = auth_info or {}
     user = auth.get('username') or ''
     pw = auth.get('password') or ''
 
-    for _, entry in auth_config.items():
+    for id, entry in auth_config.items():
         entry_user = entry.get('user', '')
         entry_pw = entry.get('pw', '')
         entry_pw_salt = entry.get('pw_salt', '')
@@ -334,9 +337,9 @@ def get_permission(auth_info, auth_config):
         entry_permission = entry.get('permission', 'all')
         if (user == entry_user and
                 util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
-            return entry_permission
+            return id if user or pw else None, entry_permission
 
-    return ''
+    return None, ''
 
 
 def verify_authorization(perm, action):
@@ -1567,7 +1570,7 @@ def handle_before_request():
         # auth not required
         return
 
-    perm = get_permission(request.authorization, auth_config)
+    id, perm = get_permission(request.authorization, auth_config)
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
         auth.set_basic('Authentication required.')

@@ -429,8 +429,7 @@ class TestAuth(unittest.TestCase):
             with self.assertRaises(KeyError):
                 response.headers['WWW-Authenticate']
 
-    @mock.patch('webscrapbook.app.ActionHandler._handle_action', return_value='')
-    @mock.patch('webscrapbook.app.get_permission')
+    @mock.patch('webscrapbook.app.get_permission', return_value=(None, ''))
     def test_get_permission(self, mock_perm, *_):
         """Check if HTTP authorization info is passed to get_permission()."""
         with open(server_config, 'w', encoding='UTF-8') as f:
@@ -461,8 +460,7 @@ permission = view
                         c.open('/', method=method, headers=headers)
                         self.assertEqual(mock_perm.call_args[0][0], expected)
 
-    @mock.patch('webscrapbook.app.ActionHandler._handle_action', return_value='')
-    @mock.patch('webscrapbook.app.verify_authorization')
+    @mock.patch('webscrapbook.app.verify_authorization', return_value=False)
     def test_verify_authorization(self, mock_auth, *_):
         """Check if action is passed to verify_authorization()."""
         app = make_app(server_root)
