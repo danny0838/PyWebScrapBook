@@ -389,6 +389,34 @@ class TestHelpers(unittest.TestCase):
         with zipfile.ZipFile(testfile4, 'w') as zh:
             zh.writestr('index.html', 'abc 測試')
 
+        # test jar, no temp dir should be generated
+        with mock.patch('webscrapbook.cli.config', {
+                'browser': {
+                    'command': '',
+                    'cache_prefix': 'webscrapbook.',
+                    'cache_expire': 1000,
+                    'use_jar': True,
+                    }
+                }):
+            cli.view_archive_files([testfile1, testfile2, testfile3, testfile4])
+
+        self.assertEqual(len(mock_browser.mock_calls), 5)
+        self.assertEqual(mock_browser.mock_calls[1][1][0],
+            r'jar:file:{}!/index.html'.format(pathname2url(os.path.normcase(testfile1)))
+            )
+        self.assertEqual(mock_browser.mock_calls[2][1][0],
+            r'jar:file:{}!/123456/index.html'.format(pathname2url(os.path.normcase(testfile2)))
+            )
+        self.assertEqual(mock_browser.mock_calls[3][1][0],
+            r'jar:file:{}!/abc/index.html'.format(pathname2url(os.path.normcase(testfile3)))
+            )
+        self.assertEqual(mock_browser.mock_calls[4][1][0],
+            r'jar:file:{}!/def/index.html'.format(pathname2url(os.path.normcase(testfile3)))
+            )
+        self.assertEqual(len(os.listdir(os.path.join(test_dir, 'temp', 'tempdir'))), 0)
+
+        # test simple view
+        mock_browser.reset_mock()
         with mock.patch('webscrapbook.cli.config', {
                 'browser': {
                     'command': '',
@@ -458,40 +486,25 @@ class TestHelpers(unittest.TestCase):
                 'browser': {
                     'command': '',
                     'cache_prefix': 'webscrapbook.',
-                    'cache_expire': 0,
+                    'cache_expire': -1,
                     'use_jar': False,
                     }
                 }):
-            cli.view_archive_files([])
-
-        self.assertEqual(len(os.listdir(os.path.join(test_dir, 'temp', 'tempdir'))), 0)
-
-        # test jar
-        mock_browser.reset_mock()
-        with mock.patch('webscrapbook.cli.config', {
-                'browser': {
-                    'command': '',
-                    'cache_prefix': 'webscrapbook.',
-                    'cache_expire': 1000,
-                    'use_jar': True,
-                    }
-                }):
-            cli.view_archive_files([testfile1, testfile2, testfile3, testfile4])
-
-        self.assertEqual(len(mock_browser.mock_calls), 5)
-        self.assertEqual(mock_browser.mock_calls[1][1][0],
-            r'jar:file:{}!/index.html'.format(pathname2url(os.path.normcase(testfile1)))
-            )
-        self.assertEqual(mock_browser.mock_calls[2][1][0],
-            r'jar:file:{}!/123456/index.html'.format(pathname2url(os.path.normcase(testfile2)))
-            )
-        self.assertEqual(mock_browser.mock_calls[3][1][0],
-            r'jar:file:{}!/abc/index.html'.format(pathname2url(os.path.normcase(testfile3)))
-            )
-        self.assertEqual(mock_browser.mock_calls[4][1][0],
-            r'jar:file:{}!/def/index.html'.format(pathname2url(os.path.normcase(testfile3)))
-            )
-        self.assertEqual(len(os.listdir(os.path.join(test_dir, 'temp', 'tempdir'))), 0)
+            with mock.patch('shutil.rmtree') as mock_rmtree:
+                cli.view_archive_files([])
+                self.assertEqual(len(mock_rmtree.call_args_list), 3)
+                self.assertRegex(
+                    mock_rmtree.call_args_list[0][0][0].path,
+                    r'^{}[0-9a-z]*_[0-9a-z_]*$'.format(re.escape(os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')))
+                    )
+                self.assertRegex(
+                    mock_rmtree.call_args_list[1][0][0].path,
+                    r'^{}[0-9a-z]*_[0-9a-z_]*$'.format(re.escape(os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')))
+                    )
+                self.assertRegex(
+                    mock_rmtree.call_args_list[2][0][0].path,
+                    r'^{}[0-9a-z]*_[0-9a-z_]*$'.format(re.escape(os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')))
+                    )
 
 if __name__ == '__main__':
     unittest.main()
