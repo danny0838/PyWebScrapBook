@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Index of {{ path }}{% endblock %}
 {% block links %}
-<link rel="stylesheet" type="text/css" href="{{ quote_path(base) }}/index.css?a=static">
+<link rel="stylesheet" type="text/css" href="{{ static_url('index.css') }}">
 {%- endblock %}
 {% block scripts %}
-<script src="{{ quote_path(base) }}/common.js?a=static"></script>
-<script src="{{ quote_path(base) }}/index.js?a=static"></script>
+<script src="{{ static_url('common.js') }}"></script>
+<script src="{{ static_url('index.js') }}"></script>
 {%- endblock %}
 {% block content %}
 <header>

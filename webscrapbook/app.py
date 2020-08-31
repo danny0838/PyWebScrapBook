@@ -1223,6 +1223,10 @@ class ActionHandler():
 action_handler = ActionHandler()
 
 
+def static_url(path):
+    return '{}/{}?a=static'.format(quote_path(request.script_root), quote_path(path))
+
+
 @bp.route('/', methods=['GET', 'HEAD', 'POST'])
 @bp.route('/<path:filepath>', methods=['GET', 'HEAD', 'POST'])
 def handle_request(filepath=''):
@@ -1293,6 +1297,7 @@ def make_app(root=".", config=None):
             'get_breadcrumbs': util.get_breadcrumbs,
             'format_filesize': util.format_filesize,
             'quote_path': quote_path,
+            'static_url': static_url,
             })
 
     return app

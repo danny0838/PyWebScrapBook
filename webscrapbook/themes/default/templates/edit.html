@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Edit {{ path }}{% endblock %}
 {% block links %}
-<link rel="stylesheet" type="text/css" href="{{ quote_path(base) }}/edit.css?a=static">
+<link rel="stylesheet" type="text/css" href="{{ static_url('edit.css') }}">
 {%- endblock %}
 {% block scripts %}
-<script src="{{ quote_path(base) }}/common.js?a=static"></script>
-<script src="{{ quote_path(base) }}/edit.js?a=static"></script>
+<script src="{{ static_url('common.js') }}"></script>
+<script src="{{ static_url('edit.js') }}"></script>
 {%- endblock %}
 {% block content %}
 <div id="pinned">
