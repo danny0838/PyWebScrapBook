@@ -207,7 +207,8 @@ class TestView(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
-            self.assertIsNone(r.headers.get('Content-Security-Policy'))
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            self.assertEqual(r.headers['X-Frame-Options'], 'deny')
             mock_template.call_args[1]['subentries'] = set(mock_template.call_args[1]['subentries'])
             mock_template.assert_called_once_with('index.html',
                 sitename='WebScrapBook',
@@ -296,7 +297,8 @@ class TestView(unittest.TestCase):
                 r = c.get('/archive.maff', buffered=True)
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-                self.assertIsNone(r.headers.get('Content-Security-Policy'))
+                self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+                self.assertEqual(r.headers['X-Frame-Options'], 'deny')
                 mock_template.assert_called_once_with('maff_index.html',
                     sitename='WebScrapBook',
                     is_local=True,
@@ -314,7 +316,8 @@ class TestView(unittest.TestCase):
                 r = c.get('/archive.maff', buffered=True)
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-                self.assertIsNone(r.headers.get('Content-Security-Policy'))
+                self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+                self.assertEqual(r.headers['X-Frame-Options'], 'deny')
                 mock_template.assert_called_once_with('maff_index.html',
                     sitename='WebScrapBook',
                     is_local=True,
@@ -413,7 +416,8 @@ class TestView(unittest.TestCase):
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
                 self.assertEqual(r.headers['Cache-Control'], 'no-cache')
-                self.assertIsNone(r.headers.get('Content-Security-Policy'))
+                self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+                self.assertEqual(r.headers['X-Frame-Options'], 'deny')
                 self.assertIsNotNone(r.headers['Last-Modified'])
                 self.assertIsNotNone(r.headers['ETag'])
                 with self.assertRaises(KeyError):

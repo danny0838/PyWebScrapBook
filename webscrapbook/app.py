@@ -1612,6 +1612,16 @@ def handle_request(filepath=''):
     return action_handler._handle_action(request.action)
 
 
+@bp.after_request
+def handle_after_request(response):
+    # forbid a privileged page to be framed
+    if 'Content-Security-Policy' not in response.headers:
+        response.headers.set('Content-Security-Policy', "frame-ancestors 'none';")
+        response.headers.set('X-Frame-Options', 'deny')
+
+    return response
+
+
 def make_app(root=".", config=None):
     if not config:
         config = Config()
