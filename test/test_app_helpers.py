@@ -595,11 +595,11 @@ class TestFunctions(unittest.TestCase):
                 except FileNotFoundError:
                     pass
 
-    def test_open_archive_path(self):
+    def test_open_archive_path_read(self):
         root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        tempfile = os.path.join(root, 'entry.zip')
         app = wsbapp.make_app(root)
         with app.app_context():
-            tempfile = os.path.join(root, 'entry.zip')
             try:
                 with zipfile.ZipFile(tempfile, 'w') as zip:
                     buf1 = io.BytesIO()
@@ -617,6 +617,126 @@ class TestFunctions(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     with wsbapp.open_archive_path([tempfile]) as zip:
                         pass
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+    def test_open_archive_path_write(self):
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        tempfile = os.path.join(root, 'entry.zip')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('subdir/index.html', 'Hello World!')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html'], 'w') as zip:
+                    # existed
+                    zip.writestr('subdir/index.html', 'rewritten 測試')
+
+                    # new
+                    zip.writestr('newdir/test.txt', 'new file 測試')
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    # existed
+                    self.assertEqual(zip.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
+
+                    # new
+                    self.assertEqual(zip.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+    def test_open_archive_path_delete(self):
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        tempfile = os.path.join(root, 'entry.zip')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            # file
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('subdir/', '')
+                        zip1.writestr('subdir/index.html', 'Hello World!')
+                        zip1.writestr('subdir2/test.txt', 'dummy')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir/index.html']) as zip:
+                    pass
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    self.assertEqual(zip.namelist(), ['subdir/', 'subdir2/test.txt'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # explicit directory
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('subdir/', '')
+                        zip1.writestr('subdir/index.html', 'Hello World!')
+                        zip1.writestr('subdir2/test.txt', 'dummy')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir']) as zip:
+                    pass
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    self.assertEqual(zip.namelist(), ['subdir2/test.txt'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # implicit directory
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('subdir/', '')
+                        zip1.writestr('subdir/index.html', 'Hello World!')
+                        zip1.writestr('subdir2/test.txt', 'dummy')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir2']) as zip:
+                    pass
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    self.assertEqual(zip.namelist(), ['subdir/', 'subdir/index.html'])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
+            # multiple
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('subdir/', '')
+                        zip1.writestr('subdir/index.html', 'Hello World!')
+                        zip1.writestr('subdir2/test.txt', 'dummy')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir', 'subdir2']) as zip:
+                    pass
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    self.assertEqual(zip.namelist(), [])
             finally:
                 try:
                     os.remove(tempfile)

@@ -2223,6 +2223,34 @@ class TestMkdir(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
 
+    def test_zip_directory_nested(self):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                pass
+            zh.writestr('20200101/entry.zip', buf1.getvalue())
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/20200101/entry.zip!/20200102', data={
+                'token': token(c),
+                'a': 'mkdir',
+                })
+
+            self.assertEqual(r.status_code, 204)
+            self.assertTrue(os.path.isfile(self.test_zip))
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                with zh.open('20200101/entry.zip') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f, 'r') as zh1:
+                        self.assertEqual(zh1.namelist(), ['20200102/'])
+
 class TestMkzip(unittest.TestCase):
     def setUp(self):
         self.test_dir = os.path.join(server_root, 'temp')
@@ -2297,8 +2325,7 @@ class TestMkzip(unittest.TestCase):
 
             mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
 
-    @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_zip(self, mock_error):
+    def test_zip_nonexist(self):
         os.makedirs(self.test_dir, exist_ok=True)
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
@@ -2309,7 +2336,45 @@ class TestMkzip(unittest.TestCase):
                 'a': 'mkzip',
                 })
 
-            mock_error.assert_called_once_with(500, 'Writing in a ZIP file is not supported.', format=None)
+            self.assertEqual(r.status_code, 204)
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                with zh.open('entry.zip') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        while True:
+                            b = f.read(8192)
+                            if not b: break
+                            ff.write(b)
+                        f.close()
+                        f = ff
+
+                    self.assertTrue(zipfile.is_zipfile(f))
+
+    def test_zip_file(self):
+        os.makedirs(self.test_dir, exist_ok=True)
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            zh.writestr('entry.zip', 'dummy')
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip!/entry.zip', data={
+                'token': token(c),
+                'a': 'mkzip',
+                })
+
+            self.assertEqual(r.status_code, 204)
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                with zh.open('entry.zip') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    self.assertTrue(zipfile.is_zipfile(f))
 
 class TestSave(unittest.TestCase):
     def setUp(self):
@@ -2462,6 +2527,36 @@ class TestSave(unittest.TestCase):
                 with zh.open('subdir/index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
 
+    def test_save_zip_file_nested(self):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                pass
+            zh.writestr('20200101/entry.zip', buf1.getvalue())
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/20200101/entry.zip!/index.html', data={
+                'token': token(c),
+                'a': 'save',
+                'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
+                })
+
+            self.assertEqual(r.status_code, 204)
+            self.assertTrue(os.path.isfile(self.test_zip))
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                with zh.open('20200101/entry.zip') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f, 'r') as zh1:
+                        with zh1.open('index.html') as f1:
+                            self.assertEqual(f1.read().decode('UTF-8'), 'ABC 你好')
+
     def test_upload_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
 
@@ -2568,6 +2663,36 @@ class TestSave(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('subdir/index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+
+    def test_upload_zip_file_nested(self):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                pass
+            zh.writestr('20200101/entry.zip', buf1.getvalue())
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/20200101/entry.zip!/index.html', data={
+                'token': token(c),
+                'a': 'save',
+                'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
+                })
+
+            self.assertEqual(r.status_code, 204)
+            self.assertTrue(os.path.isfile(self.test_zip))
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                with zh.open('20200101/entry.zip') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f, 'r') as zh1:
+                        with zh1.open('index.html') as f1:
+                            self.assertEqual(f1.read().decode('UTF-8'), 'ABC 你好')
 
 class TestDelete(unittest.TestCase):
     def setUp(self):
@@ -2745,6 +2870,35 @@ class TestDelete(unittest.TestCase):
                 })
 
             mock_error.assert_called_once_with(404, 'Entry does not exist in this ZIP file.', format=None)
+
+    def test_zip_directory_nested(self):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'ABC 你好')
+            zh.writestr('20200101/entry.zip', buf1.getvalue())
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/20200101/entry.zip!/subdir', data={
+                'token': token(c),
+                'a': 'delete',
+                })
+
+            self.assertEqual(r.status_code, 204)
+            self.assertTrue(os.path.isfile(self.test_zip))
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                with zh.open('20200101/entry.zip') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f, 'r') as zh1:
+                        self.assertEqual(zh1.namelist(), [])
 
 class TestMove(unittest.TestCase):
     def setUp(self):
