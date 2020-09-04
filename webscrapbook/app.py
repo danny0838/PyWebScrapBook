@@ -1579,8 +1579,9 @@ def handle_before_request():
     else:
         sid = session.get('auth_id')
         try:
+            assert session.get('auth_pw') == runtime['config']['auth'][sid].get('pw', '')
             perm = runtime['config']['auth'][sid].get('permission', 'all')
-        except KeyError:
+        except (KeyError, AssertionError):
             id, perm = get_permission(auth, auth_config)
 
             # clear if session becomes invalid and no new log in
@@ -1592,6 +1593,7 @@ def handle_before_request():
     # store auth id in session
     if id:
         session['auth_id'] = id
+        session['auth_pw'] = runtime['config']['auth'][id].get('pw', '')
         session.permanent = True
 
     if not verify_authorization(perm, request.action):

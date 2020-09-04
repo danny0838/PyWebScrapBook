@@ -587,6 +587,26 @@ permission = read
             self.simple_auth_check(r, True)
             self.assertIsNone(r.headers.get('Set-Cookie'))
 
+        # check if session is cleared when invalidated by password change
+        with app.test_client() as c:
+            r = c.open('/', headers=self.simple_auth_headers('user1', 'pass1'))
+            self.assertEqual(r.status_code, 200)
+            self.simple_auth_check(r, False)
+            self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            with mock.patch.dict(app.config['WEBSCRAPBOOK_RUNTIME']['config']['auth']['id1'], {
+                'pw': 'pass1newsalt',
+                }):
+                r = c.open('/')
+                self.assertEqual(r.status_code, 401)
+                self.simple_auth_check(r, True)
+                self.assertIsNotNone(r.headers.get('Set-Cookie'))
+
+            r = c.open('/')
+            self.assertEqual(r.status_code, 401)
+            self.simple_auth_check(r, True)
+            self.assertIsNone(r.headers.get('Set-Cookie'))
+
 
     def test_request(self):
         """Random request challanges."""
