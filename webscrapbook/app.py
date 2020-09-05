@@ -1178,7 +1178,7 @@ class ActionHandler():
             os.rename(localpath, targetpath)
         except:
             traceback.print_exc()
-            return http_error(500, 'Unable to move to target "{}".'.format(target), format=format)
+            return http_error(500, 'Unable to move to the target.', format=format)
 
     @_handle_advanced
     @_handle_writing
@@ -1198,7 +1198,7 @@ class ActionHandler():
                 shutil.copy2(localpath, targetpath)
         except:
             traceback.print_exc()
-            return http_error(500, 'Unable to copy to target "{}".'.format(target), format=format)
+            return http_error(500, 'Unable to copy to the target.', format=format)
 
     _handle_advanced = staticmethod(_handle_advanced)
     _handle_lock = staticmethod(_handle_lock)
