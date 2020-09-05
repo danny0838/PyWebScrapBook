@@ -9,7 +9,7 @@ from copy import deepcopy
 import mimetypes
 import re
 
-__all__ = ['WSB_USER_CONFIG', 'WSB_DIR', 'WSB_LOCAL_CONFIG', 'config']
+__all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_LOCAL_CONFIG', 'config']
 
 __package_name__ = 'webscrapbook'
 __version__ = '0.17.1'
@@ -18,6 +18,7 @@ __author_email__ = 'danny0838@gmail.com'
 __homepage__ = 'https://github.com/danny0838/PyWebScrapBook'
 __license__ = 'MIT'
 
+WSB_EXTENSION_MIN_VERSION = '0.75.6'
 WSB_USER_CONFIG = os.environ.get('WSB_USER_CONFIG') or os.path.join(os.path.expanduser('~'), '.wsbconfig')
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
 WSB_LOCAL_CONFIG = os.environ.get('WSB_LOCAL_CONFIG') or 'config.ini'

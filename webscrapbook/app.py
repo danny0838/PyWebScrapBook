@@ -1073,9 +1073,10 @@ class ActionHandler():
         # add and rewrite values for client to better know the server
         data['app']['base'] = request.script_root
         data['app']['is_local'] = is_local_access()
-        data['VERSION'] = __version__;
-        data['WSB_DIR'] = WSB_DIR;
-        data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG;
+        data['VERSION'] = __version__
+        data['WSB_DIR'] = WSB_DIR
+        data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG
+        data['WSB_EXTENSION_MIN_VERSION'] = WSB_EXTENSION_MIN_VERSION
 
         return http_response(data, format=format)
 
