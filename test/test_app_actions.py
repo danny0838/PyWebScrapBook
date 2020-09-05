@@ -2193,7 +2193,7 @@ class TestMkdir(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/'])
 
-    def test_zip_directory_nested(self):
+    def test_zip_directory_prefixed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -2342,7 +2342,7 @@ class TestSave(unittest.TestCase):
                 with zh.open('index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
 
-    def test_save_zip_file_nested(self):
+    def test_save_zip_file_prefixed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -2447,7 +2447,7 @@ class TestSave(unittest.TestCase):
                 with zh.open('index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
 
-    def test_upload_zip_file_nested(self):
+    def test_upload_zip_file_prefixed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
