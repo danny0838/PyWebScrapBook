@@ -730,7 +730,14 @@ class ActionHandler():
                         if target is not None:
                             # Keep several chars as javascript encodeURI do,
                             # plus "%" as target may have already been escaped.
-                            new_url = urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%"))
+                            parts = urlsplit(urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%")))
+                            new_url = urlunsplit((
+                                parts.scheme,
+                                parts.netloc,
+                                quote_path(unquote(parts.path)),
+                                parts.query,
+                                parts.fragment,
+                                ))
                             return redirect(new_url)
 
                     # show static file for other cases
@@ -759,7 +766,14 @@ class ActionHandler():
                     if target is not None:
                         # Keep several chars as javascript encodeURI do,
                         # plus "%" as target may have already been escaped.
-                        new_url = urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%"))
+                        parts = urlsplit(urljoin(request.url, quote(target, ";,/?:@&=+$-_.!~*'()#%")))
+                        new_url = urlunsplit((
+                            parts.scheme,
+                            parts.netloc,
+                            quote_path(unquote(parts.path)),
+                            parts.query,
+                            parts.fragment,
+                            ))
                         return redirect(new_url)
 
                 # show static file for other cases

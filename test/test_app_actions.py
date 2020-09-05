@@ -450,7 +450,6 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    # @FIXME: fix "%21" back to "!"
     def test_zip_meta_refresh(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
@@ -460,7 +459,7 @@ class TestView(unittest.TestCase):
             with app.test_client() as c:
                 r = c.get('/archive.zip!/refresh.htm', buffered=True)
                 self.assertEqual(r.status_code, 302)
-                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip%21/index.html')
+                self.assertEqual(r.headers['Location'], 'http://localhost/archive.zip!/index.html')
         finally:
             try:
                 os.remove(zip_filename)
