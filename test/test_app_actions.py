@@ -5,6 +5,7 @@ from unittest import mock
 import unittest
 import sys
 import os
+import platform
 import io
 import shutil
 import zipfile
@@ -3474,6 +3475,43 @@ class TestMove(TestActions):
                 is_move=True,
                 )
 
+    def test_symlink(self):
+        """Moving the entity rather than the referenced directory/file."""
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'nonexist'),
+                os.path.join(self.test_dir, 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'symlink')}, follow_symlinks=False)
+
+        with app.test_client() as c:
+            r = c.post('/temp/symlink', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/deep/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
+                is_move=True,
+                )
+
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
         with app.test_client() as c:
@@ -3854,6 +3892,30 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
                 )
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_symlink(self, mock_error):
+        """Raises when copying a broken symlink."""
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'nonexist'),
+                os.path.join(self.test_dir, 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/symlink', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/deep/subdir',
+                })
+
+            mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
