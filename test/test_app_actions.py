@@ -9,6 +9,7 @@ import io
 import shutil
 import zipfile
 import json
+import time
 from functools import partial
 from flask import request, Response
 import webscrapbook
@@ -3290,6 +3291,41 @@ class TestMove(TestActions):
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
             f.write('ABC 你好')
 
+        with zipfile.ZipFile(self.test_zip, 'w') as f:
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, 'w') as z:
+                z.writestr(
+                    zipfile.ZipInfo('subdir/', (1987, 1, 2, 0, 0, 0)),
+                    ''
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir/index.html', (1987, 1, 2, 1, 0, 0)),
+                    'Nested maff 測試'.encode('UTF-8'),
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
+                    'Nested maff 測試'.encode('UTF-8'),
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    )
+            f.writestr('entry.maff', buf.getvalue())
+            f.writestr(
+                zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
+                ''
+                )
+            info = zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 1, 0, 0))
+            info.comment = 'dummy comment'.encode('UTF-8')
+            f.writestr(
+                info,
+                'Maff content 測試'.encode('UTF-8'),
+                compress_type=zipfile.ZIP_DEFLATED,
+                )
+            f.writestr(
+                zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
+                'Maff content 測試'.encode('UTF-8'),
+                compress_type=zipfile.ZIP_DEFLATED,
+                )
+
     def tearDown(self):
         try:
             shutil.rmtree(self.test_dir)
@@ -3448,7 +3484,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
+            mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_file(self, mock_error):
@@ -3464,7 +3500,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_dir(self, mock_error):
@@ -3478,7 +3514,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_dir(self, mock_error):
@@ -3492,7 +3528,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_file(self, mock_error):
@@ -3508,39 +3544,139 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_source_in_zip(self, mock_error):
-        """No ZIP support."""
-        with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr('subdir/index.html', 'ABC 你好')
+    def test_disk_to_zip(self, mock_error):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/deep/test2.txt',
+                })
+
+            mock_error.assert_called_once_with(400, 'Unable to move across a zip.', format='json')
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_to_disk(self, mock_error):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/deep/index2.html',
+                })
+
+            mock_error.assert_called_once_with(400, 'Unable to move across a zip.', format='json')
+
+    def test_zip_to_zip_file(self):
+        with zipfile.ZipFile(self.test_zip) as zip1:
+            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
                 'f': 'json',
-                'target': '/temp/index.html',
+                'target': '/temp.maff!/entry.maff!/deep/newdir/index2.html',
                 })
 
-            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format='json')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
-    @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_target_in_zip(self, mock_error):
-        """No ZIP support."""
-        with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            pass
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/index.html')
+
+                with zip1.open('entry.maff') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            orig_data,
+                            {'zip': zip2, 'filename': 'deep/newdir/index2.html'},
+                            is_move=True,
+                            )
+
+    def test_zip_to_zip_dir(self):
+        with zipfile.ZipFile(self.test_zip) as zip1:
+            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/'})
+            orig_data2 = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
-            r = c.post('/temp/subdir/test.txt', data={
+            r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
                 'f': 'json',
-                'target': '/temp.maff!/test.txt',
+                'target': '/temp.maff!/entry.maff!/deep/newdir',
                 })
 
-            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format='json')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/')
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/index.html')
+
+                with zip1.open('entry.maff') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            orig_data,
+                            {'zip': zip2, 'filename': 'deep/newdir/'},
+                            )
+                        self.assert_file_equal(
+                            orig_data2,
+                            {'zip': zip2, 'filename': 'deep/newdir/index.html'},
+                            )
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_to_zip_existed1(self, mock_error):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir',
+                })
+
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_to_zip_existed2(self, mock_error):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir2',
+                })
+
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
 class TestCopy(TestActions):
     def setUp(self):
@@ -3550,6 +3686,41 @@ class TestCopy(TestActions):
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
             f.write('ABC 你好')
+
+        with zipfile.ZipFile(self.test_zip, 'w') as f:
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, 'w') as z:
+                z.writestr(
+                    zipfile.ZipInfo('subdir/', (1987, 1, 2, 0, 0, 0)),
+                    ''
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir/index.html', (1987, 1, 2, 1, 0, 0)),
+                    'Nested maff 測試'.encode('UTF-8'),
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
+                    'Nested maff 測試'.encode('UTF-8'),
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    )
+            f.writestr('entry.maff', buf.getvalue())
+            f.writestr(
+                zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
+                ''
+                )
+            info = zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 1, 0, 0))
+            info.comment = 'dummy comment'.encode('UTF-8')
+            f.writestr(
+                info,
+                'Maff content 測試'.encode('UTF-8'),
+                compress_type=zipfile.ZIP_DEFLATED,
+                )
+            f.writestr(
+                zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
+                'Maff content 測試'.encode('UTF-8'),
+                compress_type=zipfile.ZIP_DEFLATED,
+                )
 
     def tearDown(self):
         try:
@@ -3694,7 +3865,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
+            mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_file(self, mock_error):
@@ -3712,7 +3883,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_dir(self, mock_error):
@@ -3728,7 +3899,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_dir(self, mock_error):
@@ -3744,7 +3915,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_file(self, mock_error):
@@ -3762,39 +3933,195 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
-    @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_source_in_zip(self, mock_error):
-        """No ZIP support."""
-        with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr('subdir/index.html', 'ABC 你好')
-
-        with app.test_client() as c:
-            r = c.post('/temp.maff!/subdir/index.html', data={
-                'token': token(c),
-                'a': 'copy',
-                'f': 'json',
-                'target': '/temp/index.html',
-                })
-
-            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format='json')
-
-    @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_target_in_zip(self, mock_error):
-        """No ZIP support."""
-        with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            pass
-
+    def test_disk_to_zip_file(self):
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
                 'f': 'json',
-                'target': '/temp.maff!/test.txt',
+                'target': '/temp.maff!/deep/newdir/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format='json')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip:
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                    {'zip': zip, 'filename': 'deep/newdir/test2.txt'},
+                    )
+
+    def test_disk_to_zip_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/deep/newdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip:
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir')},
+                    {'zip': zip, 'filename': 'deep/newdir/'},
+                    )
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                    {'zip': zip, 'filename': 'deep/newdir/test.txt'},
+                    )
+
+    def test_zip_to_disk_file(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/deep/newdir/index2.html',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip:
+                self.assert_file_equal(
+                    {'zip': zip, 'filename': 'subdir/index.html'},
+                    {'file': os.path.join(self.test_dir, 'deep', 'newdir', 'index2.html')},
+                    )
+
+    def test_zip_to_disk_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/deep/newdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip:
+                self.assert_file_equal(
+                    {'zip': zip, 'filename': 'subdir/'},
+                    {'file': os.path.join(self.test_dir, 'deep', 'newdir')},
+                    )
+                self.assert_file_equal(
+                    {'zip': zip, 'filename': 'subdir/index.html'},
+                    {'file': os.path.join(self.test_dir, 'deep', 'newdir', 'index.html')},
+                    )
+
+    def test_zip_to_zip_file(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/deep/newdir/index2.html',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/index.html'},
+                            {'zip': zip2, 'filename': 'deep/newdir/index2.html'},
+                            )
+
+    def test_zip_to_zip_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/deep/newdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    # opened zip file is not seekable in Python < 3.7,
+                    # copy to a buffer for seeking.
+                    if not f.seekable():
+                        ff = io.BytesIO()
+                        ff.write(f.read())
+                        f.close()
+                        f = ff
+
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/'},
+                            {'zip': zip2, 'filename': 'deep/newdir/'},
+                            )
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/index.html'},
+                            {'zip': zip2, 'filename': 'deep/newdir/index.html'},
+                            )
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_to_zip_existed1(self, mock_error):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir',
+                })
+
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_zip_to_zip_existed2(self, mock_error):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir2',
+                })
+
+            mock_error.assert_called_once_with(400, 'Found something at target.', format='json')
 
 class TestUnknown(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())

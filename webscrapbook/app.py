@@ -9,6 +9,7 @@ import io
 import mimetypes
 import re
 import zipfile
+import tempfile
 import time
 import json
 import functools
@@ -717,10 +718,15 @@ class ActionHandler():
             localpaths = request.localpaths
 
             if len(localpaths) > 1:
-                return http_error(400, "File is inside an archive file.", format=format)
-
-            if not os.path.lexists(localpaths[0]):
-                return http_error(404, "File does not exist.", format=format)
+                with open_archive_path(localpaths) as zip:
+                    try:
+                        zip.getinfo(localpaths[-1])
+                    except KeyError:
+                        if not util.zip_hasdir(zip, localpaths[-1] + '/'):
+                            return http_error(404, "Source does not exist.", format=format)
+            else:
+                if not os.path.lexists(localpaths[0]):
+                    return http_error(404, "Source does not exist.", format=format)
 
             target = request.values.get('target')
 
@@ -734,12 +740,19 @@ class ActionHandler():
                 return http_error(403, "Unable to operate beyond the root directory.", format=format)
 
             if len(targetpaths) > 1:
-                return http_error(400, "Target is inside an archive file.", format=format)
+                with open_archive_path(targetpaths) as zip:
+                    try:
+                        zip.getinfo(targetpaths[-1])
+                    except KeyError:
+                        if util.zip_hasdir(zip, targetpaths[-1] + '/'):
+                            return http_error(400, 'Found something at target.', format=format)
+                    else:
+                        return http_error(400, 'Found something at target.', format=format)
+            else:
+                if os.path.lexists(targetpaths[0]):
+                    return http_error(400, 'Found something at target.', format=format)
 
-            if os.path.lexists(targetpaths[0]):
-                return http_error(400, 'Found something at target "{}".'.format(target), format=format)
-
-            return func(self, sourcepath=localpaths[0], targetpath=targetpaths[0], *args, **kwargs)
+            return func(self, sourcepaths=localpaths, targetpaths=targetpaths, *args, **kwargs)
 
         return wrapper
 
@@ -1380,14 +1393,59 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     @_handle_renaming
-    def move(self, sourcepath, targetpath, *args, **kwargs):
+    def move(self, sourcepaths, targetpaths, *args, **kwargs):
         """Move a file or directory."""
         format = request.format
 
-        os.makedirs(os.path.dirname(targetpath), exist_ok=True)
-
         try:
-            os.rename(sourcepath, targetpath)
+            if len(sourcepaths) == 1:
+                if len(targetpaths) == 1:
+                    try:
+                        os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, "Unable to copy to this path.", format=format)
+
+                    shutil.move(sourcepaths[0], targetpaths[0])
+
+                else:
+                    # Moving a file into a zip is like moving across disk,
+                    # which makes little sense. Additionally, moving a
+                    # symlink/junction should rename the entry and cannot be
+                    # implemented as copying-deleting. Forbid such operation to
+                    # prevent a confusion.
+                    return http_error(400, "Unable to move across a zip.", format=format)
+
+            elif len(sourcepaths) > 1:
+                if len(targetpaths) == 1:
+                    # Moving from zip to disk is like moving across disk, which
+                    # makes little sense.
+                    return http_error(400, "Unable to move across a zip.", format=format)
+
+                else:
+                    with open_archive_path(sourcepaths) as zip:
+                        try:
+                            zip.getinfo(sourcepaths[-1])
+                        except KeyError:
+                            entries = [e for e in zip.namelist() if e.startswith(sourcepaths[-1] + '/')]
+                        else:
+                            entries = [sourcepaths[-1]]
+
+                        with open_archive_path(targetpaths, 'w') as zip2:
+                            cut = len(sourcepaths[-1])
+                            for entry in entries:
+                                info = zip.getinfo(entry)
+                                info.filename = targetpaths[-1] + entry[cut:]
+                                try:
+                                    zip2.writestr(info, zip.read(entry),
+                                            compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                except TypeError:
+                                    # compresslevel is supported since Python 3.7
+                                    zip2.writestr(info, zip.read(entry))
+
+                    with open_archive_path(sourcepaths, 'w', entries) as zip:
+                        pass
+
         except:
             traceback.print_exc()
             return http_error(500, 'Unable to move to the target.', format=format)
@@ -1395,17 +1453,107 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     @_handle_renaming
-    def copy(self, sourcepath, targetpath, *args, **kwargs):
+    def copy(self, sourcepaths, targetpaths, *args, **kwargs):
         """Copy a file or directory."""
         format = request.format
 
-        os.makedirs(os.path.dirname(targetpath), exist_ok=True)
+        # Copying a symlink/junction means copying the real file/directory.
+        # It makes no sense if the symlink/junction is broken.
+        if not os.path.exists(sourcepaths[0]):
+            return http_error(404, "Source does not exist.", format=format)
 
         try:
-            try:
-                shutil.copytree(sourcepath, targetpath)
-            except NotADirectoryError:
-                shutil.copy2(sourcepath, targetpath)
+            if len(sourcepaths) == 1:
+                if len(targetpaths) == 1:
+                    try:
+                        os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, "Unable to copy to this path.", format=format)
+
+                    try:
+                        shutil.copytree(sourcepaths[0], targetpaths[0])
+                    except NotADirectoryError:
+                        shutil.copy2(sourcepaths[0], targetpaths[0])
+
+                else:
+                    if os.path.isdir(sourcepaths[0]):
+                        with open_archive_path(targetpaths, 'w') as zip:
+                            base = sourcepaths[0]
+                            zip.writestr(zipfile.ZipInfo(
+                                targetpaths[-1] + '/',
+                                time.localtime(os.stat(sourcepaths[0]).st_mtime)[:-3]
+                                ), '')
+                            for root, dirs, files in os.walk(base):
+                                for dir in dirs:
+                                    dir = os.path.join(root, dir)
+                                    subpath = os.path.relpath(dir, base).replace('\\', '/')
+                                    zip.writestr(zipfile.ZipInfo(
+                                        targetpaths[-1] + '/' + subpath + '/',
+                                        time.localtime(os.stat(dir).st_mtime)[:-3]
+                                        ), '')
+                                for file in files:
+                                    file = os.path.join(root, file)
+                                    subpath = os.path.relpath(file, base).replace('\\', '/')
+                                    zip.write(file, targetpaths[-1] + '/' + subpath)
+                    elif os.path.isfile(sourcepaths[0]):
+                        with open_archive_path(targetpaths, 'w') as zip:
+                            zip.write(sourcepaths[0], targetpaths[-1])
+
+            elif len(sourcepaths) > 1:
+                if len(targetpaths) == 1:
+                    try:
+                        os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
+                    except:
+                        traceback.print_exc()
+                        return http_error(500, "Unable to copy to this path.", format=format)
+
+                    tempdir = tempfile.mkdtemp()
+                    try:
+                        with open_archive_path(sourcepaths) as zip:
+                            try:
+                                zip.getinfo(sourcepaths[-1])
+                            except KeyError:
+                                entries = [e for e in zip.namelist() if e.startswith(sourcepaths[-1] + '/')]
+                            else:
+                                entries = [sourcepaths[-1]]
+
+                            # extract entries and keep datetime
+                            zip.extractall(tempdir, entries)
+                            for entry in entries:
+                                file = os.path.join(tempdir, entry)
+                                date = time.mktime(zip.getinfo(entry).date_time + (0, 0, -1))
+                                os.utime(file, (date, date))
+
+                        # move to target path
+                        shutil.move(os.path.join(tempdir, sourcepaths[-1]), targetpaths[0])
+                    finally:
+                        try:
+                            shutil.rmtree(tempdir)
+                        except:
+                            traceback.print_exc()
+
+                else:
+                    with open_archive_path(sourcepaths) as zip:
+                        try:
+                            zip.getinfo(sourcepaths[-1])
+                        except KeyError:
+                            entries = [e for e in zip.namelist() if e.startswith(sourcepaths[-1] + '/')]
+                        else:
+                            entries = [sourcepaths[-1]]
+
+                        with open_archive_path(targetpaths, 'w') as zip2:
+                            cut = len(sourcepaths[-1])
+                            for entry in entries:
+                                info = zip.getinfo(entry)
+                                info.filename = targetpaths[-1] + entry[cut:]
+                                try:
+                                    zip2.writestr(info, zip.read(entry),
+                                            compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
+                                except TypeError:
+                                    # compresslevel is supported since Python 3.7
+                                    zip2.writestr(info, zip.read(entry))
+
         except:
             traceback.print_exc()
             return http_error(500, 'Unable to copy to the target.', format=format)
