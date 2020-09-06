@@ -611,8 +611,7 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip', buf1.getvalue())
 
                 with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zip:
-                    with zip.open('subdir/index.html') as f:
-                        self.assertEqual(f.read().decode('UTF-8'), 'Hello World!')
+                    self.assertEqual(zip.read('subdir/index.html').decode('UTF-8'), 'Hello World!')
 
                 with self.assertRaises(ValueError):
                     with wsbapp.open_archive_path([tempfile]) as zip:

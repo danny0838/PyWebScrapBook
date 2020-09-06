@@ -2739,8 +2739,7 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('index.html', 'r') as f:
-                    self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+                self.assertEqual(zh.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_save_zip_file_prefixed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2761,8 +2760,7 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('subdir/index.html', 'r') as f:
-                    self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+                self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_save_zip_file_existed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2783,8 +2781,7 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('subdir/index.html', 'r') as f:
-                    self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+                self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_save_zip_file_nested(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2812,8 +2809,7 @@ class TestSave(unittest.TestCase):
                 with zh.open('20200101/entry.zip') as f:
                     f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
-                        with zh1.open('index.html') as f1:
-                            self.assertEqual(f1.read().decode('UTF-8'), 'ABC 你好')
+                        self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_upload_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -2911,8 +2907,7 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('index.html', 'r') as f:
-                    self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+                self.assertEqual(zh.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_upload_zip_file_prefixed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2934,8 +2929,7 @@ class TestSave(unittest.TestCase):
                 })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('subdir/index.html', 'r') as f:
-                    self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+                self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_upload_zip_file_existed(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2957,8 +2951,7 @@ class TestSave(unittest.TestCase):
                 })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('subdir/index.html', 'r') as f:
-                    self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
+                self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
     def test_upload_zip_file_nested(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2986,8 +2979,7 @@ class TestSave(unittest.TestCase):
                 with zh.open('20200101/entry.zip') as f:
                     f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
-                        with zh1.open('index.html') as f1:
-                            self.assertEqual(f1.read().decode('UTF-8'), 'ABC 你好')
+                        self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
 class TestDelete(unittest.TestCase):
     def setUp(self):
