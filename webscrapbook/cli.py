@@ -168,12 +168,9 @@ def view_archive_files(files):
     """
     import tempfile
     import zipfile
-    import hashlib
-    import time
     import mimetypes
     import webbrowser
     import shutil
-    from urllib.parse import urljoin
     from urllib.request import pathname2url
 
     cache_prefix = config['browser']['cache_prefix']
