@@ -39,6 +39,7 @@ from . import Config
 from . import util
 from ._compat.time import time_ns
 from ._compat.contextlib import nullcontext
+from ._compat import zip_stream
 
 # see: https://url.spec.whatwg.org/#percent-encoded-bytes
 quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
@@ -203,16 +204,7 @@ def get_archive_path(filepath):
                             break
                         try:
                             with zp.open(archivepath, 'r') as f:
-                                # opened zip file is not seekable in Python < 3.7,
-                                # copy to a buffer for seeking.
-                                if not f.seekable():
-                                    ff = io.BytesIO()
-                                    while True:
-                                        b = f.read(8192)
-                                        if not b: break
-                                        ff.write(b)
-                                    f = ff
-
+                                f = zip_stream(f)
                                 with zipfile.ZipFile(f, 'r') as zip:
                                     rv.append(archivepath)
                                     get_subpath(zip, filepath[m.end(0):])
@@ -248,18 +240,7 @@ def open_archive_path(paths, mode='r', filters=None):
         stack.append(zip)
         for i in range(1, last):
             f = zip.open(paths[i])
-
-            # opened zip file is not seekable in Python < 3.7,
-            # copy to a buffer for seeking.
-            if not f.seekable():
-                ff = io.BytesIO()
-                while True:
-                    b = f.read(8192)
-                    if not b: break
-                    ff.write(b)
-                f.close()
-                f = ff
-
+            f = zip_stream(f)
             stack.append(f)
             zip = zipfile.ZipFile(f)
             stack.append(zip)

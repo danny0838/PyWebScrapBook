@@ -18,6 +18,7 @@ import webscrapbook
 from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
 from webscrapbook.app import make_app
 from webscrapbook.util import make_hashable, frozendict
+from webscrapbook._compat import zip_stream
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_actions')
@@ -2456,14 +2457,7 @@ class TestMkdir(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), ['20200102/'])
 
@@ -2576,17 +2570,7 @@ class TestMkzip(unittest.TestCase):
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        while True:
-                            b = f.read(8192)
-                            if not b: break
-                            ff.write(b)
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     self.assertTrue(zipfile.is_zipfile(f))
 
     def test_zip_file(self):
@@ -2609,14 +2593,7 @@ class TestMkzip(unittest.TestCase):
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     self.assertTrue(zipfile.is_zipfile(f))
 
 class TestSave(unittest.TestCase):
@@ -2833,14 +2810,7 @@ class TestSave(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         with zh1.open('index.html') as f1:
                             self.assertEqual(f1.read().decode('UTF-8'), 'ABC 你好')
@@ -3014,14 +2984,7 @@ class TestSave(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         with zh1.open('index.html') as f1:
                             self.assertEqual(f1.read().decode('UTF-8'), 'ABC 你好')
@@ -3390,14 +3353,7 @@ class TestDelete(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), [])
 
@@ -3800,14 +3756,7 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -3842,14 +3791,7 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -4316,14 +4258,7 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/index.html'},
@@ -4348,14 +4283,7 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    # opened zip file is not seekable in Python < 3.7,
-                    # copy to a buffer for seeking.
-                    if not f.seekable():
-                        ff = io.BytesIO()
-                        ff.write(f.read())
-                        f.close()
-                        f = ff
-
+                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/'},
