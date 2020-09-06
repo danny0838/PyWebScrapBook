@@ -211,7 +211,7 @@ def file_info(file, base=None):
         type = 'unknown'
 
     try:
-        statinfo = os.stat(file)
+        statinfo = os.lstat(file)
     except:
         # unexpected error when getting stat info
         size = None

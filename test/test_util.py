@@ -2,6 +2,7 @@ from unittest import mock
 import unittest
 import sys
 import os
+import platform
 import shutil
 import io
 import time
@@ -194,6 +195,30 @@ class TestUtils(unittest.TestCase):
             util.file_info(entry),
             ('folder', 'dir', None, os.stat(entry).st_mtime)
             )
+
+    def test_file_info_symlink(self):
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
+        try:
+            os.symlink(
+                os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+                entry,
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        try:
+            self.assertEqual(
+                util.file_info(entry),
+                ('symlink', 'link', None, os.lstat(entry).st_mtime)
+                )
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
 
     def test_listdir(self):
         entry = os.path.join(root_dir, 'test_util', 'listdir')
