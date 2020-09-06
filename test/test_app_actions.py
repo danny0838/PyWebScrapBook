@@ -1785,22 +1785,32 @@ class TestExec(unittest.TestCase):
     @mock.patch('webscrapbook.util.launch')
     def test_directory(self, mock_exec):
         with app.test_client() as c:
-            r = c.get('/subdir', query_string={'a': 'exec'})
-            self.assertEqual(r.status_code, 204)
+            r = c.get('/subdir', query_string={'a': 'exec', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             mock_exec.assert_called_once_with(os.path.join(server_root, 'subdir'))
 
     @mock.patch('webscrapbook.util.launch')
     def test_file(self, mock_exec):
         with app.test_client() as c:
-            r = c.get('/index.html', query_string={'a': 'exec'})
-            self.assertEqual(r.status_code, 204)
+            r = c.get('/index.html', query_string={'a': 'exec', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             mock_exec.assert_called_once_with(os.path.join(server_root, 'index.html'))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
         with app.test_client() as c:
-            r = c.get('/nonexist.file', query_string={'a': 'exec'})
-            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+            r = c.get('/nonexist.file', query_string={'a': 'exec', 'f': 'json'})
+            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_zip(self, mock_error):
@@ -1810,8 +1820,8 @@ class TestExec(unittest.TestCase):
                 zh.writestr('index.html', 'Hello World!')
 
             with app.test_client() as c:
-                r = c.get('/archive.htz!/index.html', query_string={'a': 'exec'})
-                mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+                r = c.get('/archive.htz!/index.html', query_string={'a': 'exec', 'f': 'json'})
+                mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
         finally:
             try:
                 os.remove(zip_filename)
@@ -1822,22 +1832,32 @@ class TestBrowse(unittest.TestCase):
     @mock.patch('webscrapbook.util.view_in_explorer')
     def test_directory(self, mock_browse):
         with app.test_client() as c:
-            r = c.get('/subdir', query_string={'a': 'browse'})
-            self.assertEqual(r.status_code, 204)
+            r = c.get('/subdir', query_string={'a': 'browse', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             mock_browse.assert_called_once_with(os.path.join(server_root, 'subdir'))
 
     @mock.patch('webscrapbook.util.view_in_explorer')
     def test_file(self, mock_browse):
         with app.test_client() as c:
-            r = c.get('/index.html', query_string={'a': 'browse'})
-            self.assertEqual(r.status_code, 204)
+            r = c.get('/index.html', query_string={'a': 'browse', 'f': 'json'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             mock_browse.assert_called_once_with(os.path.join(server_root, 'index.html'))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
         with app.test_client() as c:
-            r = c.get('/nonexist.file', query_string={'a': 'browse'})
-            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+            r = c.get('/nonexist.file', query_string={'a': 'browse', 'f': 'json'})
+            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_zip(self, mock_error):
@@ -1847,8 +1867,8 @@ class TestBrowse(unittest.TestCase):
                 zh.writestr('index.html', 'Hello World!')
 
             with app.test_client() as c:
-                r = c.get('/archive.htz!/index.html', query_string={'a': 'browse'})
-                mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+                r = c.get('/archive.htz!/index.html', query_string={'a': 'browse', 'f': 'json'})
+                mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
         finally:
             try:
                 os.remove(zip_filename)
@@ -1905,10 +1925,11 @@ class TestLock(unittest.TestCase):
             r = c.get('/', query_string={
                 'token': token(c),
                 'a': 'lock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -1916,10 +1937,11 @@ class TestLock(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/', data={
                 'a': 'lock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_params_check(self, mock_error):
@@ -1928,18 +1950,25 @@ class TestLock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
+                'f': 'json',
                 })
-            mock_error.assert_called_once_with(400, 'Lock name is not specified.', format=None)
+            mock_error.assert_called_once_with(400, 'Lock name is not specified.', format='json')
 
     def test_normal(self):
         with app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isdir(self.lock))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
@@ -1950,11 +1979,12 @@ class TestLock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
+                'f': 'json',
                 'name': 'test',
                 'chkt': 0,
                 })
 
-            mock_error.assert_called_once_with(500, 'Unable to acquire lock "test".', format=None)
+            mock_error.assert_called_once_with(500, 'Unable to acquire lock "test".', format='json')
 
     def test_directory_staled(self):
         os.makedirs(self.lock, exist_ok=True)
@@ -1963,11 +1993,17 @@ class TestLock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
+                'f': 'json',
                 'name': 'test',
                 'chks': 0,
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isdir(self.lock))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
@@ -1980,11 +2016,12 @@ class TestLock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
+                'f': 'json',
                 'name': 'test',
                 'chkt': 0,
                 })
 
-            mock_error.assert_called_once_with(500, 'Unable to acquire lock "test".', format=None)
+            mock_error.assert_called_once_with(500, 'Unable to acquire lock "test".', format='json')
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
@@ -2007,10 +2044,11 @@ class TestUnlock(unittest.TestCase):
             r = c.get('/', query_string={
                 'token': token(c),
                 'a': 'unlock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -2020,10 +2058,11 @@ class TestUnlock(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/', data={
                 'a': 'unlock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_params_check(self, mock_error):
@@ -2034,9 +2073,10 @@ class TestUnlock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Lock name is not specified.', format=None)
+            mock_error.assert_called_once_with(400, 'Lock name is not specified.', format='json')
 
     def test_normal(self):
         os.makedirs(self.lock, exist_ok=True)
@@ -2045,9 +2085,16 @@ class TestUnlock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
+                'f': 'json',
                 'name': 'test',
                 })
-            self.assertEqual(r.status_code, 204)
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.exists(self.lock))
 
     def test_nonexist(self):
@@ -2055,10 +2102,16 @@ class TestUnlock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.exists(self.lock))
 
     @mock.patch('sys.stderr', new_callable=io.StringIO)
@@ -2072,10 +2125,11 @@ class TestUnlock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            mock_error.assert_called_once_with(500, 'Unable to remove lock "test".', format=None)
+            mock_error.assert_called_once_with(500, 'Unable to remove lock "test".', format='json')
             self.assertNotEqual(mock_stderr.getvalue(), '')
 
     @mock.patch('sys.stderr', new_callable=io.StringIO)
@@ -2089,10 +2143,11 @@ class TestUnlock(unittest.TestCase):
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
+                'f': 'json',
                 'name': 'test',
                 })
 
-            mock_error.assert_called_once_with(500, 'Unable to remove lock "test".', format=None)
+            mock_error.assert_called_once_with(500, 'Unable to remove lock "test".', format='json')
             self.assertNotEqual(mock_stderr.getvalue(), '')
 
 class TestMkdir(unittest.TestCase):
@@ -2119,9 +2174,10 @@ class TestMkdir(unittest.TestCase):
             r = c.get('/temp', query_string={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -2129,18 +2185,25 @@ class TestMkdir(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/temp', data={
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     def test_directory(self):
         with app.test_client() as c:
             r = c.post('/temp', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isdir(self.test_dir))
 
     def test_directory_nested(self):
@@ -2150,9 +2213,15 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isdir(test_dir))
 
     def test_directory_existed(self):
@@ -2160,9 +2229,15 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isdir(self.test_dir))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
@@ -2174,9 +2249,10 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found a non-directory here.', format=None)
+            mock_error.assert_called_once_with(400, 'Found a non-directory here.', format='json')
 
     def test_zip_directory(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2186,9 +2262,15 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp.maff!/temp', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/'])
@@ -2201,9 +2283,15 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp.maff!/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
@@ -2216,9 +2304,15 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp.maff!/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
@@ -2234,9 +2328,15 @@ class TestMkdir(unittest.TestCase):
             r = c.post('/temp.maff!/20200101/entry.zip!/20200102', data={
                 'token': token(c),
                 'a': 'mkdir',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
@@ -2271,9 +2371,10 @@ class TestMkzip(unittest.TestCase):
             r = c.get('/temp', query_string={
                 'token': token(c),
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -2281,9 +2382,10 @@ class TestMkzip(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/temp', data={
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     def test_nonexist(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -2292,9 +2394,15 @@ class TestMkzip(unittest.TestCase):
             r = c.post('/temp/test.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             self.assertTrue(zipfile.is_zipfile(self.test_zip))
 
@@ -2307,9 +2415,15 @@ class TestMkzip(unittest.TestCase):
             r = c.post('/temp/test.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             self.assertTrue(zipfile.is_zipfile(self.test_zip))
 
@@ -2321,9 +2435,10 @@ class TestMkzip(unittest.TestCase):
             r = c.post('/temp/test.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
+            mock_error.assert_called_once_with(400, 'Found a non-file here.', format='json')
 
     def test_zip_nonexist(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -2334,9 +2449,15 @@ class TestMkzip(unittest.TestCase):
             r = c.post('/temp/test.zip!/entry.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as f:
                     # opened zip file is not seekable in Python < 3.7,
@@ -2361,9 +2482,15 @@ class TestMkzip(unittest.TestCase):
             r = c.post('/temp/test.zip!/entry.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as f:
                     # opened zip file is not seekable in Python < 3.7,
@@ -2403,10 +2530,11 @@ class TestSave(unittest.TestCase):
             r = c.get('/temp/test.txt', query_string={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -2416,10 +2544,11 @@ class TestSave(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/temp/test.txt', data={
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     def test_save_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -2428,10 +2557,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_file))
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
@@ -2441,10 +2576,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_file))
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
@@ -2458,10 +2599,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_file))
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
@@ -2474,10 +2621,11 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
+            mock_error.assert_called_once_with(400, 'Found a non-file here.', format='json')
 
     def test_save_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2487,10 +2635,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
@@ -2503,10 +2657,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('subdir/index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
@@ -2519,10 +2679,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('subdir/index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
@@ -2538,10 +2704,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/20200101/entry.zip!/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
@@ -2564,9 +2736,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
-            self.assertEqual(r.status_code, 204)
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_file))
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
@@ -2576,10 +2755,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_file))
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
@@ -2593,10 +2778,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_file))
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
@@ -2609,10 +2800,11 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            mock_error.assert_called_once_with(400, 'Found a non-file here.', format=None)
+            mock_error.assert_called_once_with(400, 'Found a non-file here.', format='json')
 
     def test_upload_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2622,10 +2814,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('index.html', 'r') as f:
                     self.assertEqual(f.read().decode('UTF-8'), 'ABC 你好')
@@ -2638,10 +2836,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('subdir/index.html', 'r') as f:
@@ -2655,10 +2859,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 }, content_type='multipart/form-data')
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('subdir/index.html', 'r') as f:
@@ -2675,10 +2885,16 @@ class TestSave(unittest.TestCase):
             r = c.post('/temp.maff!/20200101/entry.zip!/index.html', data={
                 'token': token(c),
                 'a': 'save',
+                'f': 'json',
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
@@ -2723,9 +2939,10 @@ class TestDelete(unittest.TestCase):
             r = c.get('/temp/test.txt', query_string={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -2737,9 +2954,10 @@ class TestDelete(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/temp/test.txt', data={
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     def test_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -2750,9 +2968,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.exists(self.test_file))
 
     def test_directory(self):
@@ -2762,9 +2986,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.exists(self.test_dir))
 
     def test_directory_with_content(self):
@@ -2776,9 +3006,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.isfile(self.test_dir))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
@@ -2787,9 +3023,10 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
 
     def test_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2800,9 +3037,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -2816,9 +3059,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -2834,9 +3083,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -2851,9 +3106,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -2867,9 +3128,10 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp.maff!/nonexist', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(404, 'Entry does not exist in this ZIP file.', format=None)
+            mock_error.assert_called_once_with(404, 'Entry does not exist in this ZIP file.', format='json')
 
     def test_zip_directory_nested(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2883,9 +3145,15 @@ class TestDelete(unittest.TestCase):
             r = c.post('/temp.maff!/20200101/entry.zip!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
+                'f': 'json',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
@@ -2927,10 +3195,11 @@ class TestMove(unittest.TestCase):
         with app.test_client() as c:
             r = c.get('/temp/subdir/test.txt', query_string={
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -2938,10 +3207,11 @@ class TestMove(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_params_check(self, mock_error):
@@ -2950,9 +3220,10 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Target is not specified.', format=None)
+            mock_error.assert_called_once_with(400, 'Target is not specified.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_path_check(self, mock_error):
@@ -2961,10 +3232,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '../test_app_actions1/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format=None)
+            mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format='json')
 
     def test_file(self):
         stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
@@ -2973,10 +3245,16 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
             self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt')), stat)
             with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'r', encoding='UTF-8') as f:
@@ -2990,10 +3268,16 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/subsubdir',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir')), stat)
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')))
@@ -3007,10 +3291,16 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/subsubdir/',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
             self.assertFalse(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir')), stat)
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')))
@@ -3022,10 +3312,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/nonexist', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_file(self, mock_error):
@@ -3039,10 +3330,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_dir(self, mock_error):
@@ -3054,10 +3346,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_dir(self, mock_error):
@@ -3069,10 +3362,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_file(self, mock_error):
@@ -3086,10 +3380,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_source_in_zip(self, mock_error):
@@ -3101,10 +3396,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp/index.html',
                 })
 
-            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format=None)
+            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_target_in_zip(self, mock_error):
@@ -3116,10 +3412,11 @@ class TestMove(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
+                'f': 'json',
                 'target': '/temp.maff!/test.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format=None)
+            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format='json')
 
 class TestCopy(unittest.TestCase):
     def setUp(self):
@@ -3149,10 +3446,11 @@ class TestCopy(unittest.TestCase):
             r = c.get('/temp/subdir/test.txt', query_string={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(405, format=None, valid_methods=['POST'])
+            mock_error.assert_called_once_with(405, format='json', valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_token_check(self, mock_error):
@@ -3160,10 +3458,11 @@ class TestCopy(unittest.TestCase):
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Invalid access token.', format=None)
+            mock_error.assert_called_once_with(400, 'Invalid access token.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_params_check(self, mock_error):
@@ -3172,9 +3471,10 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 })
 
-            mock_error.assert_called_once_with(400, 'Target is not specified.', format=None)
+            mock_error.assert_called_once_with(400, 'Target is not specified.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_path_check(self, mock_error):
@@ -3183,20 +3483,28 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '../test_app_actions1/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format=None)
+            mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format='json')
 
     def test_file(self):
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
             with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
             with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'r', encoding='UTF-8') as f:
@@ -3215,10 +3523,16 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/subsubdir',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
             stat1 = os.stat(os.path.join(self.test_dir, 'subdir'))
             stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir'))
@@ -3246,10 +3560,16 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir/', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/subsubdir/',
                 })
 
-            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
             stat1 = os.stat(os.path.join(self.test_dir, 'subdir'))
             stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir'))
@@ -3278,10 +3598,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/nonexist', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(404, 'File does not exist.', format=None)
+            mock_error.assert_called_once_with(404, 'File does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_file(self, mock_error):
@@ -3295,10 +3616,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_dir(self, mock_error):
@@ -3310,10 +3632,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_dir(self, mock_error):
@@ -3325,10 +3648,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_file(self, mock_error):
@@ -3342,10 +3666,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format=None)
+            mock_error.assert_called_once_with(400, 'Found something at target "/temp/subdir2/test2.txt".', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_source_in_zip(self, mock_error):
@@ -3357,10 +3682,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp/index.html',
                 })
 
-            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format=None)
+            mock_error.assert_called_once_with(400, 'File is inside an archive file.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_target_in_zip(self, mock_error):
@@ -3372,10 +3698,11 @@ class TestCopy(unittest.TestCase):
             r = c.post('/temp/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
+                'f': 'json',
                 'target': '/temp.maff!/test.txt',
                 })
 
-            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format=None)
+            mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format='json')
 
 class TestUnknown(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
