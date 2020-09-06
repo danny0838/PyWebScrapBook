@@ -46,6 +46,119 @@ def tearDownModule():
 def token(c):
     return c.get('/', query_string={'a': 'token'}).data.decode('UTF-8')
 
+class TestActions(unittest.TestCase):
+    def get_file_data(self, data, follow_symlinks=True):
+        """Convert file data to a comparable format.
+
+        Args:
+            data: a dict with {'bytes': bytes, 'stat': os.stat_result},
+                {'file': file-like}, or {'zip': ZipFile, 'filename': str}
+        """
+        if 'file' in data:
+            rv = {
+                'stat': os.stat(data['file']) if follow_symlinks else os.lstat(data['file']),
+                }
+            if os.path.isfile(data['file']):
+                with open(data['file'], 'rb') as f:
+                    rv['bytes'] = f.read()
+            else:
+                rv['bytes'] = None
+        elif 'zip' in data:
+            rv = {}
+            try:
+                rv['stat'] = data['zip'].getinfo(data['filename'])
+            except KeyError:
+                rv['stat'] = None
+                rv['bytes'] = None
+            else:
+                rv['bytes'] = None if rv['stat'].is_dir() else data['zip'].read(rv['stat'])
+        else:
+            rv = data
+        return rv
+
+    def assert_file_equal(self, *datas, is_move=False):
+        """Assert if file datas are equivalent.
+
+        Args:
+            *datas: compatible data format with get_file_data()
+            is_move: requires strict equivalent of stat
+        """
+        datas = [self.get_file_data(data, follow_symlinks=not is_move) for data in datas]
+        for i in range(1, len(datas)):
+            self.assertEqual(datas[0]['bytes'], datas[i]['bytes'])
+            if (is_move
+                    and isinstance(datas[0]['stat'], os.stat_result)
+                    and isinstance(datas[i]['stat'], os.stat_result)
+                    ):
+                self.assertEqual(datas[0]['stat'], datas[i]['stat'])
+                return
+
+            if isinstance(datas[0]['stat'], os.stat_result):
+                if isinstance(datas[i]['stat'], os.stat_result):
+                    stat0 = {
+                        'mode': datas[0]['stat'].st_mode,
+                        'uid': datas[0]['stat'].st_uid,
+                        'gid': datas[0]['stat'].st_gid,
+                        'atime': datas[0]['stat'].st_atime,
+                        'mtime': datas[0]['stat'].st_mtime,
+                        }
+                else:
+                    stat0 = {
+                        'mtime': datas[0]['stat'].st_mtime,
+                        }
+
+            elif isinstance(datas[0]['stat'], zipfile.ZipInfo):
+                if isinstance(datas[i]['stat'], os.stat_result):
+                    stat0 = {
+                        'mtime': time.mktime(datas[0]['stat'].date_time + (0, 0, -1)),
+                        }
+                else:
+                    stat0 = {
+                        'mtime': time.mktime(datas[0]['stat'].date_time + (0, 0, -1)),
+                        'compress_type': datas[0]['stat'].compress_type,
+                        'comment': datas[0]['stat'].comment,
+                        'extra': datas[0]['stat'].extra,
+                        'flag_bits': datas[0]['stat'].flag_bits,
+                        'internal_attr': datas[0]['stat'].internal_attr,
+                        'external_attr': datas[0]['stat'].external_attr,
+                        }
+
+            if isinstance(datas[i]['stat'], os.stat_result):
+                if isinstance(datas[0]['stat'], os.stat_result):
+                    stati = {
+                        'mode': datas[i]['stat'].st_mode,
+                        'uid': datas[i]['stat'].st_uid,
+                        'gid': datas[i]['stat'].st_gid,
+                        'atime': datas[i]['stat'].st_atime,
+                        'mtime': datas[i]['stat'].st_mtime,
+                        }
+                else:
+                    stati = {
+                        'mtime': datas[i]['stat'].st_mtime,
+                        }
+
+            elif isinstance(datas[i]['stat'], zipfile.ZipInfo):
+                if isinstance(datas[0]['stat'], os.stat_result):
+                    stati = {
+                        'mtime': time.mktime(datas[i]['stat'].date_time + (0, 0, -1)),
+                        }
+                else:
+                    stati = {
+                        'mtime': time.mktime(datas[i]['stat'].date_time + (0, 0, -1)),
+                        'compress_type': datas[i]['stat'].compress_type,
+                        'comment': datas[i]['stat'].comment,
+                        'extra': datas[i]['stat'].extra,
+                        'flag_bits': datas[i]['stat'].flag_bits,
+                        'internal_attr': datas[i]['stat'].internal_attr,
+                        'external_attr': datas[i]['stat'].external_attr,
+                        }
+
+            for i in stat0:
+                if i == 'mtime':
+                    self.assertAlmostEqual(stat0[i], stati[i], delta=2)
+                else:
+                    self.assertEqual(stat0[i], stati[i])
+
 class TestView(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_permission_check1(self, mock_error):
@@ -3168,7 +3281,7 @@ class TestDelete(unittest.TestCase):
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), [])
 
-class TestMove(unittest.TestCase):
+class TestMove(TestActions):
     def setUp(self):
         self.test_dir = os.path.join(server_root, 'temp')
         self.test_zip = os.path.join(server_root, 'temp.maff')
@@ -3239,7 +3352,7 @@ class TestMove(unittest.TestCase):
             mock_error.assert_called_once_with(403, 'Unable to operate beyond the root directory.', format='json')
 
     def test_file(self):
-        stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -3255,14 +3368,17 @@ class TestMove(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
                 })
-            self.assertFalse(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt')), stat)
-            with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir', 'test.txt')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
+                is_move=True,
+                )
 
     def test_directory(self):
-        stat = os.stat(os.path.join(self.test_dir, 'subdir'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir')})
+        orig_data2 = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={
@@ -3278,14 +3394,22 @@ class TestMove(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
                 })
-            self.assertFalse(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir')), stat)
-            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')))
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')), stat2)
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir')},
+                is_move=True,
+                )
+            self.assert_file_equal(
+                orig_data2,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
+                is_move=True,
+                )
 
     def test_directory_slash(self):
-        stat = os.stat(os.path.join(self.test_dir, 'subdir'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir')})
+        orig_data2 = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
         with app.test_client() as c:
             r = c.post('/temp/subdir/', data={
@@ -3301,10 +3425,18 @@ class TestMove(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
                 })
-            self.assertFalse(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir')), stat)
-            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')))
-            self.assertEqual(os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')), stat2)
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir')},
+                is_move=True,
+                )
+            self.assert_file_equal(
+                orig_data2,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
+                is_move=True,
+                )
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
@@ -3323,8 +3455,6 @@ class TestMove(unittest.TestCase):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
-        stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt'))
 
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -3339,8 +3469,6 @@ class TestMove(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_file_to_dir(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
 
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -3355,8 +3483,6 @@ class TestMove(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_dir_to_dir(self, mock_error):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        stat = os.stat(os.path.join(self.test_dir, 'subdir'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
 
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={
@@ -3373,8 +3499,6 @@ class TestMove(unittest.TestCase):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
-        stat = os.stat(os.path.join(self.test_dir, 'subdir'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt'))
 
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={
@@ -3418,7 +3542,7 @@ class TestMove(unittest.TestCase):
 
             mock_error.assert_called_once_with(400, 'Target is inside an archive file.', format='json')
 
-class TestCopy(unittest.TestCase):
+class TestCopy(TestActions):
     def setUp(self):
         self.test_dir = os.path.join(server_root, 'temp')
         self.test_zip = os.path.join(server_root, 'temp.maff')
@@ -3505,18 +3629,10 @@ class TestCopy(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
 
-            with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
-            with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
-
-            stat1 = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-            stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt'))
-            self.assertEqual(stat1.st_mode, stat2.st_mode)
-            self.assertEqual(stat1.st_uid, stat2.st_uid)
-            self.assertEqual(stat1.st_gid, stat2.st_gid)
-            self.assertEqual(stat1.st_atime, stat2.st_atime)
-            self.assertEqual(stat1.st_mtime, stat2.st_mtime)
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
+                )
 
     def test_directory(self):
         with app.test_client() as c:
@@ -3534,26 +3650,14 @@ class TestCopy(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
 
-            stat1 = os.stat(os.path.join(self.test_dir, 'subdir'))
-            stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir'))
-            self.assertEqual(stat1.st_mode, stat2.st_mode)
-            self.assertEqual(stat1.st_uid, stat2.st_uid)
-            self.assertEqual(stat1.st_gid, stat2.st_gid)
-            self.assertEqual(stat1.st_atime, stat2.st_atime)
-            self.assertEqual(stat1.st_mtime, stat2.st_mtime)
-
-            stat1 = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-            stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt'))
-            self.assertEqual(stat1.st_mode, stat2.st_mode)
-            self.assertEqual(stat1.st_uid, stat2.st_uid)
-            self.assertEqual(stat1.st_gid, stat2.st_gid)
-            self.assertEqual(stat1.st_atime, stat2.st_atime)
-            self.assertEqual(stat1.st_mtime, stat2.st_mtime)
-
-            with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
-            with open(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir')},
+                )
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
+                )
 
     def test_directory_slash(self):
         with app.test_client() as c:
@@ -3571,26 +3675,14 @@ class TestCopy(unittest.TestCase):
                 'data': 'Command run successfully.',
                 })
 
-            stat1 = os.stat(os.path.join(self.test_dir, 'subdir'))
-            stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir'))
-            self.assertEqual(stat1.st_mode, stat2.st_mode)
-            self.assertEqual(stat1.st_uid, stat2.st_uid)
-            self.assertEqual(stat1.st_gid, stat2.st_gid)
-            self.assertEqual(stat1.st_atime, stat2.st_atime)
-            self.assertEqual(stat1.st_mtime, stat2.st_mtime)
-
-            stat1 = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-            stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt'))
-            self.assertEqual(stat1.st_mode, stat2.st_mode)
-            self.assertEqual(stat1.st_uid, stat2.st_uid)
-            self.assertEqual(stat1.st_gid, stat2.st_gid)
-            self.assertEqual(stat1.st_atime, stat2.st_atime)
-            self.assertEqual(stat1.st_mtime, stat2.st_mtime)
-
-            with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
-            with open(os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt'), 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir')},
+                )
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
+                )
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
