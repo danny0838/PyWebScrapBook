@@ -125,6 +125,7 @@ name = mywsb
 theme = mytheme
 root = myroot
 base = mybase
+content_security_policy = strict
 allowed_x_for = 1
 allowed_x_proto = 1
 allowed_x_host = 0

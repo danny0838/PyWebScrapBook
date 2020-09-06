@@ -417,6 +417,46 @@ allowed_x_for = 2
             data = r.json
             self.assertFalse(data['data']['app']['is_local'])
 
+    def test_csp(self):
+        # content_security_policy == 'strict'
+        with open(server_config, 'w', encoding='UTF-8') as f:
+            f.write("""[app]
+content_security_policy = strict
+""")
+
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            r = c.get('/')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            self.assertEqual(r.headers['X-Frame-Options'], 'deny')
+
+            r = c.get('/index.html', buffered=True)
+            self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
+
+            r = c.get('/index.md')
+            self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
+
+        # content_security_policy == ''
+        with open(server_config, 'w', encoding='UTF-8') as f:
+            f.write("""[app]
+content_security_policy =
+""")
+
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            r = c.get('/')
+            self.assertIsNone(r.headers.get('Content-Security-Policy'))
+            self.assertIsNone(r.headers.get('X-Frame-Options'))
+
+            r = c.get('/index.html', buffered=True)
+            self.assertIsNone(r.headers.get('Content-Security-Policy'))
+
+            r = c.get('/index.md')
+            self.assertIsNone(r.headers.get('Content-Security-Policy'))
+
+
 class TestAuth(unittest.TestCase):
     def simple_auth_headers(self, user, password):
         credentials = b64encode(f'{user}:{password}'.encode('utf-8')).decode('utf-8')

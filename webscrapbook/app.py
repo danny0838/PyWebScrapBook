@@ -60,7 +60,8 @@ def static_file(filename, mimetype=None):
     response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
-    response.headers.set('Content-Security-Policy', "connect-src 'none'; form-action 'none';")
+    if runtime['config']['app']['content_security_policy'] == 'strict':
+        response.headers.set('Content-Security-Policy', "connect-src 'none'; form-action 'none';")
     return response
 
 
@@ -96,8 +97,9 @@ def zip_static_file(zip, subpath, mimetype=None):
         'Cache-Control': 'no-cache',
         'Last-Modified': last_modified,
         'ETag': etag,
-        'Content-Security-Policy': "connect-src 'none'; form-action 'none';",
         }
+    if runtime['config']['app']['content_security_policy'] == 'strict':
+        headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
     response = Response(fh, headers=headers, mimetype=mimetype)
     response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
@@ -543,8 +545,9 @@ def handle_markdown_output(paths, zip=None):
             'Cache-Control': 'no-cache',
             'Last-Modified': last_modified,
             'ETag': etag,
-            'Content-Security-Policy': "connect-src 'none'; form-action 'none';",
             }
+        if runtime['config']['app']['content_security_policy'] == 'strict':
+            headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
         # prepare content
         if zip:
@@ -1615,9 +1618,10 @@ def handle_request(filepath=''):
 @bp.after_request
 def handle_after_request(response):
     # forbid a privileged page to be framed
-    if 'Content-Security-Policy' not in response.headers:
-        response.headers.set('Content-Security-Policy', "frame-ancestors 'none';")
-        response.headers.set('X-Frame-Options', 'deny')
+    if runtime['config']['app']['content_security_policy'] == 'strict':
+        if 'Content-Security-Policy' not in response.headers:
+            response.headers.set('Content-Security-Policy', "frame-ancestors 'none';")
+            response.headers.set('X-Frame-Options', 'deny')
 
     return response
 

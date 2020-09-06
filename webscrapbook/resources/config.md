@@ -95,6 +95,17 @@ value can be set to "/path/to/app" if an expected SCRIPT_NAME is not provided.
 (default: )
 
 
+#### `content_security_policy`
+
+Whether to send response with a content security policy header, which restricts
+AJAX and form actions for data pages to prevent a potential attack from a
+malicious script. Currently only the value "strict" is used. Set this to empty
+if you really need such features, but make sure that scripts and forms in the
+captured pages are all safe!
+
+(default: strict)
+
+
 #### `allowed_x_for`
 
 Number of values to trust for "X-Forwarded-For" header(s) when this app is

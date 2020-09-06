@@ -133,6 +133,7 @@ class Config():
         conf['app']['theme'] = 'default'
         conf['app']['root'] = '.'
         conf['app']['base'] = ''
+        conf['app']['content_security_policy'] = 'strict'
         conf['app']['allowed_x_for'] = '0'
         conf['app']['allowed_x_proto'] = '0'
         conf['app']['allowed_x_host'] = '0'
