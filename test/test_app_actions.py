@@ -1859,9 +1859,9 @@ class TestToken(unittest.TestCase):
     def test_token(self):
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'token'})
-            token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
             try:
                 self.assertEqual(r.status_code, 200)
+                token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
                 self.assertTrue(os.path.isfile(token_file))
             finally:
                 try:
@@ -1872,11 +1872,11 @@ class TestToken(unittest.TestCase):
     def test_token_json(self):
         with app.test_client() as c:
             r = c.get('/', query_string={'a': 'token', 'f': 'json'})
-            data = r.json
-            token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', data['data'])
             try:
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
+                data = r.json
+                token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', data['data'])
                 self.assertTrue(data['success'])
                 self.assertTrue(isinstance(data['data'], str))
                 self.assertTrue(os.path.isfile(token_file))
