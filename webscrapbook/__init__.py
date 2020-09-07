@@ -34,6 +34,9 @@ mimetypes.add_type("text/markdown", ".markdown")
 mimetypes.add_type("application/html+zip", ".htz")
 mimetypes.add_type("application/x-maff", ".maff")
 
+# seems to be set to x-zip-compressed on Windows
+mimetypes.add_type("application/zip", ".zip")
+
 
 class Config():
     """Config class whose values are lazily-initialized when accessed.

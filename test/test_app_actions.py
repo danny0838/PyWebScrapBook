@@ -325,7 +325,7 @@ class TestView(unittest.TestCase):
             with app.test_client() as c:
                 r = c.get('/archive.zip', buffered=True)
                 self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/x-zip-compressed')
+                self.assertEqual(r.headers['Content-Type'], 'application/zip')
                 self.assertNotEqual(r.headers['Content-Length'], '19')
                 self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
                 self.assertEqual(r.headers['Cache-Control'], 'no-cache')
@@ -688,7 +688,7 @@ class TestInfo(unittest.TestCase):
             {'filename': 'index.md', 'mime': 'text/markdown'},
             {'filename': 'archive.htz', 'mime': 'application/html+zip'},
             {'filename': 'archive.maff', 'mime': 'application/x-maff'},
-            {'filename': 'archive.zip', 'mime': 'application/x-zip-compressed'},
+            {'filename': 'archive.zip', 'mime': 'application/zip'},
             ]
 
         for file in files:
