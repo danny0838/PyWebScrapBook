@@ -6,6 +6,7 @@ import unittest
 import sys
 import os
 import platform
+import subprocess
 import io
 import shutil
 import zipfile
@@ -3475,6 +3476,56 @@ class TestMove(TestActions):
                 is_move=True,
                 )
 
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_junction(self):
+        """Moving the entity rather than the referenced directory."""
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'junction'),
+            os.path.join(self.test_dir, 'nonexist'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        try:
+            orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')}, follow_symlinks=False)
+
+            with app.test_client() as c:
+                r = c.post('/temp/junction', data={
+                    'token': token(c),
+                    'a': 'move',
+                    'f': 'json',
+                    'target': '/temp/deep/subdir',
+                    })
+
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': 'Command run successfully.',
+                    })
+
+                self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
+                self.assert_file_equal(
+                    orig_data,
+                    {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
+                    is_move=True,
+                    )
+        finally:
+            # In Python < 3.8, shutil.rmtree (in the tearDown) attempts to
+            # remove all content of a junction, and then raises
+            # FileNotFoundError as the junction target doesn't exist. Remove
+            # junctions on our own to prevent this issue.
+            for root, dirs, files in os.walk(self.test_dir, topdown=False):
+                for entry in dirs + files:
+                    entry = os.path.join(root, entry)
+                    try:
+                        os.rmdir(entry)
+                    except NotADirectoryError:
+                        os.remove(entry)
+
     def test_symlink(self):
         """Moving the entity rather than the referenced directory/file."""
         try:
@@ -3892,6 +3943,43 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
                 )
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_junction(self, mock_error):
+        """Raises when copying a broken directory junction."""
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'junction'),
+            os.path.join(self.test_dir, 'nonexist'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        try:
+            with app.test_client() as c:
+                r = c.post('/temp/junction', data={
+                    'token': token(c),
+                    'a': 'copy',
+                    'f': 'json',
+                    'target': '/temp/deep/subdir',
+                    })
+
+                mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
+        finally:
+            # In Python < 3.8, shutil.rmtree (in the tearDown) attempts to
+            # remove all content of a junction, and then raises
+            # FileNotFoundError as the junction target doesn't exist. Remove
+            # junctions on our own to prevent this issue.
+            for root, dirs, files in os.walk(self.test_dir, topdown=False):
+                for entry in dirs + files:
+                    entry = os.path.join(root, entry)
+                    try:
+                        os.rmdir(entry)
+                    except NotADirectoryError:
+                        os.remove(entry)
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_symlink(self, mock_error):
