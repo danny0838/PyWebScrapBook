@@ -3133,6 +3133,123 @@ class TestDelete(unittest.TestCase):
                 })
             self.assertFalse(os.path.isfile(self.test_dir))
 
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_junction(self):
+        """Delete the entity rather than the referenced directory."""
+        os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
+            f.write('dummy')
+
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'junction'),
+            os.path.join(self.test_dir, 'subdir'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        try:
+            with app.test_client() as c:
+                r = c.post('/temp/junction', data={
+                    'token': token(c),
+                    'a': 'delete',
+                    'f': 'json',
+                    })
+
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': 'Command run successfully.',
+                    })
+
+                self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
+                self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
+                self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
+        finally:
+            # In Python < 3.8, shutil.rmtree (in the tearDown) attempts to
+            # remove all content of a junction, and then raises
+            # FileNotFoundError as the junction target doesn't exist. Remove
+            # junctions on our own to prevent this issue.
+            for root, dirs, files in os.walk(self.test_dir, topdown=False):
+                for entry in dirs + files:
+                    entry = os.path.join(root, entry)
+                    try:
+                        os.rmdir(entry)
+                    except NotADirectoryError:
+                        os.remove(entry)
+
+    def test_symlink1(self):
+        """Delete the entity rather than the referenced directory."""
+        os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
+            f.write('dummy')
+
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'subdir'),
+                os.path.join(self.test_dir, 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/symlink', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
+            self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
+            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
+
+    def test_symlink2(self):
+        """Delete the entity rather than the referenced file."""
+        os.makedirs(self.test_dir, exist_ok=True)
+        with open(os.path.join(self.test_dir, 'test.txt'), 'w', encoding='UTF-8') as f:
+            f.write('dummy')
+
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'test.txt'),
+                os.path.join(self.test_dir, 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/symlink', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
+            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'test.txt')))
+
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
         with app.test_client() as c:
