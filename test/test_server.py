@@ -42,7 +42,7 @@ browse = false
 """)
 
         server.serve(server_root)
-        self.assertEqual(mock_make_server.mock_calls[2][1][1], 'Document Root: {}'.format(server_root))
+        self.assertEqual(mock_make_server.mock_calls[2][1][1], f'Document Root: {server_root}')
 
     @mock.patch('webscrapbook.server.make_server')
     def test_host_port1(self, mock_make_server):

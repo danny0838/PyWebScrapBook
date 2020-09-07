@@ -419,8 +419,8 @@ allowed_x_for = 2
 
 class TestAuth(unittest.TestCase):
     def simple_auth_headers(self, user, password):
-        credentials = b64encode('{}:{}'.format(user, password).encode('utf-8')).decode('utf-8')
-        return {'Authorization': 'Basic {}'.format(credentials)}
+        credentials = b64encode(f'{user}:{password}'.encode('utf-8')).decode('utf-8')
+        return {'Authorization': f'Basic {credentials}'}
 
     def simple_auth_check(self, response, bool=True):
         if bool:

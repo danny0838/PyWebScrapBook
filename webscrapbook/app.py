@@ -135,7 +135,7 @@ def http_response(body='', status=None, headers=None, format=None):
         body = wrapper(body)
 
     else:
-        return http_error(400, 'Output format "{}" is not supported.'.format(format))
+        return http_error(400, f'Output format "{format}" is not supported.')
 
     return Response(body, status, headers, mimetype=mimetype)
 
@@ -670,7 +670,7 @@ class ActionHandler():
             # validate targetpath
             targetpath = os.path.join(runtime['locks'], name)
             if not targetpath.startswith(os.path.join(runtime['locks'], '')):
-                return http_error(400, 'Invalid lock name "{}".'.format(name), format=format)
+                return http_error(400, f'Invalid lock name "{name}".', format=format)
 
             return func(self, name=name, targetpath=targetpath, *args, **kwargs)
 
@@ -1106,7 +1106,7 @@ class ActionHandler():
                 t = time.time()
 
                 if t >= check_expire or not os.path.isdir(targetpath):
-                    return http_error(500, 'Unable to acquire lock "{}".'.format(name), format=format)
+                    return http_error(500, f'Unable to acquire lock "{name}".', format=format)
 
                 try:
                     lock_expire = os.stat(targetpath).st_mtime + check_stale
@@ -1121,14 +1121,14 @@ class ActionHandler():
                         Path(targetpath).touch()
                     except:
                         traceback.print_exc()
-                        return http_error(500, 'Unable to regenerate stale lock "{}".'.format(name), format=format)
+                        return http_error(500, f'Unable to regenerate stale lock "{name}".', format=format)
                     else:
                         break
 
                 time.sleep(check_delta)
             except:
                 traceback.print_exc()
-                return http_error(500, 'Unable to create lock "{}".'.format(name), format=format)
+                return http_error(500, f'Unable to create lock "{name}".', format=format)
             else:
                 break
 
@@ -1144,7 +1144,7 @@ class ActionHandler():
             pass
         except:
             traceback.print_exc()
-            return http_error(500, 'Unable to remove lock "{}".'.format(name), format=format)
+            return http_error(500, f'Unable to remove lock "{name}".', format=format)
 
     @_handle_advanced
     @_handle_writing
@@ -1548,7 +1548,7 @@ action_handler = ActionHandler()
 
 
 def static_url(path):
-    return '{}/{}?a=static'.format(quote_path(request.script_root), quote_path(path))
+    return f'{quote_path(request.script_root)}/{quote_path(path)}?a=static'
 
 
 @bp.before_request

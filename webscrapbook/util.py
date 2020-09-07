@@ -30,7 +30,7 @@ class frozendict(collections.abc.Mapping):
         self._hash = None
 
     def __repr__(self):
-        return '{}({})'.format(type(self).__name__, self._d.__repr__())
+        return f'{type(self).__name__}({self._d.__repr__()})'
 
     def __iter__(self):
         return iter(self._d)
@@ -72,7 +72,7 @@ def make_hashable(obj):
     elif isinstance(obj, collections.abc.Mapping):
         return frozendict((k, make_hashable(v)) for k, v in obj.items())
     else:
-        raise TypeError("unable to make '{}' hashable".format(type(obj).__name__))
+        raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
 
 
 #########################################################################
@@ -356,7 +356,7 @@ def zip_listdir(zip, subpath, recursive=False):
                     entries.setdefault(entry, True)
 
         if not len(entries) and not dir_exist:
-            raise ZipDirNotFoundError('Directory "{}/" does not exist in the zip.'.format(base))
+            raise ZipDirNotFoundError(f'Directory "{base}/" does not exist in the zip.')
 
         for entry in entries:
             info = zip_file_info(zh, base + entry, base)
@@ -571,7 +571,7 @@ class Encrypt():
         fn = getattr(self, method, None)
 
         if not callable(fn):
-            print('Encrypt method "{}" not implemented, fallback to "plain".'.format(method), file=sys.stderr)
+            print(f'Encrypt method "{method}" not implemented, fallback to "plain".', file=sys.stderr)
             fn = self.plain
 
         return fn(text, salt)

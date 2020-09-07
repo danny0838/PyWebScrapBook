@@ -61,7 +61,7 @@ class Config():
         if len(parts) == 3:
             sec, subsec, key = parts
             try:
-                return self._conf['{} "{}"'.format(sec, subsec)][key]
+                return self._conf[f'{sec} "{subsec}"'][key]
             except KeyError:
                 pass
         elif len(parts) == 2:
@@ -106,7 +106,7 @@ class Config():
                     if m:
                         sec, subsec = m.group(1), m.group(2) or ''
                         if sec in self.SUBSECTED:
-                            newsection = '{} "{}"'.format(sec, subsec)
+                            newsection = f'{sec} "{subsec}"'
                             if newsection != section:
                                 conf.setdefault(newsection, OrderedDict())
                                 conf[newsection].update(parser[section])
@@ -118,7 +118,7 @@ class Config():
                     conf.setdefault(section, OrderedDict())
                     conf[section].update(parser[section])
             except:
-                print('Error: Unable to load config from "{}".'.format(file), file=sys.stderr)
+                print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
                 raise
 
         # default config

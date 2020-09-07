@@ -377,8 +377,10 @@ class TestHelpers(unittest.TestCase):
         testfile2 = os.path.join(test_dir, 'temp', 'test2.maff')
         testfile3 = os.path.join(test_dir, 'temp', 'test3.maff')
         testfile4 = os.path.join(test_dir, 'temp', 'test4.zip')
+        testtemp = os.path.join(test_dir, 'temp', 'tempdir')
+        testtempprefix = os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')
 
-        os.makedirs(os.path.join(test_dir, 'temp', 'tempdir'), exist_ok=True)
+        os.makedirs(testtemp, exist_ok=True)
         with zipfile.ZipFile(testfile1, 'w') as zh:
             zh.writestr('index.html', 'abc 測試')
         with zipfile.ZipFile(testfile2, 'w') as zh:
@@ -402,18 +404,14 @@ class TestHelpers(unittest.TestCase):
 
         self.assertEqual(len(mock_browser.mock_calls), 5)
         self.assertEqual(mock_browser.mock_calls[1][1][0],
-            r'jar:file:{}!/index.html'.format(pathname2url(os.path.normcase(testfile1)))
-            )
+            fr'jar:file:{pathname2url(os.path.normcase(testfile1))}!/index.html')
         self.assertEqual(mock_browser.mock_calls[2][1][0],
-            r'jar:file:{}!/123456/index.html'.format(pathname2url(os.path.normcase(testfile2)))
-            )
+            fr'jar:file:{pathname2url(os.path.normcase(testfile2))}!/123456/index.html')
         self.assertEqual(mock_browser.mock_calls[3][1][0],
-            r'jar:file:{}!/abc/index.html'.format(pathname2url(os.path.normcase(testfile3)))
-            )
+            fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/abc/index.html')
         self.assertEqual(mock_browser.mock_calls[4][1][0],
-            r'jar:file:{}!/def/index.html'.format(pathname2url(os.path.normcase(testfile3)))
-            )
-        self.assertEqual(len(os.listdir(os.path.join(test_dir, 'temp', 'tempdir'))), 0)
+            fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/def/index.html')
+        self.assertEqual(len(os.listdir(testtemp)), 0)
 
         # test simple view
         mock_browser.reset_mock()
@@ -430,22 +428,14 @@ class TestHelpers(unittest.TestCase):
         mock_browser.assert_called_once_with(None)
         self.assertEqual(len(mock_browser.mock_calls), 5)
         self.assertRegex(mock_browser.mock_calls[1][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
         self.assertRegex(mock_browser.mock_calls[2][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
         self.assertRegex(mock_browser.mock_calls[3][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
         self.assertRegex(mock_browser.mock_calls[4][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
-        self.assertEqual(len(os.listdir(os.path.join(test_dir, 'temp', 'tempdir'))), 3)
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
+        self.assertEqual(len(os.listdir(testtemp)), 3)
 
         # test browser command
         # test if cache is used for same archive
@@ -463,22 +453,14 @@ class TestHelpers(unittest.TestCase):
         mock_browser.assert_called_once_with('/path/to/firefox')
         self.assertEqual(len(mock_browser.mock_calls), 5)
         self.assertRegex(mock_browser.mock_calls[1][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
         self.assertRegex(mock_browser.mock_calls[2][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
         self.assertRegex(mock_browser.mock_calls[3][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
         self.assertRegex(mock_browser.mock_calls[4][1][0],
-            r'^file:{}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$'.format(
-                re.escape(pathname2url(os.path.join(test_dir, 'temp', 'tempdir')))
-                ))
-        self.assertEqual(len(os.listdir(os.path.join(test_dir, 'temp', 'tempdir'))), 3)
+            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
+        self.assertEqual(len(os.listdir(testtemp)), 3)
 
         # test auto clearance of stale caches
         mock_browser.reset_mock()
@@ -493,18 +475,12 @@ class TestHelpers(unittest.TestCase):
             with mock.patch('shutil.rmtree') as mock_rmtree:
                 cli.view_archive_files([])
                 self.assertEqual(len(mock_rmtree.call_args_list), 3)
-                self.assertRegex(
-                    mock_rmtree.call_args_list[0][0][0].path,
-                    r'^{}[0-9a-z]*_[0-9a-z_]*$'.format(re.escape(os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')))
-                    )
-                self.assertRegex(
-                    mock_rmtree.call_args_list[1][0][0].path,
-                    r'^{}[0-9a-z]*_[0-9a-z_]*$'.format(re.escape(os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')))
-                    )
-                self.assertRegex(
-                    mock_rmtree.call_args_list[2][0][0].path,
-                    r'^{}[0-9a-z]*_[0-9a-z_]*$'.format(re.escape(os.path.join(test_dir, 'temp', 'tempdir', 'webscrapbook.')))
-                    )
+                self.assertRegex(mock_rmtree.call_args_list[0][0][0].path,
+                    fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
+                self.assertRegex(mock_rmtree.call_args_list[1][0][0].path,
+                    fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
+                self.assertRegex(mock_rmtree.call_args_list[2][0][0].path,
+                    fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
 
 if __name__ == '__main__':
     unittest.main()

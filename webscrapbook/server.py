@@ -32,7 +32,7 @@ def serve(root, **kwargs):
     if ssl_cert:
         ssl_cert = os.path.abspath(os.path.join(root, ssl_cert))
 
-    host2 = '[{}]'.format(host) if ':' in host else host
+    host2 = f'[{host}]' if ':' in host else host
     host3 = 'localhost' if is_nullhost(host) else host2
     port2 = '' if (not ssl_on and port == 80) or (ssl_on and port == 443) else ':' + str(port)
 
@@ -49,9 +49,8 @@ def serve(root, **kwargs):
         )
 
     srv.log('info', 'WebScrapBook server starting up...')
-    srv.log('info', 'Document Root: {}'.format(os.path.abspath(root)))
-    srv.log('info', 'Listening on {scheme}://{host}:{port}'.format(
-            scheme=scheme, host=host2, port=port))
+    srv.log('info', f'Document Root: {os.path.abspath(root)}')
+    srv.log('info', f'Listening on {scheme}://{host2}:{port}')
     srv.log('info', 'Hit Ctrl-C to shutdown.')
 
     # launch browser
@@ -59,15 +58,8 @@ def serve(root, **kwargs):
         base = config['app']['base'].rstrip('/')
         index = config['browser']['index'].lstrip('/')
         path = base + (('/' + index) if index else '')
-
-        url = '{scheme}://{host}{port}{path}'.format(
-                scheme=scheme,
-                host=host3,
-                port=port2,
-                path=path,
-                )
-
-        srv.log('info', 'Launching browser at {url} ...'.format(url=url))
+        url = f'{scheme}://{host3}{port2}{path}'
+        srv.log('info', f'Launching browser at {url} ...')
         browser = webbrowser.get(config['browser']['command'] or None)
         thread = Thread(target=browser.open, args=[url], daemon=True)
         thread.start()

@@ -50,11 +50,11 @@ def cmd_config(args):
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_LOCAL_CONFIG))
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
-            print('Generating "{}"...'.format(fdst))
+            print(f'Generating "{fdst}"...')
             try:
                 fcopy(fsrc, fdst)
             except:
-                print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                 sys.exit(1)
 
         if args['edit']:
@@ -67,34 +67,34 @@ def cmd_config(args):
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'serve.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'serve.py'))
             if not os.path.isfile(fdst):
-                print('Generating "{}"...'.format(fdst))
+                print(f'Generating "{fdst}"...')
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except:
-                    print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                    print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                     sys.exit(1)
 
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'app.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'app.py'))
             if not os.path.isfile(fdst):
-                print('Generating "{}"...'.format(fdst))
+                print(f'Generating "{fdst}"...')
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except:
-                    print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                    print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                     sys.exit(1)
 
     elif args['user']:
         fdst = WSB_USER_CONFIG
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
-            print('Generating "{}"...'.format(fdst))
+            print(f'Generating "{fdst}"...')
             try:
                 fcopy(fsrc, fdst)
             except:
-                print("Error: Unable to generate {}.".format(fdst), file=sys.stderr)
+                print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                 sys.exit(1)
 
         if args['edit']:
@@ -116,7 +116,7 @@ def cmd_config(args):
         value = config.getname(args['name'])
 
         if value is None:
-            print('Error: Config entry "{}" does not exist'.format(args['name']), file=sys.stderr)
+            print(f"""Error: Config entry "{args['name']}" does not exist""", file=sys.stderr)
             sys.exit(1)
             return
 
@@ -256,7 +256,7 @@ def view():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--version', action='version', version='{} {}'.format(__package_name__, __version__),
+    parser.add_argument('--version', action='version', version=f'{__package_name__} {__version__}',
         help="""show version information and exit""")
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")
