@@ -1463,7 +1463,7 @@ class ActionHandler():
                                 targetpaths[-1] + '/',
                                 time.localtime(os.stat(sourcepaths[0]).st_mtime)[:-3]
                                 ), '')
-                            for root, dirs, files in os.walk(base):
+                            for root, dirs, files in os.walk(base, followlinks=True):
                                 for dir in dirs:
                                     dir = os.path.join(root, dir)
                                     subpath = os.path.relpath(dir, base).replace('\\', '/')
