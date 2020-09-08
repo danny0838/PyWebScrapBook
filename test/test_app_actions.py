@@ -3135,7 +3135,6 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
-    # @FIXME
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_junction2(self):
         """Delete the link entity even if target not exist."""

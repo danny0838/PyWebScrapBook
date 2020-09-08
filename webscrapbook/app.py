@@ -1347,7 +1347,7 @@ class ActionHandler():
             if not os.path.lexists(localpath):
                 return http_error(404, "File does not exist.", format=format)
 
-            if os.path.islink(localpath):
+            if util.file_is_link(localpath):
                 try:
                     os.remove(localpath)
                 except:
@@ -1361,16 +1361,13 @@ class ActionHandler():
                     return http_error(500, "Unable to delete this file.", format=format)
             elif os.path.isdir(localpath):
                 try:
-                    try:
-                        # try rmdir for a possible windows directory junction,
-                        # which is not detected by os.path.islink
-                        os.rmdir(localpath)
-                    except OSError:
-                        # directory not empty
-                        shutil.rmtree(localpath)
+                    shutil.rmtree(localpath)
                 except:
                     traceback.print_exc()
                     return http_error(500, "Unable to delete this directory.", format=format)
+            else:
+                # this should not happen
+                return http_error(500, "Unable to handle this path.", format=format)
 
     @_handle_advanced
     @_handle_writing

@@ -2,6 +2,7 @@
 """Miscellaneous utilities
 """
 import sys, os
+import stat
 import subprocess
 import collections
 from collections import namedtuple
@@ -191,6 +192,26 @@ def checksum(file, method='sha1', chunk_size=4096):
     return h.hexdigest()
 
 
+def file_is_link(path, st=None):
+    """Check if a path is a symlink or Windows directory junction
+
+    Args:
+        st: known stat for the path for better performance
+    """
+    if st is None:
+        try:
+            st = os.lstat(path)
+        except (OSError, ValueError, AttributeError):
+            return False
+
+    if os.name == 'nt':
+        if st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+            # this is True for symlink or directory junction
+            return True
+
+    return stat.S_ISLNK(st.st_mode)
+
+
 def file_info(file, base=None):
     """Read basic file information.
     """
@@ -199,9 +220,20 @@ def file_info(file, base=None):
     else:
         name = file[len(base)+1:].replace('\\', '/')
 
+    try:
+        statinfo = os.lstat(file)
+    except:
+        # unexpected error when getting stat info
+        statinfo = None
+        size = None
+        last_modified = None
+    else:
+        size = statinfo.st_size
+        last_modified = statinfo.st_mtime
+
     if not os.path.lexists(file):
         type = None
-    elif os.path.islink(file):
+    elif file_is_link(file, statinfo):
         type = 'link'
     elif os.path.isdir(file):
         type = 'dir'
@@ -210,15 +242,8 @@ def file_info(file, base=None):
     else:
         type = 'unknown'
 
-    try:
-        statinfo = os.lstat(file)
-    except:
-        # unexpected error when getting stat info
+    if type != 'file':
         size = None
-        last_modified = None
-    else:
-        size = statinfo.st_size if type == 'file' else None
-        last_modified = statinfo.st_mtime
 
     return FileInfo(name=name, type=type, size=size, last_modified=last_modified)
 

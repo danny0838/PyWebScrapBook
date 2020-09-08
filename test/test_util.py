@@ -3,6 +3,7 @@ import unittest
 import sys
 import os
 import platform
+import subprocess
 import shutil
 import io
 import time
@@ -177,6 +178,63 @@ class TestUtils(unittest.TestCase):
             'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
             )
 
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_file_is_link(self):
+        # junction
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'junction')
+
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            entry,
+            os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        try:
+            self.assertTrue(util.file_is_link(entry))
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
+
+        # directory
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'folder')
+        self.assertFalse(util.file_is_link(entry))
+
+        # file
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'file.txt')
+        self.assertFalse(util.file_is_link(entry))
+
+        # non-exist
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'nonexist')
+        self.assertFalse(util.file_is_link(entry))
+
+    def test_file_is_link2(self):
+        # symlink
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
+        try:
+            os.symlink(
+                os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+                entry,
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        try:
+            self.assertTrue(util.file_is_link(entry))
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
+
     def test_file_info(self):
         entry = os.path.join(root_dir, 'test_util', 'file_info', 'nonexist.file')
         self.assertEqual(
@@ -195,6 +253,54 @@ class TestUtils(unittest.TestCase):
             util.file_info(entry),
             ('folder', 'dir', None, os.stat(entry).st_mtime)
             )
+
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_file_info_junction(self):
+        entry = os.path.join(root_dir, 'test_util', 'file_info', 'junction')
+
+        # target directory
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            entry,
+            os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        try:
+            self.assertEqual(
+                util.file_info(entry),
+                ('junction', 'link', None, os.lstat(entry).st_mtime)
+                )
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
+
+        # target non-exist
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            entry,
+            os.path.join(root_dir, 'test_util', 'file_info', 'nonexist'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        try:
+            self.assertEqual(
+                util.file_info(entry),
+                ('junction', 'link', None, os.lstat(entry).st_mtime)
+                )
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
 
     def test_file_info_symlink(self):
         entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
