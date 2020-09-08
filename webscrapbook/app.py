@@ -1454,27 +1454,52 @@ class ActionHandler():
                         shutil.copytree(sourcepaths[0], targetpaths[0])
                     except NotADirectoryError:
                         shutil.copy2(sourcepaths[0], targetpaths[0])
+                    except shutil.Error:
+                        traceback.print_exc()
+                        return http_error(500, 'Fail to copy some files.', format=format)
 
                 else:
                     if os.path.isdir(sourcepaths[0]):
+                        errors = []
+
                         with open_archive_path(targetpaths, 'w') as zip:
-                            base = sourcepaths[0]
-                            zip.writestr(zipfile.ZipInfo(
-                                targetpaths[-1] + '/',
-                                time.localtime(os.stat(sourcepaths[0]).st_mtime)[:-3]
-                                ), '')
-                            for root, dirs, files in os.walk(base, followlinks=True):
+                            src = sourcepaths[0]
+                            dst = targetpaths[-1] + '/'
+                            try:
+                                t = time.localtime(os.stat(src).st_mtime)[:-3]
+                                zip.writestr(zipfile.ZipInfo(dst, t), '')
+                            except OSError as why:
+                                errors.append((src, targetpaths[:-1] + [dst], str(why)))
+
+                            base_cut = len(os.path.join(sourcepaths[0], ''))
+                            for root, dirs, files in os.walk(sourcepaths[0], followlinks=True):
                                 for dir in dirs:
-                                    dir = os.path.join(root, dir)
-                                    subpath = os.path.relpath(dir, base).replace('\\', '/')
-                                    zip.writestr(zipfile.ZipInfo(
-                                        targetpaths[-1] + '/' + subpath + '/',
-                                        time.localtime(os.stat(dir).st_mtime)[:-3]
-                                        ), '')
+                                    src = os.path.join(root, dir)
+                                    dst = src[base_cut:]
+                                    if os.sep != '/': dst = dst.replace(os.sep, '/')
+                                    dst = targetpaths[-1] + '/' + dst + '/'
+                                    try:
+                                        t = time.localtime(os.stat(src).st_mtime)[:-3]
+                                        zip.writestr(zipfile.ZipInfo(dst, t), '')
+                                    except OSError as why:
+                                        errors.append((src, targetpaths[:-1] + [dst], str(why)))
                                 for file in files:
-                                    file = os.path.join(root, file)
-                                    subpath = os.path.relpath(file, base).replace('\\', '/')
-                                    zip.write(file, targetpaths[-1] + '/' + subpath)
+                                    src = os.path.join(root, file)
+                                    dst = src[base_cut:]
+                                    if os.sep != '/': dst = dst.replace(os.sep, '/')
+                                    dst = targetpaths[-1] + '/' + dst
+                                    try:
+                                        zip.write(src, dst)
+                                    except OSError as why:
+                                        errors.append((src, targetpaths[:-1] + [dst], str(why)))
+
+                        if len(errors):
+                            try:
+                                raise shutil.Error(errors)
+                            except shutil.Error:
+                                traceback.print_exc()
+                            return http_error(500, 'Fail to copy some files.', format=format)
+
                     elif os.path.isfile(sourcepaths[0]):
                         with open_archive_path(targetpaths, 'w') as zip:
                             zip.write(sourcepaths[0], targetpaths[-1])

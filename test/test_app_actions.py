@@ -4178,7 +4178,6 @@ class TestCopy(TestActions):
 
             mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
-    # @FIXME
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
@@ -4291,7 +4290,6 @@ class TestCopy(TestActions):
 
             mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
-    # @FIXME
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_symlink_deep(self, mock_error):
@@ -4469,7 +4467,6 @@ class TestCopy(TestActions):
                     {'zip': zip, 'filename': 'deep/newdir/test.txt'},
                     )
 
-    # @FIXME
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
@@ -4521,7 +4518,6 @@ class TestCopy(TestActions):
                 with self.assertRaises(KeyError):
                     zip.getinfo('clone/junction2/')
 
-    # @FIXME
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_disk_to_zip_symlink_deep(self, mock_error):
