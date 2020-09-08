@@ -4119,8 +4119,45 @@ class TestCopy(TestActions):
                 )
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_junction1(self):
+        """Copy junction as a new regular directory."""
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'junction'),
+            os.path.join(self.test_dir, 'subdir'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        with app.test_client() as c:
+            r = c.post('/temp/junction', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/deep/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'junction')},
+                {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
+                )
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'deep', 'subdir', 'test.txt')},
+                )
+
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_junction(self, mock_error):
+    def test_junction2(self, mock_error):
         """Raises when copying a broken directory junction."""
         # capture_output is not supported in Python < 3.8
         subprocess.run([
@@ -4142,8 +4179,97 @@ class TestCopy(TestActions):
 
             mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
+    # @FIXME
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
-    def test_symlink(self, mock_error):
+    def test_junction_deep(self, mock_error):
+        """Copy junction entities with referenced directory content.
+
+        - May use stat of the junction entity (Python 3.8) or the referenced
+          directory (Python < 3.8).
+        - Broken junctions are not copied.
+        """
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        t = time.mktime((1971, 1, 1, 0, 0, 0, 0, 0, -1))
+        os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
+
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'subdir2', 'junction'),
+            os.path.join(self.test_dir, 'subdir'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'subdir2', 'junction2'),
+            os.path.join(self.test_dir, 'nonexist'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir2', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/clone',
+                })
+
+            mock_error.assert_called_once_with(500, 'Fail to copy some files.', format='json')
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'junction')))
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir2', 'junction', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'clone', 'junction', 'test.txt')},
+                )
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'junction2')))
+
+    def test_symlink1(self):
+        """Copy symlink as a new regular directory."""
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'subdir'),
+                os.path.join(self.test_dir, 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/symlink', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/deep/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'symlink')},
+                {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
+                )
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'deep', 'subdir', 'test.txt')},
+                )
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_symlink2(self, mock_error):
         """Raises when copying a broken symlink."""
         try:
             os.symlink(
@@ -4165,6 +4291,56 @@ class TestCopy(TestActions):
                 })
 
             mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
+
+    # @FIXME
+    @mock.patch('sys.stderr', io.StringIO())
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_symlink_deep(self, mock_error):
+        """Copy symlink entities with referenced directory content.
+
+        - Use stat of the symlink target.
+        - Broken symlinks are not copied.
+        """
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        t = time.mktime((1971, 1, 1, 0, 0, 0, 0, 0, -1))
+        os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
+
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'subdir'),
+                os.path.join(self.test_dir, 'subdir2', 'symlink')
+                )
+            os.symlink(
+                os.path.join(self.test_dir, 'nonexist'),
+                os.path.join(self.test_dir, 'subdir2', 'symlink2')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir2', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/clone',
+                })
+
+            mock_error.assert_called_once_with(500, 'Fail to copy some files.', format='json')
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir')},
+                {'file': os.path.join(self.test_dir, 'clone', 'symlink')},
+                )
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir2', 'symlink', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'clone', 'symlink', 'test.txt')},
+                )
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'symlink2')))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
@@ -4293,6 +4469,110 @@ class TestCopy(TestActions):
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
                     {'zip': zip, 'filename': 'deep/newdir/test.txt'},
                     )
+
+    # @FIXME
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @mock.patch('sys.stderr', io.StringIO())
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_disk_to_zip_junction_deep(self, mock_error):
+        """Copy junction entities with referenced directory content.
+
+        - Broken symlinks are not copied.
+        """
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'subdir2', 'junction'),
+            os.path.join(self.test_dir, 'subdir'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'subdir2', 'junction2'),
+            os.path.join(self.test_dir, 'nonexist'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir2', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/clone',
+                })
+
+            mock_error.assert_called_once_with(500, 'Fail to copy some files.', format='json')
+
+            with zipfile.ZipFile(self.test_zip) as zip:
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir')},
+                    {'zip': zip, 'filename': 'clone/junction/'},
+                    )
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                    {'zip': zip, 'filename': 'clone/junction/test.txt'},
+                    )
+
+                with self.assertRaises(KeyError):
+                    zip.getinfo('clone/junction2/')
+
+    # @FIXME
+    @mock.patch('sys.stderr', io.StringIO())
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_disk_to_zip_symlink_deep(self, mock_error):
+        """Copy symlink entities with referenced directory content.
+
+        - Use stat of the symlink target.
+        - Broken symlinks are not copied.
+        """
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        t = time.mktime((1981, 1, 1, 0, 0, 0, 0, 0, -1))
+        os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
+
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'subdir'),
+                os.path.join(self.test_dir, 'subdir2', 'symlink')
+                )
+            os.symlink(
+                os.path.join(self.test_dir, 'nonexist'),
+                os.path.join(self.test_dir, 'subdir2', 'symlink2')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir2', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/clone',
+                })
+
+            mock_error.assert_called_once_with(500, 'Fail to copy some files.', format='json')
+
+            with zipfile.ZipFile(self.test_zip) as zip:
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir')},
+                    {'zip': zip, 'filename': 'clone/symlink/'},
+                    )
+                self.assert_file_equal(
+                    {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                    {'zip': zip, 'filename': 'clone/symlink/test.txt'},
+                    )
+
+                with self.assertRaises(KeyError):
+                    zip.getinfo('clone/symlink2/')
 
     def test_zip_to_disk_file(self):
         with app.test_client() as c:
