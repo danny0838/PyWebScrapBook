@@ -158,7 +158,7 @@ class TestActions(unittest.TestCase):
                         }
 
             for i in stat0:
-                if i == 'mtime':
+                if i in {'mtime', 'atime'}:
                     self.assertAlmostEqual(stat0[i], stati[i], delta=2)
                 else:
                     self.assertEqual(stat0[i], stati[i])
