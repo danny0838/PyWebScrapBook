@@ -51,6 +51,17 @@ def token(c):
     return c.get('/', query_string={'a': 'token'}).data.decode('UTF-8')
 
 class TestActions(unittest.TestCase):
+    def rmtree_error_handler(self, func, path, ex):
+        """Error handler for shutil.rmtree.
+
+        Python < 3.8 attempts to remove all contents for a directory junction,
+        and will raises a FileNotFoundError if target not exist. Catch it to
+        prevent skipping removal of further entries.
+        """
+        type, value, trace = ex
+        if type is not FileNotFoundError:
+            raise
+
     def get_file_data(self, data, follow_symlinks=True):
         """Convert file data to a comparable format.
 
@@ -2982,7 +2993,7 @@ class TestSave(unittest.TestCase):
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
-class TestDelete(unittest.TestCase):
+class TestDelete(TestActions):
     def setUp(self):
         self.test_dir = os.path.join(server_root, 'temp')
         self.test_file = os.path.join(server_root, 'temp', 'test.txt')
@@ -2990,7 +3001,7 @@ class TestDelete(unittest.TestCase):
 
     def tearDown(self):
         try:
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, onerror=self.rmtree_error_handler)
         except NotADirectoryError:
             os.remove(self.test_dir)
         except FileNotFoundError:
@@ -3106,36 +3117,23 @@ class TestDelete(unittest.TestCase):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
 
-        try:
-            with app.test_client() as c:
-                r = c.post('/temp/junction', data={
-                    'token': token(c),
-                    'a': 'delete',
-                    'f': 'json',
-                    })
+        with app.test_client() as c:
+            r = c.post('/temp/junction', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
 
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/json')
-                self.assertEqual(r.json, {
-                    'success': True,
-                    'data': 'Command run successfully.',
-                    })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
-                self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
-                self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
-                self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
-        finally:
-            # In Python < 3.8, shutil.rmtree (in the tearDown) attempts to
-            # remove all content of a junction, and then raises
-            # FileNotFoundError as the junction target doesn't exist. Remove
-            # junctions on our own to prevent this issue.
-            for root, dirs, files in os.walk(self.test_dir, topdown=False):
-                for entry in dirs + files:
-                    entry = os.path.join(root, entry)
-                    try:
-                        os.rmdir(entry)
-                    except NotADirectoryError:
-                        os.remove(entry)
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
+            self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
+            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
     def test_symlink1(self):
         """Delete the entity rather than the referenced directory."""
@@ -3396,7 +3394,7 @@ class TestMove(TestActions):
 
     def tearDown(self):
         try:
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, onerror=self.rmtree_error_handler)
         except NotADirectoryError:
             os.remove(self.test_dir)
         except FileNotFoundError:
@@ -3555,42 +3553,29 @@ class TestMove(TestActions):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
 
-        try:
-            orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')}, follow_symlinks=False)
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')}, follow_symlinks=False)
 
-            with app.test_client() as c:
-                r = c.post('/temp/junction', data={
-                    'token': token(c),
-                    'a': 'move',
-                    'f': 'json',
-                    'target': '/temp/deep/subdir',
-                    })
+        with app.test_client() as c:
+            r = c.post('/temp/junction', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/deep/subdir',
+                })
 
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/json')
-                self.assertEqual(r.json, {
-                    'success': True,
-                    'data': 'Command run successfully.',
-                    })
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
-                self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
-                self.assert_file_equal(
-                    orig_data,
-                    {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
-                    is_move=True,
-                    )
-        finally:
-            # In Python < 3.8, shutil.rmtree (in the tearDown) attempts to
-            # remove all content of a junction, and then raises
-            # FileNotFoundError as the junction target doesn't exist. Remove
-            # junctions on our own to prevent this issue.
-            for root, dirs, files in os.walk(self.test_dir, topdown=False):
-                for entry in dirs + files:
-                    entry = os.path.join(root, entry)
-                    try:
-                        os.rmdir(entry)
-                    except NotADirectoryError:
-                        os.remove(entry)
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
+                is_move=True,
+                )
 
     def test_symlink(self):
         """Moving the entity rather than the referenced directory/file."""
@@ -3865,7 +3850,7 @@ class TestCopy(TestActions):
 
     def tearDown(self):
         try:
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, onerror=self.rmtree_error_handler)
         except NotADirectoryError:
             os.remove(self.test_dir)
         except FileNotFoundError:
@@ -3996,8 +3981,8 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
                 )
 
-    @mock.patch('webscrapbook.app.http_error', return_value=Response())
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_junction(self, mock_error):
         """Raises when copying a broken directory junction."""
         # capture_output is not supported in Python < 3.8
@@ -4010,28 +3995,15 @@ class TestCopy(TestActions):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
 
-        try:
-            with app.test_client() as c:
-                r = c.post('/temp/junction', data={
-                    'token': token(c),
-                    'a': 'copy',
-                    'f': 'json',
-                    'target': '/temp/deep/subdir',
-                    })
+        with app.test_client() as c:
+            r = c.post('/temp/junction', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/deep/subdir',
+                })
 
-                mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
-        finally:
-            # In Python < 3.8, shutil.rmtree (in the tearDown) attempts to
-            # remove all content of a junction, and then raises
-            # FileNotFoundError as the junction target doesn't exist. Remove
-            # junctions on our own to prevent this issue.
-            for root, dirs, files in os.walk(self.test_dir, topdown=False):
-                for entry in dirs + files:
-                    entry = os.path.join(root, entry)
-                    try:
-                        os.rmdir(entry)
-                    except NotADirectoryError:
-                        os.remove(entry)
+            mock_error.assert_called_once_with(404, 'Source does not exist.', format='json')
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_symlink(self, mock_error):
