@@ -198,9 +198,57 @@ class TestUtils(unittest.TestCase):
 
     def test_file_info_symlink(self):
         entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
+
+        # target file
         try:
             os.symlink(
                 os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+                entry,
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        try:
+            self.assertEqual(
+                util.file_info(entry),
+                ('symlink', 'link', None, os.lstat(entry).st_mtime)
+                )
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
+
+        # target directory
+        try:
+            os.symlink(
+                os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+                entry,
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        try:
+            self.assertEqual(
+                util.file_info(entry),
+                ('symlink', 'link', None, os.lstat(entry).st_mtime)
+                )
+        finally:
+            try:
+                os.remove(entry)
+            except FileNotFoundError:
+                pass
+
+        # target non-exist
+        try:
+            os.symlink(
+                os.path.join(root_dir, 'test_util', 'file_info', 'nonexist'),
                 entry,
                 )
         except OSError:
