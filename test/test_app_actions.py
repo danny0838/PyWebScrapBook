@@ -3101,8 +3101,8 @@ class TestDelete(TestActions):
             self.assertFalse(os.path.isfile(self.test_dir))
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    def test_junction(self):
-        """Delete the entity rather than the referenced directory."""
+    def test_junction1(self):
+        """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
             f.write('dummy')
@@ -3135,8 +3135,77 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
+    # @FIXME
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_junction2(self):
+        """Delete the link entity even if target not exist."""
+        os.makedirs(self.test_dir, exist_ok=True)
+
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'junction'),
+            os.path.join(self.test_dir, 'nonexist'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        with app.test_client() as c:
+            r = c.post('/temp/junction', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
+
+    @unittest.skipUnless(sys.version_info >= (3, 8), 'requires Python >= 3.8')
+    def test_junction_deep(self):
+        """Delete junction entities without altering the referenced directory.
+        """
+        os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
+            f.write('dummy')
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        # capture_output is not supported in Python < 3.8
+        subprocess.run([
+            'mklink',
+            '/j',
+            os.path.join(self.test_dir, 'subdir2', 'junction'),
+            os.path.join(self.test_dir, 'subdir'),
+            ], shell=True, check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir2', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir2')))
+            self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
+            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
+
     def test_symlink1(self):
-        """Delete the entity rather than the referenced directory."""
+        """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
             f.write('dummy')
@@ -3171,7 +3240,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
     def test_symlink2(self):
-        """Delete the entity rather than the referenced file."""
+        """Delete the link entity rather than the referenced file."""
         os.makedirs(self.test_dir, exist_ok=True)
         with open(os.path.join(self.test_dir, 'test.txt'), 'w', encoding='UTF-8') as f:
             f.write('dummy')
@@ -3203,6 +3272,74 @@ class TestDelete(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'test.txt')))
+
+    def test_symlink3(self):
+        """Delete the link entity even if target not exist."""
+        os.makedirs(self.test_dir, exist_ok=True)
+
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'nonexist'),
+                os.path.join(self.test_dir, 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/symlink', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
+
+    def test_symlink_deep(self):
+        """Delete symlink entities without altering the referenced directory.
+        """
+        os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
+            f.write('dummy')
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        try:
+            os.symlink(
+                os.path.join(self.test_dir, 'subdir'),
+                os.path.join(self.test_dir, 'subdir2', 'symlink')
+                )
+        except OSError:
+            if platform.system() == 'Windows':
+                self.skipTest('requires administrator or Developer Mode on Windows')
+            else:
+                raise
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir2', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir2')))
+            self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
+            self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_nonexist(self, mock_error):
