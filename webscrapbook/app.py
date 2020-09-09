@@ -953,7 +953,7 @@ class ActionHandler():
             with open_archive_path(localpaths) as zip:
                 try:
                     info = zip.getinfo(localpaths[-1])
-                except:
+                except KeyError:
                     body = b''
                 else:
                     body = zip.read(info)
@@ -1004,7 +1004,7 @@ class ActionHandler():
             with open_archive_path(localpaths) as zip:
                 try:
                     info = zip.getinfo(localpaths[-1])
-                except:
+                except KeyError:
                     return http_error(404, format=format)
         else:
             if not os.path.lexists(localpath):
@@ -1120,14 +1120,14 @@ class ActionHandler():
                     # Lock expired. Touch rather than remove and make for atomicity.
                     try:
                         Path(targetpath).touch()
-                    except:
+                    except OSError:
                         traceback.print_exc()
                         return http_error(500, f'Unable to regenerate stale lock "{name}".', format=format)
                     else:
                         break
 
                 time.sleep(check_delta)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, f'Unable to create lock "{name}".', format=format)
             else:
@@ -1143,7 +1143,7 @@ class ActionHandler():
             os.rmdir(targetpath)
         except FileNotFoundError:
             pass
-        except:
+        except Exception:
             traceback.print_exc()
             return http_error(500, f'Unable to remove lock "{name}".', format=format)
 
@@ -1176,7 +1176,7 @@ class ActionHandler():
                 with zip as zip:
                     info = zipfile.ZipInfo(folderpath, time.localtime())
                     zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
@@ -1226,7 +1226,7 @@ class ActionHandler():
                     with zipfile.ZipFile(buf, 'w'):
                         pass
                     zip.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_STORED)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
@@ -1238,14 +1238,14 @@ class ActionHandler():
 
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this path.", format=format)
 
             try:
                 with zipfile.ZipFile(localpath, 'w') as f:
                     pass
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this file.", format=format)
 
@@ -1268,7 +1268,7 @@ class ActionHandler():
                         zip0.getinfo(localpaths[-1])
                     except KeyError:
                         zip = zip0
-                    except:
+                    except Exception:
                         zip0.close()
                         raise
                     else:
@@ -1294,7 +1294,7 @@ class ActionHandler():
                         except TypeError:
                             # compresslevel is supported since Python 3.7
                             zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
@@ -1306,7 +1306,7 @@ class ActionHandler():
 
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
-            except:
+            except OSError:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this path.", format=format)
 
@@ -1318,7 +1318,7 @@ class ActionHandler():
                     bytes = request.values.get('text', '').encode('ISO-8859-1')
                     with open(localpath, 'wb') as f:
                         f.write(bytes)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this file.", format=format)
 
@@ -1337,7 +1337,7 @@ class ActionHandler():
             except KeyError:
                 # fail since nothing is deleted
                 return http_error(404, "Entry does not exist in this ZIP file.", format=format)
-            except:
+            except Exception:
                 traceback.print_exc()
                 return http_error(500, "Unable to write to this ZIP file.", format=format)
 
@@ -1350,19 +1350,19 @@ class ActionHandler():
             if util.file_is_link(localpath):
                 try:
                     os.remove(localpath)
-                except:
+                except OSError:
                     traceback.print_exc()
                     return http_error(500, "Unable to delete this link.", format=format)
             elif os.path.isfile(localpath):
                 try:
                     os.remove(localpath)
-                except:
+                except OSError:
                     traceback.print_exc()
                     return http_error(500, "Unable to delete this file.", format=format)
             elif os.path.isdir(localpath):
                 try:
                     shutil.rmtree(localpath)
-                except:
+                except OSError:
                     traceback.print_exc()
                     return http_error(500, "Unable to delete this directory.", format=format)
             else:
@@ -1381,7 +1381,7 @@ class ActionHandler():
                 if len(targetpaths) == 1:
                     try:
                         os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
-                    except:
+                    except OSError:
                         traceback.print_exc()
                         return http_error(500, "Unable to copy to this path.", format=format)
 
@@ -1425,7 +1425,7 @@ class ActionHandler():
                     with open_archive_path(sourcepaths, 'w', entries) as zip:
                         pass
 
-        except:
+        except Exception:
             traceback.print_exc()
             return http_error(500, 'Unable to move to the target.', format=format)
 
@@ -1446,7 +1446,7 @@ class ActionHandler():
                 if len(targetpaths) == 1:
                     try:
                         os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
-                    except:
+                    except OSError:
                         traceback.print_exc()
                         return http_error(500, "Unable to copy to this path.", format=format)
 
@@ -1508,7 +1508,7 @@ class ActionHandler():
                 if len(targetpaths) == 1:
                     try:
                         os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
-                    except:
+                    except OSError:
                         traceback.print_exc()
                         return http_error(500, "Unable to copy to this path.", format=format)
 
@@ -1534,7 +1534,7 @@ class ActionHandler():
                     finally:
                         try:
                             shutil.rmtree(tempdir)
-                        except:
+                        except OSError:
                             traceback.print_exc()
 
                 else:
@@ -1558,7 +1558,7 @@ class ActionHandler():
                                     # compresslevel is supported since Python 3.7
                                     zip2.writestr(info, zip.read(entry))
 
-        except:
+        except Exception:
             traceback.print_exc()
             return http_error(500, 'Unable to copy to the target.', format=format)
 

@@ -103,6 +103,10 @@ class Config():
             try:
                 parser = ConfigParser(interpolation=None)
                 parser.read(file, encoding='UTF-8')
+            except Exception:
+                print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
+                raise
+            else:    
                 for section in parser.sections():
                     # Handle subsected sections formatted as [section "subsection"].
                     # Also normalize [section] and [section  ""  ] to [section ""].
@@ -121,9 +125,6 @@ class Config():
                     # Section object.
                     conf.setdefault(section, OrderedDict())
                     conf[section].update(parser[section])
-            except:
-                print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
-                raise
 
         # default config
         self._conf = conf = ConfigParser(interpolation=None)

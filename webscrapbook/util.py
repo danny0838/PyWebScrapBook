@@ -170,13 +170,13 @@ def view_in_explorer(path):
     elif sys.platform == "darwin":
         try:
             subprocess.Popen(["open", "-R", path])
-        except:
+        except OSError:
             # fallback for older OS X
             launch(os.path.dirname(path))
     else:
         try:
             subprocess.Popen(["nautilus", "--select", path])
-        except:
+        except OSError:
             # fallback if no nautilus
             launch(os.path.dirname(path))
 
@@ -222,7 +222,7 @@ def file_info(file, base=None):
 
     try:
         statinfo = os.lstat(file)
-    except:
+    except OSError:
         # unexpected error when getting stat info
         statinfo = None
         size = None
@@ -277,7 +277,7 @@ def format_filesize(bytes, si=False):
     """
     try:
         bytes = int(bytes)
-    except:
+    except (ValueError, TypeError):
         return ''
 
     if si:
@@ -497,8 +497,7 @@ def get_maff_pages(zip):
             try:
                 with zh.open(rdf, 'r') as f:
                     meta = parse_maff_index_rdf(f)
-                    f.close()
-            except:
+            except Exception:
                 pass
             else:
                 if meta.indexfilename is not None:
@@ -531,7 +530,7 @@ def parse_maff_index_rdf(fh):
         try:
             node = root.find('./RDF:Description/MAF:' + attr, ns)
             return node.attrib['{' + ns['RDF'] + '}' + 'resource']
-        except:
+        except Exception:
             return None
 
     ns = {
@@ -652,7 +651,7 @@ class TokenHandler():
 
         try:
             os.remove(token_file)
-        except:
+        except OSError:
             pass
 
     def delete_expire(self, now=None):
@@ -668,7 +667,7 @@ class TokenHandler():
                 try:
                     with open(token_file, 'r', encoding='UTF-8') as f:
                         expire = int(f.read())
-                except:
+                except (OSError, ValueError):
                     continue
                 if now >= expire:
                     os.remove(token_file)

@@ -53,7 +53,7 @@ def cmd_config(args):
             print(f'Generating "{fdst}"...')
             try:
                 fcopy(fsrc, fdst)
-            except:
+            except OSError:
                 print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                 sys.exit(1)
 
@@ -71,7 +71,7 @@ def cmd_config(args):
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
-                except:
+                except OSError:
                     print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                     sys.exit(1)
 
@@ -82,7 +82,7 @@ def cmd_config(args):
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
-                except:
+                except OSError:
                     print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                     sys.exit(1)
 
@@ -93,7 +93,7 @@ def cmd_config(args):
             print(f'Generating "{fdst}"...')
             try:
                 fcopy(fsrc, fdst)
-            except:
+            except OSError:
                 print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
                 sys.exit(1)
 
@@ -240,7 +240,7 @@ def view_archive_files(files):
                 # cache may be created by another user and undeletable
                 try:
                     shutil.rmtree(entry)
-                except:
+                except OSError:
                     traceback.print_exc()
 
 
