@@ -39,6 +39,22 @@ class Book:
     SAVE_TOC_THRESHOLD = 4 * 1024 * 1024
     SAVE_FULLTEXT_THRESHOLD = 128 * 1024 * 1024
     REPR_ATTRS = ('id', 'name', 'top_dir')
+    DEFAULT_META = {
+        'id': None,
+        'index': None,
+        'title': None,
+        'type': None,
+        'create': None,
+        'modify': None,
+        'source': None,
+        'icon': None,
+        'comment': None,
+        }
+    TYPES_OPTIONAL_INDEX = {
+        'folder',
+        'separator',
+        'bookmark',
+        }
 
     def __init__(self, host, book_id=''):
         self.host = host

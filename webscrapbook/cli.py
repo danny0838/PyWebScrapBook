@@ -2,6 +2,7 @@
 """
 import sys
 import os
+import shutil
 import argparse
 from getpass import getpass
 import traceback
@@ -158,6 +159,64 @@ def cmd_cache(args):
             log(f'{info.type.upper()}: {info.msg}')
 
 
+def cmd_convert(args):
+    """Convert data between different formats.
+
+    Do not perform any data operation for the input and/or output directory
+        during the conversion process (and related backend server(s) should be
+        shutted down in prior) to prevent a potential conversion error.
+    """
+    kwargs = args.copy()
+    kwargs.pop('root')
+    mode = kwargs.pop('mode')
+    force = kwargs.pop('force')
+    debug = kwargs.pop('debug')
+
+    import importlib
+    try:
+        conv = importlib.import_module(f'.scrapbook.convert.{mode}', __package__)
+    except ImportError:
+        die(f'Unsupported conversion mode: "{mode}".')
+
+    # validate input and output directory
+    args['input'] = os.path.realpath(args['input'])
+    args['output'] = os.path.realpath(args['output'])
+
+    if os.path.normcase(args['output']) == os.path.normcase(args['input']):
+        die(f'''Unable to output to the input directory''')
+
+    if os.path.normcase(args['output']).startswith(os.path.normcase(os.path.join(args['input'], ''))):
+        die(f'''Unable to output to a descendant of the input directory''')
+
+    if os.path.normcase(args['input']).startswith(os.path.normcase(os.path.join(args['output'], ''))):
+        die(f'''Unable to output to an ancestor of the input directory''')
+
+    if not os.path.isdir(args['input']):
+        die(f'''Input directory not available: "{args['input']}"''')
+
+    if not os.path.lexists(args['output']):
+        pass
+    elif not os.path.isdir(args['output']):
+        die(f'''Output directory not available: "{args['output']}"''')
+    else:
+        if force:
+            # using os.rmtree() frequently cause an error on Windows
+            with os.scandir(args['output']) as dirs:
+                for entry in dirs:
+                    try:
+                        shutil.rmtree(entry)
+                    except NotADirectoryError:
+                        os.remove(entry)
+        else:
+            with os.scandir(args['output']) as dirs:
+                if next(dirs, None):
+                    die(f'''Output directory not empty: "{args['output']}"''')
+
+    for info in conv.run(**kwargs):
+        if info.type != 'debug' or debug:
+            log(f'{info.type.upper()}: {info.msg}')
+
+
 def cmd_help(args):
     """Show detailed information about certain topics.
     """
@@ -187,7 +246,6 @@ def view_archive_files(files):
     import zipfile
     import mimetypes
     import webbrowser
-    import shutil
     from urllib.request import pathname2url
 
     cache_prefix = config['browser']['cache_prefix']
@@ -346,6 +404,29 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
     parser_cache.add_argument('--no-backup', default=False, action='store_true',
         help="""do not backup changed files""")
     parser_cache.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
+    # subcommand: convert
+    parser_convert = subparsers.add_parser('convert', aliases=['v'],
+        description=cmd_convert.__doc__,
+        help="""convert scrapbook data between different formats""")
+    parser_convert.set_defaults(func=cmd_convert)
+    parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE', required=True,
+        help="""the conversion mode. Get usage help with e.g. %(prog)s sb2wsb -h""")
+
+    # -- sb2wsb
+    parser_convert_sb2wsb = parser_convert_sub.add_parser('sb2wsb',
+        description="""Convert from legacy ScrapBook (X) to WebScrapBook.""",
+        help="""convert from legacy ScrapBook (X) to WebScrapBook""")
+    parser_convert_sb2wsb.add_argument('input', action='store',
+        help="""the input directory""")
+    parser_convert_sb2wsb.add_argument('output', action='store',
+        help="""the output directory""")
+    parser_convert_sb2wsb.add_argument('--no-backup', default=False, action='store_true',
+        help="""do not backup unneeded legacy scrapbook files""")
+    parser_convert_sb2wsb.add_argument('--force', default=False, action='store_true',
+        help="""overwrite everything in the output directory""")
+    parser_convert_sb2wsb.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: help
