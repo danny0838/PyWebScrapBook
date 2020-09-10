@@ -260,7 +260,8 @@ def main():
         help="""show version information and exit""")
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")
-    subparsers = parser.add_subparsers(dest='command', metavar='COMMAND')
+    subparsers = parser.add_subparsers(metavar='COMMAND',
+        help="""The sub-command to run. Add --help(-h) after the sub-command for usage details.""")
 
     # subcommand: serve
     parser_serve = subparsers.add_parser('serve', aliases=['s'],
@@ -312,9 +313,10 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
 
     # parse the command
     args = vars(parser.parse_args())
-    if args.get('func'):
-        args['func'](args)
-    else:
+    try:
+        func = args.pop('func')
+        func(args)
+    except KeyError:
         parser.parse_args(['-h'])
 
 
