@@ -1646,6 +1646,154 @@ class TestSource(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+class TestDownload(unittest.TestCase):
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_format_check(self, mock_error):
+        """No format."""
+        with app.test_client() as c:
+            r = c.get('/index.html', query_string={'a': 'download', 'f': 'json'})
+            mock_error.assert_called_once_with(400, 'Action not supported.', format='json')
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check1(self, mock_error):
+        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+            r = c.get('/index.html', query_string={'a': 'download'})
+            mock_error.assert_called_once_with(403, format=None)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_permission_check2(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+                r = c.get('/archive.zip!/', query_string={'a': 'download'})
+                mock_error.assert_called_once_with(403, format=None)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
+    def test_file_binary(self):
+        zip_filename = os.path.join(server_root, '中文.htz')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('index.html', 'Hello World! 你好')
+
+            with app.test_client() as c:
+                r = c.get('/中文.htz', query_string={'a': 'download'}, buffered=True)
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/html+zip')
+                self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.htz; filename="%E4%B8%AD%E6%96%87.htz"''')
+                self.assertEqual(r.headers['Content-Length'], str(os.stat(zip_filename).st_size))
+                self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_nonexist(self, mock_error):
+        with app.test_client() as c:
+            r = c.get('/nonexist', query_string={'a': 'download'}, buffered=True)
+            mock_error.assert_called_once_with(404)
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_directory(self, mock_error):
+        with app.test_client() as c:
+            r = c.get('/subdir', query_string={'a': 'download'})
+            mock_error.assert_called_once_with(404)
+
+        mock_error.reset_mock()
+
+        with app.test_client() as c:
+            r = c.get('/subdir/', query_string={'a': 'download'})
+            mock_error.assert_called_once_with(404)
+
+    def test_file_zip_subfile(self):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, 'w') as zh2:
+                    pass
+                zh.writestr('中文.zip', buf.getvalue())
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/中文.zip', query_string={'a': 'download'}, buffered=True)
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/zip')
+                self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
+                self.assertEqual(r.headers['Content-Length'], '22')
+                self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
+                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
+                self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
+                self.assertIsNotNone(r.headers['Last-Modified'])
+                self.assertIsNotNone(r.headers['ETag'])
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_zip_subdir(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('explicit_dir/', '')
+                zh.writestr('explicit_dir/index.html', 'Hello World! 你好')
+                zh.writestr('implicit_dir/index.html', 'Hello World! 你好嗎')
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'download'}, buffered=True)
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'download'}, buffered=True)
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'download'}, buffered=True)
+                mock_error.assert_called_once_with(404)
+
+            mock_error.reset_mock()
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'download'}, buffered=True)
+                mock_error.assert_called_once_with(404)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
+    @mock.patch('webscrapbook.app.http_error', return_value=Response())
+    def test_file_zip_nonexist(self, mock_error):
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                pass
+
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/nonexist', query_string={'a': 'download'}, buffered=True)
+                mock_error.assert_called_once_with(404)
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
 class TestStatic(unittest.TestCase):
     @mock.patch('webscrapbook.app.http_error', return_value=Response())
     def test_format_check(self, mock_error):

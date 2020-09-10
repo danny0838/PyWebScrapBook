@@ -356,7 +356,7 @@ def verify_authorization(perm, action):
             return True
 
     elif perm == 'view':
-        if action in {'view', 'info', 'source', 'static'}:
+        if action in {'view', 'info', 'source', 'download', 'static'}:
             return True
         else:
             return False
@@ -879,6 +879,26 @@ class ActionHandler():
         response.headers.set('Content-Type', 'text/plain; charset=' + quote(encoding))
         response.headers.set('Content-Disposition', 'inline')
 
+        return response
+
+    def download(self, *args, **kwargs):
+        """Download the  file."""
+        format = request.format
+
+        if format:
+            return http_error(400, "Action not supported.", format=format)
+
+        localpaths = request.localpaths
+
+        if len(localpaths) > 1:
+            with open_archive_path(localpaths) as zip:
+                response = zip_static_file(zip, localpaths[-1], mimetype=request.localmimetype)
+        else:
+            response = static_file(localpaths[0])
+
+        filename = quote_path(os.path.basename(request.localrealpath))
+        response.headers.set('Content-Disposition',
+                f'''attachment; filename*=UTF-8''{filename}; filename="{filename}"''')
         return response
 
     def info(self, *args, **kwargs):
