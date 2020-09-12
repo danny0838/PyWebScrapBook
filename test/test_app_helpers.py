@@ -26,61 +26,6 @@ def tearDownModule():
     mocking.stop()
 
 class TestFunctions(unittest.TestCase):
-    @mock.patch('webscrapbook.app.abort', return_value='')
-    def test_http_error1(self, mock_abort):
-        root = os.path.join(root_dir, 'test_app_helpers', 'general')
-        app = wsbapp.make_app(root)
-        with app.app_context():
-            wsbapp.http_error(400)
-            mock_abort.assert_called_with(400, description=None)
-
-            wsbapp.http_error(401, 'You are not authorized.', www_authenticate='mock_auth_object')
-            mock_abort.assert_called_with(401, description='You are not authorized.', www_authenticate='mock_auth_object')
-
-            wsbapp.http_error(403, 'You are not allowed to access this resource.')
-            mock_abort.assert_called_with(403, description='You are not allowed to access this resource.')
-
-            wsbapp.http_error(404)
-            mock_abort.assert_called_with(404, description=None)
-
-            wsbapp.http_error(405, valid_methods=['POST'])
-            mock_abort.assert_called_with(405, description=None, valid_methods=['POST'])
-
-            wsbapp.http_error(500)
-            mock_abort.assert_called_with(500, description=None)
-
-    @mock.patch('webscrapbook.app.Response', return_value='')
-    def test_http_error2(self, mock_response):
-            wsbapp.http_error(400, 'A bad request.', format='json')
-            mock_response.assert_called_with(
-                '{"error": {"status": 400, "message": "A bad request."}}',
-                400,
-                headers=[('Content-Type', 'text/html; charset=utf-8')],
-                mimetype='application/json',
-                )
-
-            wsbapp.http_error(401, 'You are not authorized.', www_authenticate='mock_auth_object', format='json')
-            mock_response.assert_called_with(
-                '{"error": {"status": 401, "message": "You are not authorized."}}',
-                401,
-                headers=[
-                    ('Content-Type', 'text/html; charset=utf-8'),
-                    ('WWW-Authenticate', 'mock_auth_object'),
-                    ],
-                mimetype='application/json',
-                )
-
-            wsbapp.http_error(405, valid_methods=['POST'], format='json')
-            mock_response.assert_called_with(
-                '{"error": {"status": 405, "message": "The method is not allowed for the requested URL."}}',
-                405,
-                headers=[
-                    ('Content-Type', 'text/html; charset=utf-8'),
-                    ('Allow', 'POST')
-                    ],
-                mimetype='application/json',
-                )
-
     def test_is_local_access(self):
         root = os.path.join(root_dir, 'test_app_helpers', 'general')
         app = wsbapp.make_app(root)
@@ -901,6 +846,30 @@ class TestRequest(unittest.TestCase):
 
             r = c.get('/index.html', query_string={'f': 'json', 'format': 'sse'})
             self.assertEqual(request.format, 'sse')
+
+class TestHandlers(unittest.TestCase):
+    def test_handle_error(self):
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+
+        # json
+        with app.test_client() as c:
+            r = c.get('/nonexist', query_string={'a': 'list', 'f': 'json'})
+            self.assertEqual(r.status_code, 404)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'error': {
+                    'status': 404,
+                    'message': 'Directory does not exist.'
+                    }
+                })
+
+        # other
+        with app.test_client() as c:
+            r = c.get('/nonexist')
+            self.assertEqual(r.status_code, 404)
+            html = r.data.decode('UTF-8')
+            self.assertTrue('<h1>Not Found</h1>' in html)
 
 if __name__ == '__main__':
     unittest.main()

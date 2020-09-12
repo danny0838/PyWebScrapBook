@@ -25,6 +25,7 @@ from flask import current_app
 from werkzeug.local import LocalProxy
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.exceptions import HTTPException
 from werkzeug.http import is_resource_modified
 from werkzeug.http import http_date
 from werkzeug.http import parse_options_header, dump_options_header
@@ -56,7 +57,7 @@ def static_file(filename, mimetype=None):
         filename: absolute path of the file to output.
     """
     if not os.path.isfile(filename):
-        return http_error(404)
+        abort(404)
     response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
@@ -76,7 +77,7 @@ def zip_static_file(zip, subpath, mimetype=None):
         try:
             info = zip.getinfo(subpath)
         except KeyError:
-            return http_error(404)
+            abort(404)
     else:
         info = subpath
 
@@ -139,37 +140,9 @@ def http_response(body='', status=None, headers=None, format=None):
         body = wrapper(body)
 
     else:
-        return http_error(400, f'Output format "{format}" is not supported.')
+        abort(400, f'Output format "{format}" is not supported.')
 
     return Response(body, status, headers, mimetype=mimetype)
-
-
-def http_error(status=500, description=None, format=None, *args, **kwargs):
-    """Handle formatted error response.
-    """
-    # expect body to be a JSON-serializable object
-    if format == 'json':
-        mimetype = 'application/json'
-
-        try:
-            abort(status, description=description, *args, **kwargs)
-        except Exception as e:
-            headers = e.get_headers()
-            description = e.description
-
-        body = {
-            'error': {
-                'status': status,
-                'message': description,
-                },
-            }
-
-        body = json.dumps(body, ensure_ascii=False)
-
-        return Response(body, status, headers=headers, mimetype=mimetype)
-
-    else:
-        return abort(status, description=description, *args, **kwargs)
 
 
 def get_archive_path(filepath):
@@ -625,7 +598,7 @@ class ActionHandler():
             handler = getattr(self, action, None) or self.unknown
             return handler()
         except PermissionError:
-            return http_error(403, format=request.format)
+            abort(403)
 
     def _handle_advanced(func):
         """A decorator function that helps handling an advanced command.
@@ -640,13 +613,13 @@ class ActionHandler():
 
             # require POST method
             if request.method != 'POST':
-                return http_error(405, format=format, valid_methods=['POST'])
+                abort(405, valid_methods=['POST'])
 
             # validate and revoke token
             token = request.values.get('token') or ''
 
             if not runtime['token_handler'].validate(token):
-                return http_error(400, 'Invalid access token.', format=format)
+                abort(400, 'Invalid access token.')
 
             runtime['token_handler'].delete(token)
 
@@ -675,12 +648,12 @@ class ActionHandler():
             # verify name
             name = request.values.get('name')
             if name is None:
-                return http_error(400, "Lock name is not specified.", format=format)
+                abort(400, "Lock name is not specified.")
 
             # validate targetpath
             targetpath = os.path.join(runtime['locks'], name)
             if not targetpath.startswith(os.path.join(runtime['locks'], '')):
-                return http_error(400, f'Invalid lock name "{name}".', format=format)
+                abort(400, f'Invalid lock name "{name}".')
 
             return func(self, name=name, targetpath=targetpath, *args, **kwargs)
 
@@ -694,7 +667,7 @@ class ActionHandler():
             format = request.format
 
             if os.path.abspath(request.localpath) == runtime['root']:
-                return http_error(403, "Unable to operate the root directory.", format=format)
+                abort(403, "Unable to operate the root directory.")
 
             return func(self, *args, **kwargs)
 
@@ -714,21 +687,21 @@ class ActionHandler():
                         zip.getinfo(localpaths[-1])
                     except KeyError:
                         if not util.zip_hasdir(zip, localpaths[-1] + '/'):
-                            return http_error(404, "Source does not exist.", format=format)
+                            abort(404, "Source does not exist.")
             else:
                 if not os.path.lexists(localpaths[0]):
-                    return http_error(404, "Source does not exist.", format=format)
+                    abort(404, "Source does not exist.")
 
             target = request.values.get('target')
 
             if target is None:
-                return http_error(400, 'Target is not specified.', format=format)
+                abort(400, 'Target is not specified.')
 
             targetpaths = get_archive_path(target)
             targetpaths[0] = os.path.normpath(os.path.join(runtime['root'], targetpaths[0].lstrip('/')))
 
             if not targetpaths[0].startswith(os.path.join(runtime['root'], '')):
-                return http_error(403, "Unable to operate beyond the root directory.", format=format)
+                abort(403, "Unable to operate beyond the root directory.")
 
             if len(targetpaths) > 1:
                 with open_archive_path(targetpaths) as zip:
@@ -736,12 +709,12 @@ class ActionHandler():
                         zip.getinfo(targetpaths[-1])
                     except KeyError:
                         if util.zip_hasdir(zip, targetpaths[-1] + '/'):
-                            return http_error(400, 'Found something at target.', format=format)
+                            abort(400, 'Found something at target.')
                     else:
-                        return http_error(400, 'Found something at target.', format=format)
+                        abort(400, 'Found something at target.')
             else:
                 if os.path.lexists(targetpaths[0]):
-                    return http_error(400, 'Found something at target.', format=format)
+                    abort(400, 'Found something at target.')
 
             return func(self, sourcepaths=localpaths, targetpaths=targetpaths, *args, **kwargs)
 
@@ -750,7 +723,7 @@ class ActionHandler():
     def unknown(self, *args, **kwargs):
         """Default handler for an undefined action"""
         format = request.format
-        return http_error(400, "Action not supported.", format=format)
+        abort(400, "Action not supported.")
 
     def view(self, *args, **kwargs):
         """Show the content of a file or list a directory.
@@ -779,8 +752,8 @@ class ActionHandler():
                         try:
                             return handle_directory_listing(localpaths, zip, redirect_slash=False)
                         except util.ZipDirNotFoundError:
-                            return http_error(404)
-                    return http_error(404)
+                            abort(404)
+                    abort(404)
                 else:
                     # view archive file
                     if mimetype in ("application/html+zip", "application/x-maff"):
@@ -848,7 +821,7 @@ class ActionHandler():
                 response = static_file(localpath, mimetype=mimetype)
 
             else:
-                return http_error(404)
+                abort(404)
 
         # don't include charset
         m, p = parse_options_header(response.headers.get('Content-Type'))
@@ -865,7 +838,7 @@ class ActionHandler():
         format = request.format
 
         if format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         localpaths = request.localpaths
 
@@ -890,7 +863,7 @@ class ActionHandler():
         format = request.format
 
         if format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         localpaths = request.localpaths
 
@@ -910,7 +883,7 @@ class ActionHandler():
         format = request.format
 
         if not format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         localpaths = request.localpaths
         mimetype = request.localmimetype
@@ -935,7 +908,7 @@ class ActionHandler():
         format = request.format
 
         if not format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         recursive = request.values.get('recursive', type=bool)
         localpaths = request.localpaths
@@ -944,19 +917,19 @@ class ActionHandler():
             try:
                 return handle_directory_listing(localpaths, redirect_slash=False, recursive=recursive, format=format)
             except util.ZipDirNotFoundError:
-                return http_error(404, "Directory does not exist.", format=format)
+                abort(404, "Directory does not exist.")
 
         if os.path.isdir(localpaths[0]):
             return handle_directory_listing(localpaths, redirect_slash=False, recursive=recursive, format=format)
 
-        return http_error(404, "Directory does not exist.", format=format)
+        abort(404, "Directory does not exist.")
 
     def static(self, *args, **kwargs):
         """Show a static file of the current theme."""
         format = request.format
 
         if format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         filepath = request.path.strip('/')
         for i in runtime['statics']:
@@ -964,20 +937,20 @@ class ActionHandler():
             if os.path.isfile(f):
                 return static_file(f)
         else:
-            return http_error(404)
+            abort(404)
 
     def edit(self, *args, **kwargs):
         """Simple text editor for a file."""
         format = request.format
 
         if format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         localpaths = request.localpaths
         localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            return http_error(400, "Found a non-file here.", format=format)
+            abort(400, "Found a non-file here.")
 
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zip:
@@ -1019,26 +992,26 @@ class ActionHandler():
         format = request.format
 
         if format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         localpaths = request.localpaths
         localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            return http_error(400, "Found a non-file here.", format=format)
+            abort(400, "Found a non-file here.")
 
         if not request.localmimetype in ("text/html", "application/xhtml+xml"):
-            return http_error(400, "This is not an HTML file.", format=format)
+            abort(400, "This is not an HTML file.")
 
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zip:
                 try:
                     info = zip.getinfo(localpaths[-1])
                 except KeyError:
-                    return http_error(404, format=format)
+                    abort(404)
         else:
             if not os.path.lexists(localpath):
-                return http_error(404, format=format)
+                abort(404)
 
         body = render_template('editx.html',
                 sitename=runtime['name'],
@@ -1054,12 +1027,12 @@ class ActionHandler():
         format = request.format
 
         if not is_local_access():
-            return http_error(400, "Command can only run on local device.", format=format)
+            abort(400, "Command can only run on local device.")
 
         localpath = request.localpath
 
         if not os.path.lexists(localpath):
-            return http_error(404, "File does not exist.", format=format)
+            abort(404, "File does not exist.")
 
         util.launch(localpath)
 
@@ -1073,12 +1046,12 @@ class ActionHandler():
         format = request.format
 
         if not is_local_access():
-            return http_error(400, "Command can only run on local device.", format=format)
+            abort(400, "Command can only run on local device.")
 
         localpath = request.localpath
 
         if not os.path.lexists(localpath):
-            return http_error(404, "File does not exist.", format=format)
+            abort(404, "File does not exist.")
 
         util.view_in_explorer(localpath)
 
@@ -1092,7 +1065,7 @@ class ActionHandler():
         format = request.format
 
         if not format:
-            return http_error(400, "Action not supported.", format=format)
+            abort(400, "Action not supported.")
 
         data = runtime['config'].dump_object()
 
@@ -1116,7 +1089,7 @@ class ActionHandler():
 
         # require POST method
         if request.method != 'POST':
-            return http_error(405, format=format, valid_methods=['POST'])
+            abort(405, valid_methods=['POST'])
 
         return http_response(runtime['token_handler'].acquire(), format=format)
 
@@ -1142,7 +1115,7 @@ class ActionHandler():
                 t = time.time()
 
                 if t >= check_expire or not os.path.isdir(targetpath):
-                    return http_error(500, f'Unable to acquire lock "{name}".', format=format)
+                    abort(500, f'Unable to acquire lock "{name}".')
 
                 try:
                     lock_expire = os.stat(targetpath).st_mtime + check_stale
@@ -1157,14 +1130,14 @@ class ActionHandler():
                         Path(targetpath).touch()
                     except OSError:
                         traceback.print_exc()
-                        return http_error(500, f'Unable to regenerate stale lock "{name}".', format=format)
+                        abort(500, f'Unable to regenerate stale lock "{name}".')
                     else:
                         break
 
                 time.sleep(check_delta)
             except Exception:
                 traceback.print_exc()
-                return http_error(500, f'Unable to create lock "{name}".', format=format)
+                abort(500, f'Unable to create lock "{name}".')
             else:
                 break
 
@@ -1180,7 +1153,7 @@ class ActionHandler():
             pass
         except Exception:
             traceback.print_exc()
-            return http_error(500, f'Unable to remove lock "{name}".', format=format)
+            abort(500, f'Unable to remove lock "{name}".')
 
     @_handle_advanced
     @_handle_writing
@@ -1213,19 +1186,19 @@ class ActionHandler():
                     zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this ZIP file.", format=format)
+                abort(500, "Unable to write to this ZIP file.")
 
         else:
             localpath = localpaths[0]
 
             if os.path.lexists(localpath) and not os.path.isdir(localpath):
-                return http_error(400, "Found a non-directory here.", format=format)
+                abort(400, "Found a non-directory here.")
 
             try:
                 os.makedirs(localpath, exist_ok=True)
             except OSError:
                 traceback.print_exc()
-                return http_error(500, "Unable to create a directory here.", format=format)
+                abort(500, "Unable to create a directory here.")
 
 
     @_handle_advanced
@@ -1263,26 +1236,26 @@ class ActionHandler():
                     zip.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_STORED)
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this ZIP file.", format=format)
+                abort(500, "Unable to write to this ZIP file.")
 
         else:
             localpath = localpaths[0]
 
             if os.path.lexists(localpath) and not os.path.isfile(localpath):
-                return http_error(400, "Found a non-file here.", format=format)
+                abort(400, "Found a non-file here.")
 
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this path.", format=format)
+                abort(500, "Unable to write to this path.")
 
             try:
                 with zipfile.ZipFile(localpath, 'w') as f:
                     pass
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this file.", format=format)
+                abort(500, "Unable to write to this file.")
 
 
     @_handle_advanced
@@ -1331,19 +1304,19 @@ class ActionHandler():
                             zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this ZIP file.", format=format)
+                abort(500, "Unable to write to this ZIP file.")
 
         else:
             localpath = localpaths[0]
 
             if os.path.lexists(localpath) and not os.path.isfile(localpath):
-                return http_error(400, "Found a non-file here.", format=format)
+                abort(400, "Found a non-file here.")
 
             try:
                 os.makedirs(os.path.dirname(localpath), exist_ok=True)
             except OSError:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this path.", format=format)
+                abort(500, "Unable to write to this path.")
 
             try:
                 file = request.files.get('upload')
@@ -1355,7 +1328,7 @@ class ActionHandler():
                         f.write(bytes)
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this file.", format=format)
+                abort(500, "Unable to write to this file.")
 
 
     @_handle_advanced
@@ -1371,38 +1344,38 @@ class ActionHandler():
                     pass
             except KeyError:
                 # fail since nothing is deleted
-                return http_error(404, "Entry does not exist in this ZIP file.", format=format)
+                abort(404, "Entry does not exist in this ZIP file.")
             except Exception:
                 traceback.print_exc()
-                return http_error(500, "Unable to write to this ZIP file.", format=format)
+                abort(500, "Unable to write to this ZIP file.")
 
         else:
             localpath = localpaths[0]
 
             if not os.path.lexists(localpath):
-                return http_error(404, "File does not exist.", format=format)
+                abort(404, "File does not exist.")
 
             if util.file_is_link(localpath):
                 try:
                     os.remove(localpath)
                 except OSError:
                     traceback.print_exc()
-                    return http_error(500, "Unable to delete this link.", format=format)
+                    abort(500, "Unable to delete this link.")
             elif os.path.isfile(localpath):
                 try:
                     os.remove(localpath)
                 except OSError:
                     traceback.print_exc()
-                    return http_error(500, "Unable to delete this file.", format=format)
+                    abort(500, "Unable to delete this file.")
             elif os.path.isdir(localpath):
                 try:
                     shutil.rmtree(localpath)
                 except OSError:
                     traceback.print_exc()
-                    return http_error(500, "Unable to delete this directory.", format=format)
+                    abort(500, "Unable to delete this directory.")
             else:
                 # this should not happen
-                return http_error(500, "Unable to handle this path.", format=format)
+                abort(500, "Unable to handle this path.")
 
     @_handle_advanced
     @_handle_writing
@@ -1418,7 +1391,7 @@ class ActionHandler():
                         os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                     except OSError:
                         traceback.print_exc()
-                        return http_error(500, "Unable to copy to this path.", format=format)
+                        abort(500, "Unable to copy to this path.")
 
                     shutil.move(sourcepaths[0], targetpaths[0])
 
@@ -1428,13 +1401,13 @@ class ActionHandler():
                     # symlink/junction should rename the entry and cannot be
                     # implemented as copying-deleting. Forbid such operation to
                     # prevent a confusion.
-                    return http_error(400, "Unable to move across a zip.", format=format)
+                    abort(400, "Unable to move across a zip.")
 
             elif len(sourcepaths) > 1:
                 if len(targetpaths) == 1:
                     # Moving from zip to disk is like moving across disk, which
                     # makes little sense.
-                    return http_error(400, "Unable to move across a zip.", format=format)
+                    abort(400, "Unable to move across a zip.")
 
                 else:
                     with open_archive_path(sourcepaths) as zip:
@@ -1460,9 +1433,11 @@ class ActionHandler():
                     with open_archive_path(sourcepaths, 'w', entries) as zip:
                         pass
 
+        except HTTPException:
+            raise
         except Exception:
             traceback.print_exc()
-            return http_error(500, 'Unable to move to the target.', format=format)
+            abort(500, 'Unable to move to the target.')
 
     @_handle_advanced
     @_handle_writing
@@ -1474,7 +1449,7 @@ class ActionHandler():
         # Copying a symlink/junction means copying the real file/directory.
         # It makes no sense if the symlink/junction is broken.
         if not os.path.exists(sourcepaths[0]):
-            return http_error(404, "Source does not exist.", format=format)
+            abort(404, "Source does not exist.")
 
         try:
             if len(sourcepaths) == 1:
@@ -1483,7 +1458,7 @@ class ActionHandler():
                         os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                     except OSError:
                         traceback.print_exc()
-                        return http_error(500, "Unable to copy to this path.", format=format)
+                        abort(500, "Unable to copy to this path.")
 
                     try:
                         shutil.copytree(sourcepaths[0], targetpaths[0])
@@ -1491,7 +1466,7 @@ class ActionHandler():
                         shutil.copy2(sourcepaths[0], targetpaths[0])
                     except shutil.Error:
                         traceback.print_exc()
-                        return http_error(500, 'Fail to copy some files.', format=format)
+                        abort(500, 'Fail to copy some files.')
 
                 else:
                     if os.path.isdir(sourcepaths[0]):
@@ -1533,7 +1508,7 @@ class ActionHandler():
                                 raise shutil.Error(errors)
                             except shutil.Error:
                                 traceback.print_exc()
-                            return http_error(500, 'Fail to copy some files.', format=format)
+                            abort(500, 'Fail to copy some files.')
 
                     elif os.path.isfile(sourcepaths[0]):
                         with open_archive_path(targetpaths, 'w') as zip:
@@ -1545,7 +1520,7 @@ class ActionHandler():
                         os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                     except OSError:
                         traceback.print_exc()
-                        return http_error(500, "Unable to copy to this path.", format=format)
+                        abort(500, "Unable to copy to this path.")
 
                     tempdir = tempfile.mkdtemp()
                     try:
@@ -1593,9 +1568,11 @@ class ActionHandler():
                                     # compresslevel is supported since Python 3.7
                                     zip2.writestr(info, zip.read(entry))
 
+        except HTTPException:
+            raise
         except Exception:
             traceback.print_exc()
-            return http_error(500, 'Unable to copy to the target.', format=format)
+            abort(500, 'Unable to copy to the target.')
 
     _handle_advanced = staticmethod(_handle_advanced)
     _handle_lock = staticmethod(_handle_lock)
@@ -1628,7 +1605,7 @@ def handle_before_request():
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
         auth.set_basic(runtime['config']['app']['name'])
-        return http_error(401, 'You are not authorized.', format=request.format, www_authenticate=auth)
+        abort(401, 'You are not authorized.', www_authenticate=auth)
 
 
 @bp.route('/', methods=['GET', 'HEAD', 'POST'])
@@ -1648,6 +1625,24 @@ def handle_after_request(response):
             response.headers.set('X-Frame-Options', 'deny')
 
     return response
+
+
+@bp.errorhandler(HTTPException)
+def handle_error(exc):
+    """Handle formatted error if requested by client.
+    """
+    if request.format == 'json':
+        response = exc.get_response()
+        response.data = json.dumps({
+            'error': {
+                'status': exc.code,
+                'message': exc.description,
+                },
+            })
+        response.content_type = "application/json"
+        return response
+
+    return exc
 
 
 def make_app(root=".", config=None):
