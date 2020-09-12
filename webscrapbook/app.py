@@ -1627,7 +1627,7 @@ def handle_before_request():
     perm = get_permission(request.authorization, auth_config)
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
-        auth.set_basic('Authentication required.')
+        auth.set_basic(runtime['config']['app']['name'])
         return http_error(401, 'You are not authorized.', format=request.format, www_authenticate=auth)
 
 

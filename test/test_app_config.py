@@ -64,6 +64,29 @@ name = mywsb
             html = r.data.decode('UTF-8')
             self.assertTrue('<h1 id="header" class="breadcrumbs"><a href="/">mywsb</a>/<a>subdir</a>/</h1>' in html)
 
+    def test_name2(self):
+        """app.name should be used as auth realm"""
+        with open(server_config, 'w', encoding='UTF-8') as f:
+            f.write("""[app]
+name = mywsb
+
+[auth "id1"]
+user = user1
+pw = pass1salt
+pw_salt = salt
+pw_type = plain
+permission = all
+""")
+
+        app = make_app(server_root)
+        app.testing = True
+        with app.test_client() as c:
+            get = partial(c.get)
+
+            # /
+            r = get('/')
+            self.assertEqual(r.headers['WWW-Authenticate'], 'Basic realm="mywsb"')
+
     @mock.patch('jinja2.FileSystemLoader')
     def test_theme(self, mock_loader):
         with open(server_config, 'w', encoding='UTF-8') as f:
