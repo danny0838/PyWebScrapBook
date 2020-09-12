@@ -332,13 +332,17 @@ def get_permission(auth_info, auth_config):
 
     for _, entry in auth_config.items():
         entry_user = entry.get('user', '')
+        if user != entry_user:
+            continue
+
         entry_pw = entry.get('pw', '')
         entry_pw_salt = entry.get('pw_salt', '')
         entry_pw_type = entry.get('pw_type', '')
+        if util.encrypt(pw, entry_pw_salt, entry_pw_type) != entry_pw:
+            continue
+
         entry_permission = entry.get('permission', 'all')
-        if (user == entry_user and
-                util.encrypt(pw, entry_pw_salt, entry_pw_type) == entry_pw):
-            return entry_permission
+        return entry_permission
 
     return ''
 
