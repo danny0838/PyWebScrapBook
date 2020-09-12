@@ -643,8 +643,6 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            format = request.format
-
             # verify name
             name = request.values.get('name')
             if name is None:
@@ -664,8 +662,6 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            format = request.format
-
             if os.path.abspath(request.localpath) == runtime['root']:
                 abort(403, "Unable to operate the root directory.")
 
@@ -678,7 +674,6 @@ class ActionHandler():
         """
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            format = request.format
             localpaths = request.localpaths
 
             if len(localpaths) > 1:
@@ -722,7 +717,6 @@ class ActionHandler():
 
     def unknown(self, *args, **kwargs):
         """Default handler for an undefined action"""
-        format = request.format
         abort(400, "Action not supported.")
 
     def view(self, *args, **kwargs):
@@ -730,10 +724,8 @@ class ActionHandler():
 
         If formatted, show information of the file or directory.
         """
-        format = request.format
-
         # info for other output formats
-        if format:
+        if request.format:
             return self.info()
 
         localpaths = request.localpaths
@@ -835,9 +827,7 @@ class ActionHandler():
 
     def source(self, *args, **kwargs):
         """Show file content as plain text."""
-        format = request.format
-
-        if format:
+        if request.format:
             abort(400, "Action not supported.")
 
         localpaths = request.localpaths
@@ -860,9 +850,7 @@ class ActionHandler():
 
     def download(self, *args, **kwargs):
         """Download the  file."""
-        format = request.format
-
-        if format:
+        if request.format:
             abort(400, "Action not supported.")
 
         localpaths = request.localpaths
