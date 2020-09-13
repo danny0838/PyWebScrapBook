@@ -13,7 +13,7 @@ import tempfile
 import time
 import json
 import functools
-from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
+from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote
 from zlib import adler32
 from contextlib import contextmanager
 
@@ -37,7 +37,6 @@ from . import *
 from . import __version__
 from . import Config
 from . import util
-from ._compat.time import time_ns
 from ._compat.contextlib import nullcontext
 from ._compat import zip_stream
 
