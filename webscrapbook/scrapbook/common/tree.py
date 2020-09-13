@@ -46,7 +46,7 @@ def traverse_tree(tree: TreeInterface, start_node, nodeCheck, callback):
     '''
     def recurse(tree, node, callback):
         if nodeCheck(node):
-            callback(node)
+            callback(node, tree)
     
         if not tree.hasChildren(node):
             return
