@@ -55,26 +55,26 @@ def _json_preprocessing(comment_lines, prefix, suffix):
                                 remove_lines(string, comment_lines), prefix), suffix)
 
 class Toc(OrderedDict):
-  @staticmethod
-  def loadToc():
-    return parse_json(_toc_filepath(),
+    @staticmethod
+    def loadToc():
+        return parse_json(_toc_filepath(),
                         _json_preprocessing(3, TOC_PREFIX, TOC_SUFFIX))
 
-  _instance = None
-  def __new__(cls):
-      if cls._instance is None:
-          cls._instance = OrderedDict(cls.loadToc())
-      return cls._instance
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = OrderedDict(cls.loadToc())
+        return cls._instance
 
 
 class Metadata(OrderedDict):
-  @staticmethod
-  def loadMetadata():
-    return parse_json(_meta_filepath(),
+    @staticmethod
+    def loadMetadata():
+        return parse_json(_meta_filepath(),
                         _json_preprocessing(3, META_PREFIX, META_SUFFIX))
 
-  _instance = None
-  def __new__(cls):
-      if cls._instance is None:
-          cls._instance = OrderedDict(cls.loadMetadata())
-      return cls._instance
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = OrderedDict(cls.loadMetadata())
+        return cls._instance

@@ -13,9 +13,9 @@ def remove_suffix(text, suffix):
         return text[:-1 * len(suffix)]
   return text
 
-def remove_lines(s, count):
-  s = s.split('\n', count)[-1]
-  return s
+def remove_lines(text, count):
+  text = text.split('\n', count)[-1]
+  return text
 
 def parse_json(filename, preprocessing):
   data = {}
