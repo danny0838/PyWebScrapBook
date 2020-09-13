@@ -14,7 +14,6 @@ import time
 import json
 import functools
 from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote, parse_qs
-from pathlib import Path
 from zlib import adler32
 from contextlib import contextmanager
 
@@ -1115,7 +1114,7 @@ class ActionHandler():
                 if t >= lock_expire:
                     # Lock expired. Touch rather than remove and make for atomicity.
                     try:
-                        Path(targetpath).touch()
+                        os.utime(targetpath)
                     except OSError:
                         traceback.print_exc()
                         abort(500, f'Unable to regenerate stale lock "{name}".')
