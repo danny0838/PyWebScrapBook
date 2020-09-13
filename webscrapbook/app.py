@@ -585,7 +585,13 @@ class Request(flask.Request):
     @cached_property
     def format(self):
         """Shortcut of the requested format."""
-        rv = request.values.get('f')
+        rv = None
+        best_accept = request.accept_mimetypes.best
+        if best_accept == 'application/json':
+            rv = 'json'
+        elif best_accept == 'text/event-stream':
+            rv = 'sse'
+        rv = request.values.get('f', default=rv)
         rv = request.values.get('format', default=rv)
         return rv
 
