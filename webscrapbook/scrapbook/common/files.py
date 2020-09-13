@@ -1,3 +1,4 @@
+import os, json
 from collections import OrderedDict
 from .util import (
     remove_prefix,
@@ -22,6 +23,26 @@ def _toc_filepath():
 def _meta_filepath():
     # TODO: get filepath
     return './tree/meta.js'
+
+def writeToc(toc: dict):
+    def backupToc():
+    # TODO: improve backup
+        try:
+            os.rename(_toc_filepath(), _toc_filepath() + '.bak')
+        except:
+            raise Exception('Could not backup ' + _toc_filepath() + ' before writing')
+
+    def writeNewToc(toc):
+        def toc_preprocessing(toc):
+            return FILE_COMMENT + TOC_PREFIX + json.dumps(toc) + TOC_SUFFIX
+        with open(_toc_filepath(), "w") as file:
+            file.write(
+                toc_preprocessing(json.dumps(toc))
+            )
+  
+    backupToc()
+    writeNewToc(toc)
+
 
 # Toc and Metadata
 ###############################################################################
