@@ -261,7 +261,9 @@ def main():
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")
     subparsers = parser.add_subparsers(metavar='COMMAND',
-        help="""The sub-command to run. Add --help(-h) after the sub-command for usage details.""")
+        help="""The sub-command to run.
+Add -h (--help) after a sub-command for help message.
+(E.g. %(prog)s config -h)""")
 
     # subcommand: serve
     parser_serve = subparsers.add_parser('serve', aliases=['s'],
