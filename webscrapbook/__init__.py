@@ -106,7 +106,7 @@ class Config():
             except Exception:
                 print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
                 raise
-            else:    
+            else:
                 for section in parser.sections():
                     # Handle subsected sections formatted as [section "subsection"].
                     # Also normalize [section] and [section  ""  ] to [section ""].

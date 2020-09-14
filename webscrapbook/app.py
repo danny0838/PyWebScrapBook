@@ -531,7 +531,7 @@ def handle_markdown_output(paths, zip=None):
         else:
             with open(paths[0], 'r', encoding='UTF-8') as f:
                 body = f.read()
-    
+
     body = render_template('markdown.html',
             sitename=runtime['name'],
             is_local=is_local_access(),
@@ -1161,7 +1161,7 @@ class ActionHandler():
                         if len(localpaths) == 2:
                             zip = zipfile.ZipFile(localpaths[0], 'a')
                     else:
-                        # skip as the folder already exists 
+                        # skip as the folder already exists
                         return
 
                 if zip is None:

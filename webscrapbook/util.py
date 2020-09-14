@@ -382,7 +382,7 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
 def zip_listdir(zip, subpath, recursive=False):
     """Generates FileInfo(s) and omit invalid entries.
 
-    Raise ZipDirNotFoundError if subpath does not exist. 
+    Raise ZipDirNotFoundError if subpath does not exist.
 
     NOTE: It is possible that entry mydir/ does not exist while
     mydir/foo.bar exists. Check for matching subentries to make sure whether
