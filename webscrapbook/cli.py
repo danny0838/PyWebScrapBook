@@ -49,7 +49,7 @@ def fcopy(fsrc, fdst):
 
 
 def cmd_serve(args):
-    """Serve the directory."""
+    """Serve the root directory."""
     server.serve(args['root'])
 
 
