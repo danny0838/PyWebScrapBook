@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """The WGSI application.
 """
-import sys
 import os
 import traceback
 import shutil

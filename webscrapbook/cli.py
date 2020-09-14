@@ -4,9 +4,7 @@
 import sys
 import os
 import argparse
-import json
 from getpass import getpass
-import time
 import traceback
 
 # this package

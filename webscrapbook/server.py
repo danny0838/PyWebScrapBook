@@ -2,7 +2,6 @@
 """Server backend of WebScrapBook toolkit.
 """
 import os
-import time
 import webbrowser
 from threading import Thread
 

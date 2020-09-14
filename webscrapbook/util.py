@@ -12,7 +12,6 @@ import math
 import re
 import hashlib
 import time
-from urllib.parse import quote, unquote
 from ipaddress import IPv6Address, AddressValueError
 from secrets import token_urlsafe
 from ._compat.contextlib import nullcontext
