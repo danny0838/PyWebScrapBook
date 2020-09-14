@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Miscellaneous utilities
 """
-import sys, os
+import sys
+import os
 import stat
 import subprocess
 import collections
 from collections import namedtuple
-from lxml import etree
 import zipfile
 import math
 import re
@@ -14,6 +14,7 @@ import hashlib
 import time
 from ipaddress import IPv6Address, AddressValueError
 from secrets import token_urlsafe
+from lxml import etree
 from ._compat.contextlib import nullcontext
 
 
