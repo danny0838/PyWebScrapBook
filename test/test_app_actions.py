@@ -4640,6 +4640,7 @@ class TestCopy(TestActions):
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
                     {'zip': zip, 'filename': 'deep/newdir/test.txt'},
                     )
+                self.assertEqual(zip.getinfo('deep/newdir/test.txt').compress_type, zipfile.ZIP_DEFLATED)
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @mock.patch('sys.stderr', io.StringIO())

@@ -1484,8 +1484,15 @@ class ActionHandler():
                                     dst = src[base_cut:]
                                     if os.sep != '/': dst = dst.replace(os.sep, '/')
                                     dst = targetpaths[-1] + '/' + dst
+                                    compressible = util.is_compressible(mimetypes.guess_type(dst)[0])
+                                    compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
+                                    compresslevel = 9 if compressible else None
                                     try:
-                                        zip.write(src, dst)
+                                        try:
+                                            zip.write(src, dst, compress_type, compresslevel)
+                                        except TypeError:
+                                            # compresslevel is supported since Python 3.7
+                                            zip.write(src, dst, compress_type)
                                     except OSError as why:
                                         errors.append((src, targetpaths[:-1] + [dst], str(why)))
 
