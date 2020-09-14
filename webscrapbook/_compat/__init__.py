@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+"""Compatibility shims
+"""
 import io
 
 def zip_stream(file, chunk_size=8192):
