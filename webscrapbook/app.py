@@ -323,20 +323,13 @@ def verify_authorization(perm, action):
     if perm == 'all':
         return True
 
-    elif perm == 'read':
-        if action in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy'}:
-            return False
-        else:
-            return True
+    if perm == 'read':
+        return action not in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy'}
 
-    elif perm == 'view':
-        if action in {'view', 'info', 'source', 'download', 'static'}:
-            return True
-        else:
-            return False
+    if perm == 'view':
+        return action in {'view', 'info', 'source', 'download', 'static'}
 
-    else:
-        return False
+    return False
 
 
 def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=False, format=None):
@@ -405,7 +398,7 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
 
         return http_response(gen(), headers=headers, format=format)
 
-    elif format == 'json':
+    if format == 'json':
         data = []
         for entry in subentries:
             data.append({
@@ -457,11 +450,12 @@ def handle_archive_viewing(paths, mimetype):
         if len(pages) > 1:
             # multiple index files
             return list_maff_pages(pages)
-        elif len(pages) > 0:
-            subpath = pages[0].indexfilename
-        else:
+
+        if len(pages) == 0:
             # no valid index file found
             return list_maff_pages([])
+
+        subpath = pages[0].indexfilename
 
     parts = urlsplit(request.url)
     new_url = urlunsplit((
@@ -921,8 +915,8 @@ class ActionHandler():
             f = os.path.join(i, filepath)
             if os.path.isfile(f):
                 return static_file(f)
-        else:
-            abort(404)
+
+        abort(404)
 
     def edit(self):
         """Simple text editor for a file."""
@@ -1495,7 +1489,7 @@ class ActionHandler():
                                     except OSError as why:
                                         errors.append((src, targetpaths[:-1] + [dst], str(why)))
 
-                        if len(errors):
+                        if errors:
                             try:
                                 raise shutil.Error(errors)
                             except shutil.Error:

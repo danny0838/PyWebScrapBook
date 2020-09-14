@@ -148,7 +148,6 @@ def cmd_help(args):
         file = os.path.join(root, 'config.md')
         with open(file, 'r', encoding='UTF-8') as f:
             text = f.read()
-            f.close()
         print(text)
 
 

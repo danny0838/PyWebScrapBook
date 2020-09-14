@@ -188,7 +188,6 @@ def checksum(file, method='sha1', chunk_size=4096):
     with open(file, 'rb') as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             h.update(chunk)
-        f.close()
     return h.hexdigest()
 
 
@@ -416,7 +415,7 @@ def zip_listdir(zip, subpath, recursive=False):
                     entry = '/'.join(parts[0:i + 1])
                     entries.setdefault(entry, True)
 
-        if not len(entries) and not dir_exist:
+        if not entries and not dir_exist:
             raise ZipDirNotFoundError(f'Directory "{base}/" does not exist in the zip.')
 
         for entry in entries:
