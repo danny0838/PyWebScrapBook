@@ -1,4 +1,4 @@
-import os, json, glob
+import os, json, glob, re
 
 # string functions
 ###############################################################################
@@ -13,20 +13,24 @@ def remove_suffix(text, suffix):
         return text[:-1 * len(suffix)]
     return text
 
-def remove_lines(text, count):
-    text = text.split('\n', count)[-1]
-    return text
+def remove_lines(file, count):
+    for _ in range(count):
+        file.readline()
 
-def parse_json(filename, preprocessing):
+def parse_json(filepath, preprocessing):
     data = {}
-    with open(filename) as file:
-        json_string = preprocessing(file.read())
+    with open(filepath) as file:
+        json_string = preprocessing(file)
         try:
             data = json.loads(json_string)
         except:
             # TODO: better handling
-            raise Exception("Failed to parse json file " + filename)
+            raise Exception("Failed to parse json file " + filepath)
     return data
+
+def get_number_suffix(text):
+    ''' return the number at the end of a string if no number found return empty string '''
+    return re.findall('([0-9]*$)', text)[0]
 
 ###############################################################################
 
@@ -34,16 +38,30 @@ def parse_json(filename, preprocessing):
 # filesystem functions
 ###############################################################################
 
-def find_file(path, glob_val):
-    ''' given a filepath, glob return a list of matching files 
+def add_directory_to_filename(directory, filename):
+    return os.path.join(directory, filename)
+
+def get_filename_no_ext(filepath):
+    return os.path.splitext(os.path.basename(filepath))[0]
+
+def find_file(directory, file_regex):
+    ''' given a directory, regex return a list of matching files 
     
         Parameters:
-            path (str): path to directory containing file
-            glob_val (str): a glob to match a filename
+            directory (str): directory containing files
+            file_regex (str): a regex to match a filename
     '''
-    file = os.path.join(path + glob_val)
-    possible_files = glob.glob(file)
+    files = os.listdir(directory)
+    possible_files = [ add_directory_to_filename(directory, file) for file in files if re.match(file_regex, file)]
     return possible_files
+
+def find_regex_file(directory, regex, no_match_message):
+    ''' find all files matching regex '''
+    possible_files = find_file(directory, regex)
+    if not possible_files:
+        raise Exception(no_match_message)
+    else:
+        return possible_files
 
 
 # misc
