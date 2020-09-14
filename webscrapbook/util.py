@@ -294,6 +294,42 @@ def format_filesize(bytes, si=False):
     return tpl.format(n, units[e])
 
 
+COMPRESSIBLE_TYPES = {
+    'application/xml',
+
+    # historical non-text/* javascript types
+    # ref: https://mimesniff.spec.whatwg.org/
+    'application/javascript',
+    'application/ecmascript',
+    'application/x-ecmascript',
+    'application/x-javascript',
+
+    'application/json',
+    }
+
+COMPRESSIBLE_SUFFIXES = {
+    '+xml',
+    '+json',
+    }
+
+def is_compressible(mimetype):
+    """Guess if the given mimetype is compressible."""
+    if not mimetype:
+        return False
+
+    if mimetype.startswith('text/'):
+        return True
+
+    if mimetype in COMPRESSIBLE_TYPES:
+        return True
+
+    for suffix in COMPRESSIBLE_SUFFIXES:
+        if mimetype.endswith(suffix):
+            return True
+
+    return False
+
+
 #########################################################################
 # ZIP handling
 #########################################################################

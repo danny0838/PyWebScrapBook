@@ -419,6 +419,40 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.format_filesize(1e14, si=True), '100 TB')
         self.assertEqual(util.format_filesize(1e28, si=True), '10000 YB')
 
+    def test_is_compressible(self):
+        # None
+        self.assertFalse(util.is_compressible(None))
+
+        # text/*
+        self.assertTrue(util.is_compressible('text/plain'))
+        self.assertTrue(util.is_compressible('text/html'))
+        self.assertTrue(util.is_compressible('text/css'))
+        self.assertTrue(util.is_compressible('text/javascript'))
+        self.assertTrue(util.is_compressible('text/markdown'))
+
+        # binary
+        self.assertFalse(util.is_compressible('image/jpeg'))
+        self.assertFalse(util.is_compressible('application/octet-stream'))
+        self.assertFalse(util.is_compressible('application/ogg'))
+        self.assertFalse(util.is_compressible('application/pdf'))
+        self.assertFalse(util.is_compressible('application/zip'))
+        self.assertFalse(util.is_compressible('application/x-rar-compressed'))
+        self.assertFalse(util.is_compressible('application/x-gzip'))
+        self.assertFalse(util.is_compressible('application/html+zip'))
+        self.assertFalse(util.is_compressible('application/x-maff'))
+
+        # text-like application/*
+        self.assertTrue(util.is_compressible('application/javascript'))
+        self.assertTrue(util.is_compressible('application/ecmascript'))
+        self.assertTrue(util.is_compressible('application/x-ecmascript'))
+        self.assertTrue(util.is_compressible('application/x-javascript'))
+        self.assertTrue(util.is_compressible('application/json'))
+        self.assertTrue(util.is_compressible('application/xml'))
+
+        # text-like suffixes
+        self.assertTrue(util.is_compressible('application/xhtml+xml'))
+        self.assertTrue(util.is_compressible('application/ld+json'))
+
     def test_zip_file_info(self):
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
         try:
