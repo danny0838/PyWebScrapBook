@@ -8,11 +8,11 @@ from ..common.files import Files
 class Sort:
 
     def __init__(self, scrapbook_dir):
-        self._scrapbook_dir = scrapbook_dir
-        self._files = Files(self._scrapbook_dir)
-        self._toc = self._files.files.toc
-        self._meta = self._files.files.meta
-        self._toc_tree = TocTree(self._toc)
+        self.__scrapbook_dir = scrapbook_dir
+        self.__files = Files(self.__scrapbook_dir)
+        self.__toc = self.__files.files.toc
+        self.__meta = self.__files.files.meta
+        self.__toc_tree = TocTree(self.__toc)
 
     def sort_folder(self, id_val, sort_key, sort_direction='a', recursive=False):
         ''' Sort a folder 
@@ -23,26 +23,26 @@ class Sort:
             sort_direction: [a,d] ascending or desending.
             recursive (bool): recursively sort child folders
         '''
-        self._sort_tree_at_folder(id_val, sort_key, sort_direction, recursive)
-        self._files.write_toc(self._toc)
+        self.__sort_tree_at_folder(id_val, sort_key, sort_direction, recursive)
+        self.__files.write_toc(self.__toc)
 
-    def _sort_tree_at_folder(self, id_val, sort_key, sort_direction, recursive):
+    def __sort_tree_at_folder(self, id_val, sort_key, sort_direction, recursive):
         def sortCurrentFolder(id_val, tree):
-            self._sort_folder_by_id(id_val, tree, sort_key, sort_direction)
+            self.__sort_folder_by_id(id_val, tree, sort_key, sort_direction)
 
         if not recursive:
-            sortCurrentFolder(id_val, self._toc_tree)
+            sortCurrentFolder(id_val, self.__toc_tree)
         else:
-            traverse_tree(self._toc_tree, id_val, self._toc_tree.hasChildren, sortCurrentFolder)
+            traverse_tree(self.__toc_tree, id_val, self.__toc_tree.hasChildren, sortCurrentFolder)
 
-    def _sort_folder_by_id(self, id_val, tree, sort_key, sort_direction):
+    def __sort_folder_by_id(self, id_val, tree, sort_key, sort_direction):
         ''' default natural sort case insensitive '''
         sort_direction = False if sort_direction == 'a' else True
 
         # do not sort empty folders
-        if self._toc_tree.hasChildren(id_val):
-            self._toc[id_val] = natsorted(self._toc[id_val], key = lambda e : self._meta[e][sort_key], alg=ns.IGNORECASE)
+        if self.__toc_tree.hasChildren(id_val):
+            self.__toc[id_val] = natsorted(self.__toc[id_val], key = lambda e : self.__meta[e][sort_key], alg=ns.IGNORECASE)
             if sort_direction:
-                self._toc[id_val].reverse()
+                self.__toc[id_val].reverse()
 
 ###############################################################################
