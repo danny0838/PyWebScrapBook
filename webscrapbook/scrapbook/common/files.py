@@ -9,7 +9,8 @@ from .util import (
     find_regex_file,
     get_filename_no_ext,
     get_number_suffix,
-    SimpleObject
+    SimpleObject,
+    merge_dictionaries
 )
 
 
@@ -100,19 +101,12 @@ class Files:
             ''' large numbers later so they are merged later with precedence '''
             file_filenumbers.sort(key= lambda f: f[1])
 
-        def merge_files(files):
-            ''' load each file at a time and merge top level keys into single dictionary '''
-            dictionary = dict()
-            for file in files:
-                file_dict = load_func(file)
-                dictionary = { **dictionary , **file_dict }
-            return dictionary
-
         file_filenames = [ (file, get_filename_no_ext(file)) for file in find_regex_file(directory, regex, no_match_message) ]
         file_filenumbers = [ (file, get_number_suffix(filename)) for file, filename in file_filenames ]
         sort_files_by_number(file_filenumbers)
         ordered_files = [f[0] for f in file_filenumbers]
-        return merge_files(ordered_files)
+        file_dictionaries = [ load_func(file) for file in ordered_files]
+        return merge_dictionaries(file_dictionaries)
     
     def __load_toc(self):
         def load_toc_file(file):

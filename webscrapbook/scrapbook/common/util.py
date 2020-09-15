@@ -81,3 +81,14 @@ class Memoize:
 class SimpleObject(object):
     ''' used to create a simple namespace object to dynamically add attributes to '''
     pass
+
+def merge_dictionaries(dictionaries):
+    '''
+        Merge top level keys of a list of dictionaries.
+        Later dictionaries in the list will overwrite keys of earlier dictionaries.
+        This merge is not recursive.
+    '''
+    dictionary = dict()
+    for d in dictionaries:
+        dictionary = { **dictionary , **d }
+    return dictionary
