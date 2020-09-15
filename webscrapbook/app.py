@@ -1092,38 +1092,41 @@ class ActionHandler():
         check_expire = time.time() + check_timeout
         check_delta = min(check_timeout, 0.1)
 
-        while True:
-            try:
-                os.makedirs(targetpath)
-            except FileExistsError:
-                t = time.time()
-
-                if t >= check_expire or not os.path.isdir(targetpath):
-                    abort(500, f'Unable to acquire lock "{name}".')
-
+        try:
+            while True:
                 try:
-                    lock_expire = os.stat(targetpath).st_mtime + check_stale
-                except FileNotFoundError:
-                    # Lock removed by another process during the short interval.
-                    # Try acquire again.
-                    continue
+                    os.makedirs(targetpath)
+                except FileExistsError:
+                    t = time.time()
 
-                if t >= lock_expire:
-                    # Lock expired. Touch rather than remove and make for atomicity.
+                    if t >= check_expire or not os.path.isdir(targetpath):
+                        abort(500, f'Unable to acquire lock "{name}".')
+
                     try:
-                        os.utime(targetpath)
-                    except OSError:
-                        traceback.print_exc()
-                        abort(500, f'Unable to regenerate stale lock "{name}".')
-                    else:
-                        break
+                        lock_expire = os.stat(targetpath).st_mtime + check_stale
+                    except FileNotFoundError:
+                        # Lock removed by another process during the short interval.
+                        # Try acquire again.
+                        continue
 
-                time.sleep(check_delta)
-            except Exception:
-                traceback.print_exc()
-                abort(500, f'Unable to create lock "{name}".')
-            else:
-                break
+                    if t >= lock_expire:
+                        # Lock expired. Touch rather than remove and make for atomicity.
+                        try:
+                            os.utime(targetpath)
+                        except OSError:
+                            traceback.print_exc()
+                            abort(500, f'Unable to regenerate stale lock "{name}".')
+                        else:
+                            break
+
+                    time.sleep(check_delta)
+                else:
+                    break
+        except HTTPException:
+            raise
+        except Exception:
+            traceback.print_exc()
+            abort(500, f'Unable to create lock "{name}".')
 
     @_handle_advanced
     @_handle_lock
