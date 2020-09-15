@@ -108,14 +108,34 @@ theme = default
 root = subdir
 """)
 
+        os.makedirs(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'static'))
+        with open(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'static', 'index.js'), 'w', encoding='UTF-8') as f:
+            f.write('console.log("test");')
+
         app = make_app(server_root)
         app.testing = True
         with app.test_client() as c:
             get = partial(c.get, buffered=True)
+            post = partial(c.post, buffered=True)
 
             r = get('/index.html')
             html = r.data.decode('UTF-8')
             self.assertEqual(html, 'Subdirectory Hello World! 你好')
+
+            # check if server dependent files are at the right path
+            r = get('/index.js', query_string={'a': 'static'})
+            self.assertEqual(r.data.decode('UTF-8'), 'console.log("test");')
+
+            t = token(post)
+            self.assertEqual(len(os.listdir(os.path.join(server_root, WSB_DIR, 'server', 'tokens'))), 1)
+
+            r = post('/', data={
+                'token': t,
+                'a': 'lock',
+                'f': 'json',
+                'name': 'test.lock',
+                })
+            self.assertTrue(os.path.lexists(os.path.join(server_root, WSB_DIR, 'server', 'locks', 'test.lock')))
 
     def test_base(self):
         # base = / (no base)

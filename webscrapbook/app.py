@@ -1632,6 +1632,9 @@ def handle_error(exc):
 
 
 def make_app(root=".", config=None):
+    # use the same realpath during the APP lifetime
+    root = os.path.realpath(root)
+
     if not config:
         config = Config()
         config.load(root)
@@ -1639,19 +1642,19 @@ def make_app(root=".", config=None):
     # runtime variables
     _runtime = {}
     _runtime['config'] = config
-    _runtime['root'] = os.path.abspath(os.path.join(root, config['app']['root']))
+    _runtime['root'] = os.path.normpath(os.path.join(root, config['app']['root']))
     _runtime['name'] = config['app']['name']
 
     # add path for themes
     _runtime['themes'] = [
-        os.path.join(_runtime['root'], WSB_DIR, 'themes', config['app']['theme']),
+        os.path.join(root, WSB_DIR, 'themes', config['app']['theme']),
         os.path.join(os.path.dirname(__file__), 'themes', config['app']['theme']),
         ]
     _runtime['statics'] = [os.path.join(t, 'static') for t in _runtime['themes']]
     _runtime['templates'] = [os.path.join(t, 'templates') for t in _runtime['themes']]
 
-    _runtime['tokens'] = os.path.join(_runtime['root'], WSB_DIR, 'server', 'tokens')
-    _runtime['locks'] = os.path.join(_runtime['root'], WSB_DIR, 'server', 'locks')
+    _runtime['tokens'] = os.path.join(root, WSB_DIR, 'server', 'tokens')
+    _runtime['locks'] = os.path.join(root, WSB_DIR, 'server', 'locks')
 
     # init token_handler
     _runtime['token_handler'] = util.TokenHandler(_runtime['tokens'])
