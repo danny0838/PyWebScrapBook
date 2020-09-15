@@ -1,6 +1,6 @@
 from natsort import natsort_keygen, ns
-from common.tree import TocTree, traverse_tree
-from common.files import Files
+from webscrapbook.scrapbook.common.tree import TocTree, traverse_tree
+from webscrapbook.scrapbook.common.files import Files
 
 # sorting folders
 ###############################################################################
