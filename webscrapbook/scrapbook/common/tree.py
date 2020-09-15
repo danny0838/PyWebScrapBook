@@ -7,7 +7,7 @@ class TreeInterface:
     def hasChildren(self, node: str) -> bool:
         '''does a given node have children'''
         pass
-    def getChildren(self) -> List[str]:
+    def getChildren(self, node) -> List[str]:
         '''return list of children for current node'''
         pass
 

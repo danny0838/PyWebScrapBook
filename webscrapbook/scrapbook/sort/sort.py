@@ -1,6 +1,6 @@
-from natsort import natsorted, ns
-from ..common.tree import TocTree, traverse_tree
-from ..common.files import Files
+from natsort import natsort_keygen, ns
+from common.tree import TocTree, traverse_tree
+from common.files import Files
 
 # sorting folders
 ###############################################################################
@@ -37,12 +37,14 @@ class Sort:
 
     def __sort_folder_by_id(self, id_val, tree, sort_key, sort_direction):
         ''' default natural sort case insensitive '''
+        # TODO: profile difference when sorting in place
+        natsort_key = natsort_keygen(key = lambda e : self.__meta[e][sort_key], alg=ns.IGNORECASE)
+
         sort_direction = False if sort_direction == 'a' else True
 
         # do not sort empty folders
         if self.__toc_tree.hasChildren(id_val):
-            self.__toc[id_val] = natsorted(self.__toc[id_val], key = lambda e : self.__meta[e][sort_key], alg=ns.IGNORECASE)
-            if sort_direction:
-                self.__toc[id_val].reverse()
+            self.__toc_tree.getChildren(id_val).sort(key=natsort_key, reverse=sort_direction)
+
 
 ###############################################################################
