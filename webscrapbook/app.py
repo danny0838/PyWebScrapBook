@@ -645,9 +645,8 @@ class ActionHandler():
                 abort(400, "Lock name is not specified.")
 
             # validate targetpath
-            targetpath = os.path.join(runtime['locks'], name)
-            if not targetpath.startswith(os.path.join(runtime['locks'], '')):
-                abort(400, f'Invalid lock name "{name}".')
+            targetname = util.encrypt(name, method='md5') + '.lock'
+            targetpath = os.path.join(runtime['locks'], targetname)
 
             return func(self, name=name, targetpath=targetpath, *args, **kwargs)
 

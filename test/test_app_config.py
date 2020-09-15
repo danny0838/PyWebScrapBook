@@ -133,9 +133,9 @@ root = subdir
                 'token': t,
                 'a': 'lock',
                 'f': 'json',
-                'name': 'test.lock',
+                'name': 'test',
                 })
-            self.assertTrue(os.path.lexists(os.path.join(server_root, WSB_DIR, 'server', 'locks', 'test.lock')))
+            self.assertTrue(os.path.lexists(os.path.join(server_root, WSB_DIR, 'server', 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')))
 
     def test_base(self):
         # base = / (no base)
