@@ -2323,7 +2323,7 @@ class TestToken(unittest.TestCase):
 
 class TestLock(unittest.TestCase):
     def setUp(self):
-        self.lock = os.path.join(server_root, WSB_DIR, 'server', 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        self.lock = os.path.join(server_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     def tearDown(self):
         try:
@@ -2440,7 +2440,7 @@ class TestLock(unittest.TestCase):
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
-        self.lock = os.path.join(server_root, WSB_DIR, 'server', 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        self.lock = os.path.join(server_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     def tearDown(self):
         try:

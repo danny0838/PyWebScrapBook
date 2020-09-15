@@ -1749,7 +1749,7 @@ def make_app(root=".", config=None):
     _runtime['templates'] = [os.path.join(t, 'templates') for t in _runtime['themes']]
 
     _runtime['tokens'] = os.path.join(root, WSB_DIR, 'server', 'tokens')
-    _runtime['locks'] = os.path.join(root, WSB_DIR, 'server', 'locks')
+    _runtime['locks'] = os.path.join(root, WSB_DIR, 'locks')
 
     # init token_handler
     _runtime['token_handler'] = TokenHandler(_runtime['tokens'])
