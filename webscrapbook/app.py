@@ -128,8 +128,13 @@ def http_response(body='', status=None, headers=None, format=None):
         mimetype = 'text/event-stream'
 
         def wrapper(gen):
-            for data in gen:
-                yield "data: " + data + "\n\n"
+            try:
+                for data in gen:
+                    yield "data: " + data + "\n\n"
+            except Exception:
+                traceback.print_exc()
+                err = {'error': {'message': 'Internal Server Error'}}
+                yield "data: " + json.dumps(err, ensure_ascii=False) + "\n\n"
 
             yield "event: complete" + "\n"
             yield "data: " + "\n\n"
