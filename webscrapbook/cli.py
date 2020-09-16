@@ -307,7 +307,7 @@ def main():
     parser_sort.add_argument('-k', '--keys',
         nargs='+',
         choices=['title','create', 'modify', 'source', 'comment', 'id'],
-        default='create',
+        default='id',
         help=""""metadata key to sort on (default: create)""")
     parser_sort.add_argument('-d', '--direction',
         choices=['a','d'],
