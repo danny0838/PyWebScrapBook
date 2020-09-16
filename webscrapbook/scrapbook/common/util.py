@@ -22,7 +22,7 @@ def remove_lines(file, count):
 
 def parse_json(filepath, preprocessing):
     data = {}
-    with open(filepath) as file:
+    with open(filepath, encoding='UTF-8') as file:
         json_string = preprocessing(file)
         try:
             data = json.loads(json_string, object_pairs_hook=OrderedDict)
@@ -70,7 +70,7 @@ def file_exists(directory, filename):
     return os.path.isfile(add_directory_to_filename(directory, filename))
 
 def write_file(directory, filename, contents):
-    with open(add_directory_to_filename(directory, filename), "w") as file:
+    with open(add_directory_to_filename(directory, filename), "w", encoding='UTF-8') as file:
         file.write(contents)
 
 def delete_file(directory, filename):
