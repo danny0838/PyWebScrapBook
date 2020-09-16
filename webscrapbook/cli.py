@@ -136,9 +136,9 @@ def cmd_sort(args):
     scrapbook.sort_operation(
         args['root'],
         args['folder'],
-        args['key'],
+        args['keys'],
         args['direction'],
-        args['recursive']
+        args['recursive'],
     )
 
 
@@ -298,15 +298,17 @@ def main():
     parser_config.add_argument('-e', '--edit', default=False, action='store_true',
         help="""edit the config file. (with --book or --user)""")
     
-    # subcommand: scrapbook
-    parser_sort = subparsers.add_parser('sort', aliases=['scrap'],
+    # subcommand: sort
+    parser_sort = subparsers.add_parser('sort',
         help=cmd_sort.__doc__, description=cmd_sort.__doc__)
     parser_sort.set_defaults(func=cmd_sort)
     parser_sort.add_argument('folder',
         help="""id for folder to sort""")
-    parser_sort.add_argument('key',
-        choices=['title','create', 'modify', 'source', 'comment'],
-        help=""""metadata key to sort on""")
+    parser_sort.add_argument('-k', '--keys',
+        nargs='+',
+        choices=['title','create', 'modify', 'source', 'comment', 'id'],
+        default='create',
+        help=""""metadata key to sort on (default: create)""")
     parser_sort.add_argument('-d', '--direction',
         choices=['a','d'],
         default='a',

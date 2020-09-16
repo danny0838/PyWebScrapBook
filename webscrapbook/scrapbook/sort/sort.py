@@ -14,6 +14,18 @@ class Sort:
         self.__meta = self.__files.files.meta
         self.__toc_tree = TocTree(self.__toc)
 
+        def safe_dict_index(dict, index):
+            return dict[index] if index in dict else ''
+
+        self.__sort_keys = {
+            'title': lambda x: safe_dict_index(self.__meta[x], 'title'),
+            'create': lambda x: safe_dict_index(self.__meta[x], 'create'),
+            'modify': lambda x: safe_dict_index(self.__meta[x], 'modify'),
+            'source': lambda x: safe_dict_index(self.__meta[x], 'source'),
+            'comment': lambda x: safe_dict_index(self.__meta[x], 'comment') if x != '20200408200623' else 'zzz',
+            'id': lambda x: x
+        }
+
     def sort_folder(self, id_val, sort_key, sort_direction='a', recursive=False):
         ''' Sort a folder 
         
@@ -35,10 +47,15 @@ class Sort:
         else:
             traverse_tree(self.__toc_tree, id_val, self.__toc_tree.hasChildren, sortCurrentFolder)
 
-    def __sort_folder_by_id(self, id_val, tree, sort_key, sort_direction):
+    def __sort_folder_by_id(self, id_val, tree, sort_keys, sort_direction):
         ''' default natural sort case insensitive '''
         # TODO: profile difference when sorting in place
-        natsort_key = natsort_keygen(key = lambda e : self.__meta[e][sort_key], alg=ns.IGNORECASE)
+
+        def sort_key_func():
+            key_funcs = [self.__sort_keys[key] for key in sort_keys]
+            return lambda e: [func(e) for func in key_funcs]
+
+        natsort_key = natsort_keygen(key = sort_key_func(), alg=ns.IGNORECASE)
 
         sort_direction = False if sort_direction == 'a' else True
 
