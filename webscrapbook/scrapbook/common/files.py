@@ -62,10 +62,8 @@ class Files:
         ''' 
         raises exceptions if scrapbook directory is invalid and get filepaths for necessary files
         '''
-        try:
-            os.path.isdir(self.__tree_dir)
-        except:
-            raise Exception('Current working directory is not a scrapbook directory')
+        if not os.path.isdir(self.__tree_dir):
+            raise Exception(self.__tree_dir + ' is not a scrapbook directory', )
 
 
     # Parse and load files

@@ -129,14 +129,12 @@ def cmd_config(args):
         config.load(args['root'])
         config.dump(sys.stdout)
 
-def cmd_scrapbook():
-    """ modify existing scrapbook """
-    pass
 
 def cmd_sort(args):
     """ sort existing scrapbook """
+
     scrapbook.sort_operation(
-        args['directory'],
+        args['root'],
         args['folder'],
         args['key'],
         args['direction'],
@@ -301,14 +299,8 @@ def main():
         help="""edit the config file. (with --book or --user)""")
     
     # subcommand: scrapbook
-    parser_scrapbook = subparsers.add_parser('scrapbook', aliases=['scrap'],
-        help=cmd_scrapbook.__doc__, description=cmd_scrapbook.__doc__)
-    parser_scrapbook.set_defaults(func=cmd_scrapbook)
-    parser_scrapbook.add_argument('directory',
-        help="""scrapbook directory""")
-    subparser_scrapbook = parser_scrapbook.add_subparsers(metavar='SCRAPBOOK_COMMAND',
-        help="""The scrapbook command to run. Add --help(-h) after the command for usage details.""")
-    parser_sort = subparser_scrapbook.add_parser('sort')
+    parser_sort = subparsers.add_parser('sort', aliases=['scrap'],
+        help=cmd_sort.__doc__, description=cmd_sort.__doc__)
     parser_sort.set_defaults(func=cmd_sort)
     parser_sort.add_argument('folder',
         help="""id for folder to sort""")
