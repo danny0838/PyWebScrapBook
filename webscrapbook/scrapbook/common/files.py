@@ -62,7 +62,7 @@ class Files:
         raises exceptions if scrapbook directory is invalid and get filepaths for necessary files
         '''
         if not os.path.isdir(self.__tree_dir):
-            raise Exception(self.__tree_dir + ' is not a scrapbook directory', )
+            raise Exception(self.__tree_dir + ' is not a scrapbook directory')
 
 
     # Parse and load files
@@ -91,11 +91,11 @@ class Files:
             ''' large numbers later so they are merged later with precedence '''
             file_filenumbers.sort(key= lambda f: f[1])
 
-        file_filenames = [ (file, get_filename_no_ext(file)) for file in find_regex_file(directory, regex, no_match_message) ]
-        file_filenumbers = [ (file, get_number_suffix(filename)) for file, filename in file_filenames ]
+        file_filenames = [(file, get_filename_no_ext(file)) for file in find_regex_file(directory, regex, no_match_message)]
+        file_filenumbers = [(file, get_number_suffix(filename)) for file, filename in file_filenames]
         sort_files_by_number(file_filenumbers)
         ordered_files = [f[0] for f in file_filenumbers]
-        file_dictionaries = [ load_func(file) for file in ordered_files]
+        file_dictionaries = [load_func(file) for file in ordered_files]
         return merge_dictionaries(file_dictionaries)
     
     def __load_toc(self):

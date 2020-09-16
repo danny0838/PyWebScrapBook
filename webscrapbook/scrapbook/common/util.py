@@ -52,7 +52,7 @@ def find_file(directory, file_regex):
             file_regex (str): a regex to match a filename
     '''
     files = os.listdir(directory)
-    possible_files = [ os.path.join(directory, file) for file in files if re.match(file_regex, file)]
+    possible_files = [os.path.join(directory, file) for file in files if re.match(file_regex, file)]
     return possible_files
 
 def find_regex_file(directory, regex, no_match_message):
@@ -99,7 +99,7 @@ def merge_dictionaries(dictionaries):
     '''
     dictionary = dict()
     for d in dictionaries:
-        dictionary = { **dictionary , **d }
+        dictionary = {**dictionary , **d}
     return dictionary
 
 def split_dictionary(dictionary, max_size):
@@ -114,5 +114,5 @@ def split_dictionary(dictionary, max_size):
         return OrderedDict(islice(dictionary.items(), start, end))
 
     num_splits = ceil(len(dictionary) / max_size)
-    sliced = [ slice_dictionary(dictionary, max_size*i, max_size*(i+1)) for i in range(num_splits)]
+    sliced = [slice_dictionary(dictionary, max_size*i, max_size*(i+1)) for i in range(num_splits)]
     return sliced
