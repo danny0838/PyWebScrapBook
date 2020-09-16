@@ -1,4 +1,7 @@
 import os, json, glob, re
+from math import ceil
+from collections import OrderedDict
+from itertools import islice
 
 # string functions
 ###############################################################################
@@ -22,7 +25,7 @@ def parse_json(filepath, preprocessing):
     with open(filepath) as file:
         json_string = preprocessing(file)
         try:
-            data = json.loads(json_string)
+            data = json.loads(json_string, object_pairs_hook=OrderedDict)
         except:
             # TODO: better handling
             raise Exception("Failed to parse json file " + filepath)
@@ -63,6 +66,15 @@ def find_regex_file(directory, regex, no_match_message):
     else:
         return possible_files
 
+def file_exists(directory, filename):
+    return os.path.isfile(add_directory_to_filename(directory, filename))
+
+def write_file(directory, filename, contents):
+    with open(add_directory_to_filename(directory, filename), "w") as file:
+        file.write(contents)
+
+def delete_file(directory, filename):
+    os.remove(add_directory_to_filename(directory, filename))
 
 # misc
 ###############################################################################
@@ -92,3 +104,18 @@ def merge_dictionaries(dictionaries):
     for d in dictionaries:
         dictionary = { **dictionary , **d }
     return dictionary
+
+def split_dictionary(dictionary, max_size):
+    '''
+        Split a single dictionary into many smaller sized dictionaries
+        preserving key order.
+
+        Parameters:
+            max_size (int): max number of top level keys in any given split dictionary
+    '''
+    def slice_dictionary(dictionary, start, end):
+        return OrderedDict(islice(dictionary.items(), start, end))
+
+    num_splits = ceil(len(dictionary) / max_size)
+    sliced = [ slice_dictionary(dictionary, max_size*i, max_size*(i+1)) for i in range(num_splits)]
+    return sliced

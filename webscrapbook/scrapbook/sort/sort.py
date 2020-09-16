@@ -24,7 +24,7 @@ class Sort:
             recursive (bool): recursively sort child folders
         '''
         self.__sort_tree_at_folder(id_val, sort_key, sort_direction, recursive)
-        self.__files.write_toc(self.__toc)
+        self.__files.write_toc()
 
     def __sort_tree_at_folder(self, id_val, sort_key, sort_direction, recursive):
         def sortCurrentFolder(id_val, tree):
