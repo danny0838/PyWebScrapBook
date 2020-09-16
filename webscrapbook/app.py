@@ -47,6 +47,10 @@ bp = flask.Blueprint('default', __name__)
 runtime = LocalProxy(lambda: current_app.config['WEBSCRAPBOOK_RUNTIME'])
 
 
+def static_url(path):
+    return f'{quote_path(request.script_root)}/{quote_path(path)}?a=static'
+
+
 def static_file(filename, mimetype=None):
     """Output the specified file to the client.
 
@@ -1570,10 +1574,6 @@ class ActionHandler():
     _handle_renaming = staticmethod(_handle_renaming)
 
 action_handler = ActionHandler()
-
-
-def static_url(path):
-    return f'{quote_path(request.script_root)}/{quote_path(path)}?a=static'
 
 
 @bp.before_request
