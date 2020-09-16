@@ -307,10 +307,10 @@ def main():
     parser_sort.add_argument('key',
         choices=['title','create', 'modify', 'source', 'comment'],
         help=""""metadata key to sort on""")
-    parser_sort.add_argument('-dir', '--direction',
+    parser_sort.add_argument('-d', '--direction',
         choices=['a','d'],
         default='a',
-        help="""direction of sort ascending or descending""")
+        help="""direction of sort ascending or descending (default: a)""")
     parser_sort.add_argument('-r', '--recursive', default=False, action='store_true',
         help='recursively sort child directories')
 
