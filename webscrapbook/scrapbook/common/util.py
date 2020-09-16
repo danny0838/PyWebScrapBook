@@ -41,9 +41,6 @@ def get_number_suffix(text):
 # filesystem functions
 ###############################################################################
 
-def add_directory_to_filename(directory, filename):
-    return os.path.join(directory, filename)
-
 def get_filename_no_ext(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
@@ -55,7 +52,7 @@ def find_file(directory, file_regex):
             file_regex (str): a regex to match a filename
     '''
     files = os.listdir(directory)
-    possible_files = [ add_directory_to_filename(directory, file) for file in files if re.match(file_regex, file)]
+    possible_files = [ os.path.join(directory, file) for file in files if re.match(file_regex, file)]
     return possible_files
 
 def find_regex_file(directory, regex, no_match_message):
@@ -67,14 +64,14 @@ def find_regex_file(directory, regex, no_match_message):
         return possible_files
 
 def file_exists(directory, filename):
-    return os.path.isfile(add_directory_to_filename(directory, filename))
+    return os.path.isfile(os.path.join(directory, filename))
 
 def write_file(directory, filename, contents):
-    with open(add_directory_to_filename(directory, filename), "w", encoding='UTF-8') as file:
+    with open(os.path.join(directory, filename), "w", encoding='UTF-8') as file:
         file.write(contents)
 
 def delete_file(directory, filename):
-    os.remove(add_directory_to_filename(directory, filename))
+    os.remove(os.path.join(directory, filename))
 
 # misc
 ###############################################################################

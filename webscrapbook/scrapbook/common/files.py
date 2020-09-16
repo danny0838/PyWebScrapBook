@@ -8,7 +8,6 @@ from .util import (
     parse_json,
     Memoize,
     find_regex_file,
-    get_filename_no_ext,
     write_file,
     delete_file,
     file_exists,
@@ -85,6 +84,9 @@ class Files:
             Merge all files in directory which match the regex.
             Files are merged where higher number files have a higher precedence.
         '''
+        def get_filename_no_ext(filepath):
+            return os.path.splitext(os.path.basename(filepath))[0]
+
         def sort_files_by_number(file_filenumbers):
             ''' large numbers later so they are merged later with precedence '''
             file_filenumbers.sort(key= lambda f: f[1])
