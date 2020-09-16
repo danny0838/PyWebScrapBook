@@ -680,7 +680,7 @@ class TestView(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    @mock.patch('webscrapbook.app.ActionHandler.info', return_value='')
+    @mock.patch('webscrapbook.app.action_info', return_value='')
     def test_json(self, mock_info):
         with app.test_client() as c:
             r = c.get('/', query_string={'f': 'json'})

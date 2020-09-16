@@ -10,13 +10,13 @@ from base64 import b64encode
 from functools import partial
 from flask import request
 from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
-from webscrapbook.app import make_app, action_handler
+from webscrapbook import app as wsbapp
+from webscrapbook.app import make_app
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_config')
 server_config = os.path.join(server_root, WSB_DIR, WSB_LOCAL_CONFIG)
 
-all_actions = [attr for attr in dir(action_handler) if not attr.startswith('_')]
 mocking = None
 
 def setUpModule():
@@ -546,6 +546,7 @@ permission = view
     @mock.patch('webscrapbook.app.verify_authorization', return_value=False)
     def test_verify_authorization(self, mock_auth):
         """Check if action is passed to verify_authorization()."""
+        all_actions = (fn[7:] for fn in dir(wsbapp) if fn.startswith('action_'))
         app = make_app(server_root)
         app.testing = True
         with app.test_client() as c:
