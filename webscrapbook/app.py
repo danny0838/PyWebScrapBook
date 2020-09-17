@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """The WGSI application.
 """
-import sys
 import os
 import traceback
 import shutil
@@ -129,8 +128,13 @@ def http_response(body='', status=None, headers=None, format=None):
         mimetype = 'text/event-stream'
 
         def wrapper(gen):
-            for data in gen:
-                yield "data: " + data + "\n\n"
+            try:
+                for data in gen:
+                    yield "data: " + data + "\n\n"
+            except Exception:
+                traceback.print_exc()
+                err = {'error': {'message': 'Internal Server Error'}}
+                yield "data: " + json.dumps(err, ensure_ascii=False) + "\n\n"
 
             yield "event: complete" + "\n"
             yield "data: " + "\n\n"
@@ -324,20 +328,13 @@ def verify_authorization(perm, action):
     if perm == 'all':
         return True
 
-    elif perm == 'read':
-        if action in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy'}:
-            return False
-        else:
-            return True
+    if perm == 'read':
+        return action not in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy'}
 
-    elif perm == 'view':
-        if action in {'view', 'info', 'source', 'download', 'static'}:
-            return True
-        else:
-            return False
+    if perm == 'view':
+        return action in {'view', 'info', 'source', 'download', 'static'}
 
-    else:
-        return False
+    return False
 
 
 def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=False, format=None):
@@ -406,7 +403,7 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
 
         return http_response(gen(), headers=headers, format=format)
 
-    elif format == 'json':
+    if format == 'json':
         data = []
         for entry in subentries:
             data.append({
@@ -458,11 +455,12 @@ def handle_archive_viewing(paths, mimetype):
         if len(pages) > 1:
             # multiple index files
             return list_maff_pages(pages)
-        elif len(pages) > 0:
-            subpath = pages[0].indexfilename
-        else:
+
+        if len(pages) == 0:
             # no valid index file found
             return list_maff_pages([])
+
+        subpath = pages[0].indexfilename
 
     parts = urlsplit(request.url)
     new_url = urlunsplit((
@@ -531,7 +529,7 @@ def handle_markdown_output(paths, zip=None):
         else:
             with open(paths[0], 'r', encoding='UTF-8') as f:
                 body = f.read()
-    
+
     body = render_template('markdown.html',
             sitename=runtime['name'],
             is_local=is_local_access(),
@@ -647,9 +645,8 @@ class ActionHandler():
                 abort(400, "Lock name is not specified.")
 
             # validate targetpath
-            targetpath = os.path.join(runtime['locks'], name)
-            if not targetpath.startswith(os.path.join(runtime['locks'], '')):
-                abort(400, f'Invalid lock name "{name}".')
+            targetname = util.encrypt(name, method='md5') + '.lock'
+            targetpath = os.path.join(runtime['locks'], targetname)
 
             return func(self, name=name, targetpath=targetpath, *args, **kwargs)
 
@@ -713,11 +710,11 @@ class ActionHandler():
 
         return wrapper
 
-    def unknown(self, *args, **kwargs):
+    def unknown(self):
         """Default handler for an undefined action"""
         abort(400, "Action not supported.")
 
-    def view(self, *args, **kwargs):
+    def view(self):
         """Show the content of a file or list a directory.
 
         If formatted, show information of the file or directory.
@@ -823,7 +820,7 @@ class ActionHandler():
 
         return response
 
-    def source(self, *args, **kwargs):
+    def source(self):
         """Show file content as plain text."""
         if request.format:
             abort(400, "Action not supported.")
@@ -846,7 +843,7 @@ class ActionHandler():
 
         return response
 
-    def download(self, *args, **kwargs):
+    def download(self):
         """Download the  file."""
         if request.format:
             abort(400, "Action not supported.")
@@ -864,7 +861,7 @@ class ActionHandler():
                 f'''attachment; filename*=UTF-8''{filename}; filename="{filename}"''')
         return response
 
-    def info(self, *args, **kwargs):
+    def info(self):
         """Show information of a path."""
         format = request.format
 
@@ -889,7 +886,7 @@ class ActionHandler():
             }
         return http_response(data, format=format)
 
-    def list(self, *args, **kwargs):
+    def list(self):
         """List entries in a directory."""
         format = request.format
 
@@ -910,7 +907,7 @@ class ActionHandler():
 
         abort(404, "Directory does not exist.")
 
-    def static(self, *args, **kwargs):
+    def static(self):
         """Show a static file of the current theme."""
         format = request.format
 
@@ -922,10 +919,10 @@ class ActionHandler():
             f = os.path.join(i, filepath)
             if os.path.isfile(f):
                 return static_file(f)
-        else:
-            abort(404)
 
-    def edit(self, *args, **kwargs):
+        abort(404)
+
+    def edit(self):
         """Simple text editor for a file."""
         format = request.format
 
@@ -973,7 +970,7 @@ class ActionHandler():
 
         return http_response(body, format=format)
 
-    def editx(self, *args, **kwargs):
+    def editx(self):
         """HTML editor for a file."""
         format = request.format
 
@@ -1008,7 +1005,7 @@ class ActionHandler():
 
         return http_response(body, format=format)
 
-    def exec(self, *args, **kwargs):
+    def exec(self):
         """Launch a file or directory."""
         format = request.format
 
@@ -1027,7 +1024,7 @@ class ActionHandler():
 
         return http_response(status=204)
 
-    def browse(self, *args, **kwargs):
+    def browse(self):
         """Open a file or directory in the file browser."""
         format = request.format
 
@@ -1046,7 +1043,7 @@ class ActionHandler():
 
         return http_response(status=204)
 
-    def config(self, *args, **kwargs):
+    def config(self):
         """Show server config."""
         format = request.format
 
@@ -1069,7 +1066,7 @@ class ActionHandler():
 
         return http_response(data, format=format)
 
-    def token(self, *args, **kwargs):
+    def token(self):
         """Acquire a token and return its name."""
         format = request.format
 
@@ -1081,7 +1078,7 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_lock
-    def lock(self, name, targetpath, *args, **kwargs):
+    def lock(self, name, targetpath):
         """Acquire a lock for the given name.
 
         URL params:
@@ -1094,42 +1091,45 @@ class ActionHandler():
         check_expire = time.time() + check_timeout
         check_delta = min(check_timeout, 0.1)
 
-        while True:
-            try:
-                os.makedirs(targetpath)
-            except FileExistsError:
-                t = time.time()
-
-                if t >= check_expire or not os.path.isdir(targetpath):
-                    abort(500, f'Unable to acquire lock "{name}".')
-
+        try:
+            while True:
                 try:
-                    lock_expire = os.stat(targetpath).st_mtime + check_stale
-                except FileNotFoundError:
-                    # Lock removed by another process during the short interval.
-                    # Try acquire again.
-                    continue
+                    os.makedirs(targetpath)
+                except FileExistsError:
+                    t = time.time()
 
-                if t >= lock_expire:
-                    # Lock expired. Touch rather than remove and make for atomicity.
+                    if t >= check_expire or not os.path.isdir(targetpath):
+                        abort(500, f'Unable to acquire lock "{name}".')
+
                     try:
-                        os.utime(targetpath)
-                    except OSError:
-                        traceback.print_exc()
-                        abort(500, f'Unable to regenerate stale lock "{name}".')
-                    else:
-                        break
+                        lock_expire = os.stat(targetpath).st_mtime + check_stale
+                    except FileNotFoundError:
+                        # Lock removed by another process during the short interval.
+                        # Try acquire again.
+                        continue
 
-                time.sleep(check_delta)
-            except Exception:
-                traceback.print_exc()
-                abort(500, f'Unable to create lock "{name}".')
-            else:
-                break
+                    if t >= lock_expire:
+                        # Lock expired. Touch rather than remove and make for atomicity.
+                        try:
+                            os.utime(targetpath)
+                        except OSError:
+                            traceback.print_exc()
+                            abort(500, f'Unable to regenerate stale lock "{name}".')
+                        else:
+                            break
+
+                    time.sleep(check_delta)
+                else:
+                    break
+        except HTTPException:
+            raise
+        except Exception:
+            traceback.print_exc()
+            abort(500, f'Unable to create lock "{name}".')
 
     @_handle_advanced
     @_handle_lock
-    def unlock(self, name, targetpath, *args, **kwargs):
+    def unlock(self, name, targetpath):
         """Release a lock for the given name."""
         format = request.format
 
@@ -1143,7 +1143,7 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_writing
-    def mkdir(self, *args, **kwargs):
+    def mkdir(self):
         """Create a directory."""
         format = request.format
         localpaths = request.localpaths
@@ -1161,7 +1161,7 @@ class ActionHandler():
                         if len(localpaths) == 2:
                             zip = zipfile.ZipFile(localpaths[0], 'a')
                     else:
-                        # skip as the folder already exists 
+                        # skip as the folder already exists
                         return
 
                 if zip is None:
@@ -1189,7 +1189,7 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_writing
-    def mkzip(self, *args, **kwargs):
+    def mkzip(self):
         """Create a zip file."""
         format = request.format
         localpaths = request.localpaths
@@ -1246,7 +1246,7 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_writing
-    def save(self, *args, **kwargs):
+    def save(self):
         """Write a file with provided text or uploaded stream."""
         format = request.format
         localpaths = request.localpaths
@@ -1319,7 +1319,7 @@ class ActionHandler():
 
     @_handle_advanced
     @_handle_writing
-    def delete(self, *args, **kwargs):
+    def delete(self):
         """Delete a file or directory."""
         format = request.format
         localpaths = request.localpaths
@@ -1366,7 +1366,7 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     @_handle_renaming
-    def move(self, sourcepaths, targetpaths, *args, **kwargs):
+    def move(self, sourcepaths, targetpaths):
         """Move a file or directory."""
         format = request.format
 
@@ -1428,7 +1428,7 @@ class ActionHandler():
     @_handle_advanced
     @_handle_writing
     @_handle_renaming
-    def copy(self, sourcepaths, targetpaths, *args, **kwargs):
+    def copy(self, sourcepaths, targetpaths):
         """Copy a file or directory."""
         format = request.format
 
@@ -1484,12 +1484,19 @@ class ActionHandler():
                                     dst = src[base_cut:]
                                     if os.sep != '/': dst = dst.replace(os.sep, '/')
                                     dst = targetpaths[-1] + '/' + dst
+                                    compressible = util.is_compressible(mimetypes.guess_type(dst)[0])
+                                    compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
+                                    compresslevel = 9 if compressible else None
                                     try:
-                                        zip.write(src, dst)
+                                        try:
+                                            zip.write(src, dst, compress_type, compresslevel)
+                                        except TypeError:
+                                            # compresslevel is supported since Python 3.7
+                                            zip.write(src, dst, compress_type)
                                     except OSError as why:
                                         errors.append((src, targetpaths[:-1] + [dst], str(why)))
 
-                        if len(errors):
+                        if errors:
                             try:
                                 raise shutil.Error(errors)
                             except shutil.Error:

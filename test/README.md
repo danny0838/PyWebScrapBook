@@ -4,8 +4,6 @@ Enter this project directory and install it (adding `-e` is recommended):
 
     pip install -e .
 
-Make sure port `7357–7358` are not used by any application.
-
 Perform the unit tests:
 
     python -m unittest -v

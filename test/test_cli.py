@@ -253,35 +253,33 @@ class TestConfig(unittest.TestCase):
 
         self.assertEqual(mock_stdout.getvalue(), '')
 
-    @mock.patch('sys.stderr', new_callable=io.StringIO)
-    @mock.patch('sys.exit')
-    def test_edit(self, mock_exit, mock_stderr):
-        cli.cmd_config({
-            'root': test_dir,
-            'book': False,
-            'user': False,
-            'all': False,
-            'edit': True,
-            'name': None,
-            })
+    @mock.patch('webscrapbook.cli.die', side_effect=SystemExit)
+    def test_edit(self, mock_die):
+        with self.assertRaises(SystemExit):
+            cli.cmd_config({
+                'root': test_dir,
+                'book': False,
+                'user': False,
+                'all': False,
+                'edit': True,
+                'name': None,
+                })
 
-        mock_exit.assert_called_once_with(1)
-        self.assertNotEqual(mock_stderr.getvalue(), '')
+        mock_die.assert_called_once_with('Use --edit in combine with --book or --user.')
 
-    @mock.patch('sys.stderr', new_callable=io.StringIO)
-    @mock.patch('sys.exit')
-    def test_all(self, mock_exit, mock_stderr):
-        cli.cmd_config({
-            'root': test_dir,
-            'book': False,
-            'user': False,
-            'all': True,
-            'edit': False,
-            'name': None,
-            })
+    @mock.patch('webscrapbook.cli.die', side_effect=SystemExit)
+    def test_all(self, mock_die):
+        with self.assertRaises(SystemExit):
+            cli.cmd_config({
+                'root': test_dir,
+                'book': False,
+                'user': False,
+                'all': True,
+                'edit': False,
+                'name': None,
+                })
 
-        mock_exit.assert_called_once_with(1)
-        self.assertNotEqual(mock_stderr.getvalue(), '')
+        mock_die.assert_called_once_with('Use --all in combine with --book.')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
     @mock.patch('webscrapbook.config.getname', return_value='dummy')
@@ -298,22 +296,21 @@ class TestConfig(unittest.TestCase):
         mock_getname.assert_called_once_with('app.name')
         self.assertEqual(mock_stdout.getvalue(), 'dummy\n')
 
-    @mock.patch('sys.exit')
-    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    @mock.patch('webscrapbook.cli.die', side_effect=SystemExit)
     @mock.patch('webscrapbook.config.getname', return_value=None)
-    def test_name_call2(self, mock_getname, mock_stderr, mock_exit):
-        cli.cmd_config({
-            'root': test_dir,
-            'book': False,
-            'user': False,
-            'all': False,
-            'edit': False,
-            'name': 'unknown.config',
-            })
+    def test_name_call2(self, mock_getname, mock_die):
+        with self.assertRaises(SystemExit):
+            cli.cmd_config({
+                'root': test_dir,
+                'book': False,
+                'user': False,
+                'all': False,
+                'edit': False,
+                'name': 'unknown.config',
+                })
 
         mock_getname.assert_called_once_with('unknown.config')
-        self.assertNotEqual(mock_stderr.getvalue(), '')
-        mock_exit.assert_called_once_with(1)
+        mock_die.assert_called_once_with('Config entry "unknown.config" does not exist')
 
     @mock.patch('webscrapbook.config.dump')
     def test_dump(self, mock_dump):

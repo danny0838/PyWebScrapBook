@@ -12,7 +12,7 @@ A config file can be generated using the command `wsb config`. Run
 `wsb config --help` for more details.
 
 Configs are loaded only at process starting, and a config change won't affect
-an already running process. For example, a running webscrapbook server needs 
+an already running process. For example, a running webscrapbook server needs
 to be shut off and restarted to get new configs take effect.
 
 

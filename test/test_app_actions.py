@@ -2211,7 +2211,7 @@ class TestToken(unittest.TestCase):
 
 class TestLock(unittest.TestCase):
     def setUp(self):
-        self.lock = os.path.join(server_root, WSB_DIR, 'server', 'locks', 'test')
+        self.lock = os.path.join(server_root, WSB_DIR, 'server', 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     def tearDown(self):
         try:
@@ -2328,7 +2328,7 @@ class TestLock(unittest.TestCase):
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
-        self.lock = os.path.join(server_root, WSB_DIR, 'server', 'locks', 'test')
+        self.lock = os.path.join(server_root, WSB_DIR, 'server', 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     def tearDown(self):
         try:
@@ -4640,6 +4640,7 @@ class TestCopy(TestActions):
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
                     {'zip': zip, 'filename': 'deep/newdir/test.txt'},
                     )
+                self.assertEqual(zip.getinfo('deep/newdir/test.txt').compress_type, zipfile.ZIP_DEFLATED)
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @mock.patch('sys.stderr', io.StringIO())

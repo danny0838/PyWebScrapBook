@@ -4,9 +4,7 @@
 import sys
 import os
 import argparse
-import json
 from getpass import getpass
-import time
 import traceback
 
 # this package
@@ -18,6 +16,15 @@ from ._compat.time import time_ns
 
 # sub package
 from . import scrapbook
+
+
+def log(*args):
+    print(*args)
+
+
+def die(*args):
+    print(f'Error:', *args, file=sys.stderr)
+    sys.exit(1)
 
 
 def get_umask():
@@ -43,7 +50,7 @@ def fcopy(fsrc, fdst):
 
 
 def cmd_serve(args):
-    """Serve the directory."""
+    """Serve the root directory."""
     server.serve(args['root'])
 
 
@@ -53,12 +60,11 @@ def cmd_config(args):
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_LOCAL_CONFIG))
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
-            print(f'Generating "{fdst}"...')
+            log(f'Generating "{fdst}"...')
             try:
                 fcopy(fsrc, fdst)
             except OSError:
-                print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
-                sys.exit(1)
+                die(f"Unable to generate {fdst}.")
 
         if args['edit']:
             try:
@@ -70,35 +76,32 @@ def cmd_config(args):
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'serve.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'serve.py'))
             if not os.path.isfile(fdst):
-                print(f'Generating "{fdst}"...')
+                log(f'Generating "{fdst}"...')
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except OSError:
-                    print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
-                    sys.exit(1)
+                    die(f"Unable to generate {fdst}.")
 
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'app.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'app.py'))
             if not os.path.isfile(fdst):
-                print(f'Generating "{fdst}"...')
+                log(f'Generating "{fdst}"...')
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except OSError:
-                    print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
-                    sys.exit(1)
+                    die(f"Unable to generate {fdst}.")
 
     elif args['user']:
         fdst = WSB_USER_CONFIG
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
-            print(f'Generating "{fdst}"...')
+            log(f'Generating "{fdst}"...')
             try:
                 fcopy(fsrc, fdst)
             except OSError:
-                print(f"Error: Unable to generate {fdst}.", file=sys.stderr)
-                sys.exit(1)
+                die(f"Unable to generate {fdst}.")
 
         if args['edit']:
             try:
@@ -107,21 +110,17 @@ def cmd_config(args):
                 pass
 
     elif args['edit']:
-        print("Error: Use --edit in combine with --book or --user.", file=sys.stderr)
-        sys.exit(1)
+        die("Use --edit in combine with --book or --user.")
 
     elif args['all']:
-        print("Error: Use --all in combine with --book.", file=sys.stderr)
-        sys.exit(1)
+        die("Use --all in combine with --book.")
 
     elif args['name']:
         config.load(args['root'])
         value = config.getname(args['name'])
 
         if value is None:
-            print(f"""Error: Config entry "{args['name']}" does not exist""", file=sys.stderr)
-            sys.exit(1)
-            return
+            die(f"""Config entry "{args['name']}" does not exist""")
 
         print(value)
 
@@ -149,8 +148,7 @@ def cmd_encrypt(args):
         pw2 = getpass('Confirm the password: ')
 
         if pw1 != pw2:
-            print('Error: Entered passwords do not match.', file=sys.stderr)
-            sys.exit(1)
+            die('Entered passwords do not match.')
 
         args['password'] = pw1
 
@@ -165,7 +163,6 @@ def cmd_help(args):
         file = os.path.join(root, 'config.md')
         with open(file, 'r', encoding='UTF-8') as f:
             text = f.read()
-            f.close()
         print(text)
 
 
@@ -276,7 +273,9 @@ def main():
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")
     subparsers = parser.add_subparsers(metavar='COMMAND',
-        help="""The sub-command to run. Add --help(-h) after the sub-command for usage details.""")
+        help="""The sub-command to run.
+Add -h (--help) after a sub-command for help message.
+(E.g. %(prog)s config -h)""")
 
     # subcommand: serve
     parser_serve = subparsers.add_parser('serve', aliases=['s'],

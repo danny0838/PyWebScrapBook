@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """Miscellaneous utilities
 """
-import sys, os
+import sys
+import os
 import stat
 import subprocess
 import collections
 from collections import namedtuple
-from lxml import etree
 import zipfile
 import math
 import re
 import hashlib
 import time
-from urllib.parse import quote, unquote
 from ipaddress import IPv6Address, AddressValueError
 from secrets import token_urlsafe
+from lxml import etree
 from ._compat.contextlib import nullcontext
 
 
@@ -188,7 +188,6 @@ def checksum(file, method='sha1', chunk_size=4096):
     with open(file, 'rb') as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             h.update(chunk)
-        f.close()
     return h.hexdigest()
 
 
@@ -294,6 +293,42 @@ def format_filesize(bytes, si=False):
     return tpl.format(n, units[e])
 
 
+COMPRESSIBLE_TYPES = {
+    'application/xml',
+
+    # historical non-text/* javascript types
+    # ref: https://mimesniff.spec.whatwg.org/
+    'application/javascript',
+    'application/ecmascript',
+    'application/x-ecmascript',
+    'application/x-javascript',
+
+    'application/json',
+    }
+
+COMPRESSIBLE_SUFFIXES = {
+    '+xml',
+    '+json',
+    }
+
+def is_compressible(mimetype):
+    """Guess if the given mimetype is compressible."""
+    if not mimetype:
+        return False
+
+    if mimetype.startswith('text/'):
+        return True
+
+    if mimetype in COMPRESSIBLE_TYPES:
+        return True
+
+    for suffix in COMPRESSIBLE_SUFFIXES:
+        if mimetype.endswith(suffix):
+            return True
+
+    return False
+
+
 #########################################################################
 # ZIP handling
 #########################################################################
@@ -346,7 +381,7 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
 def zip_listdir(zip, subpath, recursive=False):
     """Generates FileInfo(s) and omit invalid entries.
 
-    Raise ZipDirNotFoundError if subpath does not exist. 
+    Raise ZipDirNotFoundError if subpath does not exist.
 
     NOTE: It is possible that entry mydir/ does not exist while
     mydir/foo.bar exists. Check for matching subentries to make sure whether
@@ -380,7 +415,7 @@ def zip_listdir(zip, subpath, recursive=False):
                     entry = '/'.join(parts[0:i + 1])
                     entries.setdefault(entry, True)
 
-        if not len(entries) and not dir_exist:
+        if not entries and not dir_exist:
             raise ZipDirNotFoundError(f'Directory "{base}/" does not exist in the zip.')
 
         for entry in entries:
