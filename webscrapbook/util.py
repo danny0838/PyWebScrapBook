@@ -468,9 +468,10 @@ def zip_hasdir(zip, subpath):
 
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target'])
 
+META_REFRESH_REGEX_URL = re.compile(r'^\s*url\s*=\s*(.*?)\s*$', re.I)
 
-def parse_meta_refresh(file):
-    """Retrieve meta refresh target from a file.
+def iter_meta_refresh(file):
+    """Iterate through meta refreshes from a file.
 
     Args:
         file: str, path-like, or file-like object
@@ -482,35 +483,45 @@ def parse_meta_refresh(file):
     except FileNotFoundError:
         fh = None
 
-    if fh:
-        try:
-            for event, elem in etree.iterparse(fh, html=True, events=('end',), tag='meta'):
-                if elem.attrib.get('http-equiv', '').lower() == 'refresh':
-                    time, _, content = elem.attrib.get('content', '').partition(';')
+    if not fh:
+        return
 
-                    try:
-                        time = int(time)
-                    except ValueError:
-                        time = 0
+    try:
+        for event, elem in etree.iterparse(fh, html=True, events=('end',), tag='meta'):
+            if elem.attrib.get('http-equiv', '').lower() == 'refresh':
+                time, _, content = elem.attrib.get('content', '').partition(';')
 
-                    m = re.match(r'^\s*url\s*=\s*(.*?)\s*$', content, flags=re.I)
-                    target = m.group(1) if m else None
+                try:
+                    time = int(time)
+                except ValueError:
+                    time = 0
 
-                    if time == 0 and target is not None:
-                        return MetaRefreshInfo(time=time, target=target)
+                match_url = META_REFRESH_REGEX_URL.search(content)
+                target = match_url.group(1) if match_url else None
+                yield MetaRefreshInfo(time=time, target=target)
 
-                # clean up to save memory
-                elem.clear()
-                while elem.getprevious() is not None:
-                    try:
-                        del elem.getparent()[0]
-                    except TypeError:
-                        # broken html may generate extra root elem
-                        break
-        finally:
-            if fh != file:
-                fh.close()
+            # clean up to save memory
+            elem.clear()
+            while elem.getprevious() is not None:
+                try:
+                    del elem.getparent()[0]
+                except TypeError:
+                    # broken html may generate extra root elem
+                    break
+    finally:
+        if fh != file:
+            fh.close()
 
+
+def parse_meta_refresh(file):
+    """Retrieve meta refresh target from a file.
+
+    Args:
+        file: str, path-like, or file-like object
+    """
+    for info in iter_meta_refresh(file):
+        if info.time == 0 and info.target is not None:
+            return info
     return MetaRefreshInfo(time=None, target=None)
 
 

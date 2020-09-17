@@ -633,17 +633,50 @@ class TestUtils(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_iter_meta_refresh(self):
+        root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'refresh1.html'))),
+            [(15, 'target.html'), (0, None), (0, 'target.html'), (0, 'target2.html')],
+            )
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'refresh2.html'))),
+            [(15, 'target.html'), (0, 'target.html'), (0, 'target2.html')],
+            )
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'nonexist.html'))),
+            [],
+            )
+
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
+
+            with zipfile.ZipFile(zip_filename, 'r') as zh:
+                with zh.open('refresh.html') as fh:
+                    self.assertEqual(
+                        list(util.iter_meta_refresh(fh)),
+                        [(0, 'target.html')]
+                        )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_parse_meta_refresh(self):
+        root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root_dir, 'test_util', 'parse_meta_refresh', 'refresh1.html')),
+            util.parse_meta_refresh(os.path.join(root, 'refresh1.html')),
             (0, 'target.html')
             )
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root_dir, 'test_util', 'parse_meta_refresh', 'refresh2.html')),
+            util.parse_meta_refresh(os.path.join(root, 'refresh2.html')),
             (0, 'target.html')
             )
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root_dir, 'test_util', 'parse_meta_refresh', 'nonexist.html')),
+            util.parse_meta_refresh(os.path.join(root, 'nonexist.html')),
             (None, None)
             )
 
@@ -653,9 +686,9 @@ class TestUtils(unittest.TestCase):
                 zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
 
             with zipfile.ZipFile(zip_filename, 'r') as zh:
-                with zh.open('refresh.html') as f:
+                with zh.open('refresh.html') as fh:
                     self.assertEqual(
-                        util.parse_meta_refresh(f),
+                        util.parse_meta_refresh(fh),
                         (0, 'target.html')
                         )
         finally:
