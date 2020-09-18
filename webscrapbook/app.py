@@ -80,8 +80,7 @@ def zip_static_file(zip, subpath, mimetype=None):
 
     fh = zip.open(info, 'r')
 
-    lm = info.date_time
-    lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+    lm = util.zip_timestamp(info)
     last_modified = http_date(lm)
 
     etag = "%s-%s-%s" % (
@@ -492,9 +491,7 @@ def handle_markdown_output(paths, zip=None):
         # calculate last-modified time and etag
         if zip:
             info = zip.getinfo(paths[-1])
-
-            lm = info.date_time
-            lm = int(time.mktime((lm[0], lm[1], lm[2], lm[3], lm[4], lm[5], 0, 0, -1)))
+            lm = util.zip_timestamp(info)
             last_modified = http_date(lm)
 
             etag = "%s-%s-%s" % (
@@ -1529,7 +1526,7 @@ class ActionHandler():
                             zip.extractall(tempdir, entries)
                             for entry in entries:
                                 file = os.path.join(tempdir, entry)
-                                date = time.mktime(zip.getinfo(entry).date_time + (0, 0, -1))
+                                date = util.zip_timestamp(zip.getinfo(entry))
                                 os.utime(file, (date, date))
 
                         # move to target path

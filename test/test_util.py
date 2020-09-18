@@ -453,6 +453,18 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(util.is_compressible('application/xhtml+xml'))
         self.assertTrue(util.is_compressible('application/ld+json'))
 
+    def test_zip_tuple_timestamp(self):
+        self.assertEqual(
+            util.zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
+            time.mktime((1987, 1, 1, 0, 0, 0, 0, 0, -1))
+            )
+
+    def test_zip_timestamp(self):
+        self.assertEqual(
+            util.zip_timestamp(zipfile.ZipInfo('dummy', (1987, 1, 1, 0, 0, 0))),
+            time.mktime((1987, 1, 1, 0, 0, 0, 0, 0, -1))
+            )
+
     def test_zip_file_info(self):
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
         try:
