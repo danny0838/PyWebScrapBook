@@ -463,6 +463,57 @@ def zip_hasdir(zip, subpath):
 
 
 #########################################################################
+# HTTP manipulation
+#########################################################################
+
+ContentType = namedtuple('ContentType', ['type', 'parameters'])
+
+PARSE_CONTENT_TYPE_REGEX_MIME = re.compile(r'^(.*?)(?=;|$)', re.I)
+PARSE_CONTENT_TYPE_REGEX_FIELD = re.compile(r';((?:"(?:\\.|[^"])*(?:"|$)|[^"])*?)(?=;|$)', re.I)
+PARSE_CONTENT_TYPE_REGEX_KEY_VALUE = re.compile(r'\s*(.*?)\s*=\s*("(?:\\.|[^"])*"|[^"]*?)\s*$', re.I)
+PARSE_CONTENT_TYPE_REGEX_DQUOTE_VALUE = re.compile(r'^"(.*?)"$')
+
+def parse_content_type(string):
+    """Parse content type header.
+
+    Return:
+        ContentType: type and parameter keys are all lower case.
+    """
+    type = None
+    parameters = {}
+
+    if not string:
+        return ContentType(type, parameters)
+
+    match_mime = PARSE_CONTENT_TYPE_REGEX_MIME.search(string)
+    if match_mime:
+        string = string[match_mime.end():]
+        type = match_mime.group(1).strip().lower()
+
+        while True:
+            match_field = PARSE_CONTENT_TYPE_REGEX_FIELD.search(string)
+            if not match_field:
+                break
+
+            string = string[match_field.end():]
+            parameter = match_field.group(1)
+            match_key_value = PARSE_CONTENT_TYPE_REGEX_KEY_VALUE.search(parameter)
+
+            if match_key_value:
+                field = match_key_value.group(1).lower()
+                value = match_key_value.group(2)
+
+                # handle double quoted value
+                match_dquote = PARSE_CONTENT_TYPE_REGEX_DQUOTE_VALUE.search(value)
+                if match_dquote:
+                    value = match_dquote.group(1)
+
+                parameters[field] = value
+
+    return ContentType(type, parameters)
+
+
+#########################################################################
 # HTML manipulation
 #########################################################################
 

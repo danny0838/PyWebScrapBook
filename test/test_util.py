@@ -636,6 +636,28 @@ class TestUtils(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_parse_content_type(self):
+        self.assertEqual(
+            util.parse_content_type('text/html; charset=UTF-8'),
+            ('text/html', {'charset': 'UTF-8'}),
+            )
+        self.assertEqual(
+            util.parse_content_type('text/html; charset="UTF-8"'),
+            ('text/html', {'charset': 'UTF-8'}),
+            )
+        self.assertEqual(
+            util.parse_content_type('TEXT/HTML; CHARSET="UTF-8"'),
+            ('text/html', {'charset': 'UTF-8'}),
+            )
+        self.assertEqual(
+            util.parse_content_type(None),
+            (None, {}),
+            )
+        self.assertEqual(
+            util.parse_content_type(''),
+            (None, {}),
+            )
+
     def test_iter_meta_refresh(self):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(
