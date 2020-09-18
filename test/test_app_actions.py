@@ -114,7 +114,6 @@ class TestActions(unittest.TestCase):
                         'mode': datas[0]['stat'].st_mode,
                         'uid': datas[0]['stat'].st_uid,
                         'gid': datas[0]['stat'].st_gid,
-                        'atime': datas[0]['stat'].st_atime,
                         'mtime': datas[0]['stat'].st_mtime,
                         }
                 else:
@@ -144,7 +143,6 @@ class TestActions(unittest.TestCase):
                         'mode': datas[i]['stat'].st_mode,
                         'uid': datas[i]['stat'].st_uid,
                         'gid': datas[i]['stat'].st_gid,
-                        'atime': datas[i]['stat'].st_atime,
                         'mtime': datas[i]['stat'].st_mtime,
                         }
                 else:
@@ -170,7 +168,7 @@ class TestActions(unittest.TestCase):
 
             for i in stat0:
                 with self.subTest(i=i):
-                    if i in {'mtime', 'atime'}:
+                    if i == 'mtime':
                         self.assertAlmostEqual(stat0[i], stati[i], delta=2)
                     else:
                         self.assertEqual(stat0[i], stati[i])
