@@ -3453,6 +3453,7 @@ class TestDelete(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
 
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @unittest.skipUnless(sys.version_info >= (3, 8), 'requires Python >= 3.8')
     def test_junction_deep(self):
         """Delete junction entities without altering the referenced directory.
