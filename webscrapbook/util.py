@@ -368,14 +368,14 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
         except KeyError:
             pass
         else:
-            return FileInfo(name=name, type='file', size=info.file_size, last_modified=int(zip_timestamp(info)))
+            return FileInfo(name=name, type='file', size=info.file_size, last_modified=zip_timestamp(info))
 
         try:
             info = zh.getinfo(subpath + '/')
         except KeyError:
             pass
         else:
-            return FileInfo(name=name, type='dir', size=None, last_modified=int(zip_timestamp(info)))
+            return FileInfo(name=name, type='dir', size=None, last_modified=zip_timestamp(info))
 
         if check_implicit_dir:
             base = subpath + '/'
