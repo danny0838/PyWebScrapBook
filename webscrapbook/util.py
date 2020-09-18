@@ -517,6 +517,53 @@ def parse_content_type(string):
 # HTML manipulation
 #########################################################################
 
+def get_charset(file):
+    """Search for a defined charset.
+
+    Args:
+        file: str, path-like, or file-like object
+    """
+    try:
+        fh = open(file, 'rb')
+    except TypeError:
+        fh = file
+    except FileNotFoundError:
+        fh = None
+
+    if fh:
+        try:
+            for event, elem in etree.iterparse(fh, html=True, events=('start',), tag=('meta', 'body')):
+                if elem.tag == 'meta':
+                    charset = elem.attrib.get('charset')
+                    if charset:
+                        return charset.strip()
+
+                    if elem.attrib.get('http-equiv', '').lower() == 'content-type':
+                        _, params = parse_content_type(elem.attrib.get('content', ''))
+                        charset = params.get('charset')
+                        if charset:
+                            return charset
+
+                elif elem.tag == 'body':
+                    # presume that no <meta> will appear after <body> start
+                    # for a normal HTML to exit early
+                    return None
+
+                # clean up to save memory
+                elem.clear()
+                while elem.getprevious() is not None:
+                    try:
+                        del elem.getparent()[0]
+                    except TypeError:
+                        # broken html may generate extra root elem
+                        break
+        finally:
+            if fh != file:
+                fh.close()
+
+    return None
+
+
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target', 'context'])
 
 META_REFRESH_REGEX_URL = re.compile(r'^\s*url\s*=\s*(.*?)\s*$', re.I)
