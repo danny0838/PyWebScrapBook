@@ -505,7 +505,11 @@ def parse_meta_refresh(file):
                 # clean up to save memory
                 elem.clear()
                 while elem.getprevious() is not None:
-                    del elem.getparent()[0]
+                    try:
+                        del elem.getparent()[0]
+                    except TypeError:
+                        # broken html may generate extra root elem
+                        break
         finally:
             if fh != file:
                 fh.close()
