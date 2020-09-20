@@ -11,6 +11,10 @@ import math
 import re
 import hashlib
 import time
+import mimetypes
+import binascii
+from base64 import b64decode
+from urllib.parse import unquote_to_bytes
 from ipaddress import IPv6Address, AddressValueError
 from lxml import etree
 from ._compat.contextlib import nullcontext
@@ -535,6 +539,55 @@ def parse_content_type(string):
                 parameters[field] = value
 
     return ContentType(type, parameters)
+
+
+DataUri = namedtuple('DataUri', ['bytes', 'mime', 'parameters'])
+
+PARSE_DATAURI_REGEX_FIELDS = re.compile(r'^data:([^,]*?)(;base64)?,([^#]*)', re.I)
+PARSE_DATAURI_REGEX_KEY_VALUE = re.compile(r'^(.*?)=(.*?)$')
+
+class DataUriMalformedError(Exception):
+    pass
+
+def parse_datauri(datauri):
+    """Parse a Data URI
+
+    Args:
+        datauri: the data URI string
+
+    Returns:
+        DataUri: a tuple containing information
+
+    Raises:
+        DataUriMalformedError
+    """
+    match_fields = PARSE_DATAURI_REGEX_FIELDS.search(datauri)
+    if not match_fields:
+        raise DataUriMalformedError('Malformed fields')
+
+    mediatype = match_fields.group(1)
+    base64 = bool(match_fields.group(2))
+    data = match_fields.group(3)
+
+    parts = mediatype.split(';')
+    mime = parts.pop(0)
+    parameters = {}
+    for part in parts:
+        match_key_value = PARSE_DATAURI_REGEX_KEY_VALUE.search(part)
+        if match_key_value:
+            parameters[match_key_value.group(1).lower()] = match_key_value.group(2)
+
+    if base64:
+        try:
+            bytes_ = b64decode(data)
+        except binascii.Error as exc:
+            raise DataUriMalformedError(f'Malformed base64 sequence: {exc}') from exc
+    else:
+        # decode precent-encoding to corresponding byte
+        # non-ASCII chars are encoded as UTF-8 bytes
+        bytes_ = unquote_to_bytes(data)
+
+    return DataUri(bytes_, mime, parameters)
 
 
 #########################################################################

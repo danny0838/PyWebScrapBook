@@ -663,6 +663,56 @@ class TestUtils(unittest.TestCase):
             (None, {}),
             )
 
+    def test_parse_datauri(self):
+        self.assertEqual(
+            util.parse_datauri('data:text/plain;base64,QUJDMTIz5Lit5paH'),
+            (b'ABC123\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {})
+            )
+        self.assertEqual(
+            util.parse_datauri('data:text/plain,ABC123%E4%B8%AD%E6%96%87'),
+            (b'ABC123\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {})
+            )
+        self.assertEqual(
+            util.parse_datauri('data:text/plain;filename=ABC%E6%AA%94.md;base64,QUJDMTIz5Lit5paH'),
+            (b'ABC123\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {'filename': 'ABC%E6%AA%94.md'})
+            )
+        self.assertEqual(
+            util.parse_datauri('data:text/plain;filename=ABC%E6%AA%94.md,ABC123%E4%B8%AD%E6%96%87'),
+            (b'ABC123\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {'filename': 'ABC%E6%AA%94.md'})
+            )
+        self.assertEqual(
+            util.parse_datauri('data:text/plain;charset=big5;filename=ABC%E6%AA%94.md;base64,QUJDMTIz5Lit5paH'),
+            (b'ABC123\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {'filename': 'ABC%E6%AA%94.md', 'charset': 'big5'})
+            )
+        self.assertEqual(
+            util.parse_datauri('data:text/plain;charset=big5;filename=ABC%E6%AA%94.md,ABC123%E4%B8%AD%E6%96%87'),
+            (b'ABC123\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {'filename': 'ABC%E6%AA%94.md', 'charset': 'big5'})
+            )
+
+        # missing MIME => empty MIME
+        self.assertEqual(
+            util.parse_datauri('data:,ABC'),
+            (b'ABC', '', {})
+            )
+
+        # non-ASCII data => treat as UTF-8
+        self.assertEqual(
+            util.parse_datauri('data:text/plain,ABC中文'),
+            (b'ABC\xe4\xb8\xad\xe6\x96\x87', 'text/plain', {})
+            )
+
+        # incomplete => raise DataUriMalformedError
+        with self.assertRaises(util.DataUriMalformedError):
+            util.parse_datauri('data:')
+        with self.assertRaises(util.DataUriMalformedError):
+            util.parse_datauri('data:text/html')
+        with self.assertRaises(util.DataUriMalformedError):
+            util.parse_datauri('data:text/html;base64')
+
+        # malformed base64 => raise DataUriMalformedError
+        with self.assertRaises(util.DataUriMalformedError):
+            util.parse_datauri('data:text/plain;base64,ABC')
+
     def test_get_charset(self):
         root = os.path.join(root_dir, 'test_util', 'get_charset')
         self.assertIsNone(util.get_charset(os.path.join(root, 'charset1.html')))
