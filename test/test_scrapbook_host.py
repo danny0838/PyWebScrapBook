@@ -63,6 +63,12 @@ class TestHost(TestBase):
 name = myhost
 theme = custom
 root = public
+
+[book ""]
+name = mybook
+
+[book "id2"]
+name = mybook2
 """)
         host = Host(self.test_root)
 
@@ -86,6 +92,10 @@ root = public
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
             ])
         self.assertEqual(host.locks, os.path.join(self.test_root, WSB_DIR, 'locks'))
+        self.assertEqual({i: host.books[i].name for i in host.books}, {
+            '': 'mybook',
+            'id2': 'mybook2',
+            })
 
     @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init02(self):
@@ -97,6 +107,9 @@ root = public
 name = myhost
 theme = custom
 root = public
+
+[book "id2"]
+name = mybook2
 """)
         conf = Config()
         conf.load(self.test_root)
@@ -123,6 +136,10 @@ root = public
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
             ])
         self.assertEqual(host.locks, os.path.join(other_root, WSB_DIR, 'locks'))
+        self.assertEqual({i: host.books[i].name for i in host.books}, {
+            '': 'scrapbook',
+            'id2': 'mybook2',
+            })
 
     def test_get_static_file01(self):
         """Lookup static file from built-in themes"""

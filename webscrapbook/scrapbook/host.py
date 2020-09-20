@@ -2,11 +2,13 @@
 """
 import os
 import time
+from collections import UserDict
 from threading import Thread
 from secrets import token_urlsafe
 from .. import WSB_USER_DIR, WSB_DIR
 from .. import Config
 from .. import util
+from .book import Book
 
 
 class LockError(Exception):
@@ -273,6 +275,25 @@ class FileLock:
             self.extend()
 
 
+class BooksProxy(UserDict):
+    """A proxied dict for Books.
+
+    Generate a Book object when first retrieved and cache it for future
+    retrieval.
+    """
+    def __init__(self, host):
+        super().__init__()
+        self.host = host
+        for book_id in host.config['book']:
+            self.data[book_id] = NotImplemented
+
+    def __getitem__(self, key):
+        rv = self.data[key]
+        if rv is NotImplemented:
+            rv = self.data[key] = Book(self.host, key)
+        return rv
+
+
 class Host:
     """Controller for a scrapbook set defined by a root directory and configs.
     """
@@ -300,6 +321,8 @@ class Host:
         self.templates = [os.path.join(t, 'templates') for t in self.themes]
 
         self.locks = os.path.join(root, WSB_DIR, 'locks')
+
+        self.books = BooksProxy(self)
 
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)

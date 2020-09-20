@@ -4,6 +4,7 @@
 *.wsgi text
 *.yaml text
 *.md text
+*.txt text
 *.html text
 *.css text
 *.js text

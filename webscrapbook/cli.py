@@ -11,6 +11,7 @@ from . import __package_name__, __version__
 from . import *
 from . import server
 from . import util
+from .scrapbook import cache as wsb_cache
 from ._compat.time import time_ns
 
 
@@ -144,6 +145,16 @@ def cmd_encrypt(args):
         args['password'] = pw1
 
     print(util.encrypt(args['password'], salt=args['salt'], method=args['method']))
+
+
+def cmd_cache(args):
+    """Generate (or update) fulltext cache.
+    """
+    kwargs = args.copy()
+    debug = kwargs.pop('debug')
+    for info in wsb_cache.generate(**kwargs):
+        if info.type != 'debug' or debug:
+            log(f'{info.type.upper()}: {info.msg}')
 
 
 def cmd_help(args):
@@ -300,6 +311,26 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
 (default: %(default)s)""")
     parser_encrypt.add_argument('-s', '--salt', default='', action='store',
         help="""the salt to add during encryption.""")
+
+    # subcommand: cache
+    parser_cache = subparsers.add_parser('cache', aliases=['a'], description=cmd_cache.__doc__,
+        help="""generate (or update) fulltext cache""")
+    parser_cache.set_defaults(func=cmd_cache)
+    parser_cache.add_argument('book_ids', metavar='book', nargs='*', action='store',
+        help="""the book ID(s) to generate cache. (default: all books)""")
+    parser_cache.add_argument('--item', dest='item_ids',
+        metavar='ID', action='store', default=None, nargs='+',
+        help="""the items ID(s) to generate cache (default: all)""")
+    parser_cache.add_argument('--fulltext', default=True, action='store_true',
+        help="""generate fulltext cache. (default)""")
+    parser_cache.add_argument('--no-fulltext', dest='fulltext', action='store_false',
+        help="""do not generate fulltext cache""")
+    parser_cache.add_argument('--inclusive-frames', default=True, action='store_true',
+        help="""cache frame content as part of the main page (default)""")
+    parser_cache.add_argument('--no-inclusive-frames', dest='inclusive_frames', action='store_false',
+        help="""do not cache frame content as part of the main page""")
+    parser_cache.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
 
     # subcommand: help
     parser_help = subparsers.add_parser('help', description=cmd_help.__doc__,

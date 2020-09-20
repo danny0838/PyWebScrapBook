@@ -25,6 +25,11 @@ from ._compat.contextlib import nullcontext
 # Common classes and objects handling
 #########################################################################
 
+# common namedtuple for yielded messages for certain classes
+Info = namedtuple('Info', ['type', 'msg', 'data', 'exc'])
+Info.__new__.__defaults__ = (None, None)
+
+
 class frozendict(collections.abc.Mapping):
     """Implementation of a frozen dict, which is hashable if all values
        are hashable.
