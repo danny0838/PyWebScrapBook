@@ -74,6 +74,30 @@ def make_hashable(obj):
 
 
 #########################################################################
+# Codecs and text encoding
+#########################################################################
+
+# all lower-case
+CODECS_MAPPING = {
+    'big5': 'cp950',
+    }
+
+def fix_codec(name):
+    """Remap codec name
+
+    Some codecs are widely used and de-facto standard for web browsers. For
+    example, most browsers display cp950 extended chars correctly even if the
+    charset of the web page is defined as 'big5'. To prevent unexpected
+    gibberish when we try to parse text in Python, we need to remap the codec
+    name of a web page from 'big5' to 'cp950' using this first.
+    """
+    try:
+        return CODECS_MAPPING[name.lower()]
+    except KeyError:
+        return name
+
+
+#########################################################################
 # URL and string
 #########################################################################
 

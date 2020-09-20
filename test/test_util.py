@@ -64,6 +64,11 @@ class TestUtils(unittest.TestCase):
             {(1, 2, 3), frozendict({'a': 123, 'b': 456})}
             )
 
+    def test_fix_codec(self):
+        self.assertEqual(util.fix_codec('big5'), 'cp950')
+        self.assertEqual(util.fix_codec('BIG5'), 'cp950')
+        self.assertEqual(util.fix_codec('UTF-8'), 'UTF-8')
+
     def test_is_nullhost(self):
         self.assertTrue(util.is_nullhost('0.0.0.0'))
         self.assertFalse(util.is_nullhost('127.0.0.1'))
