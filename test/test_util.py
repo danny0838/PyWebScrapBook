@@ -69,6 +69,35 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.fix_codec('BIG5'), 'cp950')
         self.assertEqual(util.fix_codec('UTF-8'), 'UTF-8')
 
+    def test_sniff_bom(self):
+        fh = io.BytesIO(b'\xef\xbb\xbf' + '中文'.encode('UTF-8'))
+        self.assertEqual(util.sniff_bom(fh), 'UTF-8-SIG')
+        self.assertEqual(fh.tell(), 3)
+
+        fh = io.BytesIO(b'\xff\xfe' + '中文'.encode('UTF-16-LE'))
+        self.assertEqual(util.sniff_bom(fh), 'UTF-16-LE')
+        self.assertEqual(fh.tell(), 2)
+
+        fh = io.BytesIO(b'\xfe\xff' + '中文'.encode('UTF-16-BE'))
+        self.assertEqual(util.sniff_bom(fh), 'UTF-16-BE')
+        self.assertEqual(fh.tell(), 2)
+
+        fh = io.BytesIO(b'\xff\xfe\x00\x00' + '中文'.encode('UTF-32-LE'))
+        self.assertEqual(util.sniff_bom(fh), 'UTF-32-LE')
+        self.assertEqual(fh.tell(), 4)
+
+        fh = io.BytesIO(b'\x00\x00\xfe\xff' + '中文'.encode('UTF-32-BE'))
+        self.assertEqual(util.sniff_bom(fh), 'UTF-32-BE')
+        self.assertEqual(fh.tell(), 4)
+
+        fh = io.BytesIO('中文'.encode('UTF-8'))
+        self.assertIsNone(util.sniff_bom(fh))
+        self.assertEqual(fh.tell(), 0)
+
+        fh = io.BytesIO('中文'.encode('Big5'))
+        self.assertIsNone(util.sniff_bom(fh))
+        self.assertEqual(fh.tell(), 0)
+
     def test_is_nullhost(self):
         self.assertTrue(util.is_nullhost('0.0.0.0'))
         self.assertFalse(util.is_nullhost('127.0.0.1'))

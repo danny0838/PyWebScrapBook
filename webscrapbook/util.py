@@ -13,6 +13,7 @@ import hashlib
 import time
 import mimetypes
 import binascii
+import codecs
 from base64 import b64decode
 from urllib.parse import unquote_to_bytes
 from ipaddress import IPv6Address, AddressValueError
@@ -99,6 +100,37 @@ def fix_codec(name):
         return CODECS_MAPPING[name.lower()]
     except KeyError:
         return name
+
+
+# starting of BOM32 is equal to BOM16, so check the former first
+BOM_DETECTORS = [
+    ('UTF-8-SIG', codecs.BOM_UTF8),
+    ('UTF-32-LE', codecs.BOM_UTF32_LE),
+    ('UTF-32-BE', codecs.BOM_UTF32_BE),
+    ('UTF-16-LE', codecs.BOM_UTF16_LE),
+    ('UTF-16-BE', codecs.BOM_UTF16_BE),
+    ]
+
+def sniff_bom(fh):
+    """Sniff a possibly existing BOM
+
+    Args:
+        fh: an opened file handler, must be seekable.
+
+    Return:
+        str: corresponding codec name for a found BOM if a BOM is found (and
+            sets pointer at the position after the BOM), or None otherwise.
+    """
+    # will read less if the file is smaller
+    raw = fh.read(4)
+
+    for enc, bom in BOM_DETECTORS:
+        if raw.startswith(bom):
+            fh.seek(len(bom))
+            return enc
+
+    fh.seek(0)
+    return None
 
 
 #########################################################################
