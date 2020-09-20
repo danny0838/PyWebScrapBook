@@ -2,17 +2,21 @@
 """
 import os
 import traceback
+import shutil
 import io
 import zipfile
 import mimetypes
 import time
 import re
+import html
 import copy
 import itertools
 import functools
 from collections import namedtuple, UserDict
 from urllib.parse import urlsplit, urljoin, quote, unquote
+from datetime import datetime, timezone
 
+import jinja2
 from lxml import etree
 
 from .host import Host
@@ -41,6 +45,384 @@ class MutatingDict(UserDict):
 
     def __delitem__(self, key):
         return NotImplemented
+
+
+class StaticSiteGenerator():
+    """Main class for static site pages generation.
+    """
+    RESOURCES = {
+        'icon/toggle.png': 'toggle.png',
+        'icon/search.png': 'search.png',
+        'icon/collapse.png': 'collapse.png',
+        'icon/expand.png': 'expand.png',
+        'icon/external.png': 'external.png',
+        'icon/item.png': 'item.png',
+        'icon/fclose.png': 'fclose.png',
+        'icon/fopen.png': 'fopen.png',
+        'icon/file.png': 'file.png',
+        'icon/note.png': 'note.png',  # ScrapBook X notex
+        'icon/postit.png': 'postit.png',  # ScrapBook X note
+        }
+    BIDI = {
+        'ltr': {
+            'dir': 'ltr',
+            'reversed_dir': 'rtl',
+            'start_edge': 'left',
+            'end_edge': 'right',
+            },
+        'rtl': {
+            'dir': 'rtl',
+            'reversed_dir': 'ltr',
+            'start_edge': 'right',
+            'end_edge': 'left',
+            },
+        }
+    I18N = {
+        'en': {
+            # map.html
+            'IndexerTreeToggleAll': 'Toggle all',
+            'IndexerTreeSearchLinkTitle': 'Search',
+            'IndexerTreeSourceLinkTitle': 'Source link',
+
+            # search.html
+            'IndexerTreeSearchTitle': '{book} :: Search',
+            'IndexerTreeSearchViewInMap': 'View in map',
+            'IndexerTreeSearchStart': 'go',
+            },
+        }
+    ITEM_TYPE_ICON = {
+        'folder': 'icon/fclose.png',
+        'file': 'icon/file.png',
+        'note': 'icon/note.png',
+        'postit': 'icon/postit.png',
+        }
+
+    def __init__(self, book, *, bidi='ltr', i18n=None,
+            static_index=False, rss=False,
+            ):
+        self.host = book.host
+        self.book = book
+        self.static_index = static_index
+        self.bidi = self.BIDI[bidi]
+
+        self.i18n = {}
+        self.i18n.update(self.I18N['en'])
+        if i18n is not None:
+            self.i18n.update(i18n)
+
+        self.rss = rss
+
+        self.template_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(self.host.templates),
+            autoescape=jinja2.select_autoescape(['html']),
+            )
+
+        book.load_meta_files()
+        book.load_toc_files()
+
+    def run(self):
+        yield Info('info', 'Generating static site pages...')
+
+        # copy resource files
+        for dst, src in self.RESOURCES.items():
+            yield from self._generate_resource_file(src, dst)
+
+        # generate static site pages
+        index_kwargs = dict(
+            title=self.book.name, bidi=self.bidi, i18n = self.i18n,
+            rss=self.rss,
+            data_dir = util.get_relative_url(self.book.data_dir, self.book.tree_dir),
+            meta_cnt=max(sum(1 for _ in self.book.iter_meta_files()), 1),
+            toc_cnt=max(sum(1 for _ in self.book.iter_toc_files()), 1),
+            )
+
+        if self.static_index:
+            yield from self._generate_page('index.html', 'static_map.html', filename='index',
+                static_index=self._generate_static_index(), **index_kwargs,
+                )
+
+        yield from self._generate_page('map.html', 'static_map.html', filename='map',
+            static_index=None, **index_kwargs,
+            )
+
+        yield from self._generate_page('frame.html', 'static_frame.html',
+            title=self.book.name, bidi=self.bidi, i18n = self.i18n,
+            )
+
+        yield from self._generate_page('search.html', 'static_search.html',
+            title=self.book.name, bidi=self.bidi, i18n = self.i18n,
+            path=util.get_relative_url(self.book.top_dir, self.book.tree_dir),
+            data_dir=util.get_relative_url(self.book.data_dir, self.book.top_dir),
+            tree_dir=util.get_relative_url(self.book.tree_dir, self.book.top_dir),
+            index=self.host.config['book'][self.book.id]['index'],
+            )
+
+    def _generate_resource_file(self, src, dst):
+        yield Info('debug', f'Checking resource file "{dst}"')
+        fsrc = self.host.get_static_file(src)
+        fdst = os.path.normpath(os.path.join(self.book.tree_dir, dst))
+
+        # check whether writing is required
+        if os.path.isfile(fdst):
+            if os.stat(fsrc).st_size == os.stat(fdst).st_size:
+                if util.checksum(fsrc) == util.checksum(fdst):
+                    yield Info('debug', f'Skipped resource file "{dst}" (up-to-date)')
+                    return
+
+        # save file
+        yield Info('info', f'Generating resource file "{dst}"')
+        try:
+            os.makedirs(os.path.dirname(fdst), exist_ok=True)
+            fsrc = self.host.get_static_file(src)
+            shutil.copyfile(fsrc, fdst)
+        except OSError as exc:
+            yield Info('error', f'Failed to create resource file "{dst}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+
+    def _generate_page(self, dst, tpl, **kwargs):
+        yield Info('debug', f'Checking page "{dst}"')
+        fsrc = io.BytesIO()
+        fdst = os.path.normpath(os.path.join(self.book.tree_dir, dst))
+
+        template = self.template_env.get_template(tpl)
+        content = template.render(**kwargs)
+        fsrc.write(content.encode('UTF-8'))
+
+        # check whether writing is required
+        if os.path.isfile(fdst):
+            if fsrc.getbuffer().nbytes == os.stat(fdst).st_size:
+                fsrc.seek(0)
+                if util.checksum(fsrc) == util.checksum(fdst):
+                    yield Info('debug', f'Skipped page "{dst}" (up-to-date)')
+                    return
+
+        # save file
+        yield Info('info', f'Generating page "{dst}"')
+        try:
+            fsrc.seek(0)
+            os.makedirs(os.path.dirname(fdst), exist_ok=True)
+            with open(fdst, 'wb') as fh:
+                shutil.copyfileobj(fsrc, fh)
+        except OSError as exc:
+            yield Info('error', f'Failed to create page file "{dst}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+
+    def _generate_static_index(self):
+        def get_class_text(classes, prefix=' '):
+            if not classes:
+                return ''
+
+            c = html.escape(' '.join(classes))
+            return f'{prefix}class="{c}"'
+
+        def add_child_items(parent_id):
+            nonlocal indent
+
+            try:
+                toc = book.toc[parent_id]
+            except KeyError:
+                return
+
+            toc = [id for id in toc if id in book.meta and id not in item_set]
+            if not toc:
+                return
+
+            yield f'{" " * indent}<ul class="scrapbook-container">\n'
+            indent += 2
+
+            for id in toc:
+                meta = book.meta[id]
+                meta_type = meta.get('type', '')
+                meta_index = meta.get('index', '')
+                meta_title = meta.get('title', '')
+                meta_source = meta.get('source', '')
+                meta_icon = meta.get('icon', '')
+                meta_marked = meta.get('marked', '')
+
+                classes = []
+                if meta_type:
+                    classes.append(f'scrapbook-type-{meta_type}')
+                if meta_marked:
+                    classes.append('scrapbook-marked')
+
+                yield f'{" " * indent}<li id="item-{html.escape(id)}"{get_class_text(classes)}>\n'
+                indent += 2
+
+                item_set.add(id)
+
+                if meta_type != 'separator':
+                    title = html.escape(meta_title or id)
+
+                    if meta_type != 'folder':
+                        if meta_type == 'bookmark' and meta_source:
+                            href = meta_source
+                        elif meta_index:
+                            href = util.get_relative_url(os.path.join(book.data_dir, meta_index), book.tree_dir, path_is_dir=False)
+                        else:
+                            href = ''
+                    else:
+                        href = ''
+
+                    if href:
+                        href = f' href="{html.escape(href)}"'
+
+                    # meta_icon is a URL
+                    if meta_icon:
+                        if urlsplit(meta_icon).scheme:
+                            # absolute URL
+                            icon = meta_icon
+                        else:
+                            # relative URL: tree_dir..index..icon
+                            ref = util.get_relative_url(os.path.join(book.data_dir, os.path.dirname(meta_index)), book.tree_dir)
+                            icon = ref + meta_icon
+                    else:
+                        icon = self.ITEM_TYPE_ICON.get(meta_type, 'icon/item.png')
+                    icon = html.escape(icon)
+
+                    yield f'{" " * indent}<div><a{href}><img src="{icon}" alt="">{title}</a></div>\n'
+                else:
+                    title = html.escape(meta_title)
+                    yield f'{" " * indent}<div><fieldset><legend>&nbsp;{title}&nbsp;</legend></fieldset></div>\n'
+
+                yield from add_child_items(id)
+
+                indent -= 2
+                yield f'{" " * indent}</li>\n'
+
+            indent -= 2
+            yield f'{" " * indent}</ul>\n'
+
+        book = self.book
+
+        item_set = {'root', 'hidden', 'recycle'}
+        indent = 0
+
+        yield '<div id="item-root">\n'
+        yield from add_child_items('root')
+        yield '</div>\n'
+
+
+class RssFeedGenerator():
+    """Main class for RSS feed generation.
+    """
+    NS = 'http://www.w3.org/2005/Atom'
+
+    def __init__(self, book, *, rss_root=None):
+        self.book = book
+        self.rss_root = rss_root.rstrip('/') + '/'
+
+        book.load_meta_files()
+        book.load_toc_files()
+
+    def run(self):
+        yield Info('info', 'Generating RSS feed...')
+
+        book = self.book
+        rss_root = self.rss_root
+
+        # RSS root must be an absolute URL
+        u = urlsplit(rss_root)
+        if not (u.scheme and u.netloc):
+            yield Info('error', f'Invalid RSS root URL "{rss_root}"')
+            return
+
+        id_prefix = re.sub(r'/+$', '', f'urn:webscrapbook:{u.netloc}{u.path}')
+        data_url = urljoin(rss_root, util.get_relative_url(book.data_dir, book.root))
+        tree_url = urljoin(rss_root, util.get_relative_url(book.tree_dir, book.root))
+
+        # get latest updated item entries
+        entries = []
+        for id, meta in book.meta.items():
+            # show only items with content,
+            # either with index or a bookmark with source
+            if meta.get('type') in {'folder', 'separator'}:
+                continue
+
+            if meta.get('type') != 'bookmark' and meta.get('index'):
+                pass
+            elif meta.get('type') == 'bookmark' and meta.get('source'):
+                pass
+            else:
+                continue
+
+            entries.append({
+                'id': id,
+                'modify': meta.get('modify', meta.get('create', '')),
+                'item': meta,
+                })
+        entries = sorted(entries, key=lambda d: d['modify'])
+        entries = list(reversed(entries))[:50]
+
+        # generate tree
+        root = etree.XML(f'<feed xmlns="{self.NS}"></feed>'.encode('UTF-8'))
+
+        elem = etree.SubElement(root, 'id')
+        elem.text = id_prefix
+
+        elem = etree.SubElement(root, 'link')
+        elem.attrib['rel'] = 'self'
+        elem.attrib['href'] = urljoin(tree_url, 'feed.atom')
+
+        elem = etree.SubElement(root, 'link')
+        elem.attrib['href'] = urljoin(tree_url, 'map.html')
+
+        elem = etree.SubElement(root, 'title')
+        elem.attrib['type'] = 'text'
+        elem.text = book.name
+
+        elem = etree.SubElement(root, 'updated')
+        if entries:
+            dt = util.id_to_datetime(entries[0]['modify'])
+        else:
+            dt = datetime.now(timezone.utc)
+        elem.text = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        for entry in entries:
+            entry_elem = etree.SubElement(root, 'entry')
+
+            elem = etree.SubElement(entry_elem, 'id')
+            elem.text = f'{id_prefix}:{quote(entry["id"])}'
+
+            elem = etree.SubElement(entry_elem, 'link')
+            if entry['item'].get('type') == 'bookmark':
+                elem.attrib['href'] = entry['item']['source']
+            else:
+                elem.attrib['href'] = urljoin(data_url, quote(entry['item']['index']))
+
+            elem = etree.SubElement(entry_elem, 'title')
+            elem.attrib['type'] = 'text'
+            elem.text = entry['item'].get('title', '')
+
+            elem = etree.SubElement(entry_elem, 'published')
+            dt = util.id_to_datetime(entry['item'].get('create', '')) or datetime.fromtimestamp(0, timezone.utc)
+            elem.text = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            elem = etree.SubElement(entry_elem, 'updated')
+            dt = util.id_to_datetime(entry['modify']) or datetime.fromtimestamp(0, timezone.utc)
+            elem.text = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            elem = etree.SubElement(entry_elem, 'author')
+            elem = etree.SubElement(elem, 'name')
+            elem.text = 'Anonymous'
+
+        # check whether writing is required
+        fsrc = io.BytesIO(etree.tostring(root, xml_declaration=True, encoding='UTF-8'))
+        fdst = os.path.normpath(os.path.join(self.book.tree_dir, 'feed.atom'))
+
+        if os.path.isfile(fdst):
+            if fsrc.getbuffer().nbytes == os.stat(fdst).st_size:
+                fsrc.seek(0)
+                if util.checksum(fsrc) == util.checksum(fdst):
+                    yield Info('debug', 'Skipped RSS feed (up-to-date)')
+                    return
+
+        # save file
+        yield Info('info', 'Generating RSS feed file "feed.atom"')
+        try:
+            fsrc.seek(0)
+            os.makedirs(os.path.dirname(fdst), exist_ok=True)
+            with open(fdst, 'wb') as fh:
+                shutil.copyfileobj(fsrc, fh)
+        except OSError as exc:
+            yield Info('error', f'Failed to create RSS feed file "feed.atom": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
 
 
 FulltextCacheItem = namedtuple('FulltextCacheItem', ['id', 'meta', 'index', 'indexfile', 'files_to_update'])
@@ -188,7 +570,7 @@ class FulltextCacheGenerator():
             if book.fulltext[id]:
                 yield Info('info', f'Updating cache for "{id}"...')
             else:
-                yield Info('info', f'Creating cache for "{id}"...')
+                yield Info('info', f'Generating cache for "{id}"...')
             has_update = True
 
         book = self.book
@@ -545,7 +927,9 @@ class FulltextCacheGenerator():
 
 
 def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
-        fulltext=True, inclusive_frames=True):
+        fulltext=True, inclusive_frames=True,
+        static_site=False, static_index=False,
+        bidi='ltr', i18n=None, rss_root=None):
     start = time.time()
 
     host = Host(root, config)
@@ -579,6 +963,22 @@ def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
                         inclusive_frames=inclusive_frames,
                         )
                     yield from generator.run(item_ids)
+
+                if static_site:
+                    generator = StaticSiteGenerator(
+                        book,
+                        static_index=static_index,
+                        bidi=bidi, i18n=i18n, rss=bool(rss_root),
+                        )
+                    yield from generator.run()
+
+                if rss_root:
+                    generator = RssFeedGenerator(
+                        book,
+                        rss_root=rss_root,
+                        )
+                    yield from generator.run()
+
         except Exception as exc:
             traceback.print_exc()
             yield Info('critical', str(exc), exc=exc)
