@@ -490,6 +490,116 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(util.is_compressible('application/xhtml+xml'))
         self.assertTrue(util.is_compressible('application/ld+json'))
 
+    def test_mime_is_html(self):
+        self.assertTrue(util.mime_is_html('text/html'))
+        self.assertTrue(util.mime_is_html('application/xhtml+xml'))
+        self.assertFalse(util.mime_is_html('application/html+zip'))
+        self.assertFalse(util.mime_is_html('application/x-maff'))
+        self.assertFalse(util.mime_is_html('text/plain'))
+        self.assertFalse(util.mime_is_html('text/markdown'))
+        self.assertFalse(util.mime_is_html('text/xml'))
+        self.assertFalse(util.mime_is_html('image/svg+xml'))
+        self.assertFalse(util.mime_is_html('application/octet-stream'))
+
+    def test_mime_is_archive(self):
+        self.assertFalse(util.mime_is_archive('text/html'))
+        self.assertFalse(util.mime_is_archive('application/xhtml+xml'))
+        self.assertTrue(util.mime_is_archive('application/html+zip'))
+        self.assertTrue(util.mime_is_archive('application/x-maff'))
+        self.assertFalse(util.mime_is_archive('text/plain'))
+        self.assertFalse(util.mime_is_archive('text/markdown'))
+        self.assertFalse(util.mime_is_archive('text/xml'))
+        self.assertFalse(util.mime_is_archive('image/svg+xml'))
+        self.assertFalse(util.mime_is_archive('application/octet-stream'))
+
+    def test_mime_is_htz(self):
+        self.assertFalse(util.mime_is_htz('text/html'))
+        self.assertFalse(util.mime_is_htz('application/xhtml+xml'))
+        self.assertTrue(util.mime_is_htz('application/html+zip'))
+        self.assertFalse(util.mime_is_htz('application/x-maff'))
+        self.assertFalse(util.mime_is_htz('text/plain'))
+        self.assertFalse(util.mime_is_htz('text/markdown'))
+        self.assertFalse(util.mime_is_htz('text/xml'))
+        self.assertFalse(util.mime_is_htz('image/svg+xml'))
+        self.assertFalse(util.mime_is_htz('application/octet-stream'))
+
+    def test_mime_is_maff(self):
+        self.assertFalse(util.mime_is_maff('text/html'))
+        self.assertFalse(util.mime_is_maff('application/xhtml+xml'))
+        self.assertFalse(util.mime_is_maff('application/html+zip'))
+        self.assertTrue(util.mime_is_maff('application/x-maff'))
+        self.assertFalse(util.mime_is_maff('text/plain'))
+        self.assertFalse(util.mime_is_maff('text/markdown'))
+        self.assertFalse(util.mime_is_maff('text/xml'))
+        self.assertFalse(util.mime_is_maff('image/svg+xml'))
+        self.assertFalse(util.mime_is_maff('application/octet-stream'))
+
+    def test_mime_is_markdown(self):
+        self.assertFalse(util.mime_is_markdown('text/html'))
+        self.assertFalse(util.mime_is_markdown('application/xhtml+xml'))
+        self.assertFalse(util.mime_is_markdown('application/html+zip'))
+        self.assertFalse(util.mime_is_markdown('application/x-maff'))
+        self.assertFalse(util.mime_is_markdown('text/plain'))
+        self.assertTrue(util.mime_is_markdown('text/markdown'))
+        self.assertFalse(util.mime_is_markdown('text/xml'))
+        self.assertFalse(util.mime_is_markdown('image/svg+xml'))
+        self.assertFalse(util.mime_is_markdown('application/octet-stream'))
+
+    def test_is_html(self):
+        self.assertTrue(util.is_html('index.html'))
+        self.assertTrue(util.is_html('index.xhtml'))
+        self.assertFalse(util.is_html('20200101000000000.htz'))
+        self.assertFalse(util.is_html('20200101000000000.maff'))
+        self.assertFalse(util.is_html('20200101000000000/index.md'))
+        self.assertFalse(util.is_html('20200101000000000/test.txt'))
+        self.assertFalse(util.is_html('20200101000000000/test.xml'))
+        self.assertFalse(util.is_html('20200101000000000/test.svg'))
+        self.assertFalse(util.is_html('20200101000000000/whatever'))
+
+    def test_is_archive(self):
+        self.assertFalse(util.is_archive('index.html'))
+        self.assertFalse(util.is_archive('index.xhtml'))
+        self.assertTrue(util.is_archive('20200101000000000.htz'))
+        self.assertTrue(util.is_archive('20200101000000000.maff'))
+        self.assertFalse(util.is_archive('20200101000000000/index.md'))
+        self.assertFalse(util.is_archive('20200101000000000/test.txt'))
+        self.assertFalse(util.is_archive('20200101000000000/test.xml'))
+        self.assertFalse(util.is_archive('20200101000000000/test.svg'))
+        self.assertFalse(util.is_archive('20200101000000000/whatever'))
+
+    def test_is_htz(self):
+        self.assertFalse(util.is_htz('index.html'))
+        self.assertFalse(util.is_htz('index.xhtml'))
+        self.assertTrue(util.is_htz('20200101000000000.htz'))
+        self.assertFalse(util.is_htz('20200101000000000.maff'))
+        self.assertFalse(util.is_htz('20200101000000000/index.md'))
+        self.assertFalse(util.is_htz('20200101000000000/test.txt'))
+        self.assertFalse(util.is_htz('20200101000000000/test.xml'))
+        self.assertFalse(util.is_htz('20200101000000000/test.svg'))
+        self.assertFalse(util.is_htz('20200101000000000/whatever'))
+
+    def test_is_maff(self):
+        self.assertFalse(util.is_maff('index.html'))
+        self.assertFalse(util.is_maff('index.xhtml'))
+        self.assertFalse(util.is_maff('20200101000000000.htz'))
+        self.assertTrue(util.is_maff('20200101000000000.maff'))
+        self.assertFalse(util.is_maff('20200101000000000/index.md'))
+        self.assertFalse(util.is_maff('20200101000000000/test.txt'))
+        self.assertFalse(util.is_maff('20200101000000000/test.xml'))
+        self.assertFalse(util.is_maff('20200101000000000/test.svg'))
+        self.assertFalse(util.is_maff('20200101000000000/whatever'))
+
+    def test_is_markdown(self):
+        self.assertFalse(util.is_markdown('index.html'))
+        self.assertFalse(util.is_markdown('index.xhtml'))
+        self.assertFalse(util.is_markdown('20200101000000000.htz'))
+        self.assertFalse(util.is_markdown('20200101000000000.maff'))
+        self.assertTrue(util.is_markdown('20200101000000000/index.md'))
+        self.assertFalse(util.is_markdown('20200101000000000/test.txt'))
+        self.assertFalse(util.is_markdown('20200101000000000/test.xml'))
+        self.assertFalse(util.is_markdown('20200101000000000/test.svg'))
+        self.assertFalse(util.is_markdown('20200101000000000/whatever'))
+
     def test_zip_tuple_timestamp(self):
         self.assertEqual(
             util.zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),

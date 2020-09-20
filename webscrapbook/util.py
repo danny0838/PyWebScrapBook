@@ -386,6 +386,51 @@ def is_compressible(mimetype):
     return False
 
 
+def mime_is_html(mime):
+    return mime in {'text/html', 'application/xhtml+xml'}
+
+
+def mime_is_archive(mime):
+    return mime in {'application/html+zip', 'application/x-maff'}
+
+
+def mime_is_htz(mime):
+    return mime == 'application/html+zip'
+
+
+def mime_is_maff(mime):
+    return mime == 'application/x-maff'
+
+
+def mime_is_markdown(mime):
+    return mime in {'text/markdown'}
+
+
+def is_html(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_html(mime)
+
+
+def is_archive(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_archive(mime)
+
+
+def is_htz(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_htz(mime)
+
+
+def is_maff(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_maff(mime)
+
+
+def is_markdown(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_markdown(mime)
+
+
 #########################################################################
 # ZIP handling
 #########################################################################
