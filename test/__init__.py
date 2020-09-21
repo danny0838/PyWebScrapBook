@@ -57,13 +57,17 @@ class TestClassConfig(unittest.TestCase):
             ('', OrderedDict([
                 ('name', 'mybook'),
                 ('top_dir', ''),
-                ('data_dir', ''),
-                ('tree_dir', '.wsb/tree'),
-                ('index', '.wsb/tree/map.html'),
+                ('data_dir', 'data'),
+                ('tree_dir', 'tree'),
+                ('index', 'tree/map.html'),
                 ('no_tree', False),
                 ])),
             ('book2', OrderedDict([
                 ('name', 'mybook2'),
+                ('top_dir', ''),
+                ('data_dir', ''),
+                ('tree_dir', '.wsb/tree'),
+                ('index', '.wsb/tree/map.html'),
                 ('no_tree', True),
                 ])),
             ]))
@@ -110,7 +114,9 @@ class TestClassConfig(unittest.TestCase):
         self.assertEqual(conf['book']['']['name'], 'myuserbook')
         self.assertEqual(conf['book']['']['no_tree'], True)
         self.assertEqual(conf['book']['book1']['name'], 'mybook1')
+        self.assertEqual(conf['book']['book1']['top_dir'], '')
         self.assertEqual(conf['book']['book2']['name'], 'mybook2')
+        self.assertEqual(conf['book']['book2']['top_dir'], '')
 
     def test_getitem(self):
         # test lazy loading
@@ -124,7 +130,9 @@ class TestClassConfig(unittest.TestCase):
             self.assertEqual(conf['server']['ssl_on'], True)
             self.assertEqual(conf['server']['browse'], True)
             self.assertEqual(conf['book']['']['name'], 'mybook')
+            self.assertEqual(conf['book']['']['top_dir'], '')
             self.assertEqual(conf['book']['book2']['name'], 'mybook2')
+            self.assertEqual(conf['book']['book2']['top_dir'], '')
         finally:
             os.chdir(_cwd)
 
@@ -151,7 +159,9 @@ class TestClassConfig(unittest.TestCase):
             self.assertEqual(conf.getname('server.ssl_on'), 'true')
             self.assertEqual(conf.getname('server.browse'), 'yes')
             self.assertEqual(conf.getname('book..name'), 'mybook')
+            self.assertEqual(conf.getname('book..top_dir'), '')
             self.assertEqual(conf.getname('book.book2.name'), 'mybook2')
+            self.assertEqual(conf.getname('book.book2.top_dir'), '')
         finally:
             os.chdir(_cwd)
 
@@ -196,13 +206,17 @@ use_jar = no
 [book ""]
 name = mybook
 top_dir = 
-data_dir = 
-tree_dir = .wsb/tree
-index = .wsb/tree/map.html
+data_dir = data
+tree_dir = tree
+index = tree/map.html
 no_tree = false
 
 [book "book2"]
 name = mybook2
+top_dir = 
+data_dir = 
+tree_dir = .wsb/tree
+index = .wsb/tree/map.html
 no_tree = on
 
 [auth "user1"]
@@ -253,13 +267,17 @@ permission = all
                     ('', OrderedDict([
                         ('name', 'mybook'),
                         ('top_dir', ''),
-                        ('data_dir', ''),
-                        ('tree_dir', '.wsb/tree'),
-                        ('index', '.wsb/tree/map.html'),
+                        ('data_dir', 'data'),
+                        ('tree_dir', 'tree'),
+                        ('index', 'tree/map.html'),
                         ('no_tree', False),
                         ])),
                     ('book2', OrderedDict([
                         ('name', 'mybook2'),
+                        ('top_dir', ''),
+                        ('data_dir', ''),
+                        ('tree_dir', '.wsb/tree'),
+                        ('index', '.wsb/tree/map.html'),
                         ('no_tree', True),
                         ])),
                     ])),

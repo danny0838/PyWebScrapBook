@@ -178,10 +178,9 @@ class Config():
                         sec, subsec = m.group(1), m.group(2) or ''
                         if sec in self.SUBSECTED:
                             newsection = f'{sec} "{subsec}"'
-                            if newsection != section:
-                                conf.setdefault(newsection, OrderedDict())
-                                conf[newsection].update(parser[section])
-                                continue
+                            conf.setdefault(newsection, self.DEFAULT.get(f'{sec} ""', OrderedDict()))
+                            conf[newsection].update(parser[section])
+                            continue
 
                     # conf.setdefault(...).update(...) doesn't work here as the
                     # setdefault may return the default value rather then a
