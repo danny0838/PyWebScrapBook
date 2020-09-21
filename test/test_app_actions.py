@@ -715,6 +715,31 @@ class TestInfo(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_accept_format(self):
+        """Test that `Accept` HTTP header causes change of response format
+
+        - Default `text/html` is tested by `TestView.test_directory`.
+        - `f=json` parameter is tested by `test_directory` in this class.
+        """
+        with app.test_client() as c:
+
+            r = c.get(
+                '/subdir/',
+                query_string={'a': 'info'},
+                headers=[('Accept', 'application/json')])
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
+                    'mime': None,
+                    },
+                })
+
     def test_directory(self):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'info', 'f': 'json'})
@@ -1316,6 +1341,18 @@ class TestList(TestActions):
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
                 }) in sse)
             self.assertTrue(('complete', None) in sse)
+
+            headers=[('Accept', 'text/event-stream')]
+            with self.subTest(headers=headers):
+                r = c.get('/subdir/', query_string={'a': 'list'}, headers=headers)
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+                data = r.data.decode('UTF-8')
+                self.assertTrue('data: {{"name": "file.txt", "type": "file", "size": 3, "last_modified": {}}}\n\n'.format(
+                        os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime) in data)
+                self.assertTrue('data: {{"name": "sub", "type": "dir", "size": null, "last_modified": {}}}\n\n'.format(
+                        os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime) in data)
+                self.assertTrue(data.endswith('\n\nevent: complete\ndata: \n\n'))
 
     def test_sse_directory_recursive(self):
         with app.test_client() as c:
