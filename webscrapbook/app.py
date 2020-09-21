@@ -36,6 +36,7 @@ from . import *
 from . import __version__
 from . import Config
 from . import util
+from .scrapbook import host as wsb_host
 from ._compat.contextlib import nullcontext
 from ._compat import zip_stream
 
@@ -62,7 +63,7 @@ def static_file(filename, mimetype=None):
     response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
-    if runtime['config']['app']['content_security_policy'] == 'strict':
+    if runtime.config['app']['content_security_policy'] == 'strict':
         response.headers.set('Content-Security-Policy', "connect-src 'none'; form-action 'none';")
     return response
 
@@ -99,7 +100,7 @@ def zip_static_file(zip, subpath, mimetype=None):
         'Last-Modified': last_modified,
         'ETag': etag,
         }
-    if runtime['config']['app']['content_security_policy'] == 'strict':
+    if runtime.config['app']['content_security_policy'] == 'strict':
         headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
     response = Response(fh, headers=headers, mimetype=mimetype)
@@ -165,7 +166,7 @@ def get_archive_path(filepath):
     """
     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
         archivepath = filepath[:m.start(0)].rstrip('/')
-        archivefile = os.path.normpath(os.path.join(runtime['root'], archivepath.lstrip('/')))
+        archivefile = os.path.normpath(os.path.join(runtime.chroot, archivepath.lstrip('/')))
         conflicting = archivefile + '!'
         if os.path.lexists(conflicting):
             break
@@ -418,7 +419,7 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
         return http_response(data, headers=headers, format=format)
 
     body = render_template('index.html',
-            sitename=runtime['name'],
+            sitename=runtime.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -438,7 +439,7 @@ def handle_archive_viewing(paths, mimetype):
         """List available web pages in a MAFF file.
         """
         return render_template('maff_index.html',
-                sitename=runtime['name'],
+                sitename=runtime.name,
                 is_local=is_local_access(),
                 base=request.script_root,
                 path=request.path,
@@ -520,7 +521,7 @@ def handle_markdown_output(paths, zip=None):
             'Last-Modified': last_modified,
             'ETag': etag,
             }
-        if runtime['config']['app']['content_security_policy'] == 'strict':
+        if runtime.config['app']['content_security_policy'] == 'strict':
             headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
         # prepare content
@@ -532,7 +533,7 @@ def handle_markdown_output(paths, zip=None):
                 body = f.read()
 
     body = render_template('markdown.html',
-            sitename=runtime['name'],
+            sitename=runtime.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -554,13 +555,13 @@ class Request(flask.Request):
     @cached_property
     def localpath(self):
         """Corresponding filesystem path of the requested path."""
-        return os.path.normpath(os.path.join(runtime['root'], self.path.strip('/')))
+        return os.path.normpath(os.path.join(runtime.chroot, self.path.strip('/')))
 
     @cached_property
     def localpaths(self):
         """Like localpath, but with ZIP subpaths resolved."""
         paths = self.paths.copy()
-        paths[0] = os.path.normpath(os.path.join(runtime['root'], paths[0].lstrip('/')))
+        paths[0] = os.path.normpath(os.path.join(runtime.chroot, paths[0].lstrip('/')))
         return paths
 
     @cached_property
@@ -607,10 +608,10 @@ def handle_action_advanced(func):
         # validate and revoke token
         token = request.values.get('token') or ''
 
-        if not runtime['token_handler'].validate(token):
+        if not runtime.token_handler.validate(token):
             abort(400, 'Invalid access token.')
 
-        runtime['token_handler'].delete(token)
+        runtime.token_handler.delete(token)
 
         rv = func(*args, **kwargs)
 
@@ -625,34 +626,12 @@ def handle_action_advanced(func):
     return wrapper
 
 
-def handle_action_lock(func):
-    """A decorator function that helps handling the lock.
-
-    - Verify lock name.
-    - Verify targetpath.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # verify name
-        name = request.values.get('name')
-        if name is None:
-            abort(400, "Lock name is not specified.")
-
-        # validate targetpath
-        targetname = util.encrypt(name, method='md5') + '.lock'
-        targetpath = os.path.join(runtime['locks'], targetname)
-
-        return func(name=name, targetpath=targetpath, *args, **kwargs)
-
-    return wrapper
-
-
 def handle_action_writing(func):
     """A decorator function that helps handling a writing action.
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if os.path.abspath(request.localpath) == runtime['root']:
+        if os.path.abspath(request.localpath) == runtime.chroot:
             abort(403, "Unable to operate the root directory.")
 
         return func(*args, **kwargs)
@@ -684,9 +663,9 @@ def handle_action_renaming(func):
             abort(400, 'Target is not specified.')
 
         targetpaths = get_archive_path(target)
-        targetpaths[0] = os.path.normpath(os.path.join(runtime['root'], targetpaths[0].lstrip('/')))
+        targetpaths[0] = os.path.normpath(os.path.join(runtime.chroot, targetpaths[0].lstrip('/')))
 
-        if not targetpaths[0].startswith(os.path.join(runtime['root'], '')):
+        if not targetpaths[0].startswith(os.path.join(runtime.chroot, '')):
             abort(403, "Unable to operate beyond the root directory.")
 
         if len(targetpaths) > 1:
@@ -918,10 +897,9 @@ def action_static():
         abort(400, "Action not supported.")
 
     filepath = request.path.strip('/')
-    for i in runtime['statics']:
-        f = os.path.join(i, filepath)
-        if os.path.isfile(f):
-            return static_file(f)
+    file = runtime.get_static_file(filepath)
+    if file:
+        return static_file(file)
 
     abort(404)
 
@@ -964,7 +942,7 @@ def action_edit():
         body = body.decode(encoding)
 
     body = render_template('edit.html',
-            sitename=runtime['name'],
+            sitename=runtime.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -1002,7 +980,7 @@ def action_editx():
             abort(404)
 
     body = render_template('editx.html',
-            sitename=runtime['name'],
+            sitename=runtime.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -1058,7 +1036,7 @@ def action_config():
     if not format:
         abort(400, "Action not supported.")
 
-    data = runtime['config'].dump_object()
+    data = runtime.config.dump_object()
 
     # filter values for better security
     data = {k:v for k, v in data.items() if k in ('app', 'book')}
@@ -1083,73 +1061,50 @@ def action_token():
     if request.method != 'POST':
         abort(405, valid_methods=['POST'])
 
-    return http_response(runtime['token_handler'].acquire(), format=format)
+    return http_response(runtime.token_handler.acquire(), format=format)
 
 
 @handle_action_advanced
-@handle_action_lock
-def action_lock(name, targetpath):
+def action_lock():
     """Acquire a lock for the given name.
 
     URL params:
     - chkt: recheck until the lock file not exist or fail out when time out.
     - chks: how long to treat the lock file as stale.
     """
-    format = request.format
-    check_stale = request.values.get('chks', 300, type=int)
-    check_timeout = request.values.get('chkt', 5, type=int)
-    check_expire = time.time() + check_timeout
-    check_delta = min(check_timeout, 0.1)
+    # verify name
+    name = request.values.get('name')
+    if name is None:
+        abort(400, "Lock name is not specified.")
 
+    timeout = request.values.get('chkt', 5, type=int)
+    stale = request.values.get('chks', 300, type=int)
+
+    lock = runtime.get_lock(name, timeout=timeout, stale=stale)
     try:
-        while True:
-            try:
-                os.makedirs(targetpath)
-            except FileExistsError:
-                t = time.time()
-
-                if t >= check_expire or not os.path.isdir(targetpath):
-                    abort(500, f'Unable to acquire lock "{name}".')
-
-                try:
-                    lock_expire = os.stat(targetpath).st_mtime + check_stale
-                except FileNotFoundError:
-                    # Lock removed by another process during the short interval.
-                    # Try acquire again.
-                    continue
-
-                if t >= lock_expire:
-                    # Lock expired. Touch rather than remove and make for atomicity.
-                    try:
-                        os.utime(targetpath)
-                    except OSError:
-                        traceback.print_exc()
-                        abort(500, f'Unable to regenerate stale lock "{name}".')
-                    else:
-                        break
-
-                time.sleep(check_delta)
-            else:
-                break
-    except HTTPException:
-        raise
-    except Exception:
-        traceback.print_exc()
+        lock.acquire()
+    except wsb_host.LockTimeoutError:
+        abort(500, f'Unable to acquire lock "{name}".')
+    except wsb_host.LockRegenerateError:
+        abort(500, f'Unable to regenerate stale lock "{name}".')
+    except wsb_host.LockGenerateError:
         abort(500, f'Unable to create lock "{name}".')
 
 
 @handle_action_advanced
-@handle_action_lock
-def action_unlock(name, targetpath):
+def action_unlock():
     """Release a lock for the given name."""
-    format = request.format
+    # verify name
+    name = request.values.get('name')
+    if name is None:
+        abort(400, "Lock name is not specified.")
 
+    lock = runtime.get_lock(name, assume_acquired=True)
     try:
-        os.rmdir(targetpath)
-    except FileNotFoundError:
+        lock.release()
+    except wsb_host.LockReleaseNotFoundError:
         pass
-    except Exception:
-        traceback.print_exc()
+    except wsb_host.LockReleaseError:
         abort(500, f'Unable to remove lock "{name}".')
 
 
@@ -1585,14 +1540,14 @@ def action_copy(sourcepaths, targetpaths):
 @bp.before_request
 def handle_before_request():
     # replace SCRIPT_NAME with the custom if set
-    if runtime['config']['app']['base']:
+    if runtime.config['app']['base']:
         # Flask treats SCRIPT_NAME in the same way as PATH_INFO, which is an
         # IRI string decoded as ISO-8859-1 according to WSGI standard).
-        request.environ['SCRIPT_NAME'] = unquote(runtime['config']['app']['base']).encode('UTF-8').decode('ISO-8859-1')
+        request.environ['SCRIPT_NAME'] = unquote(runtime.config['app']['base']).encode('UTF-8').decode('ISO-8859-1')
 
     # handle authorization
     try:
-        auth_config = runtime['config']['auth']
+        auth_config = runtime.config['auth']
     except KeyError:
         # auth not required
         return
@@ -1600,7 +1555,7 @@ def handle_before_request():
     perm = get_permission(request.authorization, auth_config)
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
-        auth.set_basic(runtime['config']['app']['name'])
+        auth.set_basic(runtime.config['app']['name'])
         abort(401, 'You are not authorized.', www_authenticate=auth)
 
 
@@ -1619,7 +1574,7 @@ def handle_request(filepath=''):
 @bp.after_request
 def handle_after_request(response):
     # forbid a privileged page to be framed
-    if runtime['config']['app']['content_security_policy'] == 'strict':
+    if runtime.config['app']['content_security_policy'] == 'strict':
         if 'Content-Security-Policy' not in response.headers:
             response.headers.set('Content-Security-Policy', "frame-ancestors 'none';")
             response.headers.set('X-Frame-Options', 'deny')
@@ -1726,52 +1681,36 @@ class TokenHandler():
     DEFAULT_EXPIRY = 1800  # in seconds
 
 
+class WebHost(wsb_host.Host):
+    def __init__(self, root, config=None):
+        super().__init__(root, config=config)
+
+        # init token handler
+        self.tokens = os.path.join(self.root, WSB_DIR, 'server', 'tokens')
+        self.token_handler = TokenHandler(self.tokens)
+
+
 def make_app(root=".", config=None):
-    # use the same realpath during the APP lifetime
-    root = os.path.realpath(root)
-
-    if not config:
-        config = Config()
-        config.load(root)
-
-    # runtime variables
-    _runtime = {}
-    _runtime['config'] = config
-    _runtime['root'] = os.path.normpath(os.path.join(root, config['app']['root']))
-    _runtime['name'] = config['app']['name']
-
-    # add path for themes
-    _runtime['themes'] = [
-        os.path.join(root, WSB_DIR, 'themes', config['app']['theme']),
-        os.path.join(os.path.dirname(__file__), 'themes', config['app']['theme']),
-        ]
-    _runtime['statics'] = [os.path.join(t, 'static') for t in _runtime['themes']]
-    _runtime['templates'] = [os.path.join(t, 'templates') for t in _runtime['themes']]
-
-    _runtime['tokens'] = os.path.join(root, WSB_DIR, 'server', 'tokens')
-    _runtime['locks'] = os.path.join(root, WSB_DIR, 'locks')
-
-    # init token_handler
-    _runtime['token_handler'] = TokenHandler(_runtime['tokens'])
+    _runtime = WebHost(root, config=config)
 
     # main app instance
-    app = flask.Flask(__name__, instance_path=_runtime['root'])
+    app = flask.Flask(__name__, instance_path=_runtime.chroot)
     app.register_blueprint(bp)
     app.request_class = Request
     app.config['WEBSCRAPBOOK_RUNTIME'] = _runtime
 
     xheaders = {
-            'x_for': config['app']['allowed_x_for'],
-            'x_proto': config['app']['allowed_x_proto'],
-            'x_host': config['app']['allowed_x_host'],
-            'x_port': config['app']['allowed_x_port'],
-            'x_prefix': config['app']['allowed_x_prefix'],
+            'x_for': _runtime.config['app']['allowed_x_for'],
+            'x_proto': _runtime.config['app']['allowed_x_proto'],
+            'x_host': _runtime.config['app']['allowed_x_host'],
+            'x_port': _runtime.config['app']['allowed_x_port'],
+            'x_prefix': _runtime.config['app']['allowed_x_prefix'],
             }
 
     if any(v for v in xheaders.values()):
         app.wsgi_app = ProxyFix(app.wsgi_app, **xheaders)
 
-    app.jinja_loader = jinja2.FileSystemLoader(_runtime['templates'])
+    app.jinja_loader = jinja2.FileSystemLoader(_runtime.templates)
     app.jinja_env.globals.update({
             'os': os,
             'time': time,

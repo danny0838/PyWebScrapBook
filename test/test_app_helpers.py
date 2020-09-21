@@ -693,7 +693,7 @@ class TestFunctions(unittest.TestCase):
         """Return corresponding permission for the matched user and '' for unmatched."""
         root = os.path.join(root_dir, 'test_app_helpers', 'get_permission1')
         app = wsbapp.make_app(root)
-        auth_config = app.config['WEBSCRAPBOOK_RUNTIME']['config']['auth']
+        auth_config = app.config['WEBSCRAPBOOK_RUNTIME'].config['auth']
         with app.app_context():
             # util.encrypt should be called with the inputting password
             # and the salt and method for the matched user
@@ -750,7 +750,7 @@ class TestFunctions(unittest.TestCase):
         """Use empty user and password if not provided."""
         root = os.path.join(root_dir, 'test_app_helpers', 'get_permission2')
         app = wsbapp.make_app(root)
-        auth_config = app.config['WEBSCRAPBOOK_RUNTIME']['config']['auth']
+        auth_config = app.config['WEBSCRAPBOOK_RUNTIME'].config['auth']
         with app.app_context():
             self.assertEqual(wsbapp.get_permission(None, auth_config), 'view')
             mock_encrypt.assert_called_with('', 'salt', 'plain')
@@ -763,7 +763,7 @@ class TestFunctions(unittest.TestCase):
         """Use permission for the first matched user and password."""
         root = os.path.join(root_dir, 'test_app_helpers', 'get_permission3')
         app = wsbapp.make_app(root)
-        auth_config = app.config['WEBSCRAPBOOK_RUNTIME']['config']['auth']
+        auth_config = app.config['WEBSCRAPBOOK_RUNTIME'].config['auth']
         with app.app_context():
             mock_encrypt.reset_mock()
             self.assertEqual(wsbapp.get_permission({'username': '', 'password': ''}, auth_config), 'view')
@@ -802,7 +802,7 @@ class TestFunctions(unittest.TestCase):
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            self.assertEqual(current_app.config['WEBSCRAPBOOK_RUNTIME']['config']['app']['name'], 'mywsb1')
+            self.assertEqual(current_app.config['WEBSCRAPBOOK_RUNTIME'].config['app']['name'], 'mywsb1')
 
     def test_make_app2(self):
         # pass root, config
@@ -813,7 +813,7 @@ class TestFunctions(unittest.TestCase):
 
         app = wsbapp.make_app(root, config)
         with app.app_context():
-            self.assertEqual(current_app.config['WEBSCRAPBOOK_RUNTIME']['config']['app']['name'], 'mywsb2')
+            self.assertEqual(current_app.config['WEBSCRAPBOOK_RUNTIME'].config['app']['name'], 'mywsb2')
 
 class TestRequest(unittest.TestCase):
     def test_action(self):

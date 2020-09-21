@@ -2367,6 +2367,7 @@ class TestLock(unittest.TestCase):
                 'a': 'lock',
                 'f': 'json',
                 })
+
             mock_abort.assert_called_once_with(400, 'Lock name is not specified.')
 
     def test_normal(self):
@@ -2384,11 +2385,13 @@ class TestLock(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
                 })
-            self.assertTrue(os.path.isdir(self.lock))
+            self.assertTrue(os.path.isfile(self.lock))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_directory_existed(self, mock_abort):
-        os.makedirs(self.lock, exist_ok=True)
+    def test_lock_existed(self, mock_abort):
+        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
+        with open(self.lock, 'w'):
+            pass
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2401,8 +2404,10 @@ class TestLock(unittest.TestCase):
 
             mock_abort.assert_called_once_with(500, 'Unable to acquire lock "test".')
 
-    def test_directory_staled(self):
-        os.makedirs(self.lock, exist_ok=True)
+    def test_stale_lock_existed(self):
+        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
+        with open(self.lock, 'w'):
+            pass
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2419,13 +2424,11 @@ class TestLock(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
                 })
-            self.assertTrue(os.path.isdir(self.lock))
+            self.assertTrue(os.path.isfile(self.lock))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_file_existed(self, mock_abort):
-        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
-        with open(self.lock, 'w') as f:
-            pass
+    def test_directory_existed(self, mock_abort):
+        os.makedirs(self.lock, exist_ok=True)
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2436,7 +2439,7 @@ class TestLock(unittest.TestCase):
                 'chkt': 0,
                 })
 
-            mock_abort.assert_called_once_with(500, 'Unable to acquire lock "test".')
+            mock_abort.assert_called_once_with(500, 'Unable to create lock "test".')
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
@@ -2453,8 +2456,6 @@ class TestUnlock(unittest.TestCase):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        os.makedirs(self.lock, exist_ok=True)
-
         with app.test_client() as c:
             r = c.get('/', query_string={
                 'token': token(c),
@@ -2468,8 +2469,6 @@ class TestUnlock(unittest.TestCase):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        os.makedirs(self.lock, exist_ok=True)
-
         with app.test_client() as c:
             r = c.post('/', data={
                 'a': 'unlock',
@@ -2482,8 +2481,6 @@ class TestUnlock(unittest.TestCase):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_params_check(self, mock_abort):
         """Require name."""
-        os.makedirs(self.lock, exist_ok=True)
-
         with app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
@@ -2494,7 +2491,9 @@ class TestUnlock(unittest.TestCase):
             mock_abort.assert_called_once_with(400, 'Lock name is not specified.')
 
     def test_normal(self):
-        os.makedirs(self.lock, exist_ok=True)
+        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
+        with open(self.lock, 'w'):
+            pass
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2529,12 +2528,9 @@ class TestUnlock(unittest.TestCase):
                 })
             self.assertFalse(os.path.exists(self.lock))
 
-    @mock.patch('sys.stderr', new_callable=io.StringIO)
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_unremovable(self, mock_abort, mock_stderr):
+    def test_directory_existed(self, mock_abort):
         os.makedirs(self.lock, exist_ok=True)
-        with open(os.path.join(self.lock, 'temp.txt'), 'w') as f:
-            pass
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2545,25 +2541,6 @@ class TestUnlock(unittest.TestCase):
                 })
 
             mock_abort.assert_called_once_with(500, 'Unable to remove lock "test".')
-            self.assertNotEqual(mock_stderr.getvalue(), '')
-
-    @mock.patch('sys.stderr', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_unremovable2(self, mock_abort, mock_stderr):
-        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
-        with open(self.lock, 'w') as f:
-            pass
-
-        with app.test_client() as c:
-            r = c.post('/', data={
-                'token': token(c),
-                'a': 'unlock',
-                'f': 'json',
-                'name': 'test',
-                })
-
-            mock_abort.assert_called_once_with(500, 'Unable to remove lock "test".')
-            self.assertNotEqual(mock_stderr.getvalue(), '')
 
 class TestMkdir(unittest.TestCase):
     def setUp(self):
