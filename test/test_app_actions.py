@@ -468,7 +468,7 @@ class TestView(unittest.TestCase):
                     path='/archive.zip!/',
                     pathparts=['/archive.zip', ''],
                     subentries={
-                        ('index.html', 'file', 19, 536428800),
+                        ('index.html', 'file', 19, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
                         },
                     )
 
@@ -1396,13 +1396,13 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
-                    'last_modified': 536515200,
+                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
                     }) in sse)
                 self.assertTrue(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': 536518800,
+                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
                     }) in sse)
                 self.assertTrue(('complete', None) in sse)
 
@@ -1418,13 +1418,13 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
-                    'last_modified': 536515200,
+                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
                     }) in sse)
                 self.assertTrue(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': 536518800,
+                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
                     }) in sse)
                 self.assertTrue(('complete', None) in sse)
 
@@ -1440,7 +1440,7 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
-                    'last_modified': 536601600,
+                    'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
                     }) in sse)
                 self.assertTrue(('message', {
                     'name': 'subdir',
@@ -1462,7 +1462,7 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
-                    'last_modified': 536601600,
+                    'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
                     }) in sse)
                 self.assertTrue(('message', {
                     'name': 'subdir',
