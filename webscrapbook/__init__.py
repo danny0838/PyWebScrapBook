@@ -44,6 +44,31 @@ class Config():
     Values are loaded from config files relative to CWD. Consider calling
     load() if the script changes CWD during the runtime.
     """
+    TYPES = {
+        'app': {
+            'allowed_x_for': 'getint',
+            'allowed_x_proto': 'getint',
+            'allowed_x_host': 'getint',
+            'allowed_x_port': 'getint',
+            'allowed_x_prefix': 'getint',
+            },
+        'server': {
+            'port': 'getint',
+            'ssl_on': 'getboolean',
+            'browse': 'getboolean',
+            },
+        'browser': {
+            'cache_expire': 'getint',
+            'use_jar': 'getboolean',
+            },
+        'book': {
+            None: {
+                'no_tree': 'getboolean',
+                },
+            },
+        }
+    SUBSECTED = ['book', 'auth']
+
     def __init__(self):
         self._conf = None
         self._data = None
@@ -188,30 +213,5 @@ class Config():
                     sectionobj[key] = getattr(conf[section], self.TYPES[section][key])(key)
                 except KeyError:
                     sectionobj[key] = conf[section][key]
-
-    SUBSECTED = ['book', 'auth']
-    TYPES = {
-        'app': {
-            'allowed_x_for': 'getint',
-            'allowed_x_proto': 'getint',
-            'allowed_x_host': 'getint',
-            'allowed_x_port': 'getint',
-            'allowed_x_prefix': 'getint',
-            },
-        'server': {
-            'port': 'getint',
-            'ssl_on': 'getboolean',
-            'browse': 'getboolean',
-            },
-        'browser': {
-            'cache_expire': 'getint',
-            'use_jar': 'getboolean',
-            },
-        'book': {
-            None: {
-                'no_tree': 'getboolean',
-                },
-            },
-        }
 
 config = Config()
