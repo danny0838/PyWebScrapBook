@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Miscellaneous utilities
 """
 import sys

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """The WGSI application.
 """
 import os

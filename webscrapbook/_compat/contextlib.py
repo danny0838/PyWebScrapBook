@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # since Python 3.6
 try:
     from contextlib import AbstractContextManager

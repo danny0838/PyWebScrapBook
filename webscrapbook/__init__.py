@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """A backend toolkit for management of WebScrapBook collection.
 """
 import sys

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 from webscrapbook import server
 root = os.path.abspath(os.path.join(__file__, '..', '..'))
