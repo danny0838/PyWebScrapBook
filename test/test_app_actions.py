@@ -1285,37 +1285,37 @@ class TestList(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
             sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertTrue(('message', {
+            self.assertIn(('message', {
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }) in sse)
-            self.assertTrue(('message', {
+                }), sse)
+            self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                }) in sse)
-            self.assertTrue(('complete', None) in sse)
+                }), sse)
+            self.assertIn(('complete', None), sse)
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
             sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertTrue(('message', {
+            self.assertIn(('message', {
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }) in sse)
-            self.assertTrue(('message', {
+                }), sse)
+            self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                }) in sse)
-            self.assertTrue(('complete', None) in sse)
+                }), sse)
+            self.assertIn(('complete', None), sse)
 
     def test_sse_directory_recursive(self):
         with app.test_client() as c:
@@ -1323,43 +1323,43 @@ class TestList(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
             sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertTrue(('message', {
+            self.assertIn(('message', {
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }) in sse)
-            self.assertTrue(('message', {
+                }), sse)
+            self.assertIn(('message', {
                 'name': 'sub/subfile.txt',
                 'type': 'file',
                 'size': 6,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                }) in sse)
-            self.assertTrue(('complete', None) in sse)
+                }), sse)
+            self.assertIn(('complete', None), sse)
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
             sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertTrue(('message', {
+            self.assertIn(('message', {
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }) in sse)
-            self.assertTrue(('message', {
+                }), sse)
+            self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                }) in sse)
-            self.assertTrue(('message', {
+                }), sse)
+            self.assertIn(('message', {
                 'name': 'sub/subfile.txt',
                 'type': 'file',
                 'size': 6,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                }) in sse)
-            self.assertTrue(('complete', None) in sse)
+                }), sse)
+            self.assertIn(('complete', None), sse)
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_sse_file(self, mock_abort):
@@ -1932,7 +1932,7 @@ class TestStatic(unittest.TestCase):
             self.assertIsNotNone(r.headers['ETag'])
 
             css = r.data.decode('UTF-8').replace('\r\n', '\n')
-            self.assertTrue('#data-table' in css)
+            self.assertIn('#data-table', css)
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):

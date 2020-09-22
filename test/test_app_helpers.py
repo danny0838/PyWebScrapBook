@@ -869,7 +869,7 @@ class TestHandlers(unittest.TestCase):
             r = c.get('/nonexist')
             self.assertEqual(r.status_code, 404)
             html = r.data.decode('UTF-8')
-            self.assertTrue('<h1>Not Found</h1>' in html)
+            self.assertIn('<h1>Not Found</h1>', html)
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,7 +27,7 @@ class TestUtils(unittest.TestCase):
         self.assertRegex(repr(frozendict_), r'^frozendict\([^)]*\)$')
 
         self.assertTrue(frozendict_ == dict_)
-        self.assertTrue('a' in frozendict_)
+        self.assertIn('a', frozendict_)
         self.assertEqual(set(frozendict_), {'a', 'b', 'c'})
         self.assertEqual(list(reversed(frozendict_)), list(frozendict_)[::-1])
 
