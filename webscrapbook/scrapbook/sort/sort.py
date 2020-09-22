@@ -1,5 +1,5 @@
 from natsort import natsort_keygen, ns
-from webscrapbook.scrapbook.common.tree import TocTree, traverse_tree
+from webscrapbook.scrapbook.common.tree import TocTree
 from webscrapbook.scrapbook.common.treefiles import TreeFiles
 
 # sorting folders
@@ -39,13 +39,13 @@ class Sort:
         self._files.write_toc()
 
     def _sort_tree_at_folder(self, id_val, sort_key, sort_direction, recursive):
-        def sortCurrentFolder(id_val, tree):
+        def sort_current_folder(id_val, tree):
             self._sort_folder_by_id(id_val, tree, sort_key, sort_direction)
 
         if not recursive:
-            sortCurrentFolder(id_val, self._toc_tree)
+            sort_current_folder(id_val, self._toc_tree)
         else:
-            traverse_tree(self._toc_tree, id_val, self._toc_tree.hasChildren, sortCurrentFolder)
+            self._toc_tree.traverse_tree(id_val, self._toc_tree.has_children, sort_current_folder)
 
     def _sort_folder_by_id(self, id_val, tree, sort_keys, sort_direction):
         ''' default natural sort case insensitive '''
@@ -60,8 +60,8 @@ class Sort:
         sort_direction = False if sort_direction == 'a' else True
 
         # do not sort empty folders
-        if self._toc_tree.hasChildren(id_val):
-            self._toc_tree.getChildren(id_val).sort(key=natsort_key, reverse=sort_direction)
+        if self._toc_tree.has_children(id_val):
+            self._toc_tree.get_children(id_val).sort(key=natsort_key, reverse=sort_direction)
 
 
 ###############################################################################

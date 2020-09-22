@@ -1,14 +1,17 @@
 from typing import List
 
 class TreeInterface:
-    def validNode(self, node):
+    def valid_node(self, node):
         '''return if node is in the tree'''
         pass
-    def hasChildren(self, node: str) -> bool:
+    def has_children(self, node: str) -> bool:
         '''does a given node have children'''
         pass
-    def getChildren(self, node) -> List[str]:
+    def get_children(self, node) -> List[str]:
         '''return list of children for current node'''
+        pass
+    def traverse_tree(self, start_node, node_check, callback):
+        '''traverse tree'''
         pass
 
 
@@ -17,40 +20,40 @@ class TocTree(TreeInterface):
     def __init__(self, toc: dict):
         self.toc = toc
 
-    def validNode(self, node):
+    def valid_node(self, node):
         # quick incomplete check
-        if self.hasChildren(node):
+        if self.has_children(node):
             return True
         # slow complete check
-        for children in self.getChildren(node):
+        for children in self.get_children(node):
             if node in children:
                 return True
         return False
 
-    def hasChildren(self, node):
+    def has_children(self, node):
         return node in self.toc
   
-    def getChildren(self, node):
-        if self.hasChildren(node):
+    def get_children(self, node):
+        if self.has_children(node):
             return self.toc[node]
         else:
             return []
 
-    def getToc(self):
+    def traverse_tree(self, start_node, node_check, callback):
+        '''
+        in order recursive traversal
+        callback runs on each node if nodeCheck is True
+        '''
+        def recurse(self, node, callback):
+            if node_check(node):
+                callback(node, self)
+        
+            if not self.hasChildren(node):
+                return
+
+            for child in self.getChildren(node):
+                recurse(self, child, callback)
+        recurse(self, start_node, callback)
+
+    def get_toc(self):
         return self.toc
-
-def traverse_tree(tree: TreeInterface, start_node, nodeCheck, callback):
-    '''
-    in order recursive traversal
-    callback runs on each node if nodeCheck is True
-    '''
-    def recurse(tree, node, callback):
-        if nodeCheck(node):
-            callback(node, tree)
-    
-        if not tree.hasChildren(node):
-            return
-
-        for child in tree.getChildren(node):
-            recurse(tree, child, callback)
-    recurse(tree, start_node, callback)
