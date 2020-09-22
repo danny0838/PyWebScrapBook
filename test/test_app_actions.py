@@ -1392,19 +1392,19 @@ class TestList(TestActions):
                 self.assertIsNotNone(r.headers['Last-Modified'])
                 self.assertIsNotNone(r.headers['ETag'])
                 sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-                self.assertTrue(('message', {
+                self.assertIn(('message', {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
                     'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
-                    }) in sse)
-                self.assertTrue(('message', {
+                    }), sse)
+                self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
-                    }) in sse)
-                self.assertTrue(('complete', None) in sse)
+                    }), sse)
+                self.assertIn(('complete', None), sse)
 
                 # explicit dir
                 r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1414,19 +1414,19 @@ class TestList(TestActions):
                 self.assertIsNotNone(r.headers['Last-Modified'])
                 self.assertIsNotNone(r.headers['ETag'])
                 sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-                self.assertTrue(('message', {
+                self.assertIn(('message', {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
                     'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
-                    }) in sse)
-                self.assertTrue(('message', {
+                    }), sse)
+                self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
-                    }) in sse)
-                self.assertTrue(('complete', None) in sse)
+                    }), sse)
+                self.assertIn(('complete', None), sse)
 
                 # implicit dir (no slash)
                 r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1436,19 +1436,19 @@ class TestList(TestActions):
                 self.assertIsNotNone(r.headers['Last-Modified'])
                 self.assertIsNotNone(r.headers['ETag'])
                 sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-                self.assertTrue(('message', {
+                self.assertIn(('message', {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
                     'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
-                    }) in sse)
-                self.assertTrue(('message', {
+                    }), sse)
+                self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': None,
-                    }) in sse)
-                self.assertTrue(('complete', None) in sse)
+                    }), sse)
+                self.assertIn(('complete', None), sse)
 
                 # implicit dir
                 r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1458,19 +1458,19 @@ class TestList(TestActions):
                 self.assertIsNotNone(r.headers['Last-Modified'])
                 self.assertIsNotNone(r.headers['ETag'])
                 sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-                self.assertTrue(('message', {
+                self.assertIn(('message', {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
                     'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
-                    }) in sse)
-                self.assertTrue(('message', {
+                    }), sse)
+                self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': None,
-                    }) in sse)
-                self.assertTrue(('complete', None) in sse)
+                    }), sse)
+                self.assertIn(('complete', None), sse)
 
                 etag = r.headers['ETag']
                 lm =  r.headers['Last-Modified']
