@@ -608,10 +608,10 @@ def handle_action_advanced(func):
         # validate and revoke token
         token = request.values.get('token') or ''
 
-        if not host.token_handler.validate(token):
+        if not host.token_validate(token):
             abort(400, 'Invalid access token.')
 
-        host.token_handler.delete(token)
+        host.token_delete(token)
 
         rv = func(*args, **kwargs)
 
@@ -1061,7 +1061,7 @@ def action_token():
     if request.method != 'POST':
         abort(405, valid_methods=['POST'])
 
-    return http_response(host.token_handler.acquire(), format=format)
+    return http_response(host.token_acquire(), format=format)
 
 
 @handle_action_advanced
@@ -1600,36 +1600,44 @@ def handle_error(exc):
     return exc
 
 
-class TokenHandler():
-    """Handle security token validation to avoid CSRF attack.
-    """
-    def __init__(self, cache_dir):
-        self.cache_dir = cache_dir
-        self.last_purge = 0
+class WebHost(wsb_host.Host):
+    """Extended Host class that also handles HTTP server related things.
 
-    def acquire(self, now=None):
+    - Token handling: security token validation to avoid CSRF attack.
+    """
+    TOKEN_PURGE_INTERVAL = 3600  # in seconds
+    TOKEN_DEFAULT_EXPIRY = 1800  # in seconds
+
+    def __init__(self, root, config=None):
+        super().__init__(root, config=config)
+
+        # token handling
+        self.tokens = os.path.join(self.root, WSB_DIR, 'server', 'tokens')
+        self.token_last_purge = 0
+
+    def token_acquire(self, now=None):
         if now is None:
             now = int(time.time())
 
-        self.check_delete_expire(now)
+        self.token_check_delete_expire(now)
 
         token = token_urlsafe()
-        token_file = os.path.join(self.cache_dir, token)
+        token_file = os.path.join(self.tokens, token)
         while os.path.lexists(token_file):
             token = token_urlsafe()
-            token_file = os.path.join(self.cache_dir, token)
+            token_file = os.path.join(self.tokens, token)
 
         os.makedirs(os.path.dirname(token_file), exist_ok=True)
         with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(now + self.DEFAULT_EXPIRY))
+            f.write(str(now + self.TOKEN_DEFAULT_EXPIRY))
 
         return token
 
-    def validate(self, token, now=None):
+    def token_validate(self, token, now=None):
         if now is None:
             now = int(time.time())
 
-        token_file = os.path.join(self.cache_dir, token)
+        token_file = os.path.join(self.tokens, token)
 
         try:
             with open(token_file, 'r', encoding='UTF-8') as f:
@@ -1643,20 +1651,20 @@ class TokenHandler():
 
         return True
 
-    def delete(self, token):
-        token_file = os.path.join(self.cache_dir, token)
+    def token_delete(self, token):
+        token_file = os.path.join(self.tokens, token)
 
         try:
             os.remove(token_file)
         except OSError:
             pass
 
-    def delete_expire(self, now=None):
+    def token_delete_expire(self, now=None):
         if now is None:
             now = int(time.time())
 
         try:
-            token_files = os.scandir(self.cache_dir)
+            token_files = os.scandir(self.tokens)
         except FileNotFoundError:
             pass
         else:
@@ -1669,25 +1677,13 @@ class TokenHandler():
                 if now >= expire:
                     os.remove(token_file)
 
-    def check_delete_expire(self, now=None):
+    def token_check_delete_expire(self, now=None):
         if now is None:
             now = int(time.time())
 
-        if now >= self.last_purge + self.PURGE_INTERVAL:
-            self.last_purge = now
-            self.delete_expire(now)
-
-    PURGE_INTERVAL = 3600  # in seconds
-    DEFAULT_EXPIRY = 1800  # in seconds
-
-
-class WebHost(wsb_host.Host):
-    def __init__(self, root, config=None):
-        super().__init__(root, config=config)
-
-        # init token handler
-        self.tokens = os.path.join(self.root, WSB_DIR, 'server', 'tokens')
-        self.token_handler = TokenHandler(self.tokens)
+        if now >= self.token_last_purge + self.TOKEN_PURGE_INTERVAL:
+            self.token_last_purge = now
+            self.token_delete_expire(now)
 
 
 def make_app(root=".", config=None):
