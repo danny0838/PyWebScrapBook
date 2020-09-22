@@ -45,7 +45,7 @@ quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
 quote_path.__doc__ = "Escape reserved chars for the path part of a URL."
 
 bp = flask.Blueprint('default', __name__)
-runtime = LocalProxy(lambda: current_app.config['WEBSCRAPBOOK_RUNTIME'])
+host = LocalProxy(lambda: current_app.config['WEBSCRAPBOOK_HOST'])
 
 
 def static_url(path):
@@ -63,7 +63,7 @@ def static_file(filename, mimetype=None):
     response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
-    if runtime.config['app']['content_security_policy'] == 'strict':
+    if host.config['app']['content_security_policy'] == 'strict':
         response.headers.set('Content-Security-Policy', "connect-src 'none'; form-action 'none';")
     return response
 
@@ -100,7 +100,7 @@ def zip_static_file(zip, subpath, mimetype=None):
         'Last-Modified': last_modified,
         'ETag': etag,
         }
-    if runtime.config['app']['content_security_policy'] == 'strict':
+    if host.config['app']['content_security_policy'] == 'strict':
         headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
     response = Response(fh, headers=headers, mimetype=mimetype)
@@ -166,7 +166,7 @@ def get_archive_path(filepath):
     """
     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
         archivepath = filepath[:m.start(0)].rstrip('/')
-        archivefile = os.path.normpath(os.path.join(runtime.chroot, archivepath.lstrip('/')))
+        archivefile = os.path.normpath(os.path.join(host.chroot, archivepath.lstrip('/')))
         conflicting = archivefile + '!'
         if os.path.lexists(conflicting):
             break
@@ -419,7 +419,7 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
         return http_response(data, headers=headers, format=format)
 
     body = render_template('index.html',
-            sitename=runtime.name,
+            sitename=host.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -439,7 +439,7 @@ def handle_archive_viewing(paths, mimetype):
         """List available web pages in a MAFF file.
         """
         return render_template('maff_index.html',
-                sitename=runtime.name,
+                sitename=host.name,
                 is_local=is_local_access(),
                 base=request.script_root,
                 path=request.path,
@@ -521,7 +521,7 @@ def handle_markdown_output(paths, zip=None):
             'Last-Modified': last_modified,
             'ETag': etag,
             }
-        if runtime.config['app']['content_security_policy'] == 'strict':
+        if host.config['app']['content_security_policy'] == 'strict':
             headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
         # prepare content
@@ -533,7 +533,7 @@ def handle_markdown_output(paths, zip=None):
                 body = f.read()
 
     body = render_template('markdown.html',
-            sitename=runtime.name,
+            sitename=host.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -555,13 +555,13 @@ class Request(flask.Request):
     @cached_property
     def localpath(self):
         """Corresponding filesystem path of the requested path."""
-        return os.path.normpath(os.path.join(runtime.chroot, self.path.strip('/')))
+        return os.path.normpath(os.path.join(host.chroot, self.path.strip('/')))
 
     @cached_property
     def localpaths(self):
         """Like localpath, but with ZIP subpaths resolved."""
         paths = self.paths.copy()
-        paths[0] = os.path.normpath(os.path.join(runtime.chroot, paths[0].lstrip('/')))
+        paths[0] = os.path.normpath(os.path.join(host.chroot, paths[0].lstrip('/')))
         return paths
 
     @cached_property
@@ -608,10 +608,10 @@ def handle_action_advanced(func):
         # validate and revoke token
         token = request.values.get('token') or ''
 
-        if not runtime.token_handler.validate(token):
+        if not host.token_handler.validate(token):
             abort(400, 'Invalid access token.')
 
-        runtime.token_handler.delete(token)
+        host.token_handler.delete(token)
 
         rv = func(*args, **kwargs)
 
@@ -631,7 +631,7 @@ def handle_action_writing(func):
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if os.path.abspath(request.localpath) == runtime.chroot:
+        if os.path.abspath(request.localpath) == host.chroot:
             abort(403, "Unable to operate the root directory.")
 
         return func(*args, **kwargs)
@@ -663,9 +663,9 @@ def handle_action_renaming(func):
             abort(400, 'Target is not specified.')
 
         targetpaths = get_archive_path(target)
-        targetpaths[0] = os.path.normpath(os.path.join(runtime.chroot, targetpaths[0].lstrip('/')))
+        targetpaths[0] = os.path.normpath(os.path.join(host.chroot, targetpaths[0].lstrip('/')))
 
-        if not targetpaths[0].startswith(os.path.join(runtime.chroot, '')):
+        if not targetpaths[0].startswith(os.path.join(host.chroot, '')):
             abort(403, "Unable to operate beyond the root directory.")
 
         if len(targetpaths) > 1:
@@ -897,7 +897,7 @@ def action_static():
         abort(400, "Action not supported.")
 
     filepath = request.path.strip('/')
-    file = runtime.get_static_file(filepath)
+    file = host.get_static_file(filepath)
     if file:
         return static_file(file)
 
@@ -942,7 +942,7 @@ def action_edit():
         body = body.decode(encoding)
 
     body = render_template('edit.html',
-            sitename=runtime.name,
+            sitename=host.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -980,7 +980,7 @@ def action_editx():
             abort(404)
 
     body = render_template('editx.html',
-            sitename=runtime.name,
+            sitename=host.name,
             is_local=is_local_access(),
             base=request.script_root,
             path=request.path,
@@ -1036,7 +1036,7 @@ def action_config():
     if not format:
         abort(400, "Action not supported.")
 
-    data = runtime.config.dump_object()
+    data = host.config.dump_object()
 
     # filter values for better security
     data = {k:v for k, v in data.items() if k in ('app', 'book')}
@@ -1061,7 +1061,7 @@ def action_token():
     if request.method != 'POST':
         abort(405, valid_methods=['POST'])
 
-    return http_response(runtime.token_handler.acquire(), format=format)
+    return http_response(host.token_handler.acquire(), format=format)
 
 
 @handle_action_advanced
@@ -1080,7 +1080,7 @@ def action_lock():
     timeout = request.values.get('chkt', 5, type=int)
     stale = request.values.get('chks', 300, type=int)
 
-    lock = runtime.get_lock(name, timeout=timeout, stale=stale)
+    lock = host.get_lock(name, timeout=timeout, stale=stale)
     try:
         lock.acquire()
     except wsb_host.LockTimeoutError:
@@ -1099,7 +1099,7 @@ def action_unlock():
     if name is None:
         abort(400, "Lock name is not specified.")
 
-    lock = runtime.get_lock(name, assume_acquired=True)
+    lock = host.get_lock(name, assume_acquired=True)
     try:
         lock.release()
     except wsb_host.LockReleaseNotFoundError:
@@ -1540,14 +1540,14 @@ def action_copy(sourcepaths, targetpaths):
 @bp.before_request
 def handle_before_request():
     # replace SCRIPT_NAME with the custom if set
-    if runtime.config['app']['base']:
+    if host.config['app']['base']:
         # Flask treats SCRIPT_NAME in the same way as PATH_INFO, which is an
         # IRI string decoded as ISO-8859-1 according to WSGI standard).
-        request.environ['SCRIPT_NAME'] = unquote(runtime.config['app']['base']).encode('UTF-8').decode('ISO-8859-1')
+        request.environ['SCRIPT_NAME'] = unquote(host.config['app']['base']).encode('UTF-8').decode('ISO-8859-1')
 
     # handle authorization
     try:
-        auth_config = runtime.config['auth']
+        auth_config = host.config['auth']
     except KeyError:
         # auth not required
         return
@@ -1555,7 +1555,7 @@ def handle_before_request():
     perm = get_permission(request.authorization, auth_config)
     if not verify_authorization(perm, request.action):
         auth = WWWAuthenticate()
-        auth.set_basic(runtime.config['app']['name'])
+        auth.set_basic(host.config['app']['name'])
         abort(401, 'You are not authorized.', www_authenticate=auth)
 
 
@@ -1574,7 +1574,7 @@ def handle_request(filepath=''):
 @bp.after_request
 def handle_after_request(response):
     # forbid a privileged page to be framed
-    if runtime.config['app']['content_security_policy'] == 'strict':
+    if host.config['app']['content_security_policy'] == 'strict':
         if 'Content-Security-Policy' not in response.headers:
             response.headers.set('Content-Security-Policy', "frame-ancestors 'none';")
             response.headers.set('X-Frame-Options', 'deny')
@@ -1691,26 +1691,26 @@ class WebHost(wsb_host.Host):
 
 
 def make_app(root=".", config=None):
-    _runtime = WebHost(root, config=config)
+    _host = WebHost(root, config=config)
 
     # main app instance
-    app = flask.Flask(__name__, instance_path=_runtime.chroot)
+    app = flask.Flask(__name__, instance_path=_host.chroot)
     app.register_blueprint(bp)
     app.request_class = Request
-    app.config['WEBSCRAPBOOK_RUNTIME'] = _runtime
+    app.config['WEBSCRAPBOOK_HOST'] = _host
 
     xheaders = {
-            'x_for': _runtime.config['app']['allowed_x_for'],
-            'x_proto': _runtime.config['app']['allowed_x_proto'],
-            'x_host': _runtime.config['app']['allowed_x_host'],
-            'x_port': _runtime.config['app']['allowed_x_port'],
-            'x_prefix': _runtime.config['app']['allowed_x_prefix'],
+            'x_for': _host.config['app']['allowed_x_for'],
+            'x_proto': _host.config['app']['allowed_x_proto'],
+            'x_host': _host.config['app']['allowed_x_host'],
+            'x_port': _host.config['app']['allowed_x_port'],
+            'x_prefix': _host.config['app']['allowed_x_prefix'],
             }
 
     if any(v for v in xheaders.values()):
         app.wsgi_app = ProxyFix(app.wsgi_app, **xheaders)
 
-    app.jinja_loader = jinja2.FileSystemLoader(_runtime.templates)
+    app.jinja_loader = jinja2.FileSystemLoader(_host.templates)
     app.jinja_env.globals.update({
             'os': os,
             'time': time,
