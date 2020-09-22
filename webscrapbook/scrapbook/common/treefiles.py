@@ -138,7 +138,7 @@ class TreeFiles:
     # Write files
     ###############################################################################
 
-    def _write_split_files(self, dictionary: dict, max_size, FILENAME_FORMAT, preprocessing=lambda x:x):
+    def _write_split_files(self, dictionary: dict, max_size, FILENAME_FORMAT, preprocessing=lambda x:x, entry_size_calc=lambda x:1):
         '''
             Split dictionary and write each portion to a separate numbered file.
             After writing the files, delete stale numbered files
@@ -159,13 +159,16 @@ class TreeFiles:
                 else:
                     break
 
-        dictionaries = split_dictionary(dictionary, max_size)
+        dictionaries = split_dictionary(dictionary, max_size, entry_size_calc)
         write_split_files(dictionaries)
         # wrote [0,len(dictionary)-1] files so delete [len(dictionary),∞] files
         delete_old_split_files(len(dictionaries))
 
 
     def write_toc(self):
+        def toc_entry_size(val):
+            return len(val)
+
         def toc_preprocessing(string):
                 return self._constants.TOC_CONTENT_TEMPLATE.format(string)
         
@@ -177,7 +180,8 @@ class TreeFiles:
             self.files.toc,
             max_size,
             self._constants.TOC_TEMPLATE,
-            toc_preprocessing
+            toc_preprocessing,
+            toc_entry_size
         )
 
     def write_meta(self):
@@ -195,23 +199,26 @@ class TreeFiles:
             meta_preprocessing
         )
 
-    def write_fulltext(self, toc: dict):
-        # TODO: implement get max_size
-        # def toc_preprocessing(string):
-        #         return self._constants.FULLTEXT_CONTENT_TEMPLATE.format(string)
+    def write_fulltext(self):
+        def fulltext_entry_size(val):
+            return len(val)
+
+        def fulltext_preprocessing(string):
+                return self._constants.FULLTEXT_CONTENT_TEMPLATE.format(string)
         
-        # # A javascript string >= 256 MiB (UTF-16 chars) causes an error
-        # # in the browser. Split each js file at around 4 M entries to
-        # # prevent the issue. (An entry is mostly < 32 bytes)
-        # max_size = 4 * 1024 * 1024
-        # self._write_split_files(
-        #     toc,
-        #     max_size,
-        #     self._constants.FULLTEXT_TEMPLATE,
-        #     toc_preprocessing
-        # )
-        pass
+        # A javascript string >= 256 MiB (UTF-16 chars) causes an error
+        # in the browser. Split each js file at around 4 M entries to
+        # prevent the issue. (An entry is mostly < 32 bytes)
+        max_size = 128 * 1024 * 1024
+        self._write_split_files(
+            self.files.fulltext,
+            max_size,
+            self._constants.FULLTEXT_TEMPLATE,
+            fulltext_preprocessing,
+            fulltext_entry_size
+        )
 
     def write_files(self):
         self.write_toc()
         self.write_meta()
+        self.write_fulltext()

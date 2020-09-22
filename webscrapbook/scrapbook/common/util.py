@@ -105,7 +105,7 @@ def merge_dictionaries(dictionaries):
         dictionary = {**dictionary , **d}
     return dictionary
 
-def split_dictionary(dictionary, max_size):
+def split_dictionary(dictionary, max_size, entry_size_calc=lambda x: 1):
     '''
         Split a single dictionary into many smaller sized dictionaries
         preserving key order.
@@ -113,9 +113,50 @@ def split_dictionary(dictionary, max_size):
         Parameters:
             max_size (int): max number of top level keys in any given split dictionary
     '''
-    def slice_dictionary(dictionary, start, end):
-        return OrderedDict(islice(dictionary.items(), start, end))
+    class SplitDictOnSize:
+        
+        def __init__(self, max_size, size_calc=lambda x: 1):
+            self._max_size = max_size
+            self._size_calc = size_calc
 
-    num_splits = ceil(len(dictionary) / max_size)
-    sliced = [slice_dictionary(dictionary, max_size*i, max_size*(i+1)) for i in range(num_splits)]
-    return sliced
+            self._splits = []
+            self._current_split = None
+            self._add_split()
+
+
+        def _add_split(self):
+            empty_split = dict({
+                'size': 0,
+                'dict': OrderedDict({})
+            })
+            self._splits.append(empty_split)
+
+            if self._current_split == None:
+                self._current_split = 0
+            else:
+                self._current_split += 1
+
+        def _get_current_split(self):
+            return self._splits[self._current_split]
+
+        def _get_current_size(self):
+            return self._splits[self._current_split]['size']
+
+        def _add_to_current_split(self, key, val):
+            current = self._get_current_split()
+            current['size'] += 1
+            current['dict'][key] = val
+
+        def add(self, key, val):
+            if (self._get_current_size() + self._size_calc(val)) > self._max_size:
+                self._add_split()
+            self._add_to_current_split(key, val)
+
+        def get_dictionaries(self):
+            return list(map(lambda e: e['dict'],self._splits))
+    
+    entries = dictionary.items()
+    s = SplitDictOnSize(max_size, entry_size_calc)
+    for key, val in entries:
+        s.add(key, val)
+    return s.get_dictionaries()
