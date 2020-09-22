@@ -2,6 +2,7 @@ from unittest import mock
 import unittest
 import os
 import io
+from collections import OrderedDict
 import webscrapbook
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
@@ -17,26 +18,61 @@ def tearDownModule():
     mocking.stop()
 
 class TestClassConfig(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.maxDiff = None
+
     def test_load(self):
         conf = webscrapbook.Config()
         conf.load(os.path.join(root_dir, 'test_config'))
-        self.assertEqual(conf['app']['name'], 'mywsb')
-        self.assertEqual(conf['app']['theme'], 'mytheme')
-        self.assertEqual(conf['app']['root'], 'myroot')
-        self.assertEqual(conf['app']['base'], 'mybase')
-        self.assertEqual(conf['app']['allowed_x_for'], 1)
-        self.assertEqual(conf['app']['allowed_x_proto'], 1)
-        self.assertEqual(conf['app']['allowed_x_host'], 0)
-        self.assertEqual(conf['app']['allowed_x_port'], 0)
-        self.assertEqual(conf['app']['allowed_x_prefix'], 0)
-        self.assertEqual(conf['server']['ssl_on'], True)
-        self.assertEqual(conf['server']['browse'], True)
-        self.assertEqual(conf['browser']['use_jar'], False)
-        self.assertEqual(conf['book']['']['name'], 'mybook')
-        self.assertEqual(conf['book']['']['no_tree'], False)
-        self.assertEqual(conf['book']['book2']['name'], 'mybook2')
-        self.assertEqual(conf['book']['book2']['no_tree'], True)
-        self.assertEqual(conf['auth']['user1']['user'], 'myuser1')
+        self.assertDictEqual(conf['app'], OrderedDict([
+            ('name', 'mywsb'),
+            ('theme', 'mytheme'),
+            ('root', 'myroot'),
+            ('base', 'mybase'),
+            ('content_security_policy', 'strict'),
+            ('allowed_x_for', 1),
+            ('allowed_x_proto', 1),
+            ('allowed_x_host', 0),
+            ('allowed_x_port', 0),
+            ('allowed_x_prefix', 0),
+            ]))
+        self.assertDictEqual(conf['server'], OrderedDict([
+            ('port', 9999),
+            ('host', 'localhost'),
+            ('ssl_on', True),
+            ('ssl_key', './wsb/wsb.key'),
+            ('ssl_cert', './wsb/wsb.crt'),
+            ('ssl_pw', ''),
+            ('browse', True),
+            ]))
+        self.assertDictEqual(conf['browser'], OrderedDict([
+            ('command', ''),
+            ('index', ''),
+            ('cache_prefix', 'wsb.'),
+            ('cache_expire', 123456),
+            ('use_jar', False),
+            ]))
+        self.assertDictEqual(conf['book'], OrderedDict([
+            ('', OrderedDict([
+                ('name', 'mybook'),
+                ('top_dir', ''),
+                ('data_dir', ''),
+                ('tree_dir', '.wsb/tree'),
+                ('index', '.wsb/tree/map.html'),
+                ('no_tree', False),
+                ])),
+            ('book2', OrderedDict([
+                ('name', 'mybook2'),
+                ('no_tree', True),
+                ])),
+            ]))
+        self.assertDictEqual(conf['auth'], OrderedDict([
+            ('user1', OrderedDict([
+                ('user', 'myuser1'),
+                ('permission', 'all'),
+                ])),
+            ]))
 
     def test_load_repeated(self):
         conf = webscrapbook.Config()
@@ -173,23 +209,56 @@ permission = all
 
         try:
             conf = webscrapbook.Config()
-            dump = conf.dump_object()
-            self.assertEqual(dump['app']['name'], 'mywsb')
-            self.assertEqual(dump['app']['allowed_x_for'], 1)
-            self.assertEqual(dump['app']['allowed_x_proto'], 1)
-            self.assertEqual(dump['app']['allowed_x_host'], 0)
-            self.assertEqual(dump['app']['allowed_x_port'], 0)
-            self.assertEqual(dump['app']['allowed_x_prefix'], 0)
-            self.assertEqual(dump['server']['port'], 9999)
-            self.assertEqual(dump['server']['ssl_on'], True)
-            self.assertEqual(dump['server']['browse'], True)
-            self.assertEqual(dump['browser']['cache_expire'], 123456)
-            self.assertEqual(dump['browser']['use_jar'], False)
-            self.assertEqual(dump['book']['']['name'], 'mybook')
-            self.assertEqual(dump['book']['']['no_tree'], False)
-            self.assertEqual(dump['book']['book2']['name'], 'mybook2')
-            self.assertEqual(dump['book']['book2']['no_tree'], True)
-            self.assertEqual(dump['auth']['user1']['user'], 'myuser1')
+            self.assertDictEqual(conf.dump_object(), OrderedDict([
+                ('app', OrderedDict([
+                    ('name', 'mywsb'),
+                    ('theme', 'mytheme'),
+                    ('root', 'myroot'),
+                    ('base', 'mybase'),
+                    ('content_security_policy', 'strict'),
+                    ('allowed_x_for', 1),
+                    ('allowed_x_proto', 1),
+                    ('allowed_x_host', 0),
+                    ('allowed_x_port', 0),
+                    ('allowed_x_prefix', 0),
+                    ])),
+                ('server', OrderedDict([
+                    ('port', 9999),
+                    ('host', 'localhost'),
+                    ('ssl_on', True),
+                    ('ssl_key', './wsb/wsb.key'),
+                    ('ssl_cert', './wsb/wsb.crt'),
+                    ('ssl_pw', ''),
+                    ('browse', True),
+                    ])),
+                ('browser', OrderedDict([
+                    ('command', ''),
+                    ('index', ''),
+                    ('cache_prefix', 'wsb.'),
+                    ('cache_expire', 123456),
+                    ('use_jar', False),
+                    ])),
+                ('book', OrderedDict([
+                    ('', OrderedDict([
+                        ('name', 'mybook'),
+                        ('top_dir', ''),
+                        ('data_dir', ''),
+                        ('tree_dir', '.wsb/tree'),
+                        ('index', '.wsb/tree/map.html'),
+                        ('no_tree', False),
+                        ])),
+                    ('book2', OrderedDict([
+                        ('name', 'mybook2'),
+                        ('no_tree', True),
+                        ])),
+                    ])),
+                ('auth', OrderedDict([
+                    ('user1', OrderedDict([
+                        ('user', 'myuser1'),
+                        ('permission', 'all'),
+                        ])),
+                    ])),
+                ]))
         finally:
             os.chdir(_cwd)
 
