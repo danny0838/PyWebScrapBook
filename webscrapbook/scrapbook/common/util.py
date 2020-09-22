@@ -73,6 +73,9 @@ def write_file(directory, filename, contents):
 def delete_file(directory, filename):
     os.remove(os.path.join(directory, filename))
 
+def get_unique_canonical_path(path):
+    return os.path.realpath(os.path.expanduser(path))
+
 # misc
 ###############################################################################
 

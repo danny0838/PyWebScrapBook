@@ -15,7 +15,7 @@ from . import util
 from ._compat.time import time_ns
 
 # sub package
-from . import scrapbook
+from .scrapbook import scrapbooks
 
 
 def log(*args):
@@ -131,9 +131,8 @@ def cmd_config(args):
 
 def cmd_sort(args):
     """ sort existing scrapbook """
-
-    scrapbook.sort_operation(
-        args['root'],
+    scrapbook = scrapbooks.get_book(args['root'])
+    scrapbook.sort(
         args['folder'],
         args['keys'],
         args['direction'],
