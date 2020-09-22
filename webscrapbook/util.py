@@ -12,7 +12,6 @@ import re
 import hashlib
 import time
 from ipaddress import IPv6Address, AddressValueError
-from secrets import token_urlsafe
 from lxml import etree
 from ._compat.contextlib import nullcontext
 
@@ -646,84 +645,3 @@ class Encrypt():
         return fn(text, salt)
 
 encrypt = Encrypt().encrypt
-
-
-class TokenHandler():
-    """Handle security token validation to avoid XSRF attack.
-    """
-    def __init__(self, cache_dir):
-        self.cache_dir = cache_dir
-        self.last_purge = 0
-
-    def acquire(self, now=None):
-        if now is None:
-            now = int(time.time())
-
-        self.check_delete_expire(now)
-
-        token = token_urlsafe()
-        token_file = os.path.join(self.cache_dir, token)
-        while os.path.lexists(token_file):
-            token = token_urlsafe()
-            token_file = os.path.join(self.cache_dir, token)
-
-        os.makedirs(os.path.dirname(token_file), exist_ok=True)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(now + self.DEFAULT_EXPIRY))
-
-        return token
-
-    def validate(self, token, now=None):
-        if now is None:
-            now = int(time.time())
-
-        token_file = os.path.join(self.cache_dir, token)
-
-        try:
-            with open(token_file, 'r', encoding='UTF-8') as f:
-                expire = int(f.read())
-        except (FileNotFoundError, IsADirectoryError):
-            return False
-
-        if now >= expire:
-            os.remove(token_file)
-            return False
-
-        return True
-
-    def delete(self, token):
-        token_file = os.path.join(self.cache_dir, token)
-
-        try:
-            os.remove(token_file)
-        except OSError:
-            pass
-
-    def delete_expire(self, now=None):
-        if now is None:
-            now = int(time.time())
-
-        try:
-            token_files = os.scandir(self.cache_dir)
-        except FileNotFoundError:
-            pass
-        else:
-            for token_file in token_files:
-                try:
-                    with open(token_file, 'r', encoding='UTF-8') as f:
-                        expire = int(f.read())
-                except (OSError, ValueError):
-                    continue
-                if now >= expire:
-                    os.remove(token_file)
-
-    def check_delete_expire(self, now=None):
-        if now is None:
-            now = int(time.time())
-
-        if now >= self.last_purge + self.PURGE_INTERVAL:
-            self.last_purge = now
-            self.delete_expire(now)
-
-    PURGE_INTERVAL = 3600  # in seconds
-    DEFAULT_EXPIRY = 1800  # in seconds

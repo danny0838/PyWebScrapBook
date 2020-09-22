@@ -5,6 +5,7 @@ import os
 import shutil
 import io
 import zipfile
+import time
 from flask import current_app, request
 import webscrapbook
 from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
@@ -870,6 +871,207 @@ class TestHandlers(unittest.TestCase):
             self.assertEqual(r.status_code, 404)
             html = r.data.decode('UTF-8')
             self.assertIn('<h1>Not Found</h1>', html)
+
+
+
+class TestTokenHandler(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = os.path.join(root_dir, 'test_app_helpers', 'token_handler')
+        os.makedirs(self.test_dir, exist_ok=True)
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.test_dir)
+        except NotADirectoryError:
+            os.remove(self.test_dir)
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.TokenHandler.check_delete_expire')
+    @mock.patch('webscrapbook.app.TokenHandler.DEFAULT_EXPIRY', 10)
+    def test_acquire1(self, mock_check):
+        now = time.time()
+        expected_expire_time = int(now) + 10
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        token = handler.acquire()
+        token_file = os.path.join(self.test_dir, token)
+
+        self.assertTrue(os.path.isfile(token_file))
+        with open(token_file, 'r', encoding='UTF-8') as f:
+            self.assertAlmostEqual(int(f.read()), expected_expire_time, delta=1)
+        self.assertAlmostEqual(mock_check.call_args[0][0], now, delta=1)
+
+    @mock.patch('webscrapbook.app.TokenHandler.check_delete_expire')
+    @mock.patch('webscrapbook.app.TokenHandler.DEFAULT_EXPIRY', 30)
+    def test_acquire2(self, mock_check):
+        now = 30000
+        expected_expire_time = int(now) + 30
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        token = handler.acquire(now)
+        token_file = os.path.join(self.test_dir, token)
+
+        self.assertTrue(os.path.isfile(token_file))
+        with open(token_file, 'r', encoding='UTF-8') as f:
+            self.assertEqual(int(f.read()), expected_expire_time)
+        self.assertEqual(mock_check.call_args[0][0], now)
+
+    def test_validate1(self):
+        token = 'sampleToken'
+        token_time = int(time.time()) + 3
+
+        token_file = os.path.join(self.test_dir, token)
+        with open(token_file, 'w', encoding='UTF-8') as f:
+            f.write(str(token_time))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        self.assertTrue(handler.validate(token))
+
+    def test_validate2(self):
+        token = 'sampleToken'
+        token_time = int(time.time()) - 3
+
+        token_file = os.path.join(self.test_dir, token)
+        with open(token_file, 'w', encoding='UTF-8') as f:
+            f.write(str(token_time))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        self.assertFalse(handler.validate(token))
+
+    def test_validate3(self):
+        token = 'sampleToken'
+        now = 30000
+        token_time = 30001
+
+        token_file = os.path.join(self.test_dir, token)
+        with open(token_file, 'w', encoding='UTF-8') as f:
+            f.write(str(token_time))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        self.assertTrue(handler.validate(token, now))
+
+    def test_validate4(self):
+        token = 'sampleToken'
+        now = 30000
+        token_time = 29999
+
+        token_file = os.path.join(self.test_dir, token)
+        with open(token_file, 'w', encoding='UTF-8') as f:
+            f.write(str(token_time))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        self.assertFalse(handler.validate(token, now))
+
+    def test_delete(self):
+        token = 'sampleToken'
+
+        token_file = os.path.join(self.test_dir, token)
+        with open(token_file, 'w', encoding='UTF-8') as f:
+            f.write(str(32768))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.delete(token)
+        self.assertFalse(os.path.exists(token_file))
+
+    def test_delete_expire1(self):
+        now = int(time.time())
+
+        with open(os.path.join(self.test_dir, 'sampleToken1'), 'w', encoding='UTF-8') as f:
+            f.write(str(now - 100))
+        with open(os.path.join(self.test_dir, 'sampleToken2'), 'w', encoding='UTF-8') as f:
+            f.write(str(now - 10))
+        with open(os.path.join(self.test_dir, 'sampleToken3'), 'w', encoding='UTF-8') as f:
+            f.write(str(now + 10))
+        with open(os.path.join(self.test_dir, 'sampleToken4'), 'w', encoding='UTF-8') as f:
+            f.write(str(now + 100))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.delete_expire()
+
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'sampleToken1')))
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'sampleToken2')))
+        self.assertTrue(os.path.exists(os.path.join(self.test_dir, 'sampleToken3')))
+        self.assertTrue(os.path.exists(os.path.join(self.test_dir, 'sampleToken4')))
+
+    def test_delete_expire2(self):
+        now = 30000
+
+        with open(os.path.join(self.test_dir, 'sampleToken1'), 'w', encoding='UTF-8') as f:
+            f.write(str(29000))
+        with open(os.path.join(self.test_dir, 'sampleToken2'), 'w', encoding='UTF-8') as f:
+            f.write(str(29100))
+        with open(os.path.join(self.test_dir, 'sampleToken3'), 'w', encoding='UTF-8') as f:
+            f.write(str(30100))
+        with open(os.path.join(self.test_dir, 'sampleToken4'), 'w', encoding='UTF-8') as f:
+            f.write(str(30500))
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.delete_expire(now)
+
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'sampleToken1')))
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, 'sampleToken2')))
+        self.assertTrue(os.path.exists(os.path.join(self.test_dir, 'sampleToken3')))
+        self.assertTrue(os.path.exists(os.path.join(self.test_dir, 'sampleToken4')))
+
+    @mock.patch('webscrapbook.app.TokenHandler.delete_expire')
+    def test_check_delete_expire1(self, mock_delete):
+        now = int(time.time())
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        self.assertEqual(handler.last_purge, 0)
+
+        handler.check_delete_expire()
+        self.assertAlmostEqual(mock_delete.call_args[0][0], now, delta=1)
+        self.assertAlmostEqual(handler.last_purge, now, delta=1)
+
+    @mock.patch('webscrapbook.app.TokenHandler.delete_expire')
+    @mock.patch('webscrapbook.app.TokenHandler.PURGE_INTERVAL', 1000)
+    def test_check_delete_expire2(self, mock_delete):
+        now = int(time.time())
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.last_purge = now - 1100
+
+        handler.check_delete_expire()
+        self.assertAlmostEqual(mock_delete.call_args[0][0], now, delta=1)
+        self.assertAlmostEqual(handler.last_purge, now, delta=1)
+
+    @mock.patch('webscrapbook.app.TokenHandler.delete_expire')
+    @mock.patch('webscrapbook.app.TokenHandler.PURGE_INTERVAL', 1000)
+    def test_check_delete_expire3(self, mock_delete):
+        now = int(time.time())
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.last_purge = now - 900
+
+        handler.check_delete_expire()
+        mock_delete.assert_not_called()
+        self.assertEqual(handler.last_purge, now - 900)
+
+    @mock.patch('webscrapbook.app.TokenHandler.delete_expire')
+    @mock.patch('webscrapbook.app.TokenHandler.PURGE_INTERVAL', 1000)
+    def test_check_delete_expire4(self, mock_delete):
+        now = 40000
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.last_purge = now - 1100
+
+        handler.check_delete_expire(now)
+        self.assertAlmostEqual(mock_delete.call_args[0][0], now, delta=1)
+        self.assertAlmostEqual(handler.last_purge, now, delta=1)
+
+    @mock.patch('webscrapbook.app.TokenHandler.delete_expire')
+    @mock.patch('webscrapbook.app.TokenHandler.PURGE_INTERVAL', 1000)
+    def test_check_delete_expire5(self, mock_delete):
+        now = 40000
+
+        handler = wsbapp.TokenHandler(self.test_dir)
+        handler.last_purge = now - 900
+
+        handler.check_delete_expire(now)
+        mock_delete.assert_not_called()
+        self.assertEqual(handler.last_purge, now - 900)
 
 if __name__ == '__main__':
     unittest.main()
