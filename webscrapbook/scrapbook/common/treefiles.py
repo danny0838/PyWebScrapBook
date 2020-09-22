@@ -18,7 +18,7 @@ from .util import (
 )
 
 
-class Files:
+class TreeFiles:
 
     def __init__(self, scrapbook_dir):
         self._set_file_constants()

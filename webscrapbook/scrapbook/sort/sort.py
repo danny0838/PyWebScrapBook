@@ -1,6 +1,6 @@
 from natsort import natsort_keygen, ns
 from webscrapbook.scrapbook.common.tree import TocTree, traverse_tree
-from webscrapbook.scrapbook.common.files import Files
+from webscrapbook.scrapbook.common.treefiles import TreeFiles
 
 # sorting folders
 ###############################################################################
@@ -9,7 +9,7 @@ class Sort:
 
     def __init__(self, scrapbook_dir):
         self._scrapbook_dir = scrapbook_dir
-        self._files = Files(self._scrapbook_dir)
+        self._files = TreeFiles(self._scrapbook_dir)
         self._toc = self._files.files.toc
         self._meta = self._files.files.meta
         self._toc_tree = TocTree(self._toc)
