@@ -6,19 +6,17 @@ import webscrapbook
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 
+def setUpModule():
+    # mock out WSB_USER_CONFIG
+    global mocking
+    mocking = mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config', '.wsb'))
+    mocking.start()
+
+def tearDownModule():
+    # stop mock
+    mocking.stop()
+
 class TestClassConfig(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self._WSB_USER_CONFIG = webscrapbook.WSB_USER_CONFIG
-
-        # set WSB_USER_CONFIG to a known folder to ensure it's not loaded
-        webscrapbook.WSB_USER_CONFIG = os.path.join(root_dir, 'test_config', '.wsb')
-
-    @classmethod
-    def tearDownClass(self):
-        # recover constants
-        webscrapbook.WSB_USER_CONFIG = self._WSB_USER_CONFIG
-
     def test_load(self):
         conf = webscrapbook.Config()
         conf.load(os.path.join(root_dir, 'test_config'))
