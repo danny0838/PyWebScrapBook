@@ -1322,44 +1322,44 @@ class TestList(TestActions):
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            sse = self.parse_sse(r.data.decode('UTF-8'))
-            self.assertTrue(('message', json.dumps({
+            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
+            self.assertTrue(('message', {
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }, ensure_ascii=False)) in sse)
-            self.assertTrue(('message', json.dumps({
+                }) in sse)
+            self.assertTrue(('message', {
                 'name': 'sub/subfile.txt',
                 'type': 'file',
                 'size': 6,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                }, ensure_ascii=False)) in sse)
-            self.assertTrue(('complete', '') in sse)
+                }) in sse)
+            self.assertTrue(('complete', None) in sse)
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            sse = self.parse_sse(r.data.decode('UTF-8'))
-            self.assertTrue(('message', json.dumps({
+            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
+            self.assertTrue(('message', {
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }, ensure_ascii=False)) in sse)
-            self.assertTrue(('message', json.dumps({
+                }) in sse)
+            self.assertTrue(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                }, ensure_ascii=False)) in sse)
-            self.assertTrue(('message', json.dumps({
+                }) in sse)
+            self.assertTrue(('message', {
                 'name': 'sub/subfile.txt',
                 'type': 'file',
                 'size': 6,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                }, ensure_ascii=False)) in sse)
-            self.assertTrue(('complete', '') in sse)
+                }) in sse)
+            self.assertTrue(('complete', None) in sse)
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_sse_file(self, mock_abort):
