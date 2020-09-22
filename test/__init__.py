@@ -80,11 +80,22 @@ class TestClassConfig(unittest.TestCase):
 
         # check if previous loaded config entries no more exist
         conf.load(os.path.join(root_dir, 'test_config_load_repeated'))
-        self.assertEqual(conf['app']['name'], 'mywsb2')
+        self.assertDictEqual(conf['app'], OrderedDict([
+            ('name', 'mywsb2'),
+            ('theme', 'default'),
+            ('root', '.'),
+            ('base', ''),
+            ('content_security_policy', 'strict'),
+            ('allowed_x_for', 0),
+            ('allowed_x_proto', 0),
+            ('allowed_x_host', 0),
+            ('allowed_x_port', 0),
+            ('allowed_x_prefix', 0),
+            ]))
         with self.assertRaises(KeyError):
-            self.assertEqual(conf['book']['book2']['name'], 'mybook2')
+            conf['book']['book2']
         with self.assertRaises(KeyError):
-            self.assertEqual(conf['auth']['user1']['user'], 'myuser1')
+            conf['auth']
 
     @mock.patch('webscrapbook.WSB_LOCAL_CONFIG', 'localconfig.ini')
     @mock.patch('webscrapbook.WSB_DIR', '.wsbdir')
