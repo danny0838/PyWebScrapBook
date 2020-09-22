@@ -70,6 +70,14 @@ class TestClassConfig(unittest.TestCase):
                 ('index', '.wsb/tree/map.html'),
                 ('no_tree', True),
                 ])),
+            ('book3', OrderedDict([
+                ('name', 'mybook3'),
+                ('top_dir', 'sb3'),
+                ('data_dir', 'data'),
+                ('tree_dir', 'tree'),
+                ('index', 'tree/map.html'),
+                ('no_tree', True),
+                ])),
             ]))
         self.assertDictEqual(conf['auth'], OrderedDict([
             ('user1', OrderedDict([
@@ -219,6 +227,14 @@ tree_dir = .wsb/tree
 index = .wsb/tree/map.html
 no_tree = on
 
+[book "book3"]
+name = mybook3
+top_dir = sb3
+data_dir = data
+tree_dir = tree
+index = tree/map.html
+no_tree = on
+
 [auth "user1"]
 user = myuser1
 permission = all
@@ -278,6 +294,14 @@ permission = all
                         ('data_dir', ''),
                         ('tree_dir', '.wsb/tree'),
                         ('index', '.wsb/tree/map.html'),
+                        ('no_tree', True),
+                        ])),
+                    ('book3', OrderedDict([
+                        ('name', 'mybook3'),
+                        ('top_dir', 'sb3'),
+                        ('data_dir', 'data'),
+                        ('tree_dir', 'tree'),
+                        ('index', 'tree/map.html'),
                         ('no_tree', True),
                         ])),
                     ])),
