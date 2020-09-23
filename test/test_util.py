@@ -215,6 +215,17 @@ class TestUtils(unittest.TestCase):
             'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
             )
 
+        # file-like
+        self.assertEqual(
+            util.checksum(io.BytesIO(b''), method='sha256'),
+            'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+            )
+
+        self.assertEqual(
+            util.checksum(io.BytesIO(b'ABC'), method='sha256'),
+            'b5d4045c3f466fa91fe2cc6abe79232a1a57cdf104f7a26e716e0a1e2789df78'
+            )
+
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_is_link(self):
         # junction

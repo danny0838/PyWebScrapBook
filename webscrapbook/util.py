@@ -245,12 +245,27 @@ def view_in_explorer(path):
 
 def checksum(file, method='sha1', chunk_size=4096):
     """Calculate the checksum of a file.
+
+    Args:
+        file: str, path-like, or file-like bytes object
     """
-    h = hashlib.new(method)
-    with open(file, 'rb') as f:
-        for chunk in iter(lambda: f.read(chunk_size), b""):
+    try:
+        fh = open(file, 'rb')
+    except TypeError:
+        fh = file
+
+    try:
+        h = hashlib.new(method)
+        while True:
+            chunk = fh.read(chunk_size)
+            if not chunk:
+                break
             h.update(chunk)
-    return h.hexdigest()
+
+        return h.hexdigest()
+    finally:
+        if fh != file:
+            fh.close()
 
 
 def file_is_link(path, st=None):
