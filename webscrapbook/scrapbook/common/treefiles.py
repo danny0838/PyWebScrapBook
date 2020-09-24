@@ -78,12 +78,22 @@ class TreeFiles:
 
 
     @staticmethod
-    def _get_merged_files(directory, regex, no_match_message, load_func):
+    def _get_merged_files(directory, regex, no_files_found_message, load_func, files_must_exist=True):
         '''
             Merge contents of many files into a single dictionary.
             Merge all files in directory which match the regex.
             Files are merged where higher number files have a higher precedence.
+
+            return (dictionary of merged files, modify time)
         '''
+
+        def get_merged_files_modify_time(filepaths):
+            ''' return most recent modify time of a list of filepaths 
+                if no filepaths given return 0
+            '''
+            modify_times = [os.stat(f).st_mtime for f in filepaths] or [0]
+            return max(modify_times)
+
         def get_filename_no_ext(filepath):
             return os.path.splitext(os.path.basename(filepath))[0]
 
@@ -91,42 +101,61 @@ class TreeFiles:
             ''' large numbers later so they are merged later with precedence '''
             file_filenumbers.sort(key= lambda f: f[1])
 
-        file_filenames = [(file, get_filename_no_ext(file)) for file in find_regex_file(directory, regex, no_match_message)]
-        file_filenumbers = [(file, get_number_suffix(filename)) for file, filename in file_filenames]
-        sort_files_by_number(file_filenumbers)
-        ordered_files = [f[0] for f in file_filenumbers]
+        def get_filepaths_sorted_by_number_suffix(filepaths):
+            file_filenames = [(file, get_filename_no_ext(file)) for file in filepaths]
+            file_filenumbers = [(file, get_number_suffix(filename)) for file, filename in file_filenames]
+            sort_files_by_number(file_filenumbers)
+            return [f[0] for f in file_filenumbers]
+
+        filepaths = find_regex_file(directory, regex, no_files_found_message, files_must_exist)
+        ordered_files = get_filepaths_sorted_by_number_suffix(filepaths)
         file_dictionaries = [load_func(file) for file in ordered_files]
-        return merge_dictionaries(file_dictionaries)
+        return (merge_dictionaries(file_dictionaries), get_merged_files_modify_time(filepaths))
     
     def _load_toc(self):
         def load_toc_file(file):
             return parse_json(file,
                             self._json_preprocessing(self._constants.FILE_CONTENT_REGEX))
-        self.files.toc = self._get_merged_files(
+
+        data, modify_time = self._get_merged_files(
             self._tree_dir,
             self._constants.TOC_REGEX,
             'No toc file found in scrapbook directory matching the regex: ' + self._constants.TOC_REGEX,
             load_toc_file)
+        self.files.toc = SimpleObject()
+        self.files.toc.data = data
+        self.files.toc.modify_time = modify_time
+
 
     def _load_meta(self):
         def load_meta_file(file):
             return parse_json(file,
                             self._json_preprocessing(self._constants.FILE_CONTENT_REGEX))
-        self.files.meta = self._get_merged_files(
+
+        data, modify_time = self._get_merged_files(
             self._tree_dir,
             self._constants.META_REGEX,
             'No toc file found in scrapbook directory matching the regex: ' + self._constants.META_REGEX,
             load_meta_file)
+        self.files.meta = SimpleObject()
+        self.files.meta.data = data
+        self.files.meta.modify_time = modify_time
+
 
     def _load_fulltext(self):
         def load_fulltext_file(file):
             return parse_json(file,
                             self._json_preprocessing(self._constants.FILE_CONTENT_REGEX))
-        self.files.fulltext = self._get_merged_files(
+
+        data, modify_time = self._get_merged_files(
             self._tree_dir,
             self._constants.FULLTEXT_REGEX,
             'No fulltext file found in scrapbook directory matching the regex: ' + self._constants.FULLTEXT_REGEX,
-            load_fulltext_file)
+            load_fulltext_file,
+            False)
+        self.files.fulltext = SimpleObject()
+        self.files.fulltext.data = data
+        self.files.fulltext.modify_time = modify_time
         
     def load_files(self):
         ''' load all necessary files for scrapbook '''
@@ -177,7 +206,7 @@ class TreeFiles:
         # prevent the issue. (An entry is mostly < 32 bytes)
         max_size = 4 * 1024 * 1024
         self._write_split_files(
-            self.files.toc,
+            self.files.toc.data,
             max_size,
             self._constants.TOC_TEMPLATE,
             toc_preprocessing,
@@ -193,7 +222,7 @@ class TreeFiles:
         # prevent the issue. (An item is mostly < 512 bytes)
         max_size = 256 * 1024
         self._write_split_files(
-            self.files.meta,
+            self.files.meta.data,
             max_size,
             self._constants.META_TEMPLATE,
             meta_preprocessing
@@ -211,7 +240,7 @@ class TreeFiles:
         # prevent the issue. (An entry is mostly < 32 bytes)
         max_size = 128 * 1024 * 1024
         self._write_split_files(
-            self.files.fulltext,
+            self.files.fulltext.data,
             max_size,
             self._constants.FULLTEXT_TEMPLATE,
             fulltext_preprocessing,

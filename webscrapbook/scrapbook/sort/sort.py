@@ -10,8 +10,8 @@ class Sort:
     def __init__(self, book: Book):
         self._book = book
         self._files = book.treefiles
-        self._toc = self._files.files.toc
-        self._meta = self._files.files.meta
+        self._toc = self._files.files.toc.data
+        self._meta = self._files.files.meta.data
         self._toc_tree = TocTree(self._toc)
 
         def safe_dict_index(dict, index):

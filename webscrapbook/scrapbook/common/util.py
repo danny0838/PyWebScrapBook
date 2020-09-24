@@ -55,11 +55,11 @@ def find_file(directory, file_regex):
     possible_files = [os.path.join(directory, file) for file in files if re.match(file_regex, file)]
     return possible_files
 
-def find_regex_file(directory, regex, no_match_message):
+def find_regex_file(directory, regex, no_files_found_message, files_must_exist):
     ''' find all files matching regex '''
     possible_files = find_file(directory, regex)
-    if not possible_files:
-        raise Exception(no_match_message)
+    if (not possible_files) and files_must_exist:
+        raise Exception(no_files_found_message)
     else:
         return possible_files
 
@@ -140,7 +140,7 @@ def split_dictionary(dictionary, max_size, entry_size_calc=lambda x: 1):
             return self._splits[self._current_split]
 
         def _get_current_size(self):
-            return self._splits[self._current_split]['size']
+            return self._get_current_split()['size']
 
         def _add_to_current_split(self, key, val):
             current = self._get_current_split()
