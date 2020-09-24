@@ -165,9 +165,15 @@ class FulltextCacheGenerator():
                     return
 
         # add index file(s) to update list
-        for path in book.get_index_paths(index):
-            yield Info('debug', f'Adding "{path}" of "{id}" to check list (from index)')
-            files_to_update[path] = True
+        try:
+            for path in book.get_index_paths(index):
+                yield Info('debug', f'Adding "{path}" of "{id}" to check list (from index)')
+                files_to_update[path] = True
+        except zipfile.BadZipFile:
+            # MAFF file corrupted.
+            # Skip adding index files.
+            # Treat as no file exists and remove all indexes later on.
+            yield Info('error', f'Archive file for "{id}" is corrupted')
 
         # add files in cache to update list
         for path in book.fulltext[id]:
@@ -242,15 +248,24 @@ class FulltextCacheGenerator():
 
     def _get_mtime(self, item, path):
         if util.is_archive(item.index):
-            with zipfile.ZipFile(os.path.join(self.book.data_dir, item.index)) as zh:
-                try:
+            try:
+                zh = zipfile.ZipFile(os.path.join(self.book.data_dir, item.index))
+            except zipfile.BadZipFile as exc:
+                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc}', exc=exc)
+                return None
+            except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as exc:
+                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                return None
+
+            try:
+                with zh as zh:
                     info = zh.getinfo(path)
                     return util.zip_timestamp(info)
-                except KeyError:
-                    return None
-                except Exception as exc:
-                    yield Info('error', f'Failed to access in-zip-file for "{path}" of "{item.id}": {exc}', exc=exc)
-                    return None
+            except KeyError:
+                return None
+            except Exception as exc:
+                yield Info('error', f'Failed to access in-zip-file for "{path}" of "{item.id}": {exc}', exc=exc)
+                return None
 
         file = os.path.join(self.book.data_dir, os.path.dirname(item.index), path)
         try:
@@ -263,14 +278,23 @@ class FulltextCacheGenerator():
 
     def _open_file(self, item, path):
         if util.is_archive(item.index):
-            with zipfile.ZipFile(os.path.join(self.book.data_dir, item.index)) as zh:
-                try:
+            try:
+                zh = zipfile.ZipFile(os.path.join(self.book.data_dir, item.index))
+            except zipfile.BadZipFile as exc:
+                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc}', exc=exc)
+                return None
+            except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as exc:
+                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                return None
+
+            try:
+                with zh as zh:
                     return zh.open(path)
-                except KeyError:
-                    return None
-                except Exception as exc:
-                    yield Info('error', f'Failed to open in-zip-file for "{path}" of "{item.id}": {exc}', exc=exc)
-                    return None
+            except KeyError:
+                return None
+            except Exception as exc:
+                yield Info('error', f'Failed to open in-zip-file for "{path}" of "{item.id}": {exc}', exc=exc)
+                return None
 
         file = os.path.join(self.book.data_dir, os.path.dirname(item.index), path)
         try:

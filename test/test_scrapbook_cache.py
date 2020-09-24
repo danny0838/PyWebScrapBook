@@ -1008,6 +1008,46 @@ Linked page content 3.
             })
 
     def test_update17(self):
+        """Treat as no file exists if archive corrupted
+        """
+        self.create_meta_htz()
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
+            f.write("""\
+scrapbook.fulltext({
+ "20200101000000000": {
+  "index.html": {
+   "content": "dummy"
+  },
+  "linked_exist.html": {
+   "content": "dummy2"
+  },
+  "linked_old.html": {
+   "content": "dummy3"
+  },
+  "linked_nonexist.html": {
+   "content": "dummy4"
+  }
+ }
+})""")
+        archive_file = os.path.join(self.test_root, '20200101000000000.htz')
+        with open(archive_file, 'wb'):
+            pass
+
+        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        os.utime(self.test_fulltext, (t, t))
+        t = time.mktime((2020, 3, 2, 0, 0, 0, 0, 0, -1))
+        os.utime(archive_file, (t, t))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for info in generator.run():
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {}
+            })
+
+    def test_update18(self):
         """Update all indexes for a MAFF if archive newer than cache
         """
         self.create_meta_maff()
@@ -1101,7 +1141,7 @@ Linked page content 3.
                 }
             })
 
-    def test_update18(self):
+    def test_update19(self):
         """Don't update any subfile for a MAFF if archive older than cache
         """
         self.create_meta_maff()
@@ -1192,7 +1232,47 @@ Linked page content 3.
                 }
             })
 
-    def test_update19(self):
+    def test_update20(self):
+        """Treat as no file exists if MAFF archive corrupted
+        """
+        self.create_meta_maff()
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
+            f.write("""\
+scrapbook.fulltext({
+ "20200101000000000": {
+  "20200101000000000/index.html": {
+   "content": "dummy"
+  },
+  "20200101000000000/linked_exist.html": {
+   "content": "dummy2"
+  },
+  "20200101000000000/linked_old.html": {
+   "content": "dummy3"
+  },
+  "20200101000000000/linked_nonexist.html": {
+   "content": "dummy4"
+  }
+ }
+})""")
+        archive_file = os.path.join(self.test_root, '20200101000000000.maff')
+        with open(archive_file, 'w') as zh:
+            pass
+
+        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        os.utime(self.test_fulltext, (t, t))
+        t = time.mktime((2020, 3, 2, 0, 0, 0, 0, 0, -1))
+        os.utime(archive_file, (t, t))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for info in generator.run():
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {}
+            })
+
+    def test_update21(self):
         """Inline a frame with higher priority than cache as another page."""
         self.create_meta()
         with open(self.test_file, 'w', encoding='UTF-8') as f:
@@ -1226,7 +1306,7 @@ Iframe page content.
                 }
             })
 
-    def test_update20(self):
+    def test_update22(self):
         """Inline a frame unless it's already cached as another page."""
         self.create_meta()
         with open(self.test_file, 'w', encoding='UTF-8') as f:
@@ -1272,7 +1352,7 @@ Iframe page content.
                 }
             })
 
-    def test_update21(self):
+    def test_update23(self):
         """Inline a frame unless it's already cached as another page."""
         self.create_meta()
         with open(self.test_file, 'w', encoding='UTF-8') as f:
