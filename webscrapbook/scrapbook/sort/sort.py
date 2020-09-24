@@ -1,5 +1,5 @@
 from natsort import natsort_keygen, ns
-from webscrapbook.scrapbook.common.tree import TocTree
+from webscrapbook.scrapbook.common.tree import Toc
 from webscrapbook.scrapbook.common.book import Book
 
 # sorting folders
@@ -12,17 +12,13 @@ class Sort:
         self._files = book.treefiles
         self._toc = self._files.files.toc.data
         self._meta = self._files.files.meta.data
-        self._toc_tree = TocTree(self._toc)
-
-        def safe_dict_index(dict, index):
-            return dict[index] if index in dict else ''
 
         self._sort_keys = {
-            'title': lambda x: safe_dict_index(self._meta[x], 'title'),
-            'create': lambda x: safe_dict_index(self._meta[x], 'create'),
-            'modify': lambda x: safe_dict_index(self._meta[x], 'modify'),
-            'source': lambda x: safe_dict_index(self._meta[x], 'source'),
-            'comment': lambda x: safe_dict_index(self._meta[x], 'comment') if x != '20200408200623' else 'zzz',
+            'title': lambda x: self._meta.get(x, 'title'),
+            'create': lambda x: self._meta.get(x, 'create'),
+            'modify': lambda x: self._meta.get(x, 'modify'),
+            'source': lambda x: self._meta.get(x, 'source'),
+            'comment': lambda x: self._meta.get(x, 'comment'),
             'id': lambda x: x
         }
 
@@ -39,13 +35,13 @@ class Sort:
         self._files.write_toc()
 
     def _sort_tree_at_folder(self, id_val, sort_key, sort_direction, recursive):
-        def sort_current_folder(id_val, tree):
+        def sort_current_folder(id_val, tree: Toc):
             self._sort_folder_by_id(id_val, tree, sort_key, sort_direction)
 
         if not recursive:
-            sort_current_folder(id_val, self._toc_tree)
+            sort_current_folder(id_val, self._toc)
         else:
-            self._toc_tree.traverse_tree(id_val, self._toc_tree.has_children, sort_current_folder)
+            self._toc.traverse_tree(id_val, self._toc.has_children, sort_current_folder)
 
     def _sort_folder_by_id(self, id_val, tree, sort_keys, sort_direction):
         ''' default natural sort case insensitive '''
@@ -60,8 +56,8 @@ class Sort:
         sort_direction = False if sort_direction == 'a' else True
 
         # do not sort empty folders
-        if self._toc_tree.has_children(id_val):
-            self._toc_tree.get_children(id_val).sort(key=natsort_key, reverse=sort_direction)
+        if self._toc.has_children(id_val):
+            self._toc.get_children(id_val).sort(key=natsort_key, reverse=sort_direction)
 
 
 ###############################################################################

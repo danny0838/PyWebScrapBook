@@ -1,21 +1,26 @@
 from typing import List
 
+
+class TreeFileInterface:
+    def get_data(self, parameter_list):
+        raise NotImplementedError
+
 class TreeInterface:
     def valid_node(self, node):
         '''return if node is in the tree'''
-        pass
+        raise NotImplementedError
     def has_children(self, node: str) -> bool:
         '''does a given node have children'''
-        pass
+        raise NotImplementedError
     def get_children(self, node) -> List[str]:
         '''return list of children for current node'''
-        pass
+        raise NotImplementedError
     def traverse_tree(self, start_node, node_check, callback):
         '''traverse tree'''
-        pass
+        raise NotImplementedError
 
 
-class TocTree(TreeInterface):
+class Toc(TreeInterface, TreeFileInterface):
     ''' class to navigate toc which is a linked list tree '''
     def __init__(self, toc: dict):
         self.toc = toc
@@ -55,5 +60,23 @@ class TocTree(TreeInterface):
                 recurse(self, child, callback)
         recurse(self, start_node, callback)
 
-    def get_toc(self):
+    def get_data(self):
         return self.toc
+
+
+class Meta(TreeFileInterface):
+    ''' class to manipulate meta which is a normal dictionary '''
+    def __init__(self, meta: dict):
+        self.meta = meta
+
+    def valid_item(self, id_val):
+        return id_val in self.meta
+
+    def get(self, id_val, metadata_index):
+        if self.valid_item(id_val):
+            return self.meta[id_val].get(metadata_index,'')
+        else:
+            raise Exception('Metadata item with id {} not found'.format(id_val))
+
+    def get_data(self):
+        return self.meta

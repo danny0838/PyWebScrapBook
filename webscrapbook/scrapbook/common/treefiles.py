@@ -14,7 +14,11 @@ from .util import (
     get_number_suffix,
     SimpleObject,
     merge_dictionaries,
-    split_dictionary
+    split_dictionary,
+)
+from .tree import (
+    Toc,
+    Meta,
 )
 
 
@@ -123,7 +127,7 @@ class TreeFiles:
             'No toc file found in scrapbook directory matching the regex: ' + self._constants.TOC_REGEX,
             load_toc_file)
         self.files.toc = SimpleObject()
-        self.files.toc.data = data
+        self.files.toc.data = Toc(data)
         self.files.toc.modify_time = modify_time
 
 
@@ -138,7 +142,7 @@ class TreeFiles:
             'No toc file found in scrapbook directory matching the regex: ' + self._constants.META_REGEX,
             load_meta_file)
         self.files.meta = SimpleObject()
-        self.files.meta.data = data
+        self.files.meta.data = Meta(data)
         self.files.meta.modify_time = modify_time
 
 
@@ -206,7 +210,7 @@ class TreeFiles:
         # prevent the issue. (An entry is mostly < 32 bytes)
         max_size = 4 * 1024 * 1024
         self._write_split_files(
-            self.files.toc.data,
+            self.files.toc.data.get_data(),
             max_size,
             self._constants.TOC_TEMPLATE,
             toc_preprocessing,
@@ -222,7 +226,7 @@ class TreeFiles:
         # prevent the issue. (An item is mostly < 512 bytes)
         max_size = 256 * 1024
         self._write_split_files(
-            self.files.meta.data,
+            self.files.meta.data.get_data(),
             max_size,
             self._constants.META_TEMPLATE,
             meta_preprocessing
