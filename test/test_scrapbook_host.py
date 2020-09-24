@@ -152,7 +152,7 @@ class TestFileLock(TestBase):
         self.assertEqual(lock.host, host)
         self.assertEqual(lock.name, 'test')
         self.assertEqual(lock.timeout, 5)
-        self.assertEqual(lock.stale, 300)
+        self.assertEqual(lock.stale, 60)
         self.assertEqual(lock.poll_interval, 0.1)
         self.assertEqual(lock.file, lock_file)
         self.assertEqual(lock._lock, False)

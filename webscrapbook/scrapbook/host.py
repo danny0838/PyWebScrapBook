@@ -75,7 +75,7 @@ class FileLock:
     """Controller of file lock.
     """
     def __init__(self, host, name, *,
-            timeout=5, stale=300, poll_interval=0.1,
+            timeout=5, stale=60, poll_interval=0.1,
             assume_acquired=False):
         self.host = host
         self.name = name
