@@ -17,6 +17,7 @@ import codecs
 from base64 import b64decode
 from urllib.parse import unquote_to_bytes
 from ipaddress import IPv6Address, AddressValueError
+from datetime import datetime, timezone
 from lxml import etree
 from ._compat.contextlib import nullcontext
 
@@ -81,6 +82,78 @@ def make_hashable(obj):
         return frozendict((k, make_hashable(v)) for k, v in obj.items())
 
     raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
+
+
+#########################################################################
+# ScrapBook related path/file/string/etc handling
+#########################################################################
+
+REGEX_ID_TO_DATETIME = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$')
+REGEX_ID_TO_DATETIME_LEGACY = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$')
+
+def datetime_to_id(t=None):
+    """Convert a datetime to webscrapbook ID.
+
+    Args:
+        t: datetime. Create an ID for now if None.
+    """
+    if t is None:
+        t = datetime.now(timezone.utc)
+    else:
+        # convert to UTC datetime
+        t = t.astimezone(timezone.utc)
+
+    return (f'{t.year}{t.month:02}{t.day:02}{t.hour:02}{t.minute:02}'
+        f'{t.second:02}{int(t.microsecond * 0.001):03}')
+
+
+def id_to_datetime(id):
+    """Convert a webscrapbook ID to datetime.
+    """
+    m = REGEX_ID_TO_DATETIME.search(id)
+    if m:
+        return datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+            int(m.group(4)),
+            int(m.group(5)),
+            int(m.group(6)),
+            int(m.group(7)) * 1000,
+            timezone.utc,
+            )
+    return None
+
+
+def datetime_to_id_legacy(t=None):
+    """Convert a datetime to legacy ScrapBook ID.
+
+    Args:
+        t: datetime. Create an ID for now if None.
+    """
+    if t is None:
+        t = datetime.now()
+    else:
+        # convert to local datetime
+        t = t.astimezone()
+
+    return f'{t.year}{t.month:02}{t.day:02}{t.hour:02}{t.minute:02}{t.second:02}'
+
+
+def id_to_datetime_legacy(id):
+    """Convert a legacy ScrapBook ID to datetime.
+    """
+    m = REGEX_ID_TO_DATETIME_LEGACY.search(id)
+    if m:
+        return datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+            int(m.group(4)),
+            int(m.group(5)),
+            int(m.group(6)),
+            )
+    return None
 
 
 #########################################################################

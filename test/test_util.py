@@ -9,6 +9,7 @@ import io
 import time
 import zipfile
 import collections
+from datetime import datetime, timezone, timedelta
 from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
 
@@ -63,6 +64,51 @@ class TestUtils(unittest.TestCase):
             set(util.make_hashable([{'a': 123, 'b': 456}, [1, 2, 3]])),
             {(1, 2, 3), frozendict({'a': 123, 'b': 456})}
             )
+
+    def test_datetime_to_id(self):
+        # create an ID from UTC time
+        self.assertEqual(
+            util.datetime_to_id(datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc)),
+            '20200102030405067')
+
+        # create an ID from corresponding UTC time if datetime is another timezone
+        self.assertEqual(
+            util.datetime_to_id(datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone(timedelta(hours=8)))),
+            '20200101190405067')
+
+        # create for now if datetime not provided
+        self.assertAlmostEqual(
+            util.id_to_datetime(util.datetime_to_id(None)).timestamp(),
+            datetime.now(timezone.utc).timestamp(),
+            delta=3)
+
+    def test_datetime_to_id_legacy(self):
+        # create an ID from local datetime
+        self.assertEqual(
+            util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000)),
+            '20200102030405')
+
+        # create an ID from corresponding local time if datetime is another timezone
+        self.assertEqual(
+            util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc)),
+            util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000) + datetime.now().astimezone().utcoffset())
+            )
+
+        # create for now if datetime not provided
+        self.assertAlmostEqual(
+            util.id_to_datetime_legacy(util.datetime_to_id_legacy(None)).timestamp(),
+            datetime.now().timestamp(),
+            delta=3)
+
+    def test_id_to_datetime(self):
+        self.assertEqual(util.id_to_datetime('20200102030405067'),
+            datetime(2020, 1, 2, 3, 4, 5, 67000, timezone.utc))
+        self.assertIsNone(util.id_to_datetime('20200102030405'), None)
+
+    def test_id_to_datetime_legacy(self):
+        self.assertEqual(util.id_to_datetime_legacy('20200102030405'),
+            datetime(2020, 1, 2, 3, 4, 5))
+        self.assertIsNone(util.id_to_datetime_legacy('20200102'), None)
 
     def test_fix_codec(self):
         self.assertEqual(util.fix_codec('big5'), 'cp950')
