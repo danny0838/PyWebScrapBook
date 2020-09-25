@@ -46,12 +46,16 @@ def fcopy(fsrc, fdst):
 
 
 def cmd_serve(args):
-    """Serve the root directory."""
+    """Serve the root directory forever until shutdown (via Ctrl+C or another
+       killing technique)."""
     server.serve(args['root'])
 
 
 def cmd_config(args):
-    """Show, generate, or edit config."""
+    """Show, generate, or edit the config.
+
+    Display the current config when used with no arguments.
+    """
     if args['book']:
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_LOCAL_CONFIG))
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
@@ -126,7 +130,10 @@ def cmd_config(args):
 
 
 def cmd_encrypt(args):
-    """Generate encrypted password string."""
+    """Generate an encrypted password string.
+
+    Primilarly to be used in auth config.
+    """
     if args['password'] is None:
         pw1 = getpass('Enter a password: ')
         pw2 = getpass('Confirm the password: ')
@@ -140,7 +147,8 @@ def cmd_encrypt(args):
 
 
 def cmd_help(args):
-    """Show detailed information."""
+    """Show detailed information about certain topics.
+    """
     root = os.path.join(os.path.dirname(__file__), 'resources')
 
     if args['topic'] == 'config':
@@ -151,7 +159,8 @@ def cmd_help(args):
 
 
 def cmd_view(args):
-    """View archive file(s) in the browser."""
+    """View archive file(s) in the browser.
+    """
     config.load(args['root'])
     view_archive_files(args['files'])
 
@@ -257,57 +266,55 @@ def main():
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")
     subparsers = parser.add_subparsers(metavar='COMMAND',
-        help="""The sub-command to run.
-Add -h (--help) after a sub-command for help message.
-(E.g. %(prog)s config -h)""")
+        help="""the sub-command to run. Get usage help with e.g. %(prog)s config -h""")
 
     # subcommand: serve
-    parser_serve = subparsers.add_parser('serve', aliases=['s'],
-        help=cmd_serve.__doc__, description=cmd_serve.__doc__)
+    parser_serve = subparsers.add_parser('serve', aliases=['s'], description=cmd_serve.__doc__,
+        help="""serve the root directory""")
     parser_serve.set_defaults(func=cmd_serve)
 
     # subcommand: config
-    parser_config = subparsers.add_parser('config', aliases=['c'],
-        help=cmd_config.__doc__, description=cmd_config.__doc__)
+    parser_config = subparsers.add_parser('config', aliases=['c'], description=cmd_config.__doc__,
+        help="""show, generate, or edit the config""")
     parser_config.set_defaults(func=cmd_config)
     parser_config.add_argument('name', nargs='?',
-        help="""show value of the given config name. (in the form of <section>[.<subsection>].<key>)""")
+        help="""show value of the given config name (in the form of <section>[.<subsection>].<key>)""")
     parser_config.add_argument('-b', '--book', default=False, action='store_true',
-        help="""generate book config file.""")
+        help="""generate book config file""")
     parser_config.add_argument('-u', '--user', default=False, action='store_true',
-        help="""generate user config file.""")
+        help="""generate user config file""")
     parser_config.add_argument('-a', '--all', default=False, action='store_true',
-        help="""generate more assistant files. (with --book)""")
+        help="""generate more assistant files (with --book)""")
     parser_config.add_argument('-e', '--edit', default=False, action='store_true',
-        help="""edit the config file. (with --book or --user)""")
+        help="""edit the config file (with --book or --user)""")
 
     # subcommand: encrypt
-    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'],
-        help=cmd_encrypt.__doc__, description=cmd_encrypt.__doc__)
+    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'], description=cmd_encrypt.__doc__,
+        help="""generate an encrypted password""")
     parser_encrypt.set_defaults(func=cmd_encrypt)
     parser_encrypt.add_argument('-p', '--password', nargs='?', default=None, action='store',
-        help="""the password to encrypt.""")
+        help="""the password to encrypt. Skip to provide via an interactive prompt.""")
     parser_encrypt.add_argument('-m', '--method', default='sha1', action='store',
         help="""the encrypt method to use, which is one of: plain, md5, sha1,
-sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
+sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
 (default: %(default)s)""")
     parser_encrypt.add_argument('-s', '--salt', default='', action='store',
         help="""the salt to add during encryption.""")
 
     # subcommand: help
-    parser_help = subparsers.add_parser('help',
-        help=cmd_help.__doc__, description=cmd_help.__doc__)
+    parser_help = subparsers.add_parser('help', description=cmd_help.__doc__,
+        help="""show detailed information about certain topics""")
     parser_help.set_defaults(func=cmd_help)
     parser_help.add_argument('topic', default=None, action='store',
         choices=['config'],
-        help="""detailed help topic.""")
+        help="""the topic for details""")
 
     # subcommand: view
-    parser_view = subparsers.add_parser('view',
-        help=cmd_view.__doc__, description=cmd_view.__doc__)
+    parser_view = subparsers.add_parser('view', description=cmd_view.__doc__,
+        help="""view archive file in the browser""")
     parser_view.set_defaults(func=cmd_view)
     parser_view.add_argument('files', nargs='+',
-        help="""files to view.""")
+        help="""files to view""")
 
     # parse the command
     args = vars(parser.parse_args())
