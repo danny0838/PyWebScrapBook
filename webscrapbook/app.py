@@ -1102,7 +1102,7 @@ def action_lock():
     try:
         lock.acquire()
     except wsb_host.LockTimeoutError:
-        abort(500, f'Unable to acquire lock "{name}".')
+        abort(503, f'Unable to acquire lock "{name}".', retry_after=60)
     except wsb_host.LockRegenerateError:
         abort(500, f'Unable to regenerate stale lock "{name}".')
     except wsb_host.LockGenerateError:

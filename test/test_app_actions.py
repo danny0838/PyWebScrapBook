@@ -2405,7 +2405,7 @@ class TestLock(unittest.TestCase):
                 'chkt': 0,
                 })
 
-            mock_abort.assert_called_once_with(500, 'Unable to acquire lock "test".')
+            mock_abort.assert_called_once_with(503, 'Unable to acquire lock "test".', retry_after=60)
 
     def test_stale_lock_existed(self):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
