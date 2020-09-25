@@ -3,10 +3,12 @@ import unittest
 import os
 import shutil
 import io
+import re
 import zipfile
 import time
 import functools
 from webscrapbook import WSB_DIR, Config
+from webscrapbook import util
 from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook import book as wsb_book
 from webscrapbook.scrapbook.book import Book
@@ -855,6 +857,88 @@ scrapbook.fulltext({
         self.assertFalse(os.path.exists(os.path.join(self.test_root, 'tree', 'fulltext4.js')))
         self.assertFalse(os.path.exists(os.path.join(self.test_root, 'tree', 'fulltext5.js')))
         self.assertTrue(os.path.exists(os.path.join(self.test_root, 'tree', 'fulltext6.js')))
+
+    def test_init_backup(self):
+        book = Book(Host(self.test_root))
+
+        book.init_backup(True)
+        self.assertRegex(
+            book.backup_dir,
+            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
+            )
+
+        ts = util.datetime_to_id()
+        book.init_backup(ts)
+        self.assertEqual(
+            book.backup_dir,
+            os.path.join(self.test_root, WSB_DIR, 'backup', ts),
+            )
+
+        book.init_backup(False)
+        self.assertIsNone(book.backup_dir)
+
+    def test_backup01(self):
+        """A common case."""
+        test_file = os.path.join(self.test_root, 'tree', 'meta.js')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        book = Book(Host(self.test_root))
+        book.init_backup()
+        book.backup(test_file)
+
+        with open(os.path.join(book.backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
+    def test_backup02(self):
+        """A common directory case."""
+        test_dir = os.path.join(self.test_root, 'tree')
+        os.makedirs(test_dir)
+        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('def')
+
+        book = Book(Host(self.test_root))
+        book.init_backup()
+        book.backup(test_dir)
+
+        with open(os.path.join(book.backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+        with open(os.path.join(book.backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'def')
+
+    def test_backup03(self):
+        """Pass if backup_dir not set."""
+        test_file = os.path.join(self.test_wsbdir, 'icon', 'test.txt')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        test_stat = os.stat(test_file)
+
+        book = Book(Host(self.test_root))
+        book.backup(test_file)
+
+        self.assertListEqual(os.listdir(self.test_wsbdir), ['icon'])
+
+    def test_backup04(self):
+        """Pass if file not exist."""
+        test_file = os.path.join(self.test_wsbdir, 'icon', 'test.txt')
+        
+        book = Book(Host(self.test_root))
+        book.init_backup()
+        book.backup(test_file)
+
+        self.assertFalse(os.path.lexists(os.path.join(book.backup_dir, WSB_DIR, 'icon', 'test.txt')))
+
+    def test_backup05(self):
+        """Pass if file outside the host root."""
+        book = Book(Host(self.test_root))
+        book.init_backup()
+        book.backup(__file__)
+
+        self.assertListEqual(os.listdir(self.test_wsbdir), [])
 
     def test_get_index_paths01(self):
         self.create_general_config()

@@ -1,8 +1,10 @@
 """Scrapbook book handler.
 """
 import os
+import shutil
 import re
 import json
+from .. import WSB_DIR
 from .. import util
 
 
@@ -52,6 +54,7 @@ class Book:
         self.meta = None
         self.toc = None
         self.fulltext = None
+        self.backup_dir = None
 
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)
@@ -134,6 +137,7 @@ class Book:
             OSError: failed to write
         """
         file = self.get_tree_file(name, index)
+        self.backup(file)
         with open(file, 'w', encoding='UTF-8', newline='\n') as fh:
             fh.write(data)
 
@@ -263,6 +267,59 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
             except FileNotFoundError:
                 break
             i += 1
+
+    def init_backup(self, ts=True):
+        """Setup a backup dir for following backups until next set.
+
+        Args:
+            ts: a webscrapbook ID as timestamp. True to generate one from
+            current time. False to disable backup.
+        """
+        if ts is False:
+            self.backup_dir = None
+            return
+
+        if ts is True:
+            ts = util.datetime_to_id()
+
+        self.backup_dir = os.path.join(self.root, WSB_DIR, 'backup', ts)
+
+    def backup(self, file, base=None):
+        """Create a backup for the file.
+
+        Args:
+            file: a path-like for the file or directory to backup. Silently
+                skipped if it doesn't exists or the backup cannot be performed.
+            base: an arbitrary base directory to calculate the backup file
+                path since. Must be an absolute path.
+
+        Raises:
+            OSError: failed to copy
+        """
+        if base is None:
+            base = self.root
+
+        if not self.backup_dir:
+            return
+
+        if not os.path.exists(file):
+            return
+
+        if not os.path.abspath(file).startswith(os.path.join(base, '')):
+            return
+
+        dst = os.path.join(self.backup_dir, os.path.relpath(file, base))
+        if os.path.lexists(dst):
+            try:
+                shutil.rmtree(dst)
+            except NotADirectoryError:
+                os.remove(dst)
+        else:
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+        try:
+            shutil.copytree(file, dst)
+        except NotADirectoryError:
+            shutil.copy2(file, dst)
 
     def get_index_paths(self, index):
         if util.is_maff(index):

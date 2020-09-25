@@ -219,6 +219,22 @@ no_tree = true
         self.assertFalse(mock_ssg.call_args[1]['rss'])
         mock_rss.assert_not_called()
 
+    @mock.patch('webscrapbook.scrapbook.host.Book.get_subpath', lambda *_: '')
+    @mock.patch('webscrapbook.scrapbook.host.Book.init_backup')
+    def test_no_backup01(self, mock_func):
+        for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
+            pass
+
+        self.assertIsInstance(mock_func.call_args_list[0][0][0], str)
+        self.assertFalse(mock_func.call_args_list[1][0][0])
+
+    @mock.patch('webscrapbook.scrapbook.host.Book.init_backup')
+    def test_no_backup02(self, mock_func):
+        for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=True):
+            pass
+
+        mock_func.assert_not_called()
+
 class TestFulltextCacheGenerator(TestCache):
     def setUp(self):
         """Generate general temp test folder

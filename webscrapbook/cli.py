@@ -343,6 +343,8 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
         (usually corresponds to webscrapbook app root)""")
     parser_cache.add_argument('--locale', action='store',
         help="""locale for the generated pages (default: system locale)""")
+    parser_cache.add_argument('--no-backup', default=False, action='store_true',
+        help="""do not backup changed files""")
     parser_cache.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 

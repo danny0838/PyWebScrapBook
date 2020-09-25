@@ -345,6 +345,7 @@ class TestCache(unittest.TestCase):
             'static_index': True,
             'rss_root': 'http://example.com:8000/wsb/',
             'locale': 'zh_TW',
+            'no_backup': True,
             'debug': True,
             })
 
@@ -357,6 +358,7 @@ class TestCache(unittest.TestCase):
             static_index=True,
             rss_root='http://example.com:8000/wsb/',
             locale='zh_TW',
+            no_backup=True,
             )
 
 class TestEncrypt(unittest.TestCase):

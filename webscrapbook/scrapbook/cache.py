@@ -143,6 +143,7 @@ class StaticSiteGenerator():
         try:
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
             fsrc = self.host.get_static_file(src)
+            self.book.backup(fdst)
             shutil.copyfile(fsrc, fdst)
         except OSError as exc:
             yield Info('error', f'Failed to create resource file "{dst}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
@@ -169,6 +170,7 @@ class StaticSiteGenerator():
         try:
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
+            self.book.backup(fdst)
             with open(fdst, 'wb') as fh:
                 shutil.copyfileobj(fsrc, fh)
         except OSError as exc:
@@ -388,6 +390,7 @@ class RssFeedGenerator():
         try:
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
+            self.book.backup(fdst)
             with open(fdst, 'wb') as fh:
                 shutil.copyfileobj(fsrc, fh)
         except OSError as exc:
@@ -895,7 +898,8 @@ class FulltextCacheGenerator():
         return self.FULLTEXT_SPACE_REPLACER(text).strip()
 
 
-def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
+def generate(root, book_ids=None, item_ids=None, *,
+        config=None, no_lock=False, no_backup=False,
         fulltext=True, inclusive_frames=True,
         static_site=False, static_index=False,
         locale=None, rss_root=None):
@@ -907,6 +911,7 @@ def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
     if not book_ids:
         book_ids = list(host.books)
 
+    ts = None
     avail_book_ids = set(host.books)
     for book_id in book_ids:
         # skip invalid book ID
@@ -926,27 +931,37 @@ def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
             yield Info('info', f'Caching book "{book_id}".')
             lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
             with lh:
-                if fulltext:
-                    generator = FulltextCacheGenerator(
-                        book,
-                        inclusive_frames=inclusive_frames,
-                        )
-                    yield from generator.run(item_ids)
+                if not no_backup:
+                    # use same timestamp for all books
+                    ts = ts or util.datetime_to_id()
+                    book.init_backup(ts)
+                    yield Info('info', f'Prepared backup at "{book.get_subpath(book.backup_dir)}".')
 
-                if static_site:
-                    generator = StaticSiteGenerator(
-                        book,
-                        static_index=static_index,
-                        locale=locale, rss=bool(rss_root),
-                        )
-                    yield from generator.run()
+                try:
+                    if fulltext:
+                        generator = FulltextCacheGenerator(
+                            book,
+                            inclusive_frames=inclusive_frames,
+                            )
+                        yield from generator.run(item_ids)
 
-                if rss_root:
-                    generator = RssFeedGenerator(
-                        book,
-                        rss_root=rss_root,
-                        )
-                    yield from generator.run()
+                    if static_site:
+                        generator = StaticSiteGenerator(
+                            book,
+                            static_index=static_index,
+                            locale=locale, rss=bool(rss_root),
+                            )
+                        yield from generator.run()
+
+                    if rss_root:
+                        generator = RssFeedGenerator(
+                            book,
+                            rss_root=rss_root,
+                            )
+                        yield from generator.run()
+                finally:
+                    if not no_backup:
+                        book.init_backup(False)
 
         except Exception as exc:
             traceback.print_exc()
