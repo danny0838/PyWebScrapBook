@@ -2430,7 +2430,6 @@ class TestLock(unittest.TestCase):
                 'success': True,
                 'data': id,
                 })
-            self.assertTrue(os.path.isfile(self.lock))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_directory_existed(self, mock_abort):
@@ -2446,6 +2445,43 @@ class TestLock(unittest.TestCase):
                 })
 
             mock_abort.assert_called_once_with(500, 'Unable to create lock "test".')
+
+    def test_extend(self):
+        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
+        with open(self.lock, 'w') as fh:
+            fh.write('oldid')
+
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'lock',
+                'f': 'json',
+                'name': 'test',
+                'id': 'oldid',
+                })
+
+            with open(self.lock) as fh:
+                self.assertEqual(fh.read(), 'oldid')
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'oldid',
+                })
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_extend_nonexist(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'lock',
+                'f': 'json',
+                'name': 'test',
+                'id': 'oldid',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
