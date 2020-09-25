@@ -69,14 +69,44 @@ class Meta(TreeFileInterface):
     def __init__(self, meta: dict):
         self.meta = meta
 
-    def valid_item(self, id_val):
+    def is_valid_item(self, id_val):
         return id_val in self.meta
 
     def get(self, id_val, metadata_index):
-        if self.valid_item(id_val):
+        if self.is_valid_item(id_val):
             return self.meta[id_val].get(metadata_index,'')
         else:
             raise Exception('Metadata item with id {} not found'.format(id_val))
+    
+    def get_items(self):
+        return self.meta.items()
+    
+    def get_ids(self):
+        return self.meta.keys()
 
     def get_data(self):
         return self.meta
+
+class Fulltext(TreeFileInterface):
+    ''' class to manipulate fulltext which is a normal dictionary '''
+    def __init__(self, fulltext: dict):
+        self.fulltext = fulltext
+
+    def remove_item(self, id_val):
+        del self.fulltext[id_val]
+
+    def add_item_content(self, id_val, index_path, fulltext_content):
+        if not self.item_exists(id_val):
+            self.fulltext[id_val] = {}
+        self.fulltext[id_val][index_path] = {
+            'content': fulltext_content,
+        }
+
+    def item_exists(self, id_val):
+        return id_val in self.fulltext    
+
+    def get_ids(self):
+        return self.fulltext.keys()
+
+    def get_data(self):
+        return self.fulltext

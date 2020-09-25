@@ -12,6 +12,11 @@ import math
 import re
 import hashlib
 import time
+import mimetypes
+import binascii
+import codecs
+from base64 import b64decode
+from urllib.parse import quote, unquote, unquote_to_bytes
 from ipaddress import IPv6Address, AddressValueError
 from secrets import token_urlsafe
 from lxml import etree
@@ -75,6 +80,56 @@ def make_hashable(obj):
     else:
         raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
 
+#########################################################################
+# Codecs and text encoding
+#########################################################################
+
+# all lower-case
+CODECS_MAPPING = {
+    'big5': 'cp950',
+    }
+
+def fix_codec(name):
+    """Remap codec name
+    Some codecs are widely used and de-facto standard for web browsers. For
+    example, most browsers display cp950 extended chars correctly even if the
+    charset of the web page is defined as 'big5'. To prevent unexpected
+    gibberish when we try to parse text in Python, we need to remap the codec
+    name of a web page from 'big5' to 'cp950' using this first.
+    """
+    try:
+        return CODECS_MAPPING[name.lower()]
+    except KeyError:
+        return name
+
+
+# starting of BOM32 is equal to BOM16, so check the former first
+BOM_DETECTORS = [
+    ('UTF-8-SIG', codecs.BOM_UTF8),
+    ('UTF-32-LE', codecs.BOM_UTF32_LE),
+    ('UTF-32-BE', codecs.BOM_UTF32_BE),
+    ('UTF-16-LE', codecs.BOM_UTF16_LE),
+    ('UTF-16-BE', codecs.BOM_UTF16_BE),
+    ]
+
+def sniff_bom(fh):
+    """Sniff a possibly existing BOM
+    Args:
+        fh: an opened file handler, must be seekable.
+    Return:
+        str: corresponding codec name for a found BOM if a BOM is found (and
+            sets pointer at the position after the BOM), or None otherwise.
+    """
+    # will read less if the file is smaller
+    raw = fh.read(4)
+
+    for enc, bom in BOM_DETECTORS:
+        if raw.startswith(bom):
+            fh.seek(len(bom))
+            return enc
+
+    fh.seek(0)
+    return None
 
 #########################################################################
 # URL and string
@@ -336,6 +391,17 @@ def is_compressible(mimetype):
 class ZipDirNotFoundError(Exception):
     pass
 
+def zip_tuple_timestamp(zipinfodate):
+    """Get timestamp from a ZipInfo.date_time.
+    """
+    return time.mktime(zipinfodate + (0, 0, -1))
+
+
+def zip_timestamp(zipinfo):
+    """Get timestamp from a ZipInfo.
+    """
+    return zip_tuple_timestamp(zipinfo.date_time)
+
 
 def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
     """Read basic file information from ZIP.
@@ -456,17 +522,156 @@ def zip_hasdir(zip, subpath):
 
     return False
 
+#########################################################################
+# HTTP manipulation
+#########################################################################
+
+ContentType = namedtuple('ContentType', ['type', 'parameters'])
+
+PARSE_CONTENT_TYPE_REGEX_MIME = re.compile(r'^(.*?)(?=;|$)', re.I)
+PARSE_CONTENT_TYPE_REGEX_FIELD = re.compile(r';((?:"(?:\\.|[^"])*(?:"|$)|[^"])*?)(?=;|$)', re.I)
+PARSE_CONTENT_TYPE_REGEX_KEY_VALUE = re.compile(r'\s*(.*?)\s*=\s*("(?:\\.|[^"])*"|[^"]*?)\s*$', re.I)
+PARSE_CONTENT_TYPE_REGEX_DQUOTE_VALUE = re.compile(r'^"(.*?)"$')
+
+def parse_content_type(string):
+    """Parse content type header.
+    Return:
+        ContentType: type and parameter keys are all lower case.
+    """
+    type = None
+    parameters = {}
+
+    if not string:
+        return ContentType(type, parameters)
+
+    match_mime = PARSE_CONTENT_TYPE_REGEX_MIME.search(string)
+    if match_mime:
+        string = string[match_mime.end():]
+        type = match_mime.group(1).strip().lower()
+
+        while True:
+            match_field = PARSE_CONTENT_TYPE_REGEX_FIELD.search(string)
+            if not match_field:
+                break
+
+            string = string[match_field.end():]
+            parameter = match_field.group(1)
+            match_key_value = PARSE_CONTENT_TYPE_REGEX_KEY_VALUE.search(parameter)
+
+            if match_key_value:
+                field = match_key_value.group(1).lower()
+                value = match_key_value.group(2)
+
+                # handle double quoted value
+                match_dquote = PARSE_CONTENT_TYPE_REGEX_DQUOTE_VALUE.search(value)
+                if match_dquote:
+                    value = match_dquote.group(1)
+
+                parameters[field] = value;
+
+    return ContentType(type, parameters)
+
+
+DataUri = namedtuple('DataUri', ['bytes', 'mime', 'parameters'])
+
+PARSE_DATAURI_REGEX_FIELDS = re.compile(r'^data:([^,]*?)(;base64)?,([^#]*)', re.I)
+PARSE_DATAURI_REGEX_KEY_VALUE = re.compile(r'^(.*?)=(.*?)$')
+
+class DataUriMalformedError(Exception):
+    pass
+
+def parse_datauri(datauri):
+    """Parse a Data URI
+    Args:
+        datauri: the data URI string
+    Returns:
+        DataUri: a tuple containing information
+    Raises:
+        DataUriMalformedError
+    """
+    match_fields = PARSE_DATAURI_REGEX_FIELDS.search(datauri)
+    if not match_fields:
+        raise DataUriMalformedError('Malformed data URI')
+
+    mediatype = match_fields.group(1)
+    base64 = bool(match_fields.group(2))
+    data = match_fields.group(3)
+
+    parts = mediatype.split(';')
+    mime = parts.pop(0)
+    parameters = {}
+    for part in parts:
+        match_key_value = PARSE_DATAURI_REGEX_KEY_VALUE.search(part)
+        if match_key_value:
+            parameters[match_key_value.group(1).lower()] = match_key_value.group(2)
+
+    if base64:
+        try:
+            bytes_ = b64decode(data)
+        except binascii.Error as exc:
+            raise DataUriMalformedError(f'Malformed base64 sequence: {exc}')
+    else:
+        # decode precent-encoding to corresponding byte
+        # non-ASCII chars are encoded as UTF-8 bytes
+        bytes_ = unquote_to_bytes(data)
+
+    return DataUri(bytes_, mime, parameters)
 
 #########################################################################
 # HTML manipulation
 #########################################################################
 
+def get_charset(file):
+    """Search for a defined charset.
+    Args:
+        file: str, path-like, or file-like object
+    """
+    try:
+        fh = open(file, 'rb')
+    except TypeError:
+        fh = file
+    except FileNotFoundError:
+        fh = None
+
+    if fh:
+        try:
+            for event, elem in etree.iterparse(fh, html=True, events=('start',), tag=('meta', 'body')):
+                if elem.tag == 'meta':
+                    charset = elem.attrib.get('charset')
+                    if charset:
+                        return charset.strip()
+
+                    if elem.attrib.get('http-equiv', '').lower() == 'content-type':
+                        _, params = parse_content_type(elem.attrib.get('content', ''))
+                        charset = params.get('charset')
+                        if charset:
+                            return charset
+
+                elif elem.tag == 'body':
+                    # presume that no <meta> will appear after <body> start
+                    # for a normal HTML to exit early
+                    return None
+
+                # clean up to save memory
+                elem.clear()
+                while elem.getprevious() is not None:
+                    try:
+                        del elem.getparent()[0]
+                    except TypeError:
+                        # broken html may generate extra root elem
+                        break
+        finally:
+            if fh != file:
+                fh.close()
+
+    return None
+
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target'])
 
+ITER_META_REFRESH_REGEX_PARAMETERS = re.compile(r'^\s*url\s*=\s*(.*?)\s*$', re.I)
 
-def parse_meta_refresh(file):
-    """Retrieve meta refresh target from a file.
-
+def iter_meta_refresh(file):
+    """Iterate through meta refreshes from a file.
     Args:
         file: str, path-like, or file-like object
     """
@@ -488,20 +693,31 @@ def parse_meta_refresh(file):
                     except ValueError:
                         time = 0
 
-                    m = re.match(r'^\s*url\s*=\s*(.*?)\s*$', content, flags=re.I)
+                    m = ITER_META_REFRESH_REGEX_PARAMETERS.search(content)
                     target = m.group(1) if m else None
-
-                    if time == 0 and target is not None:
-                        return MetaRefreshInfo(time=time, target=target)
+                    yield MetaRefreshInfo(time=time, target=target)
 
                 # clean up to save memory
                 elem.clear()
                 while elem.getprevious() is not None:
-                    del elem.getparent()[0]
+                    try:
+                        del elem.getparent()[0]
+                    except TypeError:
+                        # broken html may generate extra root elem
+                        break
         finally:
             if fh != file:
                 fh.close()
 
+
+def parse_meta_refresh(file):
+    """Retrieve meta refresh target from a file.
+    Args:
+        file: str, path-like, or file-like object
+    """
+    for info in iter_meta_refresh(file):
+        if info.time == 0 and info.target is not None:
+            return info
     return MetaRefreshInfo(time=None, target=None)
 
 

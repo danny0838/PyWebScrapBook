@@ -19,6 +19,7 @@ from .util import (
 from .tree import (
     Toc,
     Meta,
+    Fulltext,
 )
 
 
@@ -158,7 +159,7 @@ class TreeFiles:
             load_fulltext_file,
             False)
         self.files.fulltext = SimpleObject()
-        self.files.fulltext.data = data
+        self.files.fulltext.data = Fulltext(data)
         self.files.fulltext.modify_time = modify_time
         
     def load_files(self):
@@ -244,7 +245,7 @@ class TreeFiles:
         # prevent the issue. (An entry is mostly < 32 bytes)
         max_size = 128 * 1024 * 1024
         self._write_split_files(
-            self.files.fulltext.data,
+            self.files.fulltext.data.get_data(),
             max_size,
             self._constants.FULLTEXT_TEMPLATE,
             fulltext_preprocessing,

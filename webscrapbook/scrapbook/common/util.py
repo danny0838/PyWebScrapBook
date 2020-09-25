@@ -1,7 +1,8 @@
-import os, json, glob, re
+import os, json, glob, re, mimetypes
 from math import ceil
 from collections import OrderedDict
 from itertools import islice
+
 
 # string functions
 ###############################################################################
@@ -160,3 +161,8 @@ def split_dictionary(dictionary, max_size, entry_size_calc=lambda x: 1):
     for key, val in entries:
         s.add(key, val)
     return s.get_dictionaries()
+
+def mime_from_filepath(filepath):
+    ''' guess the mimetype from file extension '''
+    mime, _ = mimetypes.guess_type(filepath)
+    return mime
