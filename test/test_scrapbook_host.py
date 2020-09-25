@@ -149,29 +149,66 @@ class TestFileLock(TestBase):
 
         host = Host(self.test_root)
         lock = wsb_host.FileLock(host, 'test')
+
         self.assertEqual(lock.host, host)
         self.assertEqual(lock.name, 'test')
         self.assertEqual(lock.timeout, 5)
         self.assertEqual(lock.stale, 60)
         self.assertEqual(lock.poll_interval, 0.1)
         self.assertEqual(lock.file, lock_file)
+        self.assertIsInstance(lock.id, str)
         self.assertEqual(lock._lock, False)
 
     def test_init02(self):
-        """Parameters"""
+        """Parameters."""
         lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
         host = Host(self.test_root)
         lock = wsb_host.FileLock(host, 'test',
-            timeout=2, stale=120, poll_interval=0.2,
-            assume_acquired=True)
+            timeout=2, stale=120, poll_interval=0.2)
+
         self.assertEqual(lock.host, host)
         self.assertEqual(lock.name, 'test')
         self.assertEqual(lock.timeout, 2)
         self.assertEqual(lock.stale, 120)
         self.assertEqual(lock.poll_interval, 0.2)
         self.assertEqual(lock.file, lock_file)
+        self.assertIsInstance(lock.id, str)
+        self.assertEqual(lock._lock, False)
+
+    def test_persist01(self):
+        """Normal case."""
+        lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        os.makedirs(os.path.dirname(lock_file))
+        with open(lock_file, 'w', encoding='UTF-8') as fh:
+            fh.write('oldid')
+
+        host = Host(self.test_root)
+        lock = wsb_host.FileLock(host, 'test', persist='oldid')
+
+        self.assertEqual(lock.id, 'oldid')
         self.assertEqual(lock._lock, True)
+
+    def test_persist02(self):
+        """Wrong ID."""
+        lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        os.makedirs(os.path.dirname(lock_file))
+        with open(lock_file, 'w', encoding='UTF-8') as fh:
+            fh.write('oldid')
+
+        host = Host(self.test_root)
+
+        with self.assertRaises(wsb_host.LockPersistUnmatchError):
+            wsb_host.FileLock(host, 'test', persist='dummy')
+
+    def test_persist03(self):
+        """Lock file missing (or inaccessible)."""
+        lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+
+        host = Host(self.test_root)
+
+        with self.assertRaises(wsb_host.LockPersistOSError):
+            wsb_host.FileLock(host, 'test', persist='dummy')
 
     def test_acquire01(self):
         """Normal case"""
@@ -179,7 +216,8 @@ class TestFileLock(TestBase):
 
         lock.acquire()
 
-        self.assertTrue(os.path.isfile(lock.file))
+        with open(lock.file) as fh:
+            self.assertTrue(fh.read(), lock.id)
         self.assertTrue(lock.locked)
 
     def test_acquire02(self):
@@ -196,14 +234,15 @@ class TestFileLock(TestBase):
     def test_acquire03(self):
         """Stale lock should be regenerated"""
         lock = Host(self.test_root).get_lock('test', timeout=1, stale=0)
-
-        now = time.time()
         os.makedirs(os.path.dirname(lock.file))
         with open(lock.file, 'w') as fh:
-            pass
+            fh.write('oldid')
 
         lock.acquire()
-        self.assertAlmostEqual(os.stat(lock.file).st_mtime, now, delta=3)
+
+        with open(lock.file) as fh:
+            self.assertTrue(fh.read(), lock.id)
+        self.assertNotEqual(lock.id, 'oldid')
         self.assertTrue(lock.locked)
 
     def test_acquire04(self):

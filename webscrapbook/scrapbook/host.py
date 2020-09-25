@@ -3,16 +3,18 @@
 import os
 import time
 from threading import Thread
+from secrets import token_urlsafe
 from .. import WSB_DIR
 from .. import Config
 from .. import util
 
 
 class LockError(Exception):
-    def __init__(self, msg, name=None, file=None):
+    def __init__(self, msg, name=None, file=None, id=None):
         self.msg = msg
         self.name = name
         self.file = file
+        self.id = id
 
 
 class LockAcquireError(LockError):
@@ -28,6 +30,18 @@ class LockGenerateError(LockAcquireError):
 
 
 class LockRegenerateError(LockGenerateError):
+    pass
+
+
+class LockPersistError(LockAcquireError):
+    pass
+
+
+class LockPersistOSError(LockPersistError):
+    pass
+
+
+class LockPersistUnmatchError(LockPersistError):
     pass
 
 
@@ -76,15 +90,31 @@ class FileLock:
     """
     def __init__(self, host, name, *,
             timeout=5, stale=60, poll_interval=0.1,
-            assume_acquired=False):
+            persist=False):
         self.host = host
         self.name = name
         self.timeout = timeout
         self.stale = stale
         self.poll_interval = poll_interval
         self.file = os.path.join(host.locks, f'{util.encrypt(name, method="md5")}.lock')
-        self._lock = assume_acquired
         self._keeper = None
+
+        if persist:
+            try:
+                with open(self.file, encoding='UTF-8') as fh:
+                    assert fh.read() == persist
+            except OSError as exc:
+                raise LockPersistOSError(f'unable to access lock file for "{name}"',
+                    name=self.name, file=self.file, id=persist) from exc
+            except AssertionError as exc:
+                raise LockPersistUnmatchError(f'unable to persist lock "{name}" with given ID',
+                    name=self.name, file=self.file, id=persist) from exc
+
+            self.id = persist
+            self._lock = True
+        else:
+            self.id = token_urlsafe()
+            self._lock = False
 
     @property
     def locked(self):
@@ -124,8 +154,8 @@ class FileLock:
 
         while True:
             try:
-                with open(self.file, 'x') as fh:
-                    pass
+                with open(self.file, 'x', encoding='UTF-8') as fh:
+                    fh.write(self.id)
             except FileExistsError:
                 t = time.time()
 
@@ -144,10 +174,10 @@ class FileLock:
                         name=self.name, file=self.file) from exc
 
                 if t >= stale_time:
-                    # Current lock file is stale. Touch rather than recreate
-                    # for atomicity.
+                    # Current lock file is stale. Rewrite with current ID.
                     try:
-                        os.utime(self.file)
+                        with open(self.file, 'w', encoding='UTF-8') as fh:
+                            fh.write(self.id)
                     except OSError as exc:
                         raise LockRegenerateError(
                             f'unable to regenerate stale lock "{self.name}"',

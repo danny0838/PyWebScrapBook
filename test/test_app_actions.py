@@ -2379,11 +2379,14 @@ class TestLock(unittest.TestCase):
                 'name': 'test',
                 })
 
+            with open(self.lock) as fh:
+                id = fh.read()
+
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {
                 'success': True,
-                'data': 'Command run successfully.',
+                'data': id,
                 })
             self.assertTrue(os.path.isfile(self.lock))
 
@@ -2406,8 +2409,8 @@ class TestLock(unittest.TestCase):
 
     def test_stale_lock_existed(self):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
-        with open(self.lock, 'w'):
-            pass
+        with open(self.lock, 'w') as fh:
+            fh.write('oldid')
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2418,11 +2421,14 @@ class TestLock(unittest.TestCase):
                 'chks': 0,
                 })
 
+            with open(self.lock) as fh:
+                id = fh.read()
+
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             self.assertEqual(r.json, {
                 'success': True,
-                'data': 'Command run successfully.',
+                'data': id,
                 })
             self.assertTrue(os.path.isfile(self.lock))
 
@@ -2462,6 +2468,7 @@ class TestUnlock(unittest.TestCase):
                 'a': 'unlock',
                 'f': 'json',
                 'name': 'test',
+                'id': 'dummy',
                 })
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
@@ -2474,26 +2481,40 @@ class TestUnlock(unittest.TestCase):
                 'a': 'unlock',
                 'f': 'json',
                 'name': 'test',
+                'id': 'dummy',
                 })
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_params_check(self, mock_abort):
+    def test_params_check01(self, mock_abort):
         """Require name."""
         with app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
                 'f': 'json',
+                'id': 'dummy',
                 })
 
             mock_abort.assert_called_once_with(400, 'Lock name is not specified.')
 
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_params_check02(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'unlock',
+                'f': 'json',
+                'name': 'test',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Lock ID is not specified.')
+
     def test_normal(self):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
-        with open(self.lock, 'w'):
-            pass
+        with open(self.lock, 'w') as fh:
+            fh.write('oldid')
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2501,6 +2522,7 @@ class TestUnlock(unittest.TestCase):
                 'a': 'unlock',
                 'f': 'json',
                 'name': 'test',
+                'id': 'oldid',
                 })
 
             self.assertEqual(r.status_code, 200)
@@ -2511,22 +2533,35 @@ class TestUnlock(unittest.TestCase):
                 })
             self.assertFalse(os.path.exists(self.lock))
 
-    def test_nonexist(self):
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_wrong_id(self, mock_abort):
+        os.makedirs(os.path.dirname(self.lock), exist_ok=True)
+        with open(self.lock, 'w') as fh:
+            fh.write('oldid')
+
         with app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
                 'f': 'json',
                 'name': 'test',
+                'id': 'dummy',
                 })
 
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
+            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_nonexist(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'unlock',
+                'f': 'json',
+                'name': 'test',
+                'id': 'dummy',
                 })
-            self.assertFalse(os.path.exists(self.lock))
+
+            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_directory_existed(self, mock_abort):
@@ -2538,9 +2573,10 @@ class TestUnlock(unittest.TestCase):
                 'a': 'unlock',
                 'f': 'json',
                 'name': 'test',
+                'id': 'dummy',
                 })
 
-            mock_abort.assert_called_once_with(500, 'Unable to remove lock "test".')
+            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
 
 class TestMkdir(unittest.TestCase):
     def setUp(self):

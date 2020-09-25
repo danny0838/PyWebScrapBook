@@ -1090,6 +1090,8 @@ def action_lock():
     except wsb_host.LockGenerateError:
         abort(500, f'Unable to create lock "{name}".')
 
+    return http_response(lock.id, format=request.format)
+
 
 @handle_action_advanced
 def action_unlock():
@@ -1099,7 +1101,16 @@ def action_unlock():
     if name is None:
         abort(400, "Lock name is not specified.")
 
-    lock = host.get_lock(name, assume_acquired=True)
+    # verify ID
+    id = request.values.get('id')
+    if id is None:
+        abort(400, "Lock ID is not specified.")
+
+    try:
+        lock = host.get_lock(name, persist=id)
+    except wsb_host.LockPersistError:
+        abort(400, f'Unable to persist lock "{name}".')
+
     try:
         lock.release()
     except wsb_host.LockReleaseNotFoundError:
