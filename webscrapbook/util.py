@@ -18,7 +18,7 @@ from ._compat.contextlib import nullcontext
 
 
 #########################################################################
-# Abstract classes
+# Common classes and objects handling
 #########################################################################
 
 class frozendict(collections.abc.Mapping):
@@ -58,21 +58,20 @@ class frozendict(collections.abc.Mapping):
         return self.__class__(self._d.copy())
 
 
-#########################################################################
-# Objects handling
-#########################################################################
-
 def make_hashable(obj):
     if isinstance(obj, collections.abc.Hashable):
         return obj
-    elif isinstance(obj, collections.abc.Set):
+
+    if isinstance(obj, collections.abc.Set):
         return frozenset(make_hashable(v) for v in obj)
-    elif isinstance(obj, collections.abc.Sequence):
+
+    if isinstance(obj, collections.abc.Sequence):
         return tuple(make_hashable(v) for v in obj)
-    elif isinstance(obj, collections.abc.Mapping):
+
+    if isinstance(obj, collections.abc.Mapping):
         return frozendict((k, make_hashable(v)) for k, v in obj.items())
-    else:
-        raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
+
+    raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
 
 
 #########################################################################

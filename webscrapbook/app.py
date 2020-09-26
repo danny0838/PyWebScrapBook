@@ -284,9 +284,9 @@ def open_archive_path(paths, mode='r', filters=None):
             with open(paths[0], 'r+b') as fw, buffer as fr:
                 fw.truncate()
                 while True:
-                    bytes = fr.read(8192)
-                    if not bytes: break
-                    fw.write(bytes)
+                    chunk = fr.read(8192)
+                    if not chunk: break
+                    fw.write(chunk)
     finally:
         for f in reversed(stack):
             f.close()
@@ -1289,16 +1289,16 @@ def action_save():
                     with zip.open(info, 'w', force_zip64=True) as fh:
                         stream = file.stream
                         while True:
-                            s = stream.read(8192)
-                            if not s: break
-                            fh.write(s)
+                            chunk = stream.read(8192)
+                            if not chunk: break
+                            fh.write(chunk)
                 else:
-                    bytes = request.values.get('text', '').encode('ISO-8859-1')
+                    bytes_ = request.values.get('text', '').encode('ISO-8859-1')
                     try:
-                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                        zip.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
                     except TypeError:
                         # compresslevel is supported since Python 3.7
-                        zip.writestr(info, bytes, compress_type=zipfile.ZIP_DEFLATED)
+                        zip.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED)
         except Exception:
             traceback.print_exc()
             abort(500, "Unable to write to this ZIP file.")
@@ -1320,9 +1320,9 @@ def action_save():
             if file is not None:
                 file.save(localpath)
             else:
-                bytes = request.values.get('text', '').encode('ISO-8859-1')
+                bytes_ = request.values.get('text', '').encode('ISO-8859-1')
                 with open(localpath, 'wb') as f:
-                    f.write(bytes)
+                    f.write(bytes_)
         except Exception:
             traceback.print_exc()
             abort(500, "Unable to write to this file.")

@@ -19,7 +19,7 @@ def log(*args):
 
 
 def die(*args):
-    print(f'Error:', *args, file=sys.stderr)
+    print('Error:', *args, file=sys.stderr)
     sys.exit(1)
 
 
@@ -179,7 +179,7 @@ def view_archive_files(files):
 
     for file in dict.fromkeys(os.path.normcase(os.path.abspath(file)) for file in files):
         mime, _ = mimetypes.guess_type(file)
-        if not mime in ("application/html+zip", "application/x-maff"):
+        if mime not in ("application/html+zip", "application/x-maff"):
             continue
 
         if use_jar:
