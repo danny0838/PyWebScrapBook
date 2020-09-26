@@ -495,6 +495,34 @@ inconsistency.""")
     parser_convert_sb2wsb.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
+    # -- wsb2sb
+    parser_convert_wsb2sb = parser_convert_sub.add_parser('wsb2sb',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""Convert from WebScrapBook to legacy ScrapBook X
+
+Note that certain information may lose permanently, such as:
+* item appended to multiple parents (preserve only the first occurence)
+* item in the recycle bin
+
+Also note that compatibility validation of this tool is targeting ScrapBook X.
+There may be minor compatibility issues if the output scrapbook is used by a
+legacy ScrapBook implementation without features introduced by ScrapBook X,
+such as:
+* file with special or non-ASCII chars in filename
+* container item whose type property is not "folder" """,
+        help="""convert from WebScrapBook to legacy ScrapBook X""")
+    parser_convert_wsb2sb.add_argument('input', action='store',
+        help="""the input directory""")
+    parser_convert_wsb2sb.add_argument('output', action='store',
+        help="""the output directory""")
+    parser_convert_wsb2sb.add_argument('--book', dest='book_id', metavar='ID',
+        nargs='?', default='', action='store',
+        help="""the book ID to convert. (default: "")""")
+    parser_convert_wsb2sb.add_argument('--force', default=False, action='store_true',
+        help="""overwrite everything in the output directory""")
+    parser_convert_wsb2sb.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
     # subcommand: help
     parser_help = subparsers.add_parser('help', description=getdoc(cmd_help),
         help="""show detailed information about certain topics""")
