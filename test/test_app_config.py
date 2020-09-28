@@ -17,16 +17,19 @@ root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_config')
 server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
 
-mocking = None
-
 def setUpModule():
     # create temp folders
     os.makedirs(os.path.dirname(server_config), exist_ok=True)
 
-    # mock out WSB_USER_CONFIG
-    global mocking
-    mocking = mock.patch('webscrapbook.WSB_USER_CONFIG', server_root)
-    mocking.start()
+    # mock out user config
+    global mockings
+    mockings = [
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(server_root, 'wsb')),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(server_root, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
+        ]
+    for mocking in mockings:
+        mocking.start()
 
 def tearDownModule():
     # purge WSB_DIR
@@ -36,7 +39,8 @@ def tearDownModule():
         pass
 
     # stop mock
-    mocking.stop()
+    for mocking in mockings:
+        mocking.stop()
 
 def token(get):
     """Wrapper to quickly retrieve a token."""
@@ -100,6 +104,9 @@ theme = default
             os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')))
         self.assertEqual(
             os.path.normcase(mock_loader.call_args[0][0][1]),
+            os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb',  'themes', 'default', 'templates'))))
+        self.assertEqual(
+            os.path.normcase(mock_loader.call_args[0][0][2]),
             os.path.normcase(os.path.abspath(os.path.join(__file__, '..', '..', 'webscrapbook',  'themes', 'default', 'templates'))))
 
     def test_root(self):

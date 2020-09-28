@@ -23,14 +23,15 @@ from webscrapbook._compat import zip_stream
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_actions')
 
-mocking = None
-app = None
-
 def setUpModule():
-    # mock out WSB_USER_CONFIG
-    global mocking
-    mocking = mock.patch('webscrapbook.WSB_USER_CONFIG', server_root)
-    mocking.start()
+    # mock out user config
+    global mockings
+    mockings = [
+        mock.patch('webscrapbook.WSB_USER_DIR', server_root, 'wsb'),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
+        ]
+    for mocking in mockings:
+        mocking.start()
 
     # init app
     global app
@@ -45,7 +46,8 @@ def tearDownModule():
         pass
 
     # stop mock
-    mocking.stop()
+    for mocking in mockings:
+        mocking.stop()
 
 def token(c):
     return c.post('/', data={'a': 'token'}).data.decode('UTF-8')

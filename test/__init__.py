@@ -8,14 +8,19 @@ import webscrapbook
 root_dir = os.path.abspath(os.path.dirname(__file__))
 
 def setUpModule():
-    # mock out WSB_USER_CONFIG
-    global mocking
-    mocking = mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config', '.wsb'))
-    mocking.start()
+    # mock out user config
+    global mockings
+    mockings = [
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(root_dir, 'test_config', 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config')),
+        ]
+    for mocking in mockings:
+        mocking.start()
 
 def tearDownModule():
     # stop mock
-    mocking.stop()
+    for mocking in mockings:
+        mocking.stop()
 
 class TestClassConfig(unittest.TestCase):
     @classmethod
@@ -112,19 +117,22 @@ class TestClassConfig(unittest.TestCase):
     @mock.patch('webscrapbook.WSB_CONFIG', 'localconfig.ini')
     @mock.patch('webscrapbook.WSB_DIR', '.wsbdir')
     @mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config_load_constants', 'userconfig.ini'))
+    @mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(root_dir, 'test_config_load_constants', '.config', 'wsb'))
     def test_load_constants(self):
-        # check if WSB_USER_CONFIG, WSB_DIR, and WSB_CONFIG are honored
+        # check if WSB_USER_DIR, WSB_USER_CONFIG, WSB_DIR, and WSB_CONFIG are honored
         conf = webscrapbook.Config()
         conf.load(os.path.join(root_dir, 'test_config_load_constants'))
-        self.assertEqual(conf['app']['name'], 'myuserwsb')
+        self.assertEqual(conf['app']['name'], 'myuserwsbx')
         self.assertEqual(conf['app']['theme'], 'mytheme')
-        self.assertEqual(conf['server']['port'], 8888)
-        self.assertEqual(conf['book']['']['name'], 'myuserbook')
-        self.assertEqual(conf['book']['']['no_tree'], True)
+        self.assertEqual(conf['server']['port'], 7777)
+        self.assertEqual(conf['book']['']['name'], 'myuserbookx')
+        self.assertFalse(conf['book']['']['no_tree'])
         self.assertEqual(conf['book']['book1']['name'], 'mybook1')
         self.assertEqual(conf['book']['book1']['top_dir'], '')
+        self.assertTrue(conf['book']['book1']['no_tree'])
         self.assertEqual(conf['book']['book2']['name'], 'mybook2')
         self.assertEqual(conf['book']['book2']['top_dir'], '')
+        self.assertFalse(conf['book']['book2']['no_tree'])
 
     def test_getitem(self):
         # test lazy loading

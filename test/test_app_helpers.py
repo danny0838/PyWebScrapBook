@@ -14,17 +14,20 @@ from webscrapbook import app as wsbapp
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_helpers')
 
-mocking = None
-
 def setUpModule():
-    # mock out WSB_USER_CONFIG
-    global mocking
-    mocking = mock.patch('webscrapbook.WSB_USER_CONFIG', server_root)
-    mocking.start()
+    # mock out user config
+    global mockings
+    mockings = [
+        mock.patch('webscrapbook.WSB_USER_DIR', server_root, 'wsb'),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
+        ]
+    for mocking in mockings:
+        mocking.start()
 
 def tearDownModule():
     # stop mock
-    mocking.stop()
+    for mocking in mockings:
+        mocking.stop()
 
 class TestFunctions(unittest.TestCase):
     def test_is_local_access(self):

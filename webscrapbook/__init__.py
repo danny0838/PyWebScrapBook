@@ -8,7 +8,7 @@ from copy import deepcopy
 import mimetypes
 import re
 
-__all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
+__all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
 
 __package_name__ = 'webscrapbook'
 __version__ = '0.22.0'
@@ -18,6 +18,7 @@ __homepage__ = 'https://github.com/danny0838/PyWebScrapBook'
 __license__ = 'MIT'
 
 WSB_EXTENSION_MIN_VERSION = '0.76.0'
+WSB_USER_DIR = os.path.join(os.path.expanduser('~'), '.config', 'wsb')  # affected by $HOME
 WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affected by $HOME
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
 WSB_CONFIG = 'config.ini'
@@ -192,6 +193,7 @@ class Config():
         conf.read_dict(self.DEFAULT)
 
         # user config
+        load_config(os.path.join(WSB_USER_DIR, WSB_CONFIG))
         load_config(WSB_USER_CONFIG)
 
         # book config

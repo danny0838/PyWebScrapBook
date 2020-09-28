@@ -4,7 +4,7 @@ import os
 import time
 from threading import Thread
 from secrets import token_urlsafe
-from .. import WSB_DIR
+from .. import WSB_USER_DIR, WSB_DIR
 from .. import Config
 from .. import util
 
@@ -293,6 +293,7 @@ class Host:
         self.chroot = os.path.normpath(os.path.join(root, self.config['app']['root']))
         self.themes = [
             os.path.join(root, WSB_DIR, 'themes', config['app']['theme']),
+            os.path.join(WSB_USER_DIR, 'themes', config['app']['theme']),
             os.path.normpath(os.path.join(__file__, '..', '..', 'themes', config['app']['theme'])),
             ]
         self.statics = [os.path.join(t, 'static') for t in self.themes]
