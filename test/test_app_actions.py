@@ -2411,6 +2411,8 @@ class TestLock(unittest.TestCase):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
         with open(self.lock, 'w') as fh:
             fh.write('oldid')
+        t = time.time() - 300
+        os.utime(self.lock, (t, t))
 
         with app.test_client() as c:
             r = c.post('/', data={
@@ -2418,7 +2420,6 @@ class TestLock(unittest.TestCase):
                 'a': 'lock',
                 'f': 'json',
                 'name': 'test',
-                'chks': 0,
                 })
 
             with open(self.lock) as fh:

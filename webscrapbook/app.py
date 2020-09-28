@@ -1070,8 +1070,7 @@ def action_lock():
 
     URL params:
     - id: for persisting and extending previous lock.
-    - chkt: recheck until the lock file not exist or fail out when time out.
-    - chks: how long to treat the lock file as stale.
+    - chkt: timeout to wait for the lock.
     """
     # verify name
     name = request.values.get('name')
@@ -1080,11 +1079,10 @@ def action_lock():
 
     id = request.values.get('id')
 
-    timeout = request.values.get('chkt', 5, type=int)
-    stale = request.values.get('chks', 300, type=int)
+    timeout = request.values.get('chkt', 5, type=float)
 
     try:
-        lock = host.get_lock(name, timeout=timeout, stale=stale, persist=id)
+        lock = host.get_lock(name, persist=id)
     except wsb_host.LockPersistError:
         abort(400, f'Unable to persist lock "{name}".')
 
@@ -1100,7 +1098,7 @@ def action_lock():
             return http_response(lock.id, format=request.format)
 
     try:
-        lock.acquire()
+        lock.acquire(timeout=timeout)
     except wsb_host.LockTimeoutError:
         abort(503, f'Unable to acquire lock "{name}".', retry_after=60)
     except wsb_host.LockRegenerateError:
