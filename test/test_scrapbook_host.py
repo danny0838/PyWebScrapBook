@@ -154,7 +154,6 @@ class TestFileLock(TestBase):
         self.assertEqual(lock.name, 'test')
         self.assertEqual(lock.timeout, 5)
         self.assertEqual(lock.stale, 60)
-        self.assertEqual(lock.poll_interval, 0.1)
         self.assertEqual(lock.file, lock_file)
         self.assertIsInstance(lock.id, str)
         self.assertEqual(lock._lock, False)
@@ -165,13 +164,11 @@ class TestFileLock(TestBase):
 
         host = Host(self.test_root)
         lock = wsb_host.FileLock(host, 'test',
-            timeout=2, stale=120, poll_interval=0.2)
-
+            timeout=2, stale=120)
         self.assertEqual(lock.host, host)
         self.assertEqual(lock.name, 'test')
         self.assertEqual(lock.timeout, 2)
         self.assertEqual(lock.stale, 120)
-        self.assertEqual(lock.poll_interval, 0.2)
         self.assertEqual(lock.file, lock_file)
         self.assertIsInstance(lock.id, str)
         self.assertEqual(lock._lock, False)
@@ -232,6 +229,17 @@ class TestFileLock(TestBase):
             lock.acquire()
 
     def test_acquire03(self):
+        """Already exists, timeout as acquire param"""
+        lock = Host(self.test_root).get_lock('test')
+
+        os.makedirs(os.path.dirname(lock.file))
+        with open(lock.file, 'w') as fh:
+            pass
+
+        with self.assertRaises(wsb_host.LockTimeoutError):
+            lock.acquire(timeout=0)
+
+    def test_acquire04(self):
         """Stale lock should be regenerated"""
         lock = Host(self.test_root).get_lock('test', timeout=1, stale=0)
         os.makedirs(os.path.dirname(lock.file))
@@ -245,7 +253,7 @@ class TestFileLock(TestBase):
         self.assertNotEqual(lock.id, 'oldid')
         self.assertTrue(lock.locked)
 
-    def test_acquire04(self):
+    def test_acquire05(self):
         """Unable to generate upper directory"""
         lock = Host(self.test_root).get_lock('test')
 
@@ -255,7 +263,7 @@ class TestFileLock(TestBase):
         with self.assertRaises(wsb_host.LockGenerateError):
             lock.acquire()
 
-    def test_acquire05(self):
+    def test_acquire06(self):
         """Occupied by a directory"""
         lock = Host(self.test_root).get_lock('test')
 

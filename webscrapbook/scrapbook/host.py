@@ -89,13 +89,11 @@ class FileLock:
     """Controller of file lock.
     """
     def __init__(self, host, name, *,
-            timeout=5, stale=60, poll_interval=0.1,
-            persist=False):
+            timeout=5, stale=60, persist=False):
         self.host = host
         self.name = name
         self.timeout = timeout
         self.stale = stale
-        self.poll_interval = poll_interval
         self.file = os.path.join(host.locks, f'{util.encrypt(name, method="md5")}.lock')
         self._keeper = None
 
@@ -122,7 +120,7 @@ class FileLock:
         """
         return self._lock
 
-    def acquire(self):
+    def acquire(self, timeout=None, poll_interval=0.1):
         """Acquire the lock.
 
         Use this method in a context manager:
@@ -137,12 +135,26 @@ class FileLock:
                 '''do something'''
             finally:
                 lock.release()
+
+        Args:
+            timeout: float timeout to wait for a lock. < 0 to block until the
+                lock can be acquired. None to use default timeout.
+            poll_interval: float interval of seconds to check whether the lock
+                is available.
+
+        Raises:
+            LockTimeoutError: if timeout expires
+            LockGenerateError: if failed to create lock file
+            LockRegenerateError: if failed to reuse a stale lock file
         """
         # skip if we are already locking
         if self._lock:
             return _FileLockAcquireProxy(self)
 
-        timeout_time = time.time() + self.timeout
+        if timeout is None:
+            timeout = self.timeout
+
+        timeout_time = time.time() + timeout if timeout >= 0 else float('inf')
 
         try:
             os.makedirs(os.path.dirname(self.file))
@@ -185,7 +197,7 @@ class FileLock:
                     else:
                         break
 
-                time.sleep(self.poll_interval)
+                time.sleep(poll_interval)
             except OSError as exc:
                 raise LockGenerateError(f'unable to create lock "{self.name}"',
                     name=self.name, file=self.file) from exc
