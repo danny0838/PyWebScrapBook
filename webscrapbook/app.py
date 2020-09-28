@@ -1047,7 +1047,7 @@ def action_config():
     data['app']['is_local'] = is_local_access()
     data['VERSION'] = __version__
     data['WSB_DIR'] = WSB_DIR
-    data['WSB_LOCAL_CONFIG'] = WSB_LOCAL_CONFIG
+    data['WSB_CONFIG'] = WSB_CONFIG
     data['WSB_EXTENSION_MIN_VERSION'] = WSB_EXTENSION_MIN_VERSION
 
     return http_response(data, format=format)

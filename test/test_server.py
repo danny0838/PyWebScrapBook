@@ -3,12 +3,12 @@ import unittest
 import sys
 import os
 import webscrapbook
-from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
+from webscrapbook import WSB_DIR, WSB_CONFIG
 from webscrapbook import server
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_server')
-server_config = os.path.join(server_root, WSB_DIR, WSB_LOCAL_CONFIG)
+server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
 
 mocking = None
 

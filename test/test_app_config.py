@@ -9,13 +9,13 @@ import shutil
 from base64 import b64encode
 from functools import partial
 from flask import request
-from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
+from webscrapbook import WSB_DIR, WSB_CONFIG
 from webscrapbook import app as wsbapp
 from webscrapbook.app import make_app
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_config')
-server_config = os.path.join(server_root, WSB_DIR, WSB_LOCAL_CONFIG)
+server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
 
 mocking = None
 

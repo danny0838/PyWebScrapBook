@@ -8,7 +8,7 @@ import zipfile
 import time
 from flask import current_app, request
 import webscrapbook
-from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
+from webscrapbook import WSB_DIR, WSB_CONFIG
 from webscrapbook import app as wsbapp
 
 root_dir = os.path.abspath(os.path.dirname(__file__))

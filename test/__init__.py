@@ -109,11 +109,11 @@ class TestClassConfig(unittest.TestCase):
         with self.assertRaises(KeyError):
             conf['auth']
 
-    @mock.patch('webscrapbook.WSB_LOCAL_CONFIG', 'localconfig.ini')
+    @mock.patch('webscrapbook.WSB_CONFIG', 'localconfig.ini')
     @mock.patch('webscrapbook.WSB_DIR', '.wsbdir')
     @mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config_load_constants', 'userconfig.ini'))
     def test_load_constants(self):
-        # check if WSB_USER_CONFIG, WSB_DIR, and WSB_LOCAL_CONFIG are honored
+        # check if WSB_USER_CONFIG, WSB_DIR, and WSB_CONFIG are honored
         conf = webscrapbook.Config()
         conf.load(os.path.join(root_dir, 'test_config_load_constants'))
         self.assertEqual(conf['app']['name'], 'myuserwsb')

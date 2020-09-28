@@ -57,7 +57,7 @@ def cmd_config(args):
     Display the current config when used with no arguments.
     """
     if args['book']:
-        fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_LOCAL_CONFIG))
+        fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_CONFIG))
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
             log(f'Generating "{fdst}"...')

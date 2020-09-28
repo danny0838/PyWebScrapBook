@@ -15,7 +15,7 @@ import time
 from functools import partial
 from flask import request, abort
 import webscrapbook
-from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG, WSB_EXTENSION_MIN_VERSION
+from webscrapbook import WSB_DIR, WSB_CONFIG, WSB_EXTENSION_MIN_VERSION
 from webscrapbook.app import make_app
 from webscrapbook.util import make_hashable, frozendict, zip_timestamp, zip_tuple_timestamp
 from webscrapbook._compat import zip_stream
@@ -1974,7 +1974,7 @@ class TestConfig(unittest.TestCase):
                     },
                 'VERSION': webscrapbook.__version__,
                 'WSB_DIR': WSB_DIR,
-                'WSB_LOCAL_CONFIG': WSB_LOCAL_CONFIG,
+                'WSB_CONFIG': WSB_CONFIG,
                 'WSB_EXTENSION_MIN_VERSION': WSB_EXTENSION_MIN_VERSION,
                 })
 

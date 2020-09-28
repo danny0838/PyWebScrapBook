@@ -8,7 +8,7 @@ import zipfile
 import re
 from urllib.request import pathname2url
 from tempfile import gettempdir
-from webscrapbook import WSB_DIR, WSB_LOCAL_CONFIG
+from webscrapbook import WSB_DIR, WSB_CONFIG
 from webscrapbook import Config
 from webscrapbook import cli
 
