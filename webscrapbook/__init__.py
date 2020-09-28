@@ -18,9 +18,9 @@ __homepage__ = 'https://github.com/danny0838/PyWebScrapBook'
 __license__ = 'MIT'
 
 WSB_EXTENSION_MIN_VERSION = '0.76.0'
-WSB_USER_CONFIG = os.environ.get('WSB_USER_CONFIG') or os.path.join(os.path.expanduser('~'), '.wsbconfig')
+WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affected by $HOME
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
-WSB_LOCAL_CONFIG = os.environ.get('WSB_LOCAL_CONFIG') or 'config.ini'
+WSB_LOCAL_CONFIG = 'config.ini'
 
 mimetypes.add_type("application/rss+xml", ".rss")
 mimetypes.add_type("application/atom+xml", ".atom")
