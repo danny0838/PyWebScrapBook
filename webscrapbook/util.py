@@ -16,6 +16,7 @@ import binascii
 import codecs
 from base64 import b64decode
 from urllib.parse import unquote_to_bytes
+from urllib.request import pathname2url
 from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
 from lxml import etree
@@ -276,6 +277,17 @@ def get_breadcrumbs(paths, base='', topname='.'):
             sep = '!/' if part_idx == parts_max and (path_idx < paths_max or is_zip_root) else '/'
             is_last = path_idx == paths_max and part_idx == parts_max
             yield (part, base + subpath + sep, sep, is_last)
+
+
+def get_relative_url(path, start, path_is_dir=True, start_is_dir=True):
+    """Get a relative URL (quoted) from filesystem start to path
+    """
+    if not start_is_dir:
+        start = os.path.dirname(start)
+    rel_path = os.path.relpath(path, start)
+    if path_is_dir:
+        rel_path = os.path.join(rel_path, '')
+    return pathname2url(rel_path)  # this quotes URL
 
 
 #########################################################################

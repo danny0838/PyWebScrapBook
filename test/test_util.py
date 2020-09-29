@@ -250,6 +250,53 @@ class TestUtils(unittest.TestCase):
             ('directory', '/path/to/directory/', '/', True)
             ])
 
+
+    def test_get_relative_url(self):
+        self.assertEqual(
+            util.get_relative_url(
+                os.path.join(root_dir),
+                os.path.join(root_dir, 'tree', 'meta.js'),
+                start_is_dir=False,
+                ),
+            '../',
+            )
+
+        self.assertEqual(
+            util.get_relative_url(
+                os.path.join(root_dir, 'tree', 'icon'),
+                os.path.join(root_dir, 'data', '20200101000000000'),
+                ),
+            '../../tree/icon/',
+            )
+
+        self.assertEqual(
+            util.get_relative_url(
+                os.path.join(root_dir, 'tree', 'icon', 'dummy.png'),
+                os.path.join(root_dir, 'data', '20200101000000000'),
+                path_is_dir=False,
+                ),
+            '../../tree/icon/dummy.png',
+            )
+
+        self.assertEqual(
+            util.get_relative_url(
+                os.path.join(root_dir, 'data', '20200102000000000'),
+                os.path.join(root_dir, 'data', '20200101000000000'),
+                ),
+            '../20200102000000000/',
+            )
+
+        self.assertEqual(
+            util.get_relative_url(
+                os.path.join(root_dir, '中文#456.png'),
+                os.path.join(root_dir, '中文#123.png'),
+                path_is_dir=False,
+                start_is_dir=False,
+                ),
+            '%E4%B8%AD%E6%96%87%23456.png',
+            )
+
+
     def test_checksum(self):
         self.assertEqual(
             util.checksum(os.path.join(root_dir, 'test_util', 'checksum', 'checksum.txt')),
