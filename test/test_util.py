@@ -110,6 +110,20 @@ class TestUtils(unittest.TestCase):
             datetime(2020, 1, 2, 3, 4, 5))
         self.assertIsNone(util.id_to_datetime_legacy('20200102'), None)
 
+    def test_crop(self):
+        self.assertEqual(util.crop('dummy text', 10), 'dummy text')
+        self.assertEqual(util.crop('dummy text', 9), 'dummy ...')
+        self.assertEqual(util.crop('dummy text', 8), 'dummy...')
+        self.assertEqual(util.crop('dummy text', 7), 'dumm...')
+        self.assertEqual(util.crop('dummy text', 4), 'd...')
+        self.assertEqual(util.crop('dummy text', 3), '...')
+        self.assertEqual(util.crop('dummy text', 2), '...')
+        self.assertEqual(util.crop('dummy text', 1), '...')
+        self.assertEqual(util.crop('dummy text', 0), '...')
+
+        self.assertEqual(util.crop('中文字串𠀀', 5), '中文字串𠀀')
+        self.assertEqual(util.crop('中文字串𠀀', 4), '中...')
+
     def test_fix_codec(self):
         self.assertEqual(util.fix_codec('big5'), 'cp950')
         self.assertEqual(util.fix_codec('BIG5'), 'cp950')
