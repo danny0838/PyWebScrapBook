@@ -159,6 +159,20 @@ def cmd_cache(args):
             log(f'{info.type.upper()}: {info.msg}')
 
 
+def cmd_check(args):
+    """Integrity check and fix for scrapbook data.
+
+    (TOC = table of contents)
+    """
+    kwargs = args.copy()
+    debug = kwargs.pop('debug')
+
+    from .scrapbook import check
+    for info in check.run(**kwargs):
+        if info.type != 'debug' or debug:
+            log(f'{info.type.upper()}: {info.msg}')
+
+
 def cmd_convert(args):
     """Convert data between different formats.
 
@@ -404,6 +418,45 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
     parser_cache.add_argument('--no-backup', default=False, action='store_true',
         help="""do not backup changed files""")
     parser_cache.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
+    # subcommand: check
+    parser_check = subparsers.add_parser('check', aliases=['k'], description=cmd_check.__doc__,
+        help="""check and fix scrapbook data""")
+    parser_check.set_defaults(func=cmd_check)
+    parser_check.add_argument('book_ids', metavar='book', nargs='*', action='store',
+        help="""the book ID(s) to check. (default: all books)""")
+
+    parser_check.add_argument('-r', '--resolve', dest='resolve_all', default=False, action='store_true',
+        help="""resolve all found issues (implies all --resolve-*)""")
+    parser_check.add_argument('--resolve-invalid-id', default=False, action='store_true',
+        help="""remove items with invalid ID from metadata entries""")
+    parser_check.add_argument('--resolve-missing-index', default=False, action='store_true',
+        help="""remove items with missing index property from metadata entries""")
+    parser_check.add_argument('--resolve-missing-index-file', default=False, action='store_true',
+        help="""remove items with missing index file from metadata entries""")
+    parser_check.add_argument('--resolve-missing-date', default=False, action='store_true',
+        help="""attempt to generate "create" and "modify" properties for items missing any of them""")
+    parser_check.add_argument('--resolve-older-mtime', default=False, action='store_true',
+        help="""update "modify" property if it's older than last modified time of the index file""")
+    parser_check.add_argument('--resolve-toc-unreachable', default=False, action='store_true',
+        help="""append items unreachable from TOC to the root tree""")
+    parser_check.add_argument('--resolve-toc-invalid', default=False, action='store_true',
+        help="""remove invalid items from TOC""")
+    parser_check.add_argument('--resolve-toc-empty-subtree', default=False, action='store_true',
+        help="""remove items with empty subtree from TOC""")
+    parser_check.add_argument('--resolve-unindexed-files', default=False, action='store_true',
+        help="""attempt to import unindexed files to metadata and TOC""")
+    parser_check.add_argument('--resolve-invalid-icon', default=False, action='store_true',
+        help="""attempt to fix invalid "icon" property""")
+    parser_check.add_argument('--resolve-absolute-icon', default=False, action='store_true',
+        help="""cache "icon" property with absolute URL to local favicon directory""")
+    parser_check.add_argument('--resolve-unused-icon', default=False, action='store_true',
+        help="""remove unused favicon caches""")
+
+    parser_check.add_argument('--no-backup', default=False, action='store_true',
+        help="""do not backup changed files""")
+    parser_check.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: convert

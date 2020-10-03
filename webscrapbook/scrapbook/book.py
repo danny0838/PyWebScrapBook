@@ -2,10 +2,15 @@
 """
 import os
 import shutil
+import zipfile
 import re
 import json
+
+from lxml import etree
+
 from .. import WSB_DIR
 from .. import util
+from .._compat import zip_stream
 
 
 class TreeFileError(ValueError):
@@ -50,11 +55,17 @@ class Book:
         'icon': None,
         'comment': None,
         }
+    SPECIAL_ITEM_ID = {
+        'root',
+        'hidden',
+        'recycle',
+        }
     TYPES_OPTIONAL_INDEX = {
         'folder',
         'separator',
         'bookmark',
         }
+    META_PROPERTY_PREFIX = 'data-scrapbook-'
 
     def __init__(self, host, book_id=''):
         self.host = host
@@ -346,6 +357,53 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
             return ['index.html']
 
         return [os.path.basename(index)]
+
+    def get_tree_from_index_file(self, file):
+        try:
+            if util.is_html(file):
+                with open(file, 'rb') as fh:
+                    return self.get_tree_from_fh(fh)
+
+            if util.is_htz(file):
+                with zipfile.ZipFile(file) as zh:
+                    with zh.open('index.html') as fh:
+                        fh = zip_stream(fh)
+                        return self.get_tree_from_fh(fh)
+
+            if util.is_maff(file):
+                info = next(iter(util.get_maff_pages(file)), None)
+                if not info:
+                    return None
+
+                with zipfile.ZipFile(file) as zh:
+                    with zh.open(info.indexfilename) as fh:
+                        fh = zip_stream(fh)
+                        return self.get_tree_from_fh(fh)
+        except (OSError, zipfile.BadZipFile, KeyError):
+            return None
+
+        return None
+
+    def get_tree_from_fh(self, fh):
+        # Seek for the correct charset (encoding).
+        # If a charset is not specified, lxml may select a wrong encoding for
+        # the entire document if there is text before first meta charset.
+        # Priority: BOM > meta charset > assume UTF-8
+        charset = util.sniff_bom(fh)
+        if charset:
+            # lxml does not accept "UTF-16-LE" or so, but can auto-detect
+            # encoding from BOM if encoding is None
+            # ref: https://bugs.launchpad.net/lxml/+bug/1463610
+            charset = None
+        else:
+            charset = util.get_charset(fh) or 'UTF-8'
+            charset = util.fix_codec(charset)
+
+        fh.seek(0)
+        try:
+            return etree.parse(fh, etree.HTMLParser(encoding=charset))
+        except etree.Error:
+            return None
 
     def get_lock(self, name, *args, **kwargs):
         return self.host.get_lock(f'book-{self.id}-{name}', *args, **kwargs)
