@@ -50,7 +50,7 @@ A WebScrapBook config file is written in "ini" format, which looks like:
 
 ### [app] section
 
-The [app] section defines the behavior of WebScrapBook application, which
+The `[app]` section defines the behavior of WebScrapBook application, which
 follows WSGI specification and can be hosted by any WSGI server, such as the
 built-in server or Apache mod_wsgi.
 
@@ -60,37 +60,38 @@ built-in server or Apache mod_wsgi.
 The name for the served website, which is used for the site title, the label of
 the top level of breadcrumbs, etc.
 
-(default: WebScrapBook)
+(default: `WebScrapBook`)
 
 
 #### `theme`
 
 The theme name for the served website. A custom theme can be defined at
-"<book>/.wsb/themes/<name>", which contains a "templates" sub-directory for
-template files and a "static" sub-directory for static files. If the custom
+`<book>/.wsb/themes/<name>`, which contains a `templates` sub-directory for
+template files and a `static` sub-directory for static files. If the custom
 theme has a same name as the built-in one, the application will look up for
 a resource first from custom one and fallback to the default one when not
 found.
 
-(default: default)
+(default: `default`)
 
 
 #### `root`
 
 The root directory to host. Absolute path or relative to the top directory (the
-one that contains the ".wsb" directory).
+one that contains the `.wsb` directory).
 
-(default: .)
+(default: `.`)
 
 
 #### `base`
 
 The base URL path the app is serving at. When this app is not served at root
-path, the upper app usually sets the SCRIPT_NAME environmental variable to get
-things work right. If it fails to do so, this value can be set for a fix.
+path, the upper app usually sets the `SCRIPT_NAME` environmental variable to
+get things work right. If it fails to do so, this value can be set for a fix.
 
-For example, the app is served under https://example.com/path/to/app, this
-value can be set to "/path/to/app" if an expected SCRIPT_NAME is not provided.
+For example, the app is served under `https://example.com/path/to/app`, this
+value can be set to `/path/to/app` if an expected `SCRIPT_NAME` is not
+provided.
 
 (default: )
 
@@ -99,79 +100,80 @@ value can be set to "/path/to/app" if an expected SCRIPT_NAME is not provided.
 
 Whether to send response with a content security policy header, which restricts
 AJAX and form actions for data pages to prevent a potential attack from a
-malicious script. Currently only the value "strict" is used. Set this to empty
+malicious script. Currently only the value `strict` is used. Set this to empty
 if you really need such features, but make sure that scripts and forms in the
 captured pages are all safe!
 
-(default: strict)
+(default: `strict`)
 
 
 #### `allowed_x_for`
 
-Number of values to trust for "X-Forwarded-For" header(s) when this app is
+Number of values to trust for `X-Forwarded-For` header(s) when this app is
 run behind a reverse proxy.
 
 For example, if the app is served behind one reverse proxy that appends
-"X-Forwarded-For" header, set this value to 1 and the last value will be
+`X-Forwarded-For` header, set this value to `1` and the last value will be
 taken as the client address.
 
-(default: 0)
+(default: `0`)
 
 
 #### `allowed_x_proto`
 
-Number of values to trust for "X-Forwarded-Proto" header(s) when this app is
+Number of values to trust for `X-Forwarded-Proto` header(s) when this app is
 run behind a reverse proxy.
 
 By convention the header set by a reverse proxy is in an overwriting way.
-In most cases this value can be set to 1 if a trusted reverse proxy sets it,
-and 0 otherwise.
+In most cases this value can be set to `1` if a trusted reverse proxy sets it,
+and `0` otherwise.
 
-(default: 0)
+(default: `0`)
 
 
 #### `allowed_x_host`
 
-Number of values to trust for "X-Forwarded-Host" header(s) when this app is
+Number of values to trust for `X-Forwarded-Host` header(s) when this app is
 run behind a reverse proxy.
 
 See `allowed_x_proto` for convention of usage.
 
-(default: 0)
+(default: `0`)
 
 
 #### `allowed_x_port`
 
-Number of values to trust for "X-Forwarded-Port" header(s) when this app is
+Number of values to trust for `X-Forwarded-Port` header(s) when this app is
 run behind a reverse proxy.
 
 See `allowed_x_proto` for convention of usage.
 
-(default: 0)
+(default: `0`)
 
 
 #### `allowed_x_prefix`
 
-Number of values to trust for "X-Forwarded-Prefix" header(s) when this app is
+Number of values to trust for `X-Forwarded-Prefix` header(s) when this app is
 run behind a reverse proxy.
 
 See `allowed_x_proto` for convention of usage.
 
-(default: 0)
+(default: `0`)
 
 
 ### [book] section(s)
 
 The book section(s) define scrapbooks for the application to handle. It can be
-subsected as [book "identifier"]. The primary scrapbook ([book] or [book ""])
-is used by default. Additional scrapbooks can be defined and be switched into.
+subsected as `[book "identifier"]`. The primary scrapbook (`[book]` or
+`[book ""]`) is used by default. Additional scrapbooks can be defined and be
+switched into.
 
 
 #### `name`
 
 Defines the name of the scrapbook.
 
-(default: scrapbook)
+(default: `scrapbook`)
 
 
 #### `top_dir`
@@ -185,8 +187,9 @@ without leading or trailing slash.
 #### `data_dir`
 
 The directory where scrapbook data should be stored in. It's a directory path
-under top_dir, without leading or trailing slash, and cannot be under tree_dir
-or .wsb. Use "data" if the scrapbook is migrated from legacy ScrapBook.
+under `top_dir`, without leading or trailing slash, and cannot be under
+`tree_dir` or `.wsb`. Use `data` if the scrapbook is migrated from legacy
+ScrapBook.
 
 (default: )
 
@@ -194,46 +197,46 @@ or .wsb. Use "data" if the scrapbook is migrated from legacy ScrapBook.
 #### `tree_dir`
 
 The directory where scrapbook index tree should be stored in. It's a directory
-path under top_dir, without leading or trailing slash. Use "tree" if the
+path under `top_dir`, without leading or trailing slash. Use `tree` if the
 scrapbook is migrated from legacy ScrapBook.
 
-(default: .wsb/tree)
+(default: `.wsb/tree`)
 
 
 #### `index`
 
-The path where the scrapbook index page resides. It's a URL path under top_dir,
-without leading slash. Use "tree/map.html" or "tree/map.html" if the scrapbook
-is migrated from legacy ScrapBook.
+The path where the scrapbook index page resides. It's a URL path under
+`top_dir`, without leading slash. Use `tree/map.html` or `tree/index.html` if
+the scrapbook is migrated from legacy ScrapBook.
 
-(default: .wsb/tree/index.html)
+(default: `.wsb/tree/index.html`)
 
 
 #### `no_tree`
 
 Set true to disable virtual tree and index of the book.
 
-(default: false)
+(default: `false`)
 
 
 ### [auth] section(s)
 
-The [auth] section(s) define authorization rules. It can be subsected as
-[auth "identifier"]. Authorization requirement is activated when at least one
-[auth] section exists. Each section defines a rule, and the user must fullfill
-at least one to be allowed to access.
+The `[auth]` section(s) define authorization rules. It can be subsected as
+`[auth "identifier"]`. Authorization requirement is activated when at least one
+`[auth]` section exists. Each section defines a rule, and the user must
+fullfill at least one to be allowed to access.
 
-An encrypted password can be generated via the "encrypt" sub-command, For
+An encrypted password can be generated via the `encrypt` sub-command, For
 example:
 
     webscrapbook encrypt -m sha1 -s mysalt
 
 You'll then be promopted to input a password, and then you can use the output
-for pw, "mysalt" for pw_salt, and "sha1" for pw_type.
+for `pw`, "mysalt" for `pw_salt`, and "sha1" for `pw_type`.
 
-To specify permission for an anonymous user, create an [auth] section with
-empty user and a password matching an empty string (e.g. "plain" pw_type, empty
-pw, and empty pw_salt.)
+To specify permission for an anonymous user, create an `[auth]` section with
+empty user and a password matching an empty string (e.g. "plain" `pw_type`,
+empty `pw`, and empty `pw_salt`.)
 
 NOTE: Use HTTPS protocol as possible when password authorization is activated,
 as input user name and password are unencrypted during HTTP transmission.
@@ -265,28 +268,28 @@ A "salt" string which is added during encryption for better security.
 The encryption method for password. Supported methods are: plain, md5, sha1,
 sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
 
-(default: sha1)
+(default: `sha1`)
 
 
 #### `permission`
 
 The permission for those who fullfills this authorization condition.
-* "all": unrestricted access.
-* "read": read-only. APIs for data modification are disabled. Note that
+* `all`: unrestricted access.
+* `read`: read-only. APIs for data modification are disabled. Note that
   essential server information is still exposed. Recommended for read-only
   WebScrapBook browser extension access.
-* "view": web browsing only. Most APIs are disabled and access via
+* `view`: web browsing only. Most APIs are disabled and access via
   WebScrapBook browser extension is not allowed. Recommended for general public
   access.
 
-(default: all)
+(default: `all`)
 
 
 ### [server] section
 
-The [server] section defines the behavior of the built-in HTTP server, which
-can be run by "wsb serve" command or by running the "serve.py" shortcut
-generated by "wsb config -ba".
+The `[server]` section defines the behavior of the built-in HTTP server, which
+can be run by `wsb serve` command or by running the `serve.py` shortcut
+generated by `wsb config -ba`.
 
 Note that the built-in server is designed only for local hosting, or remote
 hosting for personal or few people usage. As for world wide web hosting, a more
@@ -299,20 +302,20 @@ A port integer ranged from 0 to 65535 to host. Pick a port >= 1024 to avoid a
 conflict with system ports. Consider the default port (80 for HTTP and 443 for
 HTTPS) for public hosting.
 
-(default: 8080)
+(default: `8080`)
 
 
 #### `host`
 
 Host identity of the server, as a domain name, IPv4, or IPv6 address. The
 server will only react to connections targeting a matching value. As a rule of
-thumb, use "localhost" for local hosting, "0.0.0.0" or "::" for world wide web
+thumb, use `localhost` for local hosting, `0.0.0.0` or `::` for world wide web
 hosting, and another value for specific subnet hosting.
 
 Configuration of firewall and router(s) may be needed for the server to be
 actually accessible from wide area network.
 
-(default: localhost)
+(default: `localhost`)
 
 
 #### `ssl_on`
@@ -328,14 +331,14 @@ purpose or for private usage, e.g.:
       -newkey rsa:2048 -nodes -keyout domain.key \
       -x509 -days 365 -out domain.crt
 
-and use "domain.key" for ssl_key and "domain.crt" for ssl_cert.
+and use "domain.key" for `ssl_key` and "domain.crt" for `ssl_cert`.
 
 An "adhoc" certificate can be used by setting `ssl_on` with empty `ssl_key` and
 `ssl_cert`, and a temporary certificate will be auto-generated every time when
 the server starts. However, this feature requires extra dependency, which can
 be installed via `pip install webscrapbook[adhoc_ssl]`.
 
-(default: false)
+(default: `false`)
 
 
 #### `ssl_key`
@@ -358,19 +361,19 @@ the root directory.
 
 Set true to launch the browser when the server starts, and false otherwise.
 
-(default: true)
+(default: `true`)
 
 
 ### [browser] section
 
-The [browser] section defines the desired browser to launch when needed. The
+The `[browser]` section defines the desired browser to launch when needed. The
 browser is launched when, for example, the server starts.
 
 
 #### `command`
 
-The browser path with CLI arguments to launch. Use "%s" to represent the URL
-and append "&" at end to launch browser in the background, which is generally
+The browser path with CLI arguments to launch. Use `%s` to represent the URL
+and append `&` at end to launch browser in the background, which is generally
 preferred to avoid interruption. Empty to use system default browser.
 
 Example:
@@ -398,14 +401,14 @@ The prefix for caches for viewing archive files under the system temporary
 directory. Assign a unique string if the default one conflicts with another
 application.
 
-(default: webscrapbook.)
+(default: `webscrapbook.`)
 
 
 #### `cache_expire`
 
 The duration in seconds for cache files for viewing archive files to be purged.
 
-(default: 259200 (3 days))
+(default: `259200` (3 days))
 
 
 #### `use_jar`
@@ -414,4 +417,4 @@ Whether to use JAR protocol for viewing archive files. JAR protocol, supported
 by Firefox (Gecko) based browsers, allows accessing ZIP content files directly
 without extracting them in prior.
 
-(default: false)
+(default: `false`)
