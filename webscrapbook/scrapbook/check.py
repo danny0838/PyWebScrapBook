@@ -497,6 +497,8 @@ class BookChecker:
 
         try:
             entries = os.scandir(data_dir)
+        except FileNotFoundError:
+            return
         except OSError as exc:
             yield Info('error', f'Failed to scan folder '
                 f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
@@ -552,6 +554,8 @@ class BookChecker:
 
         try:
             entries = os.scandir(os.path.join(self.book.tree_dir, 'favicon'))
+        except FileNotFoundError:
+            return
         except OSError as exc:
             yield Info('error', f'Failed to scan folder '
                 f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)

@@ -38,6 +38,7 @@ from . import Config
 from . import util
 from .scrapbook import host as wsb_host
 from .scrapbook import cache as wsb_cache
+from .scrapbook import check as wsb_check
 from ._compat.contextlib import nullcontext
 from ._compat import zip_stream
 
@@ -1627,6 +1628,62 @@ def action_cache():
 
     def gen():
         yield from wsb_cache.generate(root, config=config, **kwargs)
+
+    stream = stream_template('cli.html',
+        title=f'Indexing...',
+        messages=gen(),
+        debug=False,
+        )
+
+    return Response(stream, headers=headers)
+
+
+@handle_action_token
+def action_check():
+    """Invoke the checker."""
+    format = request.format
+
+    kwargs = {
+        'book_ids': request.values.getlist('book'),
+        'no_lock': request.values.get('no_lock', default=False, type=bool),
+        'no_backup': request.values.get('no_backup', default=False, type=bool),
+        'resolve_invalid_id': request.values.get('resolve_invalid_id', default=False, type=bool),
+        'resolve_missing_index': request.values.get('resolve_missing_index', default=False, type=bool),
+        'resolve_missing_index_file': request.values.get('resolve_missing_index_file', default=False, type=bool),
+        'resolve_missing_date': request.values.get('resolve_missing_date', default=False, type=bool),
+        'resolve_older_mtime': request.values.get('resolve_older_mtime', default=False, type=bool),
+        'resolve_toc_unreachable': request.values.get('resolve_toc_unreachable', default=False, type=bool),
+        'resolve_toc_invalid': request.values.get('resolve_toc_invalid', default=False, type=bool),
+        'resolve_toc_empty_subtree': request.values.get('resolve_toc_empty_subtree', default=False, type=bool),
+        'resolve_unindexed_files': request.values.get('resolve_unindexed_files', default=False, type=bool),
+        'resolve_invalid_icon': request.values.get('resolve_invalid_icon', default=False, type=bool),
+        'resolve_absolute_icon': request.values.get('resolve_absolute_icon', default=False, type=bool),
+        'resolve_unused_icon': request.values.get('resolve_unused_icon', default=False, type=bool),
+        }
+
+    headers = {
+        'Cache-Control': 'no-store',
+        }
+    root = host.root
+    config = host.config
+
+    if format == 'sse':
+        def gen():
+            for info in wsb_check.run(root, config=config, **kwargs):
+                data = {
+                    'type': info.type,
+                    'msg': info.msg,
+                    }
+
+                yield json.dumps(data, ensure_ascii=False)
+
+        return http_response(gen(), headers=headers, format=format)
+
+    elif format:
+        abort(400, "Action not supported.")
+
+    def gen():
+        yield from wsb_check.run(root, config=config, **kwargs)
 
     stream = stream_template('cli.html',
         title=f'Indexing...',

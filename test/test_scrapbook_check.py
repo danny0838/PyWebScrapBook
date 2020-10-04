@@ -987,7 +987,7 @@ scrapbook.meta({
             ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'])
 
     def test_resolve_absolute_icon02(self):
-        """Keep original value for bad favicon URL."""
+        """Keep original value for bad data URL."""
         test_index = os.path.join(self.test_root, '20200101000000000.html')
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -1016,7 +1016,7 @@ scrapbook.meta({
         self.assertFalse(os.path.exists(os.path.join(self.test_tree, 'favicon')))
 
     def test_resolve_absolute_icon03(self):
-        """Keep original value for bad favicon URL."""
+        """Keep original value for bad data URL."""
         test_index = os.path.join(self.test_root, '20200101000000000.html')
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -1040,6 +1040,35 @@ scrapbook.meta({
                 'index': '20200101000000000.html',
                 'type': '',
                 'icon': 'data:image/bmp;base64,Qk08AAA-------',
+                },
+            })
+        self.assertFalse(os.path.exists(os.path.join(self.test_tree, 'favicon')))
+
+    def test_resolve_absolute_icon04(self):
+        """Keep original value for bad protocol."""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.html",
+    "icon": "blob:http%3A//example.com/c94d498c-7818-49b3-8e79-d3959938ba0a"
+  }
+})""")
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'type': '',
+                'icon': 'blob:http%3A//example.com/c94d498c-7818-49b3-8e79-d3959938ba0a',
                 },
             })
         self.assertFalse(os.path.exists(os.path.join(self.test_tree, 'favicon')))

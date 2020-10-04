@@ -5124,6 +5124,115 @@ class TestCache(TestActions):
             'locale': 'zh',
             })
 
+class TestCheck(TestActions):
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with app.test_client() as c:
+            r = c.get('/', query_string={'a': 'check', 'f': 'sse'})
+
+        mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_format_check(self, mock_abort):
+        """Require format."""
+        with app.test_client() as c:
+            r = c.get('/', query_string={'a': 'check', 'f': 'json', 'token': token(c)})
+
+        mock_abort.assert_called_once_with(400, 'Action not supported.')
+
+    @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
+    def test_params01(self, mock_func):
+        """Require format. (format=sse)"""
+        with app.test_client() as c:
+            try:
+                r = c.get('/', query_string={
+                    'a': 'check', 'f': 'sse', 'token': token(c),
+                    'book': ['', 'id1'],
+                    'no_lock': 1,
+                    'no_backup': 1,
+                    'resolve_invalid_id': 1,
+                    'resolve_missing_index': 1,
+                    'resolve_missing_index_file': 1,
+                    'resolve_missing_date': 1,
+                    'resolve_older_mtime': 1,
+                    'resolve_toc_unreachable': 1,
+                    'resolve_toc_invalid': 1,
+                    'resolve_toc_empty_subtree': 1,
+                    'resolve_unindexed_files': 1,
+                    'resolve_invalid_icon': 1,
+                    'resolve_absolute_icon': 1,
+                    'resolve_unused_icon': 1,
+                    })
+            except SystemExit:
+                pass
+
+        kwargs = mock_func.call_args[1]
+        del kwargs['config']
+        self.assertEqual(kwargs, {
+            'book_ids': ['', 'id1'],
+            'no_lock': True,
+            'no_backup': True,
+            'resolve_invalid_id': True,
+            'resolve_missing_index': True,
+            'resolve_missing_index_file': True,
+            'resolve_missing_date': True,
+            'resolve_older_mtime': True,
+            'resolve_toc_unreachable': True,
+            'resolve_toc_invalid': True,
+            'resolve_toc_empty_subtree': True,
+            'resolve_unindexed_files': True,
+            'resolve_invalid_icon': True,
+            'resolve_absolute_icon': True,
+            'resolve_unused_icon': True,
+            })
+
+    @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
+    def test_params02(self, mock_func):
+        """Check params. (format=None)"""
+        with app.test_client() as c:
+            try:
+                r = c.get('/', query_string={
+                    'a': 'check', 'token': token(c),
+                    'book': ['', 'id1'],
+                    'no_lock': 1,
+                    'no_backup': 1,
+                    'resolve_invalid_id': 1,
+                    'resolve_missing_index': 1,
+                    'resolve_missing_index_file': 1,
+                    'resolve_missing_date': 1,
+                    'resolve_older_mtime': 1,
+                    'resolve_toc_unreachable': 1,
+                    'resolve_toc_invalid': 1,
+                    'resolve_toc_empty_subtree': 1,
+                    'resolve_unindexed_files': 1,
+                    'resolve_invalid_icon': 1,
+                    'resolve_absolute_icon': 1,
+                    'resolve_unused_icon': 1,
+                    }, buffered=True)
+            except SystemExit:
+                pass
+
+        kwargs = mock_func.call_args[1]
+        del kwargs['config']
+        self.assertEqual(kwargs, {
+            'book_ids': ['', 'id1'],
+            'no_lock': True,
+            'no_backup': True,
+            'resolve_invalid_id': True,
+            'resolve_missing_index': True,
+            'resolve_missing_index_file': True,
+            'resolve_missing_date': True,
+            'resolve_older_mtime': True,
+            'resolve_toc_unreachable': True,
+            'resolve_toc_invalid': True,
+            'resolve_toc_empty_subtree': True,
+            'resolve_unindexed_files': True,
+            'resolve_invalid_icon': True,
+            'resolve_absolute_icon': True,
+            'resolve_unused_icon': True,
+            })
+
 class TestUnknown(unittest.TestCase):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_unknown(self, mock_abort):
