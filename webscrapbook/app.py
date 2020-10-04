@@ -590,28 +590,35 @@ class Request(flask.Request):
         return rv
 
 
-def handle_action_advanced(func):
-    """A decorator function that helps handling an advanced command.
-
-    - Verify POST method.
-    - Verify access token.
-    - Provide a default return value.
+def handle_action_token(func):
+    """A decorator function that validates token.
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        format = request.format
-
-        # require POST method
-        if request.method != 'POST':
-            abort(405, valid_methods=['POST'])
-
-        # validate and revoke token
         token = request.values.get('token') or ''
 
         if not host.token_validate(token):
             abort(400, 'Invalid access token.')
 
         host.token_delete(token)
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def handle_action_advanced(func):
+    """A decorator function that helps handling an advanced command.
+
+    - Verify POST method.
+    - Provide a default return value.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        format = request.format
+
+        if request.method != 'POST':
+            abort(405, valid_methods=['POST'])
 
         rv = func(*args, **kwargs)
 
@@ -1065,6 +1072,7 @@ def action_token():
 
 
 @handle_action_advanced
+@handle_action_token
 def action_lock():
     """Acquire a lock for the given name.
 
@@ -1110,6 +1118,7 @@ def action_lock():
 
 
 @handle_action_advanced
+@handle_action_token
 def action_unlock():
     """Release a lock for the given name."""
     # verify name
@@ -1136,6 +1145,7 @@ def action_unlock():
 
 
 @handle_action_advanced
+@handle_action_token
 @handle_action_writing
 def action_mkdir():
     """Create a directory."""
@@ -1182,6 +1192,7 @@ def action_mkdir():
 
 
 @handle_action_advanced
+@handle_action_token
 @handle_action_writing
 def action_mkzip():
     """Create a zip file."""
@@ -1239,6 +1250,7 @@ def action_mkzip():
 
 
 @handle_action_advanced
+@handle_action_token
 @handle_action_writing
 def action_save():
     """Write a file with provided text or uploaded stream."""
@@ -1312,6 +1324,7 @@ def action_save():
 
 
 @handle_action_advanced
+@handle_action_token
 @handle_action_writing
 def action_delete():
     """Delete a file or directory."""
@@ -1359,6 +1372,7 @@ def action_delete():
 
 
 @handle_action_advanced
+@handle_action_token
 @handle_action_writing
 @handle_action_renaming
 def action_move(sourcepaths, targetpaths):
@@ -1422,6 +1436,7 @@ def action_move(sourcepaths, targetpaths):
 
 
 @handle_action_advanced
+@handle_action_token
 @handle_action_writing
 @handle_action_renaming
 def action_copy(sourcepaths, targetpaths):
