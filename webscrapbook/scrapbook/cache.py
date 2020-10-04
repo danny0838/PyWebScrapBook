@@ -22,6 +22,7 @@ from lxml import etree
 from .host import Host
 from .. import util
 from ..util import Info
+from ..locales import I18N
 from .._compat import zip_stream
 from .._compat.contextlib import nullcontext
 
@@ -63,33 +64,6 @@ class StaticSiteGenerator():
         'icon/note.png': 'note.png',  # ScrapBook X notex
         'icon/postit.png': 'postit.png',  # ScrapBook X note
         }
-    BIDI = {
-        'ltr': {
-            'dir': 'ltr',
-            'reversed_dir': 'rtl',
-            'start_edge': 'left',
-            'end_edge': 'right',
-            },
-        'rtl': {
-            'dir': 'rtl',
-            'reversed_dir': 'ltr',
-            'start_edge': 'right',
-            'end_edge': 'left',
-            },
-        }
-    I18N = {
-        'en': {
-            # map.html
-            'IndexerTreeToggleAll': 'Toggle all',
-            'IndexerTreeSearchLinkTitle': 'Search',
-            'IndexerTreeSourceLinkTitle': 'Source link',
-
-            # search.html
-            'IndexerTreeSearchTitle': '{book} :: Search',
-            'IndexerTreeSearchViewInMap': 'View in map',
-            'IndexerTreeSearchStart': 'go',
-            },
-        }
     ITEM_TYPE_ICON = {
         'folder': 'icon/fclose.png',
         'file': 'icon/file.png',
@@ -97,18 +71,13 @@ class StaticSiteGenerator():
         'postit': 'icon/postit.png',
         }
 
-    def __init__(self, book, *, bidi='ltr', i18n=None,
+    def __init__(self, book, *, locale=None,
             static_index=False, rss=False,
             ):
         self.host = book.host
         self.book = book
         self.static_index = static_index
-        self.bidi = self.BIDI[bidi]
-
-        self.i18n = {}
-        self.i18n.update(self.I18N['en'])
-        if i18n is not None:
-            self.i18n.update(i18n)
+        self.i18n = I18N(locale)
 
         self.rss = rss
 
@@ -129,7 +98,7 @@ class StaticSiteGenerator():
 
         # generate static site pages
         index_kwargs = dict(
-            title=self.book.name, bidi=self.bidi, i18n = self.i18n,
+            title=self.book.name, i18n = self.i18n,
             rss=self.rss,
             data_dir = util.get_relative_url(self.book.data_dir, self.book.tree_dir),
             meta_cnt=max(sum(1 for _ in self.book.iter_meta_files()), 1),
@@ -146,11 +115,11 @@ class StaticSiteGenerator():
             )
 
         yield from self._generate_page('frame.html', 'static_frame.html',
-            title=self.book.name, bidi=self.bidi, i18n = self.i18n,
+            title=self.book.name, i18n = self.i18n,
             )
 
         yield from self._generate_page('search.html', 'static_search.html',
-            title=self.book.name, bidi=self.bidi, i18n = self.i18n,
+            title=self.book.name, i18n = self.i18n,
             path=util.get_relative_url(self.book.top_dir, self.book.tree_dir),
             data_dir=util.get_relative_url(self.book.data_dir, self.book.top_dir),
             tree_dir=util.get_relative_url(self.book.tree_dir, self.book.top_dir),
@@ -929,7 +898,7 @@ class FulltextCacheGenerator():
 def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
         fulltext=True, inclusive_frames=True,
         static_site=False, static_index=False,
-        bidi='ltr', i18n=None, rss_root=None):
+        locale=None, rss_root=None):
     start = time.time()
 
     host = Host(root, config)
@@ -968,7 +937,7 @@ def generate(root, book_ids=None, item_ids=None, *, config=None, no_lock=False,
                     generator = StaticSiteGenerator(
                         book,
                         static_index=static_index,
-                        bidi=bidi, i18n=i18n, rss=bool(rss_root),
+                        locale=locale, rss=bool(rss_root),
                         )
                     yield from generator.run()
 

@@ -5,7 +5,6 @@ import os
 import argparse
 from getpass import getpass
 import traceback
-import json
 
 # this package
 from . import __package_name__, __version__
@@ -152,28 +151,7 @@ def cmd_cache(args):
     """Generate (or update) fulltext cache and/or static site pages.
     """
     kwargs = args.copy()
-    i18n = kwargs.pop('i18n')
-    i18n_file = kwargs.pop('i18n_file')
     debug = kwargs.pop('debug')
-
-    # attempt to load i18n_file or i18n
-    if i18n_file:
-        try:
-            with open(i18n_file, 'r', encoding='UTF-8') as fh:
-                i18n = json.load(fh)
-        except OSError as exc:
-            die(f'Failed to read from i18n file: [Errno {exc.args[0]}] {exc.args[1]}')
-        except (json.decoder.JSONDecodeError, UnicodeDecodeError) as exc:
-            die(f'Malformed JSON format for i18n file: {exc}')
-        else:
-            kwargs['i18n'] = i18n
-    elif i18n:
-        try:
-            i18n = json.loads(i18n)
-        except json.decoder.JSONDecodeError as exc:
-            die(f'Malformed JSON format for i18n: {exc}')
-        else:
-            kwargs['i18n'] = i18n
 
     for info in wsb_cache.generate(**kwargs):
         if info.type != 'debug' or debug:
@@ -363,12 +341,8 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
     parser_cache.add_argument('--rss-root', metavar='ROOT_URL', action='store',
         help="""generate an RSS feed file for the book, using the specified root URL
         (usually corresponds to webscrapbook app root)""")
-    parser_cache.add_argument('--bidi', default='ltr', action='store', choices=['ltr', 'rtl'],
-        help="""direction of the generated pages (default: %(default)s)""")
-    parser_cache.add_argument('--i18n', action='store',
-        help="""a JSON string for languages used in the template of the generated pages""")
-    parser_cache.add_argument('--i18n-file', action='store',
-        help="""a JSON file for languages used in the generated pages (overwrites --i18n)""")
+    parser_cache.add_argument('--locale', action='store',
+        help="""locale for the generated pages (default: system locale)""")
     parser_cache.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 

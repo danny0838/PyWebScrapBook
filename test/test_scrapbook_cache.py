@@ -195,18 +195,11 @@ no_tree = true
         self.assertFalse(mock_cls.call_args[1]['static_index'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
-    def test_param_bidi(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=True, bidi='rtl'):
+    def test_param_locale(self, mock_cls):
+        for info in wsb_cache.generate(self.test_root, static_site=True, locale='zh_TW'):
             pass
 
-        self.assertEqual(mock_cls.call_args[1]['bidi'], 'rtl')
-
-    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
-    def test_param_i18n(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=True, i18n={'dkey': 'dval'}):
-            pass
-
-        self.assertEqual(mock_cls.call_args[1]['i18n'], {'dkey': 'dval'})
+        self.assertEqual(mock_cls.call_args[1]['locale'], 'zh_TW')
 
     @mock.patch('webscrapbook.scrapbook.cache.RssFeedGenerator')
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
@@ -3014,31 +3007,16 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         self.assertFalse(mock_func.call_args_list[0][1]['rss'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
-    def test_param_bidi(self, mock_func):
-        """bidi should be passed."""
+    def test_param_locale(self, mock_func):
+        """locale should be passed."""
         book = Host(self.test_root).books['']
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True, bidi='rtl')
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True, locale='ar')
         for info in generator.run():
             pass
 
         for i, call in enumerate(mock_func.call_args_list):
             with self.subTest(i=i, file=call[0][0]):
-                self.assertEqual(call[1]['bidi']['dir'], 'rtl')
-
-    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
-    def test_param_i18n(self, mock_func):
-        """i18n should be passed and merged."""
-        book = Host(self.test_root).books['']
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True,
-            i18n={'IndexerTreeToggleAll': 'test', 'foo': 'foo value'})
-        for info in generator.run():
-            pass
-
-        for i, call in enumerate(mock_func.call_args_list):
-            with self.subTest(i=i, file=call[0][0]):
-                self.assertEqual(call[1]['i18n']['IndexerTreeToggleAll'], 'test')  # overwritten
-                self.assertEqual(call[1]['i18n']['foo'], 'foo value')  # added
-                self.assertEqual(call[1]['i18n']['IndexerTreeSearchLinkTitle'], 'Search')  # original
+                self.assertEqual(call[1]['i18n']('@@bidi_dir'), 'rtl')
 
     def test_static_index_anchor01(self):
         """Page with index */index.html"""
