@@ -1,0 +1,1 @@
+bidi_dir = 'ltr'
