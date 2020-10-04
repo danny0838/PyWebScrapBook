@@ -37,6 +37,7 @@ from . import __version__
 from . import Config
 from . import util
 from .scrapbook import host as wsb_host
+from .scrapbook import cache as wsb_cache
 from ._compat.contextlib import nullcontext
 from ._compat import zip_stream
 
@@ -106,6 +107,12 @@ def zip_static_file(zip, subpath, mimetype=None):
     response = Response(fh, headers=headers, mimetype=mimetype)
     response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
     return response
+
+
+def stream_template(template_name, **context):
+    current_app.update_template_context(context)
+    t = current_app.jinja_env.get_template(template_name)
+    return t.stream(context)
 
 
 def http_response(body='', status=None, headers=None, format=None):
@@ -1577,6 +1584,57 @@ def action_copy(sourcepaths, targetpaths):
     except Exception:
         traceback.print_exc()
         abort(500, 'Unable to copy to the target.')
+
+
+@handle_action_token
+def action_cache():
+    """Invoke the cacher."""
+    format = request.format
+
+    kwargs = {
+        'book_ids': request.values.getlist('book'),
+        'item_ids': request.values.getlist('item'),
+        'no_lock': request.values.get('no_lock', default=False, type=bool),
+        'no_backup': request.values.get('no_backup', default=False, type=bool),
+        'fulltext': request.values.get('fulltext', default=False, type=bool),
+        'inclusive_frames': request.values.get('inclusive_frames', default=False, type=bool),
+        'static_site': request.values.get('static_site', default=False, type=bool),
+        'static_index': request.values.get('static_index', default=False, type=bool),
+        'rss_root': request.values.get('rss_root'),
+        'locale': request.values.get('locale'),
+        }
+
+    headers = {
+        'Cache-Control': 'no-store',
+        }
+    root = host.root
+    config = host.config
+
+    if format == 'sse':
+        def gen():
+            for info in wsb_cache.generate(root, config=config, **kwargs):
+                data = {
+                    'type': info.type,
+                    'msg': info.msg,
+                    }
+
+                yield json.dumps(data, ensure_ascii=False)
+
+        return http_response(gen(), headers=headers, format=format)
+
+    elif format:
+        abort(400, "Action not supported.")
+
+    def gen():
+        yield from wsb_cache.generate(root, config=config, **kwargs)
+
+    stream = stream_template('cli.html',
+        title=f'Indexing...',
+        messages=gen(),
+        debug=False,
+        )
+
+    return Response(stream, headers=headers)
 
 
 @bp.before_request

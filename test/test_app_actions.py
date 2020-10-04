@@ -5035,6 +5035,95 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Found something at target.')
 
+class TestCache(TestActions):
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with app.test_client() as c:
+            r = c.get('/', query_string={'a': 'cache', 'f': 'sse'})
+
+        mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_format_check(self, mock_abort):
+        """Require format."""
+        with app.test_client() as c:
+            r = c.get('/', query_string={'a': 'cache', 'f': 'json', 'token': token(c)})
+
+        mock_abort.assert_called_once_with(400, 'Action not supported.')
+
+    @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
+    def test_params01(self, mock_func):
+        """Require format. (format=sse)"""
+        with app.test_client() as c:
+            try:
+                r = c.get('/', query_string={
+                    'a': 'cache', 'f': 'sse', 'token': token(c),
+                    'book': ['', 'id1'],
+                    'item': ['20200101'],
+                    'no_lock': 1,
+                    'no_backup': 1,
+                    'fulltext': 1,
+                    'inclusive_frames': 1,
+                    'static_site': 1,
+                    'static_index': 1,
+                    'rss_root': 'http://example.com',
+                    'locale': 'zh',
+                    })
+            except SystemExit:
+                pass
+
+        kwargs = mock_func.call_args[1]
+        del kwargs['config']
+        self.assertEqual(kwargs, {
+            'book_ids': ['', 'id1'],
+            'item_ids': ['20200101'],
+            'no_lock': True,
+            'no_backup': True,
+            'fulltext': True,
+            'inclusive_frames': True,
+            'static_site': True,
+            'static_index': True,
+            'rss_root': 'http://example.com',
+            'locale': 'zh',
+            })
+
+    @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
+    def test_params02(self, mock_func):
+        """Check params. (format=None)"""
+        with app.test_client() as c:
+            try:
+                r = c.get('/', query_string={
+                    'a': 'cache', 'token': token(c),
+                    'book': ['', 'id1'],
+                    'item': ['20200101'],
+                    'no_lock': 1,
+                    'no_backup': 1,
+                    'fulltext': 1,
+                    'inclusive_frames': 1,
+                    'static_site': 1,
+                    'static_index': 1,
+                    'rss_root': 'http://example.com',
+                    'locale': 'zh',
+                    }, buffered=True)
+            except SystemExit:
+                pass
+
+        kwargs = mock_func.call_args[1]
+        del kwargs['config']
+        self.assertEqual(kwargs, {
+            'book_ids': ['', 'id1'],
+            'item_ids': ['20200101'],
+            'no_lock': True,
+            'no_backup': True,
+            'fulltext': True,
+            'inclusive_frames': True,
+            'static_site': True,
+            'static_index': True,
+            'rss_root': 'http://example.com',
+            'locale': 'zh',
+            })
+
 class TestUnknown(unittest.TestCase):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_unknown(self, mock_abort):
