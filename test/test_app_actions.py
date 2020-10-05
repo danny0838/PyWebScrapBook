@@ -5160,7 +5160,6 @@ class TestCheck(TestActions):
                     'resolve_toc_invalid': 1,
                     'resolve_toc_empty_subtree': 1,
                     'resolve_unindexed_files': 1,
-                    'resolve_invalid_icon': 1,
                     'resolve_absolute_icon': 1,
                     'resolve_unused_icon': 1,
                     })
@@ -5182,7 +5181,6 @@ class TestCheck(TestActions):
             'resolve_toc_invalid': True,
             'resolve_toc_empty_subtree': True,
             'resolve_unindexed_files': True,
-            'resolve_invalid_icon': True,
             'resolve_absolute_icon': True,
             'resolve_unused_icon': True,
             })
@@ -5206,7 +5204,6 @@ class TestCheck(TestActions):
                     'resolve_toc_invalid': 1,
                     'resolve_toc_empty_subtree': 1,
                     'resolve_unindexed_files': 1,
-                    'resolve_invalid_icon': 1,
                     'resolve_absolute_icon': 1,
                     'resolve_unused_icon': 1,
                     }, buffered=True)
@@ -5228,7 +5225,6 @@ class TestCheck(TestActions):
             'resolve_toc_invalid': True,
             'resolve_toc_empty_subtree': True,
             'resolve_unindexed_files': True,
-            'resolve_invalid_icon': True,
             'resolve_absolute_icon': True,
             'resolve_unused_icon': True,
             })

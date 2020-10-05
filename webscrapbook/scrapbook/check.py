@@ -142,7 +142,6 @@ class BookChecker:
         'resolve_toc_invalid',
         'resolve_toc_empty_subtree',
         'resolve_unindexed_files',
-        'resolve_invalid_icon',
         'resolve_absolute_icon',
         'resolve_unused_icon',
         }
@@ -237,7 +236,6 @@ class BookChecker:
         items_missing_index_file = {}
         items_missing_date = {}
         items_older_mtime = {}
-        items_invalid_icon = {}
         items_absolute_icon = {}
 
         for id, meta in self.book.meta.items():
@@ -295,7 +293,7 @@ class BookChecker:
                     yield Info('error', f'"{id}": icon "{util.crop(icon, 256)}" is a root-relative URL')
                     self.cnt_errors += 1
                 else:
-                    yield from self._check_favicon_file(id, index, icon, items_invalid_icon)
+                    yield from self._check_favicon_file(id, index, icon)
 
             # create
             create = meta.get('create')
@@ -339,9 +337,6 @@ class BookChecker:
 
         if items_older_mtime and self.resolve_older_mtime:
             yield from self._resolve_older_mtime(items_older_mtime)
-
-        if items_invalid_icon and self.resolve_invalid_icon:
-            yield from self._resolve_invalid_icon(items_invalid_icon)
 
         if items_absolute_icon and self.resolve_absolute_icon:
             yield from self._resolve_absolute_icon(items_absolute_icon)
@@ -388,17 +383,11 @@ class BookChecker:
                             yield Info('error', f'"{id}": no valid page in archive file "{self.book.get_subpath(file)}"')
                             self.cnt_errors += 1
 
-    def _check_favicon_file(self, id, index, icon, items_invalid_icon):
+    def _check_favicon_file(self, id, index, icon):
         favicon_dir = os.path.join(self.book.tree_dir, 'favicon', '')
         file = os.path.normpath(os.path.join(self.book.data_dir, os.path.dirname(index), unquote(icon)))
         file_ci = os.path.normcase(file)
         is_in_favicon_dir = file_ci.startswith(os.path.normcase(favicon_dir))
-
-        if util.is_archive(index) and not is_in_favicon_dir:
-            yield Info('error', f'"{id}": icon "{util.crop(icon, 256)}" for an archive is invalid.')
-            self.cnt_errors += 1
-            items_invalid_icon[id] = True
-            return
 
         if not os.path.isfile(file):
             yield Info('error', f'"{id}": missing icon file "{self.book.get_subpath(file)}"')
@@ -699,15 +688,6 @@ class BookChecker:
             is_in_favicon_dir = file_ci.startswith(os.path.normcase(favicon_dir))
             if is_in_favicon_dir:
                 self.used_favicons.add(file_ci)
-            self.cnt_resolves += 1
-
-    def _resolve_invalid_icon(self, ids):
-        yield Info('info', 'Fixing invalid icon property...')
-        generator = FavIconCacher(self.book)
-        cached = yield from generator.run(ids)
-
-        for id, file in cached.items():
-            self.used_favicons.add(os.path.normcase(file))
             self.cnt_resolves += 1
 
     def _resolve_absolute_icon(self, ids):

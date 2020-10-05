@@ -447,8 +447,6 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
         help="""remove items with empty subtree from TOC""")
     parser_check.add_argument('--resolve-unindexed-files', default=False, action='store_true',
         help="""attempt to import unindexed files to metadata and TOC""")
-    parser_check.add_argument('--resolve-invalid-icon', default=False, action='store_true',
-        help="""attempt to fix invalid "icon" property""")
     parser_check.add_argument('--resolve-absolute-icon', default=False, action='store_true',
         help="""cache "icon" property with absolute URL to local favicon directory""")
     parser_check.add_argument('--resolve-unused-icon', default=False, action='store_true',

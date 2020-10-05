@@ -1656,7 +1656,6 @@ def action_check():
         'resolve_toc_invalid': request.values.get('resolve_toc_invalid', default=False, type=bool),
         'resolve_toc_empty_subtree': request.values.get('resolve_toc_empty_subtree', default=False, type=bool),
         'resolve_unindexed_files': request.values.get('resolve_unindexed_files', default=False, type=bool),
-        'resolve_invalid_icon': request.values.get('resolve_invalid_icon', default=False, type=bool),
         'resolve_absolute_icon': request.values.get('resolve_absolute_icon', default=False, type=bool),
         'resolve_unused_icon': request.values.get('resolve_unused_icon', default=False, type=bool),
         }
