@@ -15,6 +15,9 @@ from webscrapbook.util import frozendict, zip_tuple_timestamp
 root_dir = os.path.abspath(os.path.dirname(__file__))
 
 class TestUtils(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = 8192
+
     def test_frozendict(self):
         dict_ = {'a': 1, 'b': 2, 'c': 3}
         frozendict_ = frozendict(dict_)
@@ -637,11 +640,37 @@ class TestUtils(unittest.TestCase):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh1.html'))),
-            [(15, 'target.html'), (0, None), (0, 'target.html'), (0, 'target2.html')],
+            [
+                (15, 'target.html', None),
+                (0, None, None),
+                (0, 'target.html', None),
+                (0, 'target2.html', None),
+                ],
             )
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh2.html'))),
-            [(15, 'target.html'), (0, 'target.html'), (0, 'target2.html')],
+            [
+                (15, 'target.html', None),
+                (0, 'target.html', None),
+                (0, 'target2.html', None),
+                ],
+            )
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'refresh3.html'))),
+            [
+                (0, 'target-title.html', ['title']),
+                (0, 'target-iframe.html', ['iframe']),
+                (0, 'target-noframes.html', ['noframes']),
+                (0, 'target-noscript.html', ['noscript']),
+                (0, 'target-noembed.html', ['noembed']),
+                (0, 'target-textarea.html', ['textarea']),
+                (0, 'target-template.html', ['template']),
+                (0, 'target-xmp.html', ['xmp']),
+                ],
+            )
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'refresh4.html'))),
+            [(0, 'target.html', ['noscript', 'noframes'])],
             )
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'nonexist.html'))),
@@ -657,7 +686,7 @@ class TestUtils(unittest.TestCase):
                 with zh.open('refresh.html') as fh:
                     self.assertEqual(
                         list(util.iter_meta_refresh(fh)),
-                        [(0, 'target.html')]
+                        [(0, 'target.html', None)]
                         )
         finally:
             try:
@@ -669,15 +698,23 @@ class TestUtils(unittest.TestCase):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(root, 'refresh1.html')),
-            (0, 'target.html')
+            (0, 'target.html', None)
             )
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(root, 'refresh2.html')),
-            (0, 'target.html')
+            (0, 'target.html', None)
+            )
+        self.assertEqual(
+            util.parse_meta_refresh(os.path.join(root, 'refresh3.html')),
+            (None, None, None)
+            )
+        self.assertEqual(
+            util.parse_meta_refresh(os.path.join(root, 'refresh4.html')),
+            (None, None, None)
             )
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(root, 'nonexist.html')),
-            (None, None)
+            (None, None, None)
             )
 
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
@@ -689,7 +726,7 @@ class TestUtils(unittest.TestCase):
                 with zh.open('refresh.html') as fh:
                     self.assertEqual(
                         util.parse_meta_refresh(fh),
-                        (0, 'target.html')
+                        (0, 'target.html', None)
                         )
         finally:
             try:

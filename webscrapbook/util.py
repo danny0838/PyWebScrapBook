@@ -466,9 +466,34 @@ def zip_hasdir(zip, subpath):
 # HTML manipulation
 #########################################################################
 
-MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target'])
+MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target', 'context'])
 
 META_REFRESH_REGEX_URL = re.compile(r'^\s*url\s*=\s*(.*?)\s*$', re.I)
+
+# meta refresh in these tags does not always work
+META_REFRESH_CONTEXT_TAGS = {
+    'title',
+    # 'style', 'script',  # not visible by lxml
+    # 'frame',  # self-closing tag
+    'iframe',
+    # 'object', 'applet',  # refresh works in the browser
+    # 'audio', 'video',  # refresh works in the browser
+    # 'canvas',  # refresh works in the browser
+    'noframes', 'noscript', 'noembed',
+    'textarea',
+    'template',
+    # 'svg', 'math',  # refresh works in the browser
+    'xmp',
+    # 'parsererror',  # doesn't appear in lxml for xhtml
+    }
+
+# meta refresh in these tags should never work
+META_REFRESH_FORBID_TAGS = {
+    'title',
+    'textarea',
+    'template',
+    'xmp',
+    }
 
 def iter_meta_refresh(file):
     """Iterate through meta refreshes from a file.
@@ -487,27 +512,40 @@ def iter_meta_refresh(file):
         return
 
     try:
-        for event, elem in etree.iterparse(fh, html=True, events=('end',), tag='meta'):
-            if elem.attrib.get('http-equiv', '').lower() == 'refresh':
-                time, _, content = elem.attrib.get('content', '').partition(';')
+        contexts = []
+        for event, elem in etree.iterparse(fh, html=True, events=('start', 'end')):
+            if event == 'start':
+                if elem.tag in META_REFRESH_CONTEXT_TAGS:
+                    contexts.append(elem.tag)
+                    continue
 
-                try:
-                    time = int(time)
-                except ValueError:
-                    time = 0
+                if (elem.tag == 'meta' and
+                        elem.attrib.get('http-equiv', '').lower() == 'refresh'):
+                    time, _, content = elem.attrib.get('content', '').partition(';')
 
-                match_url = META_REFRESH_REGEX_URL.search(content)
-                target = match_url.group(1) if match_url else None
-                yield MetaRefreshInfo(time=time, target=target)
+                    try:
+                        time = int(time)
+                    except ValueError:
+                        time = 0
 
-            # clean up to save memory
-            elem.clear()
-            while elem.getprevious() is not None:
-                try:
-                    del elem.getparent()[0]
-                except TypeError:
-                    # broken html may generate extra root elem
-                    break
+                    match_url = META_REFRESH_REGEX_URL.search(content)
+                    target = match_url.group(1) if match_url else None
+                    context = contexts.copy() if contexts else None
+                    yield MetaRefreshInfo(time=time, target=target, context=context)
+
+            elif event == 'end':
+                if contexts and elem.tag == contexts[-1]:
+                    contexts.pop()
+                    continue
+
+                # clean up to save memory
+                elem.clear()
+                while elem.getprevious() is not None:
+                    try:
+                        del elem.getparent()[0]
+                    except TypeError:
+                        # broken html may generate extra root elem
+                        break
     finally:
         if fh != file:
             fh.close()
@@ -520,9 +558,9 @@ def parse_meta_refresh(file):
         file: str, path-like, or file-like object
     """
     for info in iter_meta_refresh(file):
-        if info.time == 0 and info.target is not None:
+        if info.time == 0 and info.target is not None and not info.context:
             return info
-    return MetaRefreshInfo(time=None, target=None)
+    return MetaRefreshInfo(time=None, target=None, context=None)
 
 
 #########################################################################
