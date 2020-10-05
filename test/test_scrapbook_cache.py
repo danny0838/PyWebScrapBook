@@ -395,6 +395,77 @@ scrapbook.fulltext({
             mock.call('20200101000000005'),
             ])
 
+    def test_recreate(self):
+        """Check if current cache is ignored"""
+        test_file1 = os.path.join(self.test_root, '20200101000000001', 'index.html')
+        test_file2 = os.path.join(self.test_root, '20200101000000002', 'index.html')
+        with open(self.test_meta, 'w', encoding='UTF-8') as f:
+            f.write("""\
+scrapbook.meta({
+  "20200101000000001": {
+    "index": "20200101000000001/index.html",
+    "title": "Dummy1",
+    "type": "",
+    "create": "20200101000000001",
+    "modify": "20200101000000001"
+  },
+  "20200101000000002": {
+    "index": "20200101000000002/index.html",
+    "title": "Dummy2",
+    "type": "",
+    "create": "20200101000000002",
+    "modify": "20200101000000002"
+  }
+})""")
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
+            f.write("""\
+scrapbook.fulltext({
+ "20200101000000001": {
+  "index.html": {
+   "content": "dummy1"
+  }
+ },
+ "20200101000000002": {
+  "index.html": {
+   "content": "dummy2"
+  }
+ }
+})""")
+        os.makedirs(os.path.dirname(test_file1), exist_ok=True)
+        with open(test_file1, 'w', encoding='UTF-8') as f:
+            f.write("""<!DOCTYPE html>
+<html>
+<body>
+Page content 1.
+</body>
+</html>
+""")
+        os.makedirs(os.path.dirname(test_file2), exist_ok=True)
+        with open(test_file2, 'w', encoding='UTF-8') as f:
+            f.write("""<!DOCTYPE html>
+<html>
+<body>
+Page content 2.
+</body>
+</html>
+""")
+        os.utime(self.test_fulltext, (1000, 1000))
+        os.utime(test_file1, (2001, 2001))
+        os.utime(test_file2, (2002, 2002))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_cache.FulltextCacheGenerator(book, recreate=True)
+        for info in generator.run(["20200101000000001"]):
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000001': {
+                'index.html': {
+                    'content': 'Page content 1.'
+                    }
+                },
+            })
+
     def test_update01(self):
         """Update if no cache"""
         self.create_meta()

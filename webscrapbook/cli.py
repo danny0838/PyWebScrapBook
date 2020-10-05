@@ -402,6 +402,10 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
         help="""cache frame content as part of the main page (default)""")
     parser_cache.add_argument('--no-inclusive-frames', dest='inclusive_frames', action='store_false',
         help="""do not cache frame content as part of the main page""")
+    parser_cache.add_argument('--recreate', dest='recreate', default=False, action='store_true',
+        help="""ignore current fulltext cache and generate again""")
+    parser_cache.add_argument('--no-recreate', dest='recreate', action='store_false',
+        help="""do not ignore current fulltext cache and generate again (default)""")
     parser_cache.add_argument('--static-site', default=False, action='store_true',
         help="""generate static site pages""")
     parser_cache.add_argument('--no-static-site', dest='static_site', action='store_false',

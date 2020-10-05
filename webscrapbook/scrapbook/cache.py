@@ -415,9 +415,10 @@ class FulltextCacheGenerator():
         }
     URL_SAMPLE_LENGTH = 256
 
-    def __init__(self, book, *, inclusive_frames=True):
+    def __init__(self, book, *, inclusive_frames=True, recreate=False):
         self.book = book
         self.inclusive_frames = inclusive_frames
+        self.recreate = recreate
         self.cache_last_modified = 0
 
     def run(self, item_ids=None):
@@ -439,9 +440,12 @@ class FulltextCacheGenerator():
 
         book.load_meta_files()
         book.load_toc_files()
-        book.load_fulltext_files()
-
-        book_fulltext_orig = copy.deepcopy(book.fulltext)
+        if self.recreate:
+            book.fulltext = {}
+            book_fulltext_orig = None
+        else:
+            book.load_fulltext_files()
+            book_fulltext_orig = copy.deepcopy(book.fulltext)
 
         # generate cache for each item
         if item_ids:
@@ -900,7 +904,7 @@ class FulltextCacheGenerator():
 
 def generate(root, book_ids=None, item_ids=None, *,
         config=None, no_lock=False, no_backup=False,
-        fulltext=True, inclusive_frames=True,
+        fulltext=True, inclusive_frames=True, recreate=False,
         static_site=False, static_index=False,
         locale=None, rss_root=None):
     start = time.time()
@@ -942,6 +946,7 @@ def generate(root, book_ids=None, item_ids=None, *,
                         generator = FulltextCacheGenerator(
                             book,
                             inclusive_frames=inclusive_frames,
+                            recreate=recreate,
                             )
                         yield from generator.run(item_ids)
 

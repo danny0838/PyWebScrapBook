@@ -1599,6 +1599,7 @@ def action_cache():
         'no_backup': request.values.get('no_backup', default=False, type=bool),
         'fulltext': request.values.get('fulltext', default=False, type=bool),
         'inclusive_frames': request.values.get('inclusive_frames', default=False, type=bool),
+        'recreate': request.values.get('recreate', default=False, type=bool),
         'static_site': request.values.get('static_site', default=False, type=bool),
         'static_index': request.values.get('static_index', default=False, type=bool),
         'rss_root': request.values.get('rss_root'),
