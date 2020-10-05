@@ -399,7 +399,9 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
     parser_cache.add_argument('--no-fulltext', dest='fulltext', action='store_false',
         help="""inverse of --fulltext""")
     parser_cache.add_argument('--inclusive-frames', default=True, action='store_true',
-        help="""cache frame content as part of the main page (default)""")
+        help="""cache frame content as part of the main page (default). It's
+recommended to recreate fulltext cache when changing this option to prevent
+inconsistency.""")
     parser_cache.add_argument('--no-inclusive-frames', dest='inclusive_frames', action='store_false',
         help="""inverse of --inclusive-frames""")
     parser_cache.add_argument('--recreate', dest='recreate', default=False, action='store_true',
