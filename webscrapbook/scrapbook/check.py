@@ -9,6 +9,7 @@ import mimetypes
 import time
 import copy
 import binascii
+from base64 import b64encode
 from urllib.parse import urlsplit, unquote
 from urllib.request import urlopen
 from urllib.error import URLError
@@ -779,7 +780,7 @@ class Indexer:
         self.book.meta[id] = meta
 
         # index
-        meta['index'] = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
+        meta['index'] = index = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
 
         # type
         if not meta['type']:
@@ -806,7 +807,11 @@ class Indexer:
         # icon
         if meta['icon'] is None:
             favicon_elem = next(iter_favicon_elems(tree), None)
-            meta['icon'] = favicon_elem.attrib.get('href', '') if favicon_elem is not None else ''
+            icon = favicon_elem.attrib.get('href', '') if favicon_elem is not None else ''
+            if util.is_archive(index):
+                icon = yield from self._get_archive_favicon(index, icon)
+            meta['icon'] = icon
+
         generator = FavIconCacher(self.book)
         yield from generator.run([id])
 
@@ -824,6 +829,50 @@ class Indexer:
             self.seen_in_toc.add(id)
 
         return id
+
+    def _get_archive_favicon(self, index, url):
+        """Convert in-zip relative favicon path to data URL.
+        """
+        # skip invalid in-zip-path
+        if url.startswith('../'):
+            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid ZIP path')
+            return ''
+
+        urlparts = urlsplit(url)
+
+        # skip absolute URL
+        if urlparts.scheme:
+            yield Info('debug', f'Skipped reading archive favicon "{util.crop(url, 256)}" for "{id}": absolute URL')
+            return url
+
+        subpath = unquote(urlparts.path)
+        mime, _ = mimetypes.guess_type(subpath)
+        file = os.path.join(self.book.data_dir, index)
+
+        if util.is_htz(index):
+            try:
+                with zipfile.ZipFile(file) as zh:
+                    bytes_ = zh.read(subpath)
+            except (OSError, zipfile.BadZipFile, KeyError) as exc:
+                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
+
+        elif util.is_maff(index):
+            try:
+                page = next(iter(util.get_maff_pages(file)), None)
+                if not page:
+                    return ''
+
+                refpath = page.indexfilename
+                if not refpath:
+                    return ''
+
+                subpath = os.path.join(os.path.dirname(refpath), subpath).replace('\\', '/')
+                with zipfile.ZipFile(file) as zh:
+                    bytes_ = zh.read(subpath)
+            except (OSError, zipfile.BadZipFile, KeyError):
+                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
+
+        return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
 
 
 class FavIconCacher:
@@ -859,7 +908,7 @@ class FavIconCacher:
 
             return True
 
-        def handle_fh(fh):
+        def cache_fh(fh):
             fsrc = io.BytesIO()
             while True:
                 chunk = fh.read(8192)
@@ -874,25 +923,14 @@ class FavIconCacher:
 
             if os.path.isfile(fdst):
                 yield Info('info', f'Use saved favicon "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
-                self.book.meta[id]['icon'] = util.get_relative_url(
-                    fdst,
-                    os.path.join(self.book.data_dir, os.path.dirname(index)),
-                    path_is_dir=False,
-                    )
                 return fdst
 
             yield Info('info', f'Saving favicon "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
             self.book.backup(fdst)
-            with open(fdst, 'wb') as fh:
-                shutil.copyfileobj(fsrc, fh)
-
-            self.book.meta[id]['icon'] = util.get_relative_url(
-                fdst,
-                os.path.join(self.book.data_dir, os.path.dirname(index)),
-                path_is_dir=False,
-                )
+            with open(fdst, 'wb') as fw:
+                shutil.copyfileobj(fsrc, fw)
             return fdst
 
         yield Info('debug', f'Caching favicon for "{id}"...')
@@ -922,65 +960,14 @@ class FavIconCacher:
                 if not (yield from verify_mime(mime)):
                     return None
 
-                return (yield from handle_fh(r))
+                cache_file = yield from cache_fh(r)
 
-            return None
-
-        # cache for archive
-        if util.is_archive(index):
-            # skip a URL that's obviously not in-zip path
-            if url.startswith('../'):
-                return None
-
-            favicon_prefix = util.get_relative_url(
-                os.path.join(self.book.tree_dir, 'favicon'),
+            self.book.meta[id]['icon'] = util.get_relative_url(
+                cache_file,
                 os.path.join(self.book.data_dir, os.path.dirname(index)),
+                path_is_dir=False,
                 )
-
-            # skip if already in favicon folder
-            if url.startswith(favicon_prefix):
-                return None
-
-            subpath = unquote(urlparts.path)
-
-            # verify MIME
-            mime, _ = mimetypes.guess_type(subpath)
-            if not (yield from verify_mime(mime)):
-                return None
-
-            if util.is_htz(index):
-                try:
-                    file = os.path.join(self.book.data_dir, index)
-                    with zipfile.ZipFile(file) as zh:
-                        with zh.open(subpath) as fh:
-                            return (yield from handle_fh(fh))
-                except (OSError, zipfile.BadZipFile, KeyError):
-                    yield Info('error', f'Unable to load favicon "{util.crop(url, 256)}" for "{id}" from archive file.')
-
-                return None
-
-            if util.is_maff(index):
-                try:
-                    file = os.path.join(self.book.data_dir, index)
-
-                    page = next(iter(util.get_maff_pages(file)), None)
-                    if not page:
-                        return None
-
-                    refpath = page.indexfilename
-                    if not refpath:
-                        return None
-
-                    subpath = os.path.join(os.path.dirname(refpath), subpath).replace('\\', '/')
-                    with zipfile.ZipFile(file) as zh:
-                        with zh.open(subpath) as fh:
-                            return (yield from handle_fh(fh))
-                except (OSError, zipfile.BadZipFile, KeyError):
-                    yield Info('error', f'Unable to load favicon "{util.crop(url, 256)}" for "{id}" from archive file.')
-
-                return None
-
-            return None
+            return cache_file
 
         return None
 

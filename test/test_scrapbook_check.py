@@ -1441,7 +1441,7 @@ page content
             })
 
     def test_item_icon(self):
-        """Test if icon is cached."""
+        """Check if favicon in an archive page is correctly cached."""
         test_index = os.path.join(self.test_root, '20200101000000000.htz')
         with zipfile.ZipFile(test_index, 'w') as zh:
             zh.writestr('index.html', """\
@@ -1488,7 +1488,7 @@ page content
 
 class FavIconCacher(TestCheck):
     def test_cache01(self):
-        """Cache favicon if absolute URL.
+        """Cache absolute URL.
 
         Test using data URL. Should also work for a remote URL.
         """
@@ -1516,77 +1516,6 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
-
-    def test_cache02(self):
-        """Cache favicon for archive (HTZ).
-        """
-        test_index = os.path.join(self.test_root, '20200101000000000.htz')
-        with zipfile.ZipFile(test_index, 'w') as zh:
-            zh.writestr('favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
-
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.htz",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "icon": "favicon.bmp"
-  }
-})""")
-
-        book = Host(self.test_root).books['']
-        generator = wsb_check.FavIconCacher(book)
-        for info in generator.run():
-            pass
-
-        self.assertDictEqual(book.meta, {
-            '20200101000000000': {
-                'index': '20200101000000000.htz',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
-
-    def test_cache03(self):
-        """Cache favicon for archive (MAFF).
-        """
-        test_index = os.path.join(self.test_root, '20200101000000000.maff')
-        with zipfile.ZipFile(test_index, 'w') as zh:
-            zh.writestr('20200101000000000/favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
-            zh.writestr('20200101000000000/index.html', 'dummy')
-
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.maff",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "icon": "favicon.bmp"
-  }
-})""")
-
-        book = Host(self.test_root).books['']
-        generator = wsb_check.FavIconCacher(book)
-        for info in generator.run():
-            pass
-
-        self.assertDictEqual(book.meta, {
-            '20200101000000000': {
-                'index': '20200101000000000.maff',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                 },
             })
 
