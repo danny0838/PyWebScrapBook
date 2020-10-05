@@ -17,7 +17,7 @@ __author_email__ = 'danny0838@gmail.com'
 __homepage__ = 'https://github.com/danny0838/PyWebScrapBook'
 __license__ = 'MIT'
 
-WSB_EXTENSION_MIN_VERSION = '0.76.0'
+WSB_EXTENSION_MIN_VERSION = '0.79.0'
 WSB_USER_DIR = os.path.join(os.path.expanduser('~'), '.config', 'wsb')  # affected by $HOME
 WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affected by $HOME
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
