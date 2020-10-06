@@ -1,0 +1,6 @@
+{% extends "static_map.html" %}
+{% block static_index %}
+{%- for chunk in static_index -%}
+  {{ chunk | safe }}
+{%- endfor -%}
+{% endblock %}

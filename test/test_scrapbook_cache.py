@@ -3032,7 +3032,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         for info in generator.run():
             pass
 
-        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_map.html'))
+        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
         self.assertEqual(mock_func.call_args_list[0][1]['data_dir'], '../data%25%E4%B8%AD%E6%96%87/')
 
         self.assertEqual(mock_func.call_args_list[1][0], ('map.html', 'static_map.html'))
@@ -3052,7 +3052,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         for info in generator.run():
             pass
 
-        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_map.html'))
+        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
         self.assertEqual(mock_func.call_args_list[0][1]['filename'], 'index')
         self.assertIsInstance(mock_func.call_args_list[0][1]['static_index'], collections.abc.Generator)
 

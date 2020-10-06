@@ -106,7 +106,7 @@ class StaticSiteGenerator():
             )
 
         if self.static_index:
-            yield from self._generate_page('index.html', 'static_map.html', filename='index',
+            yield from self._generate_page('index.html', 'static_index.html', filename='index',
                 static_index=self._generate_static_index(), **index_kwargs,
                 )
 

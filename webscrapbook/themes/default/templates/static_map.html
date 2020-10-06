@@ -409,9 +409,7 @@ var scrapbook = {
 <a id="toggle-all" title="{{ i18n('cache_index_toggle_all') }}" href="#"><img src="icon/toggle.png">{{ title }}</a>
 <a id="search" href="search.html" target="_self" title="{{ i18n('cache_index_search_link_title') }}"><img src="icon/search.png" alt=""></a>
 </div>
-{% if static_index -%}
-  {%- for chunk in static_index -%}{{ chunk | safe }}{%- endfor -%}
-{% endif -%}
+{% block static_index %}{% endblock -%}
 <script>scrapbook.init();</script>
 </body>
 </html>
