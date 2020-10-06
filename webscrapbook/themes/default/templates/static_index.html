@@ -1,6 +1,40 @@
 {% extends "static_map.html" %}
-{% block static_index %}
-{%- for chunk in static_index -%}
-  {{ chunk | safe }}
-{%- endfor -%}
+{%- macro print_type_classes(type, marked) -%}
+  {%- set classes = [] -%}
+  {%- if type -%}
+    {%- set _ = classes.append('scrapbook-type-' + type) -%}
+  {%- endif -%}
+  {%- if marked -%}
+    {%- set _ = classes.append('scrapbook-type-marked') -%}
+  {%- endif -%}
+  {{ print_attr('class', classes | join(' ')) }}
+{%- endmacro -%}
+{%- macro print_attr(attr, value, prefix=' ') -%}
+  {%- if value -%}
+    {{ prefix + attr }}="{{ value }}"
+  {%- endif -%}
+{%- endmacro -%}
+{% block static_index -%}
+<div id="item-root">
+{%- set indent = '  ' -%}
+{%- for item in static_index -%}
+  {%- set event, level, id, type, marked, title, url, icon = item -%}
+  {%- if event == 'start-container' %}
+{{ indent * level }}<ul class="scrapbook-container">
+  {%- elif event == 'end-container' %}
+{{ indent * level }}</ul>
+  {%- elif event == 'start' %}
+{{ indent * level }}<li{{ print_attr('id', 'item-' + id) }}{{ print_type_classes(type, marked) }}>
+{{ indent * (level + 1) }}<div>
+    {%- if type != 'separator' -%}
+<a{{ print_attr('href', url) }}><img{{ print_attr('src', icon) }} alt="">{{ title }}</a>
+    {%- else -%}
+<fieldset><legend>&nbsp;{{ title }}&nbsp;</legend></fieldset>
+    {%- endif -%}
+</div>
+  {%- elif event == 'end' %}
+{{ indent * level }}</li>
+  {%- endif -%}
+{%- endfor %}
+</div>
 {% endblock %}

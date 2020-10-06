@@ -48,6 +48,10 @@ class MutatingDict(UserDict):
         return NotImplemented
 
 
+StaticIndexItem = namedtuple('StaticIndexItem',
+    ['event', 'level', 'id', 'type', 'marked', 'title', 'url', 'icon'])
+StaticIndexItem.__new__.__defaults__ = (None, None, None, None, None, None)
+
 class StaticSiteGenerator():
     """Main class for static site pages generation.
     """
@@ -185,7 +189,7 @@ class StaticSiteGenerator():
             return f'{prefix}class="{c}"'
 
         def add_child_items(parent_id):
-            nonlocal indent
+            nonlocal level
 
             try:
                 toc = book.toc[parent_id]
@@ -196,8 +200,8 @@ class StaticSiteGenerator():
             if not toc:
                 return
 
-            yield f'{" " * indent}<ul class="scrapbook-container">\n'
-            indent += 2
+            yield StaticIndexItem('start-container', level)
+            level += 1
 
             for id in toc:
                 meta = book.meta[id]
@@ -208,19 +212,10 @@ class StaticSiteGenerator():
                 meta_icon = meta.get('icon', '')
                 meta_marked = meta.get('marked', '')
 
-                classes = []
-                if meta_type:
-                    classes.append(f'scrapbook-type-{meta_type}')
-                if meta_marked:
-                    classes.append('scrapbook-marked')
-
-                yield f'{" " * indent}<li id="item-{html.escape(id)}"{get_class_text(classes)}>\n'
-                indent += 2
-
                 item_set.add(id)
 
                 if meta_type != 'separator':
-                    title = html.escape(meta_title or id)
+                    title = meta_title or id
 
                     if meta_type != 'folder':
                         if meta_type == 'bookmark' and meta_source:
@@ -231,9 +226,6 @@ class StaticSiteGenerator():
                             href = ''
                     else:
                         href = ''
-
-                    if href:
-                        href = f' href="{html.escape(href)}"'
 
                     # meta_icon is a URL
                     if meta_icon:
@@ -246,29 +238,26 @@ class StaticSiteGenerator():
                             icon = ref + meta_icon
                     else:
                         icon = self.ITEM_TYPE_ICON.get(meta_type, 'icon/item.png')
-                    icon = html.escape(icon)
 
-                    yield f'{" " * indent}<div><a{href}><img src="{icon}" alt="">{title}</a></div>\n'
                 else:
-                    title = html.escape(meta_title)
-                    yield f'{" " * indent}<div><fieldset><legend>&nbsp;{title}&nbsp;</legend></fieldset></div>\n'
+                    title = meta_title
+                    href = ''
+                    icon = ''
 
+                yield StaticIndexItem('start', level, id, meta_type, meta_marked, title, href, icon)
+                level += 1
                 yield from add_child_items(id)
+                level -= 1
+                yield StaticIndexItem('end', level, id, meta_type, meta_marked, title, href, icon)
 
-                indent -= 2
-                yield f'{" " * indent}</li>\n'
-
-            indent -= 2
-            yield f'{" " * indent}</ul>\n'
+            level -= 1
+            yield StaticIndexItem('end-container', level)
 
         book = self.book
 
         item_set = {'root', 'hidden', 'recycle'}
-        indent = 0
-
-        yield '<div id="item-root">\n'
+        level = 0
         yield from add_child_items('root')
-        yield '</div>\n'
 
 
 class RssFeedGenerator():
