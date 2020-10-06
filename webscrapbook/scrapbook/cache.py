@@ -923,16 +923,16 @@ def generate(root, book_ids=None, item_ids=None, *,
             yield Info('warn', f'Skipped invalid book "{book_id}".')
             continue
 
-        yield Info('info', f'Checking book "{book_id}".')
+        yield Info('debug', f'Loading book "{book_id}".')
 
         try:
             book = host.books[book_id]
 
             if book.no_tree:
-                yield Info('info', f'Skipped book "{book_id}" (no_tree).')
+                yield Info('info', f'Skipped book "{book_id}" ("{book.name}") (no_tree).')
                 continue
 
-            yield Info('info', f'Caching book "{book_id}".')
+            yield Info('info', f'Caching book "{book_id}" ({book.name}).')
             lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
             with lh:
                 if not no_backup:
