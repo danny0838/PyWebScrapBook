@@ -18,7 +18,7 @@
 <div id="item-root">
 {%- set indent = '  ' -%}
 {%- for item in static_index -%}
-  {%- set event, level, id, type, marked, title, url, icon = item -%}
+  {%- set event, level, id, type, marked, title, url, icon, source, comment = item -%}
   {%- if event == 'start-container' %}
 {{ indent * level }}<ul class="scrapbook-container">
   {%- elif event == 'end-container' %}
@@ -28,6 +28,9 @@
 {{ indent * (level + 1) }}<div>
     {%- if type != 'separator' -%}
 <a{{ print_attr('href', url) }}><img{{ print_attr('src', icon) }} alt="">{{ title }}</a>
+      {%- if type != 'bookmark' and source -%}
+<a title="{{ i18n('cache_index_source_link_title') }}" class="scrapbook-external" target="_blank" href="{{ source }}"><img src="icon/external.png" alt=""></a>
+      {%- endif -%}
     {%- else -%}
 <fieldset><legend>&nbsp;{{ title }}&nbsp;</legend></fieldset>
     {%- endif -%}

@@ -49,8 +49,8 @@ class MutatingDict(UserDict):
 
 
 StaticIndexItem = namedtuple('StaticIndexItem',
-    ['event', 'level', 'id', 'type', 'marked', 'title', 'url', 'icon'])
-StaticIndexItem.__new__.__defaults__ = (None, None, None, None, None, None)
+    ['event', 'level', 'id', 'type', 'marked', 'title', 'url', 'icon', 'source', 'comment'])
+StaticIndexItem.__new__.__defaults__ = (None, None, None, None, None, None, None, None)
 
 class StaticSiteGenerator():
     """Main class for static site pages generation.
@@ -210,6 +210,7 @@ class StaticSiteGenerator():
                 meta_title = meta.get('title', '')
                 meta_source = meta.get('source', '')
                 meta_icon = meta.get('icon', '')
+                meta_comment = meta.get('comment', '')
                 meta_marked = meta.get('marked', '')
 
                 item_set.add(id)
@@ -244,11 +245,11 @@ class StaticSiteGenerator():
                     href = ''
                     icon = ''
 
-                yield StaticIndexItem('start', level, id, meta_type, meta_marked, title, href, icon)
+                yield StaticIndexItem('start', level, id, meta_type, meta_marked, title, href, icon, meta_source, meta_comment)
                 level += 1
                 yield from add_child_items(id)
                 level -= 1
-                yield StaticIndexItem('end', level, id, meta_type, meta_marked, title, href, icon)
+                yield StaticIndexItem('end', level, id, meta_type, meta_marked, title, href, icon, meta_source, meta_comment)
 
             level -= 1
             yield StaticIndexItem('end-container', level)
