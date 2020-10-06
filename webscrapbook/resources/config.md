@@ -44,11 +44,15 @@ A WebScrapBook config file is written in "ini" format, which looks like:
     user = myuser2
     #...
 
+For convenience, `key` of `[section]` is also denoted as `section.key`,
+and `key` of `[section "subsection"]` is also denoted as
+`section.subsection.key`.
+
 
 ## Available values
 
 
-### [app] section
+### `[app]` section
 
 The `[app]` section defines the behavior of WebScrapBook application, which
 follows WSGI specification and can be hosted by any WSGI server, such as the
@@ -161,7 +165,7 @@ See `allowed_x_proto` for convention of usage.
 (default: `0`)
 
 
-### [book] section(s)
+### `[book]` section(s)
 
 The book section(s) define scrapbooks for the application to handle. It can be
 subsected as `[book "identifier"]`. The primary scrapbook (`[book]` or
@@ -219,7 +223,7 @@ Set true to disable virtual tree and index of the book.
 (default: `false`)
 
 
-### [auth] section(s)
+### `[auth]` section(s)
 
 The `[auth]` section(s) define authorization rules. It can be subsected as
 `[auth "identifier"]`. Authorization requirement is activated when at least one
@@ -285,7 +289,7 @@ The permission for those who fullfills this authorization condition.
 (default: `all`)
 
 
-### [server] section
+### `[server]` section
 
 The `[server]` section defines the behavior of the built-in HTTP server, which
 can be run by `wsb serve` command or by running the `serve.py` shortcut
@@ -364,7 +368,7 @@ Set true to launch the browser when the server starts, and false otherwise.
 (default: `true`)
 
 
-### [browser] section
+### `[browser]` section
 
 The `[browser]` section defines the desired browser to launch when needed. The
 browser is launched when, for example, the server starts.
