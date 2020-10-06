@@ -6,7 +6,9 @@ import stat
 import subprocess
 import collections
 from collections import namedtuple
+import shutil
 import zipfile
+import tempfile
 import math
 import re
 import hashlib
@@ -680,6 +682,54 @@ def zip_hasdir(zip, subpath):
                 return True
 
     return False
+
+
+def zip_extract(zip, dst, subpath=''):
+    """Extract zip subpath to dst and preserve metadata.
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+        dst: path where the extracted file or directory will be placed at.
+        subpath: internal path to a file or folder (without trailing slash), or
+            '' or None to extract the whole zip
+
+    Raises:
+        FileExistsError: if dst already exists
+    """
+    if os.path.lexists(dst):
+        # trigger FileExistsError
+        os.mkdir(dst)
+
+    tempdir = tempfile.mkdtemp()
+    try:
+        with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+            if not subpath:
+                entries = zh.namelist()
+            else:
+                try:
+                    zh.getinfo(subpath)
+                except KeyError:
+                    entries = [e for e in zh.namelist() if e.startswith(subpath + '/')]
+                else:
+                    entries = [subpath]
+
+            # extract entries and keep datetime
+            zh.extractall(tempdir, entries)
+            for entry in entries:
+                file = os.path.join(tempdir, entry)
+                ts = zip_timestamp(zh.getinfo(entry))
+                os.utime(file, (ts, ts))
+
+        # move to target path
+        if not subpath:
+            shutil.move(tempdir, dst)
+        else:
+            shutil.move(os.path.join(tempdir, subpath), dst)
+    finally:
+        try:
+            shutil.rmtree(tempdir)
+        except OSError:
+            pass
 
 
 #########################################################################

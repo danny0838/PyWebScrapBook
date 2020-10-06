@@ -898,6 +898,147 @@ class TestUtils(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_zip_extract(self):
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
+        # root
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+
+            util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'))
+
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))
+                )
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'zipfile', 'folder')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 2, 0, 0, 0))
+                )
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'zipfile', 'folder', '.gitkeep')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 3, 0, 0, 0))
+                )
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'zipfile', 'implicit_folder', '.gitkeep')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 4, 0, 0, 0))
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+        # folder explicit
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+
+            util.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'folder')
+
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'folder')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 2, 0, 0, 0))
+                )
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 3, 0, 0, 0))
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+        # folder implicit
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+
+            util.zip_extract(zip_filename, os.path.join(temp_dir, 'implicit_folder'), 'implicit_folder')
+
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'implicit_folder', '.gitkeep')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 4, 0, 0, 0))
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+        # file
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+
+            util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile.txt'), 'file.txt')
+
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'zipfile.txt')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+        # target exists
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+
+            with self.assertRaises(FileExistsError):
+                util.zip_extract(zip_filename, temp_dir, '')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
     def test_parse_content_type(self):
         self.assertEqual(
             util.parse_content_type('text/html; charset=UTF-8'),

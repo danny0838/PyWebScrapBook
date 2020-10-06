@@ -7,7 +7,6 @@ import io
 import mimetypes
 import re
 import zipfile
-import tempfile
 import time
 import json
 import functools
@@ -1534,30 +1533,8 @@ def action_copy(sourcepaths, targetpaths):
                     traceback.print_exc()
                     abort(500, "Unable to copy to this path.")
 
-                tempdir = tempfile.mkdtemp()
-                try:
-                    with open_archive_path(sourcepaths) as zip:
-                        try:
-                            zip.getinfo(sourcepaths[-1])
-                        except KeyError:
-                            entries = [e for e in zip.namelist() if e.startswith(sourcepaths[-1] + '/')]
-                        else:
-                            entries = [sourcepaths[-1]]
-
-                        # extract entries and keep datetime
-                        zip.extractall(tempdir, entries)
-                        for entry in entries:
-                            file = os.path.join(tempdir, entry)
-                            date = util.zip_timestamp(zip.getinfo(entry))
-                            os.utime(file, (date, date))
-
-                    # move to target path
-                    shutil.move(os.path.join(tempdir, sourcepaths[-1]), targetpaths[0])
-                finally:
-                    try:
-                        shutil.rmtree(tempdir)
-                    except OSError:
-                        traceback.print_exc()
+                with open_archive_path(sourcepaths) as zh:
+                    util.zip_extract(zh, targetpaths[0], sourcepaths[-1])
 
             else:
                 with open_archive_path(sourcepaths) as zip:
