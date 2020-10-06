@@ -12,11 +12,35 @@ class TestI18N(unittest.TestCase):
         self.assertEqual(i18n.lang, 'en_gb')
         self.assertEqual(i18n.langs, ['en_gb', 'en'])
 
+        i18n = I18N('en-GB')
+        self.assertEqual(i18n.lang, 'en_gb')
+        self.assertEqual(i18n.langs, ['en_gb', 'en'])
+
+        i18n = I18N('en_gb')
+        self.assertEqual(i18n.lang, 'en_gb')
+        self.assertEqual(i18n.langs, ['en_gb', 'en'])
+
+        i18n = I18N('en-gb')
+        self.assertEqual(i18n.lang, 'en_gb')
+        self.assertEqual(i18n.langs, ['en_gb', 'en'])
+
         i18n = I18N('zh_TW')
         self.assertEqual(i18n.lang, 'zh_tw')
         self.assertEqual(i18n.langs, ['zh_tw', 'zh', 'en'])
 
-    def test_call01(self):
+        i18n = I18N('zh-TW')
+        self.assertEqual(i18n.lang, 'zh_tw')
+        self.assertEqual(i18n.langs, ['zh_tw', 'zh', 'en'])
+
+        i18n = I18N('zh_tw')
+        self.assertEqual(i18n.lang, 'zh_tw')
+        self.assertEqual(i18n.langs, ['zh_tw', 'zh', 'en'])
+
+        i18n = I18N('zh-tw')
+        self.assertEqual(i18n.lang, 'zh_tw')
+        self.assertEqual(i18n.langs, ['zh_tw', 'zh', 'en'])
+
+    def test_call(self):
         i18n = I18N('zh_TW')
         self.assertEqual(i18n('MyMessage'), 'MyMessage')
 
