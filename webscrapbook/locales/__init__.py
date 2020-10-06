@@ -43,6 +43,9 @@ class I18N:
         if not lang:
             lang, _ = locale.getdefaultlocale()
 
+        # normalize lang to lower_snake_case
+        lang = lang.replace('-', '_').lower()
+
         if not domain:
             domain = 'messages'
 
