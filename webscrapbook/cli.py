@@ -6,6 +6,7 @@ import shutil
 import argparse
 from getpass import getpass
 import traceback
+from inspect import getdoc
 
 # this package
 from . import __package_name__, __version__
@@ -47,8 +48,9 @@ def fcopy(fsrc, fdst):
 
 
 def cmd_serve(args):
-    """Serve the root directory forever until shutdown (via Ctrl+C or another
-       killing technique)."""
+    """Serve the root directory forever.
+
+    Shutdown via Ctrl+C or another killing technique."""
     server.serve(args['root'])
 
 
@@ -177,8 +179,8 @@ def cmd_convert(args):
     """Convert data between different formats.
 
     Do not perform any data operation for the input and/or output directory
-        during the conversion process (and related backend server(s) should be
-        shutted down in prior) to prevent a potential conversion error.
+    during the conversion process (and related backend server(s) should be shut
+    down in prior) to prevent a potential conversion error.
     """
     kwargs = args.copy()
     kwargs.pop('root')
@@ -336,7 +338,9 @@ def view_archive_files(files):
 def view():
     """CLI entry point for viewing archive files.
     """
-    parser = argparse.ArgumentParser(description=view_archive_files.__doc__)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(view_archive_files))
     parser.add_argument('files', nargs='+',
         help="""files to view.""")
     args = vars(parser.parse_args())
@@ -353,12 +357,12 @@ def main():
         help="""the sub-command to run. Get usage help with e.g. %(prog)s config -h""")
 
     # subcommand: serve
-    parser_serve = subparsers.add_parser('serve', aliases=['s'], description=cmd_serve.__doc__,
+    parser_serve = subparsers.add_parser('serve', aliases=['s'], description=getdoc(cmd_serve),
         help="""serve the root directory""")
     parser_serve.set_defaults(func=cmd_serve)
 
     # subcommand: config
-    parser_config = subparsers.add_parser('config', aliases=['c'], description=cmd_config.__doc__,
+    parser_config = subparsers.add_parser('config', aliases=['c'], description=getdoc(cmd_config),
         help="""show, generate, or edit the config""")
     parser_config.set_defaults(func=cmd_config)
     parser_config.add_argument('name', nargs='?',
@@ -373,7 +377,7 @@ def main():
         help="""edit the config file (with --book or --user)""")
 
     # subcommand: encrypt
-    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'], description=cmd_encrypt.__doc__,
+    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'], description=getdoc(cmd_encrypt),
         help="""generate an encrypted password""")
     parser_encrypt.set_defaults(func=cmd_encrypt)
     parser_encrypt.add_argument('-p', '--password', nargs='?', default=None, action='store',
@@ -386,7 +390,7 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
         help="""the salt to add during encryption.""")
 
     # subcommand: cache
-    parser_cache = subparsers.add_parser('cache', aliases=['a'], description=cmd_cache.__doc__,
+    parser_cache = subparsers.add_parser('cache', aliases=['a'], description=getdoc(cmd_cache),
         help="""update fulltext cache and/or static site pages""")
     parser_cache.set_defaults(func=cmd_cache)
     parser_cache.add_argument('book_ids', metavar='book', nargs='*', action='store',
@@ -431,7 +435,7 @@ inconsistency.""")
         help="""include debug output""")
 
     # subcommand: check
-    parser_check = subparsers.add_parser('check', aliases=['k'], description=cmd_check.__doc__,
+    parser_check = subparsers.add_parser('check', aliases=['k'], description=getdoc(cmd_check),
         help="""check and fix scrapbook data""")
     parser_check.set_defaults(func=cmd_check)
     parser_check.add_argument('book_ids', metavar='book', nargs='*', action='store',
@@ -469,7 +473,8 @@ inconsistency.""")
 
     # subcommand: convert
     parser_convert = subparsers.add_parser('convert', aliases=['v'],
-        description=cmd_convert.__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_convert),
         help="""convert scrapbook data between different formats""")
     parser_convert.set_defaults(func=cmd_convert)
     parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE', required=True,
@@ -491,7 +496,7 @@ inconsistency.""")
         help="""include debug output""")
 
     # subcommand: help
-    parser_help = subparsers.add_parser('help', description=cmd_help.__doc__,
+    parser_help = subparsers.add_parser('help', description=getdoc(cmd_help),
         help="""show detailed information about certain topics""")
     parser_help.set_defaults(func=cmd_help)
     parser_help.add_argument('topic', default=None, action='store',
@@ -499,7 +504,7 @@ inconsistency.""")
         help="""the topic for details""")
 
     # subcommand: view
-    parser_view = subparsers.add_parser('view', description=cmd_view.__doc__,
+    parser_view = subparsers.add_parser('view', description=getdoc(cmd_view),
         help="""view archive file in the browser""")
     parser_view.set_defaults(func=cmd_view)
     parser_view.add_argument('files', nargs='+',
