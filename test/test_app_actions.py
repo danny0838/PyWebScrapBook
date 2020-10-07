@@ -3841,12 +3841,12 @@ class TestMove(TestActions):
                     )
                 z.writestr(
                     zipfile.ZipInfo('subdir/index.html', (1987, 1, 2, 1, 0, 0)),
-                    'Nested maff 測試'.encode('UTF-8'),
+                    'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                     )
                 z.writestr(
                     zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
-                    'Nested maff 測試'.encode('UTF-8'),
+                    'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                     )
             f.writestr('entry.maff', buf.getvalue())
@@ -3858,12 +3858,12 @@ class TestMove(TestActions):
             info.comment = 'dummy comment'.encode('UTF-8')
             f.writestr(
                 info,
-                'Maff content 測試'.encode('UTF-8'),
+                'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
                 )
             f.writestr(
                 zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
-                'Maff content 測試'.encode('UTF-8'),
+                'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
                 )
 
@@ -4297,12 +4297,12 @@ class TestCopy(TestActions):
                     )
                 z.writestr(
                     zipfile.ZipInfo('subdir/index.html', (1987, 1, 2, 1, 0, 0)),
-                    'Nested maff 測試'.encode('UTF-8'),
+                    'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                     )
                 z.writestr(
                     zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
-                    'Nested maff 測試'.encode('UTF-8'),
+                    'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                     )
             f.writestr('entry.maff', buf.getvalue())
@@ -4314,12 +4314,12 @@ class TestCopy(TestActions):
             info.comment = 'dummy comment'.encode('UTF-8')
             f.writestr(
                 info,
-                'Maff content 測試'.encode('UTF-8'),
+                'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
                 )
             f.writestr(
                 zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
-                'Maff content 測試'.encode('UTF-8'),
+                'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
                 )
 
