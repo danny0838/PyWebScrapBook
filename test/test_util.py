@@ -898,6 +898,56 @@ class TestUtils(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_zip_compress(self):
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
+        # directory
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABC中文')
+            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+            with open(os.path.join(temp_dir, 'folder', 'sybfile1.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('123456')
+
+            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder')
+
+            with zipfile.ZipFile(zip_filename) as zh:
+                self.assertEqual(zh.read('myfolder/sybfile1.txt').decode('UTF-8'), '123456')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+        # file
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABC中文')
+            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+            with open(os.path.join(temp_dir, 'folder', 'sybfile1.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('123456')
+
+            util.zip_compress(zip_filename, os.path.join(temp_dir, 'file.txt'), 'myfile.txt')
+
+            with zipfile.ZipFile(zip_filename) as zh:
+                self.assertEqual(zh.read('myfile.txt').decode('UTF-8'), 'ABC中文')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
     def test_zip_extract(self):
         temp_dir = os.path.join(root_dir, 'test_util', 'temp')
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')

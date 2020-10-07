@@ -684,6 +684,66 @@ def zip_hasdir(zip, subpath):
     return False
 
 
+def zip_compress(zip, filename, subpath):
+    """Compress src to be the subpath in the zip.
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+        filename: path of the source file or directory
+        subpath: internal path to a file or folder (without trailing slash)
+
+    Raises:
+        shutil.Error: if any child file cannot be added to the zip
+    """
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'w') as zh:
+        if os.path.isdir(filename):
+            errors = []
+
+            src = filename
+            dst = subpath + '/'
+            try:
+                ts = time.localtime(os.stat(src).st_mtime)[:-3]
+                zh.writestr(zipfile.ZipInfo(dst, ts), '')
+            except OSError as why:
+                errors.append((src, dst, str(why)))
+
+            base_cut = len(os.path.join(filename, ''))
+            for root, dirs, files in os.walk(filename, followlinks=True):
+                for dir in dirs:
+                    src = os.path.join(root, dir)
+                    dst = src[base_cut:]
+                    if os.sep != '/':
+                        dst = dst.replace(os.sep, '/')
+                    dst = subpath + '/' + dst + '/'
+                    try:
+                        ts = time.localtime(os.stat(src).st_mtime)[:-3]
+                        zh.writestr(zipfile.ZipInfo(dst, ts), '')
+                    except OSError as why:
+                        errors.append((src, dst, str(why)))
+                for file in files:
+                    src = os.path.join(root, file)
+                    dst = src[base_cut:]
+                    if os.sep != '/':
+                        dst = dst.replace(os.sep, '/')
+                    dst = subpath + '/' + dst
+                    compressible = is_compressible(mimetypes.guess_type(dst)[0])
+                    compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
+                    compresslevel = 9 if compressible else None
+                    try:
+                        try:
+                            zh.write(src, dst, compress_type, compresslevel)
+                        except TypeError:
+                            # compresslevel is supported since Python 3.7
+                            zh.write(src, dst, compress_type)
+                    except OSError as why:
+                        errors.append((src, dst, str(why)))
+
+            if errors:
+                raise shutil.Error(errors)
+        else:
+            zh.write(filename, subpath)
+
+
 def zip_extract(zip, dst, subpath=''):
     """Extract zip subpath to dst and preserve metadata.
 

@@ -1473,57 +1473,15 @@ def action_copy(sourcepaths, targetpaths):
                     abort(500, 'Fail to copy some files.')
 
             else:
-                if os.path.isdir(sourcepaths[0]):
-                    errors = []
-
-                    with open_archive_path(targetpaths, 'w') as zip:
-                        src = sourcepaths[0]
-                        dst = targetpaths[-1] + '/'
-                        try:
-                            t = time.localtime(os.stat(src).st_mtime)[:-3]
-                            zip.writestr(zipfile.ZipInfo(dst, t), '')
-                        except OSError as why:
-                            errors.append((src, targetpaths[:-1] + [dst], str(why)))
-
-                        base_cut = len(os.path.join(sourcepaths[0], ''))
-                        for root, dirs, files in os.walk(sourcepaths[0], followlinks=True):
-                            for dir in dirs:
-                                src = os.path.join(root, dir)
-                                dst = src[base_cut:]
-                                if os.sep != '/': dst = dst.replace(os.sep, '/')
-                                dst = targetpaths[-1] + '/' + dst + '/'
-                                try:
-                                    t = time.localtime(os.stat(src).st_mtime)[:-3]
-                                    zip.writestr(zipfile.ZipInfo(dst, t), '')
-                                except OSError as why:
-                                    errors.append((src, targetpaths[:-1] + [dst], str(why)))
-                            for file in files:
-                                src = os.path.join(root, file)
-                                dst = src[base_cut:]
-                                if os.sep != '/': dst = dst.replace(os.sep, '/')
-                                dst = targetpaths[-1] + '/' + dst
-                                compressible = util.is_compressible(mimetypes.guess_type(dst)[0])
-                                compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
-                                compresslevel = 9 if compressible else None
-                                try:
-                                    try:
-                                        zip.write(src, dst, compress_type, compresslevel)
-                                    except TypeError:
-                                        # compresslevel is supported since Python 3.7
-                                        zip.write(src, dst, compress_type)
-                                except OSError as why:
-                                    errors.append((src, targetpaths[:-1] + [dst], str(why)))
-
-                    if errors:
-                        try:
-                            raise shutil.Error(errors)
-                        except shutil.Error:
-                            traceback.print_exc()
-                        abort(500, 'Fail to copy some files.')
-
-                elif os.path.isfile(sourcepaths[0]):
-                    with open_archive_path(targetpaths, 'w') as zip:
-                        zip.write(sourcepaths[0], targetpaths[-1])
+                error = False
+                with open_archive_path(targetpaths, 'w') as zip:
+                    try:
+                        util.zip_compress(zip, sourcepaths[0], targetpaths[-1])
+                    except shutil.Error:
+                        traceback.print_exc()
+                        error = True
+                if error:
+                    abort(500, 'Fail to copy some files.')
 
         elif len(sourcepaths) > 1:
             if len(targetpaths) == 1:
