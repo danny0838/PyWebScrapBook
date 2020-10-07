@@ -741,7 +741,14 @@ def zip_compress(zip, filename, subpath):
             if errors:
                 raise shutil.Error(errors)
         else:
-            zh.write(filename, subpath)
+            compressible = is_compressible(mimetypes.guess_type(subpath)[0])
+            compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
+            compresslevel = 9 if compressible else None
+            try:
+                zh.write(filename, subpath, compress_type, compresslevel)
+            except TypeError:
+                # compresslevel is supported since Python 3.7
+                zh.write(filename, subpath, compress_type)
 
 
 def zip_extract(zip, dst, subpath=''):
