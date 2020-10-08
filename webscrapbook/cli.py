@@ -419,6 +419,8 @@ inconsistency.""")
     parser_cache.add_argument('--rss-root', metavar='ROOT_URL', action='store',
         help="""generate an RSS feed file for the book, using the specified root URL
         (usually corresponds to webscrapbook app root)""")
+    parser_cache.add_argument('--rss-item-count', default=50, type=int, action='store',
+        help="""number of items the RSS feed should include (default: %(default)s)""")
     parser_cache.add_argument('--locale', action='store',
         help="""locale for the generated pages (default: system locale)""")
     parser_cache.add_argument('--backup', dest='no_backup', default=True, action='store_false',

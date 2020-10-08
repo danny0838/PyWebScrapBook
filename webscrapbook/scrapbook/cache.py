@@ -276,9 +276,10 @@ class RssFeedGenerator():
     """
     NS = 'http://www.w3.org/2005/Atom'
 
-    def __init__(self, book, *, rss_root=None):
+    def __init__(self, book, *, rss_root=None, item_count=50):
         self.book = book
         self.rss_root = rss_root.rstrip('/') + '/'
+        self.item_count = item_count
 
         book.load_meta_files()
         book.load_toc_files()
@@ -320,7 +321,7 @@ class RssFeedGenerator():
                 'item': meta,
                 })
         entries = sorted(entries, key=lambda d: d['modify'])
-        entries = list(reversed(entries))[:50]
+        entries = list(reversed(entries))[:self.item_count]
 
         # generate tree
         root = etree.XML(f'<feed xmlns="{self.NS}"></feed>'.encode('UTF-8'))
@@ -905,8 +906,8 @@ class FulltextCacheGenerator():
 def generate(root, book_ids=None, item_ids=None, *,
         config=None, no_lock=False, no_backup=False,
         fulltext=True, inclusive_frames=True, recreate=False,
-        static_site=False, static_index=False,
-        locale=None, rss_root=None):
+        static_site=False, static_index=False, locale=None,
+        rss_root=None, rss_item_count=50):
     start = time.time()
 
     host = Host(root, config)
@@ -962,6 +963,7 @@ def generate(root, book_ids=None, item_ids=None, *,
                         generator = RssFeedGenerator(
                             book,
                             rss_root=rss_root,
+                            item_count=rss_item_count,
                             )
                         yield from generator.run()
                 finally:

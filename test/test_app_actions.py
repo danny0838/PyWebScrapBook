@@ -5069,6 +5069,7 @@ class TestCache(TestActions):
                     'static_site': 1,
                     'static_index': 1,
                     'rss_root': 'http://example.com',
+                    'rss_item_count': 25,
                     'locale': 'zh',
                     })
             except SystemExit:
@@ -5087,6 +5088,7 @@ class TestCache(TestActions):
             'static_site': True,
             'static_index': True,
             'rss_root': 'http://example.com',
+            'rss_item_count': 25,
             'locale': 'zh',
             })
 
@@ -5107,6 +5109,7 @@ class TestCache(TestActions):
                     'static_site': 1,
                     'static_index': 1,
                     'rss_root': 'http://example.com',
+                    'rss_item_count': 25,
                     'locale': 'zh',
                     }, buffered=True)
             except SystemExit:
@@ -5125,6 +5128,7 @@ class TestCache(TestActions):
             'static_site': True,
             'static_index': True,
             'rss_root': 'http://example.com',
+            'rss_item_count': 25,
             'locale': 'zh',
             })
 

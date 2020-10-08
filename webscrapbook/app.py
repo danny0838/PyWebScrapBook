@@ -1603,6 +1603,7 @@ def action_cache():
         'static_site': request.values.get('static_site', default=False, type=bool),
         'static_index': request.values.get('static_index', default=False, type=bool),
         'rss_root': request.values.get('rss_root'),
+        'rss_item_count': request.values.get('rss_item_count', default=50, type=int),
         'locale': request.values.get('locale'),
         }
 

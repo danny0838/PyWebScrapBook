@@ -3877,6 +3877,7 @@ scrapbook.meta({
             tree.find(f'/{NS}updated').text,
             '2020-01-01T00:05:00Z',
             )
+        self.assertEqual(len(tree.findall(f'/{NS}entry')), 5)
 
         # entry 1
         self.assertEqual(
@@ -4027,6 +4028,60 @@ scrapbook.meta({
             tree.find(f'/{NS}entry[5]/{NS}author/{NS}name').text,
             'Anonymous',
             )
+
+    def test_param_item_count(self):
+        """Check item_count param."""
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000100000": {
+    "index": "20200101000100000/index.html",
+    "title": "Title 中文 1",
+    "type": "",
+    "create": "20200101000001000",
+    "modify": "20200101000100000"
+  },
+  "20200101000200000": {
+    "index": "20200101000200000.htz",
+    "title": "Title 中文 2",
+    "type": "",
+    "create": "20200101000002000",
+    "modify": "20200101000200000"
+  },
+  "20200101000300000": {
+    "index": "20200101000300000.maff",
+    "title": "Title 中文 3",
+    "type": "",
+    "create": "20200101000003000",
+    "modify": "20200101000300000"
+  },
+  "20200101000400000": {
+    "index": "20200101000400000.html",
+    "title": "Title 中文 4",
+    "type": "",
+    "create": "20200101000004000",
+    "modify": "20200101000400000"
+  },
+  "20200101000500000": {
+    "title": "Title 中文 5",
+    "type": "bookmark",
+    "create": "20200101000005000",
+    "modify": "20200101000500000",
+    "source": "http://example.com"
+  }
+})""")
+        book = Host(self.test_root).books['']
+
+        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb', item_count=3)
+        for info in generator.run():
+            pass
+
+        with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
+            tree = etree.parse(fh)
+
+        NS = '{http://www.w3.org/2005/Atom}'
+
+        self.assertEqual(len(tree.findall(f'/{NS}entry')), 3)
 
     def test_empty(self):
         """Include only items with index or bookmark with source.
