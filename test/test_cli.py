@@ -325,6 +325,19 @@ class TestConfig(unittest.TestCase):
 
         mock_dump.assert_called_once_with(sys.stdout)
 
+class TestEncrypt(unittest.TestCase):
+    @mock.patch('sys.stdout', new_callable=io.StringIO)
+    @mock.patch('webscrapbook.util.encrypt', return_value='dummy_hash')
+    def test_call(self, mock_encrypt, mock_stdout):
+        cli.cmd_encrypt({
+            'password': '1234',
+            'salt': 'mysalt',
+            'method': 'sha256',
+            })
+
+        mock_encrypt.assert_called_once_with('1234', salt='mysalt', method='sha256')
+        self.assertEqual(mock_stdout.getvalue(), 'dummy_hash\n')
+
 class TestCache(unittest.TestCase):
     def tearDown(self):
         try:
@@ -360,19 +373,6 @@ class TestCache(unittest.TestCase):
             locale='zh_TW',
             no_backup=True,
             )
-
-class TestEncrypt(unittest.TestCase):
-    @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.encrypt', return_value='dummy_hash')
-    def test_call(self, mock_encrypt, mock_stdout):
-        cli.cmd_encrypt({
-            'password': '1234',
-            'salt': 'mysalt',
-            'method': 'sha256',
-            })
-
-        mock_encrypt.assert_called_once_with('1234', salt='mysalt', method='sha256')
-        self.assertEqual(mock_stdout.getvalue(), 'dummy_hash\n')
 
 class TestHelp(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
