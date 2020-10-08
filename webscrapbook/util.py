@@ -17,7 +17,7 @@ import mimetypes
 import binascii
 import codecs
 from base64 import b64decode
-from urllib.parse import unquote_to_bytes
+from urllib.parse import quote, unquote_to_bytes
 from urllib.request import pathname2url
 from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
@@ -157,6 +157,39 @@ def id_to_datetime_legacy(id):
             int(m.group(6)),
             )
     return None
+
+
+def validate_filename(filename, force_ascii=False):
+    """Transliterates the given string to be a safe filename
+
+    See also: scrapbook.validateFilename of WebScrapBook.
+    """
+    fn = filename
+
+    # control chars are bad for filename
+    fn = re.sub(r'[\x00-\x1F\x7F]+', '', fn)
+
+    # leading/trailing spaces and dots are not allowed on Windows
+    fn = re.sub(r'^\.', '_.', fn)
+    fn = re.sub(r'^ +', '', fn)
+    fn = re.sub(r'[. ]+$', '', fn)
+
+    # bad chars on most OS
+    fn = re.sub(r'[:"?*\\/|]', '_', fn)
+
+    # bad chars on Windows, replace with adequate direction
+    fn = fn.replace('<', '(').replace('>', ')')
+
+    # "~" is not allowed by browser.downloads
+    fn = fn.replace('~', '-')
+
+    if force_ascii:
+        fn = quote(fn, safe="""!_#$&'()*+,-./:;<=>?@[\\]^_`{|}~""")
+
+    # prevent empty filename
+    fn = fn or "_"
+
+    return fn
 
 
 #########################################################################

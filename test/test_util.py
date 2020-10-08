@@ -111,6 +111,32 @@ class TestUtils(unittest.TestCase):
             datetime(2020, 1, 2, 3, 4, 5))
         self.assertIsNone(util.id_to_datetime_legacy('20200102'), None)
 
+    def test_validate_filename(self):
+        self.assertEqual(
+            util.validate_filename(''),
+            '_')
+        self.assertEqual(
+            util.validate_filename('.wsb'),
+            '_.wsb')
+        self.assertEqual(
+            util.validate_filename('foo.'),
+            'foo')
+        self.assertEqual(
+            util.validate_filename('  wsb  '),
+            'wsb')
+        self.assertEqual(
+            util.validate_filename(''.join(chr(i) for i in range(0x80))),
+            "!_#$%&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
+        self.assertEqual(
+            util.validate_filename('\u0080中文𠀀'),
+            '\u0080中文𠀀')
+        self.assertEqual(
+            util.validate_filename(''.join(chr(i) for i in range(0x80)), force_ascii=True),
+            "!_#$%25&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
+        self.assertEqual(
+            util.validate_filename('\u0080中文𠀀', force_ascii=True),
+            '%C2%80%E4%B8%AD%E6%96%87%F0%A0%80%80')
+
     def test_crop(self):
         self.assertEqual(util.crop('dummy text', 10), 'dummy text')
         self.assertEqual(util.crop('dummy text', 9), 'dummy ...')
