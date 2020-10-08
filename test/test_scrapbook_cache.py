@@ -3857,21 +3857,18 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb',
             )
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['rel'],
-            'self',
-            )
+            dict(tree.find(f'/{NS}link[1]').attrib), {
+            'rel': 'self',
+            'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/feed.atom',
-            )
+            dict(tree.find(f'/{NS}link[2]').attrib), {
+            'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[2]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/map.html',
-            )
-        self.assertEqual(
-            tree.find(f'/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
@@ -3887,13 +3884,13 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb:20200101000500000',
             )
         self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}link').attrib['href'],
-            'http://example.com',
-            )
+            dict(tree.find(f'/{NS}entry[1]/{NS}link').attrib), {
+            'href': 'http://example.com',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}entry[1]/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}title').text,
             'Title 中文 5',
@@ -3917,13 +3914,13 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb:20200101000400000',
             )
         self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}link').attrib['href'],
-            'http://example.com/wsb/20200101000400000.html',
-            )
+            dict(tree.find(f'/{NS}entry[2]/{NS}link').attrib), {
+            'href': 'http://example.com/wsb/20200101000400000.html',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}entry[2]/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}title').text,
             'Title 中文 4',
@@ -3947,13 +3944,13 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb:20200101000300000',
             )
         self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}link').attrib['href'],
-            'http://example.com/wsb/20200101000300000.maff',
-            )
+            dict(tree.find(f'/{NS}entry[3]/{NS}link').attrib), {
+            'href': 'http://example.com/wsb/20200101000300000.maff',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}entry[3]/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}entry[3]/{NS}title').text,
             'Title 中文 3',
@@ -3977,13 +3974,13 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb:20200101000200000',
             )
         self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}link').attrib['href'],
-            'http://example.com/wsb/20200101000200000.htz',
-            )
+            dict(tree.find(f'/{NS}entry[4]/{NS}link').attrib), {
+            'href': 'http://example.com/wsb/20200101000200000.htz',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}entry[4]/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}entry[4]/{NS}title').text,
             'Title 中文 2',
@@ -4007,13 +4004,13 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb:20200101000100000',
             )
         self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}link').attrib['href'],
-            'http://example.com/wsb/20200101000100000/index.html',
-            )
+            dict(tree.find(f'/{NS}entry[5]/{NS}link').attrib), {
+            'href': 'http://example.com/wsb/20200101000100000/index.html',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}entry[5]/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}entry[5]/{NS}title').text,
             'Title 中文 1',
@@ -4084,21 +4081,18 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb',
             )
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['rel'],
-            'self',
-            )
+            dict(tree.find(f'/{NS}link[1]').attrib), {
+            'rel': 'self',
+            'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/feed.atom',
-            )
+            dict(tree.find(f'/{NS}link[2]').attrib), {
+            'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[2]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/map.html',
-            )
-        self.assertEqual(
-            tree.find(f'/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
@@ -4143,21 +4137,18 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb',
             )
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['rel'],
-            'self',
-            )
+            dict(tree.find(f'/{NS}link[1]').attrib), {
+            'rel': 'self',
+            'href': 'http://example.com/wsb/.wsb/tree/feed.atom'
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/feed.atom',
-            )
+            dict(tree.find(f'/{NS}link[2]').attrib), {
+            'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[2]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/map.html',
-            )
-        self.assertEqual(
-            tree.find(f'/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
@@ -4211,21 +4202,18 @@ scrapbook.meta({
             'urn:webscrapbook:example.com/wsb',
             )
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['rel'],
-            'self',
-            )
+            dict(tree.find(f'/{NS}link[1]').attrib), {
+            'rel': 'self',
+            'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[1]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/feed.atom',
-            )
+            dict(tree.find(f'/{NS}link[2]').attrib), {
+            'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            })
         self.assertEqual(
-            tree.find(f'/{NS}link[2]').attrib['href'],
-            'http://example.com/wsb/.wsb/tree/map.html',
-            )
-        self.assertEqual(
-            tree.find(f'/{NS}title').attrib['type'],
-            'text',
-            )
+            dict(tree.find(f'/{NS}title').attrib), {
+            'type': 'text',
+            })
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
