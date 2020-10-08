@@ -12,7 +12,6 @@ from . import __package_name__, __version__
 from . import *
 from . import server
 from . import util
-from .scrapbook import cache as wsb_cache
 from ._compat.time import time_ns
 
 
@@ -154,7 +153,8 @@ def cmd_cache(args):
     kwargs = args.copy()
     debug = kwargs.pop('debug')
 
-    for info in wsb_cache.generate(**kwargs):
+    from .scrapbook import cache
+    for info in cache.generate(**kwargs):
         if info.type != 'debug' or debug:
             log(f'{info.type.upper()}: {info.msg}')
 

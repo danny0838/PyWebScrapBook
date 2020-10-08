@@ -347,7 +347,7 @@ class TestCache(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    @mock.patch('webscrapbook.cli.wsb_cache.generate')
+    @mock.patch('webscrapbook.scrapbook.cache.generate')
     def test_call(self, mock_func):
         cli.cmd_cache({
             'book_ids': ['book1', 'book2'],
