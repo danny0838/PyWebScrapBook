@@ -16,7 +16,7 @@ PyWebScrapBook is a command line toolkit and backend server for
 
 Install Python >= 3.6 from the [official site](https://www.python.org).
 
-Add python to PATH so that it can be run from the command line interface (CLI).
+Add python to `PATH` environment variable so that it can be run from the command line interface (CLI).
 
 ### Install this package
 
@@ -25,6 +25,29 @@ Run below command from CLI to install (or upgrade to) the latest version:
     python -m pip install -U webscrapbook
 
 After installation, `wsb`, `webscrapbook`, and `wsbview` will be available from the CLI.
+
+### Usage overview
+
+    usage: wsb [-h] [--version] [--root ROOT] COMMAND ...
+
+    positional arguments:
+      COMMAND      the sub-command to run. Get usage help with e.g. wsb config -h
+        serve (s)  serve the root directory
+        config (c)
+                   show, generate, or edit the config
+        encrypt (e)
+                   generate an encrypted password
+        cache (a)  update fulltext cache and/or static site pages
+        check (k)  check and fix scrapbook data
+        convert (v)
+                   convert scrapbook data between different formats
+        help       show detailed information about certain topics
+        view       view archive file in the browser
+
+    optional arguments:
+      -h, --help   show this help message and exit
+      --version    show version information and exit
+      --root ROOT  root directory to manipulate (default: current working directory)
 
 ### Host a scrapbook
 
@@ -42,13 +65,15 @@ Generate config files for the directory:
 
 > This step can be skipped if you want PyWebScrapBook default data structure instead. See [doc wiki](https://github.com/danny0838/webscrapbook/wiki/Backend) for more details.
 
-Run `.wsb/serve.py` to start the server, or run below command from CLI:
+Run the generated `.wsb/serve.py` to start the server, or run below command from CLI:
 
     wsb serve
 
 ### Open archive file directly
 
-Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the command path. Set default application of MAFF/HTZ file to the command at that path to open them directly in the browser with double-click.
+The `wsbview` executable supports opening an archive page (HTZ or MAFF) to view in the browser.
+
+Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the path of `wsbview` executable, and set default application of MAFF/HTZ file to that executable to open them directly in the browser with double-click.
 
 ### Further documentation
 
