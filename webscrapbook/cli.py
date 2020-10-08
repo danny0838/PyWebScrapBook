@@ -505,9 +505,10 @@ inconsistency.""")
     args = vars(parser.parse_args())
     try:
         func = args.pop('func')
-        func(args)
     except KeyError:
         parser.parse_args(['-h'])
+    else:
+        func(args)
 
 
 if __name__ == '__main__':
