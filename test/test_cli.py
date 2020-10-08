@@ -409,6 +409,28 @@ class TestCheck(unittest.TestCase):
             no_backup=True,
             )
 
+class TestExport(unittest.TestCase):
+    @mock.patch('webscrapbook.scrapbook.exporter.run', autospec=True)
+    def test_call(self, mock_func):
+        cli.cmd_export({
+            'root': test_dir,
+            'output': os.path.join(test_dir, 'export'),
+            'book_id': 'id1',
+            'item_ids': ['item1', 'item2'],
+            'recursive': True,
+            'singleton': True,
+            'debug': True,
+            })
+
+        mock_func.assert_called_once_with(
+            root=test_dir,
+            output=os.path.join(test_dir, 'export'),
+            book_id='id1',
+            item_ids=['item1', 'item2'],
+            recursive=True,
+            singleton=True,
+            )
+
 class TestConvert(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.convert.sb2wsb.run', autospec=True)
     def test_sb2wsb(self, mock_func):

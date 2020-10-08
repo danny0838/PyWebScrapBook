@@ -690,6 +690,18 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(util.mime_is_markdown('image/svg+xml'))
         self.assertFalse(util.mime_is_markdown('application/octet-stream'))
 
+    def test_mime_is_wsba(self):
+        self.assertFalse(util.mime_is_wsba('text/html'))
+        self.assertFalse(util.mime_is_wsba('application/xhtml+xml'))
+        self.assertFalse(util.mime_is_wsba('application/html+zip'))
+        self.assertFalse(util.mime_is_wsba('application/x-maff'))
+        self.assertFalse(util.mime_is_wsba('text/plain'))
+        self.assertFalse(util.mime_is_wsba('text/markdown'))
+        self.assertTrue(util.mime_is_wsba('application/wsba+zip'))
+        self.assertFalse(util.mime_is_wsba('text/xml'))
+        self.assertFalse(util.mime_is_wsba('image/svg+xml'))
+        self.assertFalse(util.mime_is_wsba('application/octet-stream'))
+
     def test_is_html(self):
         self.assertTrue(util.is_html('index.html'))
         self.assertTrue(util.is_html('index.xhtml'))
@@ -744,6 +756,18 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(util.is_markdown('20200101000000000/test.xml'))
         self.assertFalse(util.is_markdown('20200101000000000/test.svg'))
         self.assertFalse(util.is_markdown('20200101000000000/whatever'))
+
+    def test_is_wsba(self):
+        self.assertFalse(util.is_wsba('index.html'))
+        self.assertFalse(util.is_wsba('index.xhtml'))
+        self.assertFalse(util.is_wsba('20200101000000000.htz'))
+        self.assertFalse(util.is_wsba('20200101000000000.maff'))
+        self.assertFalse(util.is_wsba('20200101000000000/index.md'))
+        self.assertTrue(util.is_wsba('20200101000000000-example.wsba'))
+        self.assertFalse(util.is_wsba('20200101000000000/test.txt'))
+        self.assertFalse(util.is_wsba('20200101000000000/test.xml'))
+        self.assertFalse(util.is_wsba('20200101000000000/test.svg'))
+        self.assertFalse(util.is_wsba('20200101000000000/whatever'))
 
     def test_zip_tuple_timestamp(self):
         self.assertEqual(

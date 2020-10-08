@@ -556,6 +556,10 @@ def mime_is_markdown(mime):
     return mime in {'text/markdown'}
 
 
+def mime_is_wsba(mime):
+    return mime in {'application/wsba+zip'}
+
+
 def is_html(filename):
     mime, _ = mimetypes.guess_type(filename)
     return mime_is_html(mime)
@@ -579,6 +583,11 @@ def is_maff(filename):
 def is_markdown(filename):
     mime, _ = mimetypes.guess_type(filename)
     return mime_is_markdown(mime)
+
+
+def is_wsba(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_wsba(mime)
 
 
 #########################################################################

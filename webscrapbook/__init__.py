@@ -33,6 +33,7 @@ mimetypes.add_type("text/markdown", ".mdown")
 mimetypes.add_type("text/markdown", ".markdown")
 mimetypes.add_type("application/html+zip", ".htz")
 mimetypes.add_type("application/x-maff", ".maff")
+mimetypes.add_type("application/wsba+zip", ".wsba")
 
 # seems to be set to x-zip-compressed on Windows
 mimetypes.add_type("application/zip", ".zip")

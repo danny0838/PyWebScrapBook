@@ -169,6 +169,18 @@ def cmd_cache(args):
             log(f'{info.type.upper()}: {info.msg}')
 
 
+def cmd_export(args):
+    """Export data items into archive files (*.wsba).
+    """
+    kwargs = args.copy()
+    debug = kwargs.pop('debug')
+
+    from .scrapbook import exporter
+    for info in exporter.run(**kwargs):
+        if info.type != 'debug' or debug:
+            log(f'{info.type.upper()}: {info.msg}')
+
+
 def cmd_check(args):
     """Integrity check and fix for scrapbook data.
 
@@ -491,6 +503,26 @@ inconsistency.""")
     parser_check.add_argument('--no-backup', default=False, action='store_true',
         help="""do not backup changed files""")
     parser_check.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
+    # subcommand: export
+    parser_export = subparsers.add_parser('export', aliases=['x'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_export),
+        help="""export data items into archive files (*.wsba)""")
+    parser_export.set_defaults(func=cmd_export)
+    parser_export.add_argument('output', action='store',
+        help="""the output directory""")
+    parser_export.add_argument('--book', dest='book_id', metavar='ID', default='', action='store',
+        help="""the book ID to export. (default: "")""")
+    parser_export.add_argument('--item', dest='item_ids',
+        metavar='ID', action='store', default=None, nargs='+',
+        help="""the items ID(s) to export (default: all)""")
+    parser_export.add_argument('-r', '--recursive', default=False, action='store_true',
+        help="""recursively include descendant items of the provided item ID(s)""")
+    parser_export.add_argument('-s', '--singleton', default=False, action='store_true',
+        help="""export only the first occurrence for an item referenced many times""")
+    parser_export.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: convert
