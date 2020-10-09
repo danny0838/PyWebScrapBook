@@ -421,8 +421,10 @@ inconsistency.""")
         (usually corresponds to webscrapbook app root)""")
     parser_cache.add_argument('--locale', action='store',
         help="""locale for the generated pages (default: system locale)""")
-    parser_cache.add_argument('--no-backup', default=False, action='store_true',
-        help="""do not backup changed files""")
+    parser_cache.add_argument('--backup', dest='no_backup', default=True, action='store_false',
+        help="""backup changed files""")
+    parser_cache.add_argument('--no-backup', action='store_true',
+        help="""do not backup changed files (default)""")
     parser_cache.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
