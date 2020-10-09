@@ -431,6 +431,34 @@ class TestExport(unittest.TestCase):
             singleton=True,
             )
 
+class TestImport(unittest.TestCase):
+    @mock.patch('webscrapbook.scrapbook.importer.run', autospec=True)
+    def test_call(self, mock_func):
+        cli.cmd_import({
+            'root': test_dir,
+            'files': [os.path.join(test_dir, 'import')],
+            'book': 'id1',
+            'target_id': '20200101000000000',
+            'target_index': 1,
+            'target_filename': '%UUID%',
+            'rebuild_folders': True,
+            'resolve_id_used': 'new',
+            'prune': True,
+            'debug': True,
+            })
+
+        mock_func.assert_called_once_with(
+            root=test_dir,
+            files=[os.path.join(test_dir, 'import')],
+            book='id1',
+            target_id='20200101000000000',
+            target_index=1,
+            target_filename='%UUID%',
+            rebuild_folders=True,
+            resolve_id_used='new',
+            prune=True,
+            )
+
 class TestConvert(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.convert.sb2wsb.run', autospec=True)
     def test_sb2wsb(self, mock_func):

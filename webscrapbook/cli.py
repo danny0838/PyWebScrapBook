@@ -181,6 +181,21 @@ def cmd_export(args):
             log(f'{info.type.upper()}: {info.msg}')
 
 
+def cmd_import(args):
+    """Import data items from archive files (*.wsba).
+
+    To faithfully recover original tree structure, import items using the same
+    order as how they have been exported.
+    """
+    kwargs = args.copy()
+    debug = kwargs.pop('debug')
+
+    from .scrapbook import importer
+    for info in importer.run(**kwargs):
+        if info.type != 'debug' or debug:
+            log(f'{info.type.upper()}: {info.msg}')
+
+
 def cmd_check(args):
     """Integrity check and fix for scrapbook data.
 
@@ -523,6 +538,71 @@ inconsistency.""")
     parser_export.add_argument('-s', '--singleton', default=False, action='store_true',
         help="""export only the first occurrence for an item referenced many times""")
     parser_export.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
+    # subcommand: import
+    parser_import = subparsers.add_parser('import', aliases=['i'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_import),
+        help="""import data items from archive files (*.wsba)""",
+        epilog="""\
+Available MODEs for --resolve-id-used:
+  "skip": skip the import
+  "replace": replace current metadata and data file(s)
+  "new": import as a new item
+
+Available placeholders for --filename PATTERN:
+  "%%": a literal "%"
+  "%ID%": item ID
+  "%EID%": item export ID
+  "%UUID%": a random UUID
+  "%TITLE%": item title
+  "%SOURCE%": item source URL
+  "%CREATE%": item create time (allow SUBPATTERN)
+  "%MODIFY%": item modify time (allow SUBPATTERN)
+  "%EXPORT%": item export time (allow SUBPATTERN)
+
+Datetime related ones can be written as %PATTERN:SUBPATTERN% for further
+formatting with SUBPATTERN being one of these placeholders:
+  "DATE": date (YYYY-MM-DD)
+  "TIME": time (HH-MM-SS)
+  "YEAR": year (YYYY)
+  "MONTH": year (MM, 01-12)
+  "DAY": day of month (DD, 01-31)
+  "HOURS": hours (HH, 01-24)
+  "MINUTES": minutes (MM, 00-59)
+  "SECONDS": seconds (SS, 00-59)
+
+All SUBPATTERNs can be prepended with "UTC_" for UTC time instead of local
+time. For example, "%CREATE:UTC_DATE%".
+""")
+    parser_import.set_defaults(func=cmd_import)
+    parser_import.add_argument('files', metavar='file', action='store', nargs='+',
+        help="""the file(s) to import in order. If a directory is provided, all
+child files are imported in unicode filename order.""")
+    parser_import.add_argument('--book', dest='book_id', metavar='ID', default='', action='store',
+        help="""the book ID to import into. (default: "")""")
+    parser_import.add_argument('--target', dest='target_id', metavar='ID',
+        default='root', action='store',
+        help="""the target item ID to insert the imported items under (default: "%(default)s")""")
+    parser_import.add_argument('--target-index', metavar='INDEX',
+        type=int, action='store',
+        help="""the index number (starting from 0) the imported items will be
+inserted at (default: last)""")
+    parser_import.add_argument('--rebuild-folders', default=False, action='store_true',
+        help="""insert imported items under the original parent, and
+auto-generate parent folders if not found. (ignores --target and
+--target-index)""")
+    parser_import.add_argument('--resolve-id-used', metavar='MODE',
+        default='skip', action='store',
+        choices={'skip', 'replace', 'new'},
+        help="""what to do if an importing item ID already exists (default: "%(default)s")""")
+    parser_import.add_argument('--filename', dest='target_filename', metavar='PATTERN',
+        default='%ID%', action='store',
+        help="""formatter of the imported filename (default: "%(default)s")""")
+    parser_import.add_argument('--prune', default=False, action='store_true',
+        help="""delete the archive file after successfully imported""")
+    parser_import.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: convert
