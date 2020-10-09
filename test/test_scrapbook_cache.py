@@ -3602,6 +3602,34 @@ scrapbook.toc({
         self.assertEqual(div.find('./a/img').attrib['src'], 'icon/file.png')
 
     def test_static_index_icon09(self):
+        """Default icon for image"""
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "image"
+  }
+})""")
+        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "20200101000000000"
+  ]
+})""")
+        book = Host(self.test_root).books['']
+
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        for info in generator.run():
+            pass
+
+        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
+            tree = etree.parse(fh, etree.HTMLParser())
+            div = tree.find('/body/div/ul/li/div')
+
+        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/file.png')
+
+    def test_static_index_icon10(self):
         """Default icon for note"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3629,7 +3657,7 @@ scrapbook.toc({
 
         self.assertEqual(div.find('./a/img').attrib['src'], 'icon/note.png')
 
-    def test_static_index_icon10(self):
+    def test_static_index_icon11(self):
         """Default icon for postit"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\

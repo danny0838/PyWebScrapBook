@@ -72,6 +72,7 @@ class StaticSiteGenerator():
         '': 'icon/item.png',
         'folder': 'icon/fclose.png',
         'file': 'icon/file.png',
+        'image': 'icon/file.png',
         'note': 'icon/note.png',
         'postit': 'icon/postit.png',
         }
