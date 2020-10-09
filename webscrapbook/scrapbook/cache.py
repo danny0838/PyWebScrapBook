@@ -199,7 +199,7 @@ class StaticSiteGenerator():
             except KeyError:
                 return
 
-            toc = [id for id in toc if id in book.meta and id not in item_set]
+            toc = [id for id in toc if id in book.meta]
             if not toc:
                 return
 
@@ -215,8 +215,6 @@ class StaticSiteGenerator():
                 meta_icon = meta.get('icon', '')
                 meta_comment = meta.get('comment', '')
                 meta_marked = meta.get('marked', '')
-
-                item_set.add(id)
 
                 if meta_type != 'separator':
                     title = meta_title or id
@@ -245,18 +243,23 @@ class StaticSiteGenerator():
                     icon = ''
 
                 yield StaticIndexItem('start', level, id, meta_type, meta_marked, title, href, icon, meta_source, meta_comment)
-                level += 1
-                yield from add_child_items(id)
-                level -= 1
+
+                # do not output children of a circular item
+                if id not in id_chain:
+                    level += 1
+                    id_chain.add(id)
+                    yield from add_child_items(id)
+                    id_chain.remove(id)
+                    level -= 1
+
                 yield StaticIndexItem('end', level, id, meta_type, meta_marked, title, href, icon, meta_source, meta_comment)
 
             level -= 1
             yield StaticIndexItem('end-container', level)
 
         book = self.book
-
-        item_set = {'root', 'hidden', 'recycle'}
         level = 0
+        id_chain = {'root'}
         yield from add_child_items('root')
 
 
