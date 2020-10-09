@@ -69,6 +69,7 @@ class StaticSiteGenerator():
         'icon/postit.png': 'postit.png',  # ScrapBook X note
         }
     ITEM_TYPE_ICON = {
+        '': 'icon/item.png',
         'folder': 'icon/fclose.png',
         'file': 'icon/file.png',
         'note': 'icon/note.png',
@@ -105,6 +106,7 @@ class StaticSiteGenerator():
             title=self.book.name, i18n = self.i18n,
             rss=self.rss,
             data_dir = util.get_relative_url(self.book.data_dir, self.book.tree_dir),
+            default_icons = self.ITEM_TYPE_ICON,
             meta_cnt=max(sum(1 for _ in self.book.iter_meta_files()), 1),
             toc_cnt=max(sum(1 for _ in self.book.iter_toc_files()), 1),
             )
@@ -229,16 +231,12 @@ class StaticSiteGenerator():
                         href = ''
 
                     # meta_icon is a URL
-                    if meta_icon:
-                        if urlsplit(meta_icon).scheme:
-                            # absolute URL
-                            icon = meta_icon
-                        else:
-                            # relative URL: tree_dir..index..icon
-                            ref = util.get_relative_url(os.path.join(book.data_dir, os.path.dirname(meta_index)), book.tree_dir)
-                            icon = ref + meta_icon
+                    if meta_icon and not urlsplit(meta_icon).scheme:
+                        # relative URL: tree_dir..index..icon
+                        ref = util.get_relative_url(os.path.join(book.data_dir, os.path.dirname(meta_index)), book.tree_dir)
+                        icon = ref + meta_icon
                     else:
-                        icon = self.ITEM_TYPE_ICON.get(meta_type, 'icon/item.png')
+                        icon = meta_icon
 
                 else:
                     title = meta_title

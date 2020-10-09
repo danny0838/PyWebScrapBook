@@ -136,7 +136,8 @@ a.scrapbook-external > img {
 var scrapbook = {
   conf: {
     dataDir: {{ data_dir | tojson }},
-    viewSourceTitle: {{ i18n('cache_index_source_link_title') | tojson }}
+    viewSourceTitle: {{ i18n('cache_index_source_link_title') | tojson }},
+    defaultIcons: {{ default_icons | tojson }}
   },
 
   data: {
@@ -216,12 +217,7 @@ var scrapbook = {
             meta.icon : 
             (scrapbook.conf.dataDir + scrapbook.escapeFilename(meta.index || "")).replace(/[/][^/]+$/, '/') + meta.icon;
       } else {
-        icon.src = {
-          'folder': 'icon/fclose.png',
-          'file': 'icon/file.png',
-          'note': 'icon/note.png',
-          'postit': 'icon/postit.png',
-        }[meta.type] || 'icon/item.png';
+        icon.src = scrapbook.conf.defaultIcons[meta.type] || scrapbook.conf.defaultIcons[''];
       }
       icon.alt = "";
 
