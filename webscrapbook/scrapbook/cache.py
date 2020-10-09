@@ -65,16 +65,16 @@ class StaticSiteGenerator():
         'icon/fclose.png': 'fclose.png',
         'icon/fopen.png': 'fopen.png',
         'icon/file.png': 'file.png',
-        'icon/note.png': 'note.png',  # ScrapBook X notex
-        'icon/postit.png': 'postit.png',  # ScrapBook X note
+        'icon/note.png': 'note.png',
+        'icon/postit.png': 'postit.png',
         }
     ITEM_TYPE_ICON = {
         '': 'icon/item.png',
         'folder': 'icon/fclose.png',
         'file': 'icon/file.png',
         'image': 'icon/file.png',
-        'note': 'icon/note.png',
-        'postit': 'icon/postit.png',
+        'note': 'icon/note.png',  # ScrapBook X notex
+        'postit': 'icon/postit.png',  # ScrapBook X note
         }
 
     def __init__(self, book, *, locale=None,
