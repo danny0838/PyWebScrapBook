@@ -348,6 +348,12 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
         except NotADirectoryError:
             shutil.copy2(file, dst)
 
+    def get_lock(self, name, *args, **kwargs):
+        return self.host.get_lock(f'book-{self.id}-{name}', *args, **kwargs)
+
+    def get_tree_lock(self, *args, **kwargs):
+        return self.get_lock('tree', *args, **kwargs)
+
     def get_index_paths(self, index):
         if util.is_maff(index):
             pages = util.get_maff_pages(os.path.join(self.data_dir, index))
@@ -404,9 +410,3 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
             return etree.parse(fh, etree.HTMLParser(encoding=charset))
         except etree.Error:
             return None
-
-    def get_lock(self, name, *args, **kwargs):
-        return self.host.get_lock(f'book-{self.id}-{name}', *args, **kwargs)
-
-    def get_tree_lock(self, *args, **kwargs):
-        return self.get_lock('tree', *args, **kwargs)

@@ -942,6 +942,43 @@ scrapbook.fulltext({
 
         self.assertListEqual(os.listdir(self.test_wsbdir), [])
 
+    @mock.patch('webscrapbook.scrapbook.host.FileLock')
+    def test_get_lock01(self, mock_filelock):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.get_lock('test')
+        mock_filelock.assert_called_once_with(host, 'book--test')
+
+    @mock.patch('webscrapbook.scrapbook.host.FileLock')
+    def test_get_lock02(self, mock_filelock):
+        """With parameters"""
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.get_lock('test',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+        mock_filelock.assert_called_once_with(host, 'book--test',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_lock')
+    def test_get_tree_lock01(self, mock_get_lock):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.get_tree_lock()
+        mock_get_lock.assert_called_once_with('tree')
+
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_lock')
+    def test_get_tree_lock02(self, mock_get_lock):
+        """With parameters"""
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.get_tree_lock(timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+        mock_get_lock.assert_called_once_with('tree',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+
     def test_get_index_paths01(self):
         self.create_general_config()
         book = Book(Host(self.test_root))
@@ -982,43 +1019,6 @@ scrapbook.fulltext({
         book = Book(Host(self.test_root))
 
         self.assertEqual(book.get_index_paths('20200101000000000.maff'), [])
-
-    @mock.patch('webscrapbook.scrapbook.host.FileLock')
-    def test_get_lock01(self, mock_filelock):
-        self.create_general_config()
-        host = Host(self.test_root)
-        book = Book(host)
-        book.get_lock('test')
-        mock_filelock.assert_called_once_with(host, 'book--test')
-
-    @mock.patch('webscrapbook.scrapbook.host.FileLock')
-    def test_get_lock02(self, mock_filelock):
-        """With parameters"""
-        self.create_general_config()
-        host = Host(self.test_root)
-        book = Book(host)
-        book.get_lock('test',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
-        mock_filelock.assert_called_once_with(host, 'book--test',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
-
-    @mock.patch('webscrapbook.scrapbook.book.Book.get_lock')
-    def test_get_tree_lock01(self, mock_get_lock):
-        self.create_general_config()
-        host = Host(self.test_root)
-        book = Book(host)
-        book.get_tree_lock()
-        mock_get_lock.assert_called_once_with('tree')
-
-    @mock.patch('webscrapbook.scrapbook.book.Book.get_lock')
-    def test_get_tree_lock02(self, mock_get_lock):
-        """With parameters"""
-        self.create_general_config()
-        host = Host(self.test_root)
-        book = Book(host)
-        book.get_tree_lock(timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
-        mock_get_lock.assert_called_once_with('tree',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
 
 if __name__ == '__main__':
     unittest.main()
