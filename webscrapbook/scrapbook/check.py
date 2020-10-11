@@ -294,7 +294,7 @@ class BookChecker:
                     yield Info('error', f'"{id}": icon "{util.crop(icon, 256)}" is a root-relative URL')
                     self.cnt_errors += 1
                 else:
-                    yield from self._check_favicon_file(id, index, icon)
+                    yield from self._check_favicon_file(id, meta)
 
             # create
             create = meta.get('create')
@@ -386,9 +386,9 @@ class BookChecker:
                             yield Info('error', f'"{id}": no valid page in archive file "{self.book.get_subpath(file)}"')
                             self.cnt_errors += 1
 
-    def _check_favicon_file(self, id, index, icon):
+    def _check_favicon_file(self, id, meta):
         favicon_dir = os.path.join(self.book.tree_dir, 'favicon', '')
-        file = os.path.normpath(os.path.join(self.book.data_dir, os.path.dirname(index), unquote(icon)))
+        file = self.book.get_icon_file(meta)
         file_ci = os.path.normcase(file)
         is_in_favicon_dir = file_ci.startswith(os.path.normcase(favicon_dir))
 

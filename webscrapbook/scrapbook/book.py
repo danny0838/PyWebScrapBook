@@ -5,6 +5,7 @@ import shutil
 import zipfile
 import re
 import json
+from urllib.parse import urlsplit, quote, unquote
 
 from lxml import etree
 
@@ -410,3 +411,31 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
             return etree.parse(fh, etree.HTMLParser(encoding=charset))
         except etree.Error:
             return None
+
+    def get_icon_file(self, item):
+        """Get favicon file path of an item.
+
+        Returns:
+            str file path of the favicon, or None if not determinable
+        """
+        icon = item.get('icon', '')
+
+        if not icon:
+            return None
+
+        u = urlsplit(icon)
+
+        if u.scheme:
+            return None
+
+        if u.netloc:
+            return None
+
+        if not u.path:
+            return None
+
+        if u.path.startswith('/'):
+            return None
+
+        index = item.get('index', '')
+        return os.path.normpath(os.path.join(self.data_dir, os.path.dirname(index), unquote(u.path)))

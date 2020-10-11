@@ -285,11 +285,11 @@ class Converter:
                         return moz_icon_url
             return ''
 
-        if urlsplit(icon).scheme:
+        file = book.get_icon_file(book.meta[id])
+
+        if not file:
             return icon
 
-        index = book.meta[id].get('index', '')
-        file = os.path.normpath(os.path.join(book.data_dir, os.path.dirname(index), unquote(icon)))
         file_ci = os.path.normcase(file)
 
         # favicon cache should go to "icon" folder

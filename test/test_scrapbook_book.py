@@ -1020,5 +1020,84 @@ scrapbook.fulltext({
 
         self.assertEqual(book.get_index_paths('20200101000000000.maff'), [])
 
+    def test_get_icon_file01(self):
+        """Pass if file not exist."""
+        book = Book(Host(self.test_root))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': 'http://example.com',
+            }))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+            }))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': '//example.com',
+            }))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': '/favicon.ico',
+            }))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': '',
+            }))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': '?id=123',
+            }))
+
+        self.assertIsNone(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': '#test',
+            }))
+
+        self.assertEqual(book.get_icon_file({
+            'icon': 'favicon.ico?id=123#test',
+            }),
+            os.path.join(book.data_dir, 'favicon.ico'),
+            )
+
+        self.assertEqual(book.get_icon_file({
+            'icon': '%E4%B8%AD%E6%96%87%231.ico?id=123#test',
+            }),
+            os.path.join(book.data_dir, '中文#1.ico'),
+            )
+
+        self.assertEqual(book.get_icon_file({
+            'index': '20200101000000000/index.html',
+            'icon': 'favicon.ico?id=123#test',
+            }),
+            os.path.join(book.data_dir, '20200101000000000', 'favicon.ico'),
+            )
+
+        self.assertEqual(book.get_icon_file({
+            'index': '20200101000000000.html',
+            'icon': 'favicon.ico?id=123#test',
+            }),
+            os.path.join(book.data_dir, 'favicon.ico'),
+            )
+
+        self.assertEqual(book.get_icon_file({
+            'index': '20200101000000000.maff',
+            'icon': 'favicon.ico?id=123#test',
+            }),
+            os.path.join(book.data_dir, 'favicon.ico'),
+            )
+
+        self.assertEqual(book.get_icon_file({
+            'index': '20200101000000000.maff',
+            'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp?id=123#test',
+            }),
+            os.path.join(book.tree_dir, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'),
+            )
+
 if __name__ == '__main__':
     unittest.main()
