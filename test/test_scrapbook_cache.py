@@ -35,12 +35,11 @@ def tearDownModule():
         mocking.stop()
 
 class TestCache(unittest.TestCase):
-    def setUp(self):
-        """Set up a general temp test folder
-        """
-        self.maxDiff = 8192
-        self.test_root = os.path.join(test_root, 'general')
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_root = os.path.join(test_root, 'general')
+        cls.test_config = os.path.join(cls.test_root, WSB_DIR, 'config.ini')
 
     def tearDown(self):
         """Remove general temp test folder
@@ -236,18 +235,20 @@ no_tree = true
         mock_func.assert_not_called()
 
 class TestFulltextCacheGenerator(TestCache):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_root = os.path.join(test_root, 'general')
+        cls.test_tree = os.path.join(cls.test_root, WSB_DIR, 'tree')
+        cls.test_meta = os.path.join(cls.test_tree, 'meta.js')
+        cls.test_toc = os.path.join(cls.test_tree, 'toc.js')
+        cls.test_fulltext = os.path.join(cls.test_tree, 'fulltext.js')
+        cls.test_dir = os.path.join(cls.test_root, '20200101000000000')
+        cls.test_file = os.path.join(cls.test_root, '20200101000000000', 'index.html')
+
     def setUp(self):
         """Generate general temp test folder
         """
-        self.maxDiff = 8192
-        self.test_root = os.path.join(test_root, 'general')
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
-        self.test_meta = os.path.join(self.test_root, WSB_DIR, 'tree', 'meta.js')
-        self.test_toc = os.path.join(self.test_root, WSB_DIR, 'tree', 'toc.js')
-        self.test_fulltext = os.path.join(self.test_root, WSB_DIR, 'tree', 'fulltext.js')
-        self.test_dir = os.path.join(self.test_root, '20200101000000000')
-        self.test_file = os.path.join(self.test_root, '20200101000000000', 'index.html')
-
         try:
             shutil.rmtree(self.test_root)
         except NotADirectoryError:
@@ -2918,13 +2919,16 @@ Text file content
             })
 
 class TestStaticSiteGenerator(TestCache):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_root = os.path.join(test_root, 'general')
+        cls.test_config = os.path.join(cls.test_root, WSB_DIR, 'config.ini')
+        cls.test_tree = os.path.join(cls.test_root, WSB_DIR, 'tree')
+
     def setUp(self):
         """Generate general temp test folder
         """
-        self.test_root = os.path.join(test_root, 'general')
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
-
         try:
             shutil.rmtree(self.test_root)
         except NotADirectoryError:
@@ -3812,13 +3816,16 @@ scrapbook.toc({
             )
 
 class TestRssFeedGenerator(TestCache):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_root = os.path.join(test_root, 'general')
+        cls.test_config = os.path.join(cls.test_root, WSB_DIR, 'config.ini')
+        cls.test_tree = os.path.join(cls.test_root, WSB_DIR, 'tree')
+    
     def setUp(self):
         """Generate general temp test folder
         """
-        self.test_root = os.path.join(test_root, 'general')
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
-
         try:
             shutil.rmtree(self.test_root)
         except NotADirectoryError:

@@ -35,17 +35,20 @@ def tearDownModule():
         mocking.stop()
 
 class TestRun(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_input = os.path.join(test_root, 'input')
+        cls.test_input_config = os.path.join(cls.test_input, WSB_DIR, 'config.ini')
+        cls.test_input_tree = os.path.join(cls.test_input, WSB_DIR, 'tree')
+        cls.test_input_meta = os.path.join(cls.test_input_tree, 'meta.js')
+        cls.test_input_toc = os.path.join(cls.test_input_tree, 'toc.js')
+        cls.test_output = os.path.join(test_root, 'output')
+        cls.test_output_rdf = os.path.join(cls.test_output, 'scrapbook.rdf')
+
     def setUp(self):
         """Set up a general temp test folder
         """
-        self.maxDiff = 8192
-        self.test_input = os.path.join(test_root, 'input')
-        self.test_input_config = os.path.join(self.test_input, '.wsb', 'config.ini')
-        self.test_input_tree = os.path.join(self.test_input, '.wsb', 'tree')
-        self.test_input_meta = os.path.join(self.test_input, '.wsb', 'tree', 'meta.js')
-        self.test_input_toc = os.path.join(self.test_input, '.wsb', 'tree', 'toc.js')
-        self.test_output = os.path.join(test_root, 'output')
-        self.test_output_rdf = os.path.join(self.test_output, 'scrapbook.rdf')
         os.makedirs(self.test_input_tree, exist_ok=True)
         os.makedirs(self.test_output, exist_ok=True)
 

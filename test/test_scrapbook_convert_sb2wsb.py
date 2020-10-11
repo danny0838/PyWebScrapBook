@@ -28,15 +28,19 @@ def tearDownModule():
         mocking.stop()
 
 class TestRun(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_input = os.path.join(test_root, 'input')
+        cls.test_input_rdf = os.path.join(cls.test_input, 'scrapbook.rdf')
+        cls.test_output = os.path.join(test_root, 'output')
+        cls.test_output_tree = os.path.join(cls.test_output, 'tree')
+        cls.test_output_meta = os.path.join(cls.test_output_tree, 'meta.js')
+        cls.test_output_toc = os.path.join(cls.test_output_tree, 'toc.js')
+
     def setUp(self):
         """Set up a general temp test folder
         """
-        self.maxDiff = 8192
-        self.test_input = os.path.join(test_root, 'input')
-        self.test_input_rdf = os.path.join(self.test_input, 'scrapbook.rdf')
-        self.test_output = os.path.join(test_root, 'output')
-        self.test_output_meta = os.path.join(self.test_output, 'tree', 'meta.js')
-        self.test_output_toc = os.path.join(self.test_output, 'tree', 'toc.js')
         os.makedirs(self.test_input, exist_ok=True)
         os.makedirs(self.test_output, exist_ok=True)
 

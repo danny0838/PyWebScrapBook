@@ -31,12 +31,15 @@ def tearDownModule():
         mocking.stop()
 
 class TestCheck(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_root = os.path.join(test_root, 'general')
+        cls.test_tree = os.path.join(cls.test_root, WSB_DIR, 'tree')
+
     def setUp(self):
         """Set up a general temp test folder
         """
-        self.maxDiff = 8192
-        self.test_root = os.path.join(test_root, 'general')
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
         os.makedirs(self.test_tree)
 
     def tearDown(self):

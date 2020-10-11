@@ -16,8 +16,9 @@ from webscrapbook.util import frozendict, zip_tuple_timestamp
 root_dir = os.path.abspath(os.path.dirname(__file__))
 
 class TestUtils(unittest.TestCase):
-    def setUp(self):
-        self.maxDiff = 8192
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
 
     def test_frozendict(self):
         dict_ = {'a': 1, 'b': 2, 'c': 3}

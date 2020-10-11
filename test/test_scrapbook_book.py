@@ -33,14 +33,16 @@ def tearDownModule():
         mocking.stop()
 
 class TestBook(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+        cls.test_root = os.path.join(test_root, 'general')
+        cls.test_wsbdir = os.path.join(cls.test_root, WSB_DIR)
+        cls.test_config = os.path.join(cls.test_root, WSB_DIR, 'config.ini')
+
     def setUp(self):
         """Set up a general temp test folder
         """
-        self.maxDiff = 8192
-        self.test_root = os.path.join(test_root, 'general')
-        self.test_wsbdir = os.path.join(self.test_root, WSB_DIR)
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
-
         try:
             shutil.rmtree(self.test_root)
         except NotADirectoryError:
