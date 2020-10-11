@@ -1090,6 +1090,30 @@ class TestUtils(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+        # timezone adjust
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+
+            test_offset = -12345  # use a timezone offset which is unlikely really used
+            util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'), tzoffset=test_offset)
+            delta = datetime.now().astimezone().utcoffset().total_seconds()
+
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
     def test_parse_content_type(self):
         self.assertEqual(
             util.parse_content_type('text/html; charset=UTF-8'),

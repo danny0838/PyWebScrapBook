@@ -751,7 +751,7 @@ def zip_compress(zip, filename, subpath):
                 zh.write(filename, subpath, compress_type)
 
 
-def zip_extract(zip, dst, subpath=''):
+def zip_extract(zip, dst, subpath='', tzoffset=None):
     """Extract zip subpath to dst and preserve metadata.
 
     Args:
@@ -759,6 +759,9 @@ def zip_extract(zip, dst, subpath=''):
         dst: path where the extracted file or directory will be placed at.
         subpath: internal path to a file or folder (without trailing slash), or
             '' or None to extract the whole zip
+        tzoffset: known timezone offset (in seconds) the ZIP file has been
+            created at, to adjust mtime of the internal files, which are
+            recorded using local timestamp
 
     Raises:
         FileExistsError: if dst already exists
@@ -785,6 +788,11 @@ def zip_extract(zip, dst, subpath=''):
             for entry in entries:
                 file = os.path.join(tempdir, entry)
                 ts = zip_timestamp(zh.getinfo(entry))
+
+                if tzoffset is not None:
+                    delta = datetime.now().astimezone().utcoffset().total_seconds()
+                    ts = ts - tzoffset + delta
+
                 os.utime(file, (ts, ts))
 
         # move to target path
