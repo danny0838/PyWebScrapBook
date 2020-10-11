@@ -197,11 +197,11 @@ class BookChecker:
 
         # update files
         if self.book.meta != book_meta_orig:
-            yield Info('info', f'Saving changed meta files...')
+            yield Info('info', 'Saving changed meta files...')
             self.book.save_meta_files()
 
         if self.book.toc != book_toc_orig:
-            yield Info('info', f'Saving changed TOC files...')
+            yield Info('info', 'Saving changed TOC files...')
             self.book.save_toc_files()
 
         yield Info('info', f'Totally {self.cnt_items} items, {self.cnt_dirs} folders, '
