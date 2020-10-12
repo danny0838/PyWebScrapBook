@@ -64,6 +64,8 @@ def cmd_config(args):
     """Show, generate, or edit the config.
 
     Display the current config when used with no arguments.
+
+    Run `wsb help config` for details about config.
     """
     if args['book']:
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_CONFIG))
@@ -382,7 +384,7 @@ def main():
     parser_config.add_argument('name', nargs='?',
         help="""show value of the given config name (in the form of <section>[.<subsection>].<key>)""")
     parser_config.add_argument('-b', '--book', default=False, action='store_true',
-        help="""generate book config file""")
+        help="""generate book (host) config file""")
     parser_config.add_argument('-u', '--user', default=False, action='store_true',
         help="""generate user config file""")
     parser_config.add_argument('-a', '--all', default=False, action='store_true',
