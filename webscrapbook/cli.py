@@ -357,12 +357,16 @@ def main():
         help="""the sub-command to run. Get usage help with e.g. %(prog)s config -h""")
 
     # subcommand: serve
-    parser_serve = subparsers.add_parser('serve', aliases=['s'], description=getdoc(cmd_serve),
+    parser_serve = subparsers.add_parser('serve', aliases=['s'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_serve),
         help="""serve the root directory""")
     parser_serve.set_defaults(func=cmd_serve)
 
     # subcommand: config
-    parser_config = subparsers.add_parser('config', aliases=['c'], description=getdoc(cmd_config),
+    parser_config = subparsers.add_parser('config', aliases=['c'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_config),
         help="""show, generate, or edit the config""")
     parser_config.set_defaults(func=cmd_config)
     parser_config.add_argument('name', nargs='?',
@@ -377,7 +381,9 @@ def main():
         help="""edit the config file (with --book or --user)""")
 
     # subcommand: encrypt
-    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'], description=getdoc(cmd_encrypt),
+    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_encrypt),
         help="""generate an encrypted password""")
     parser_encrypt.set_defaults(func=cmd_encrypt)
     parser_encrypt.add_argument('-p', '--password', nargs='?', default=None, action='store',
@@ -390,7 +396,9 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
         help="""the salt to add during encryption.""")
 
     # subcommand: cache
-    parser_cache = subparsers.add_parser('cache', aliases=['a'], description=getdoc(cmd_cache),
+    parser_cache = subparsers.add_parser('cache', aliases=['a'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_cache),
         help="""update fulltext cache and/or static site pages""")
     parser_cache.set_defaults(func=cmd_cache)
     parser_cache.add_argument('book_ids', metavar='book', nargs='*', action='store',
@@ -435,7 +443,9 @@ inconsistency.""")
         help="""include debug output""")
 
     # subcommand: check
-    parser_check = subparsers.add_parser('check', aliases=['k'], description=getdoc(cmd_check),
+    parser_check = subparsers.add_parser('check', aliases=['k'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_check),
         help="""check and fix scrapbook data""")
     parser_check.set_defaults(func=cmd_check)
     parser_check.add_argument('book_ids', metavar='book', nargs='*', action='store',
@@ -482,6 +492,7 @@ inconsistency.""")
 
     # -- sb2wsb
     parser_convert_sb2wsb = parser_convert_sub.add_parser('sb2wsb',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Convert from legacy ScrapBook (X) to WebScrapBook.""",
         help="""convert from legacy ScrapBook (X) to WebScrapBook""")
     parser_convert_sb2wsb.add_argument('input', action='store',
@@ -524,7 +535,9 @@ such as:
         help="""include debug output""")
 
     # subcommand: help
-    parser_help = subparsers.add_parser('help', description=getdoc(cmd_help),
+    parser_help = subparsers.add_parser('help',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_help),
         help="""show detailed information about certain topics""")
     parser_help.set_defaults(func=cmd_help)
     parser_help.add_argument('topic', default=None, action='store',
@@ -532,7 +545,9 @@ such as:
         help="""the topic for details""")
 
     # subcommand: view
-    parser_view = subparsers.add_parser('view', description=getdoc(cmd_view),
+    parser_view = subparsers.add_parser('view',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_view),
         help="""view archive file in the browser""")
     parser_view.set_defaults(func=cmd_view)
     parser_view.add_argument('files', nargs='+',
