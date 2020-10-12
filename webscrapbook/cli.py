@@ -48,10 +48,16 @@ def fcopy(fsrc, fdst):
 
 
 def cmd_serve(args):
-    """Serve the root directory forever.
+    """Serve the root directory forever. Shutdown via Ctrl+C or another killing
+    technique.
 
-    Shutdown via Ctrl+C or another killing technique."""
-    server.serve(args['root'])
+    By default the local browser will be launched to view the served (hosted) site.
+    This behavior can be changed using the `server.browse` config.
+
+    Note that this built-in server is designed only for local hosting, or remote
+    hosting for personal or few people usage. For an opened world wide web hosting,
+    a more specialized server should be used."""
+    server.serve(**args)
 
 
 def cmd_config(args):
@@ -361,6 +367,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_serve),
         help="""serve the root directory""")
+    parser_serve.add_argument('--browse', default=None, action='store_true',
+        help="""launch the browser to visit the served directory""")
+    parser_serve.add_argument('--no-browse', dest='browse', action='store_false',
+        help="""do not launch the browser""")
     parser_serve.set_defaults(func=cmd_serve)
 
     # subcommand: config

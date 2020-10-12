@@ -12,7 +12,7 @@ from . import Config
 from .app import make_app
 from .util import is_nullhost
 
-def serve(root):
+def serve(root, browse=None):
     config = Config()
     config.load(root)
 
@@ -52,7 +52,10 @@ def serve(root):
     srv.log('info', 'Hit Ctrl-C to shutdown.')
 
     # launch browser
-    if config['server']['browse']:
+    if browse is None:
+        browse = config['server']['browse']
+
+    if browse:
         base = config['app']['base'].rstrip('/')
         index = config['browser']['index'].lstrip('/')
         path = base + (('/' + index) if index else '')

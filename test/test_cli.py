@@ -22,9 +22,10 @@ class TestServe(unittest.TestCase):
     def test_call(self, mock_serve):
         cli.cmd_serve({
             'root': test_dir,
+            'browse': False,
             })
 
-        mock_serve.assert_called_once_with(test_dir)
+        mock_serve.assert_called_once_with(root=test_dir, browse=False)
 
 class TestConfig(unittest.TestCase):
     def tearDown(self):
