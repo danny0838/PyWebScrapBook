@@ -369,6 +369,83 @@ class TestCache(unittest.TestCase):
             no_backup=True,
             )
 
+class TestCheck(unittest.TestCase):
+    @mock.patch('webscrapbook.scrapbook.check.run', autospec=True)
+    def test_call(self, mock_func):
+        cli.cmd_check({
+            'root': test_dir,
+            'book_ids': ['book1', 'book2'],
+            'resolve_all': False,
+            'resolve_invalid_id': True,
+            'resolve_missing_index': True,
+            'resolve_missing_index_file': True,
+            'resolve_missing_date': True,
+            'resolve_older_mtime': True,
+            'resolve_toc_unreachable': True,
+            'resolve_toc_invalid': True,
+            'resolve_toc_empty_subtree': True,
+            'resolve_unindexed_files': True,
+            'resolve_absolute_icon': True,
+            'resolve_unused_icon': True,
+            'no_backup': True,
+            'debug': True,
+            })
+
+        mock_func.assert_called_once_with(
+            root=test_dir,
+            book_ids=['book1', 'book2'],
+            resolve_all=False,
+            resolve_invalid_id=True,
+            resolve_missing_index=True,
+            resolve_missing_index_file=True,
+            resolve_missing_date=True,
+            resolve_older_mtime=True,
+            resolve_toc_unreachable=True,
+            resolve_toc_invalid=True,
+            resolve_toc_empty_subtree=True,
+            resolve_unindexed_files=True,
+            resolve_absolute_icon=True,
+            resolve_unused_icon=True,
+            no_backup=True,
+            )
+
+class TestConvert(unittest.TestCase):
+    @mock.patch('webscrapbook.scrapbook.convert.sb2wsb.run', autospec=True)
+    def test_sb2wsb(self, mock_func):
+        cli.cmd_convert({
+            'root': test_dir,
+            'mode': 'sb2wsb',
+            'input': test_dir,
+            'output': os.path.join(root_dir, 'test_cli_output'),
+            'no_backup': True,
+            'force': True,
+            'debug': True,
+            })
+
+        mock_func.assert_called_once_with(
+            input=test_dir,
+            output=os.path.join(root_dir, 'test_cli_output'),
+            no_backup=True,
+            )
+
+    @mock.patch('webscrapbook.scrapbook.convert.wsb2sb.run', autospec=True)
+    def test_wsb2sb(self, mock_func):
+        cli.cmd_convert({
+            'root': test_dir,
+            'mode': 'wsb2sb',
+            'input': test_dir,
+            'output': os.path.join(root_dir, 'test_cli_output'),
+            'book_id': 'id1',
+            'force': True,
+            'debug': True,
+            })
+
+        mock_func.assert_called_once_with(
+            input=test_dir,
+            output=os.path.join(root_dir, 'test_cli_output'),
+            book_id='id1',
+            )
+
 class TestHelp(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
     def test_call(self, mock_stdout):
