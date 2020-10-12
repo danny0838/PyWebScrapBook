@@ -539,7 +539,7 @@ such as:
     parser_convert_wsb2sb.add_argument('output', action='store',
         help="""the output directory""")
     parser_convert_wsb2sb.add_argument('--book', dest='book_id', metavar='ID',
-        nargs='?', default='', action='store',
+        default='', action='store',
         help="""the book ID to convert. (default: "")""")
     parser_convert_wsb2sb.add_argument('--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
