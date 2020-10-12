@@ -58,9 +58,13 @@ def serve(root):
         path = base + (('/' + index) if index else '')
         url = f'{scheme}://{host3}{port2}{path}'
         srv.log('info', f'Launching browser at {url} ...')
-        browser = webbrowser.get(config['browser']['command'] or None)
-        thread = Thread(target=browser.open, args=[url], daemon=True)
-        thread.start()
+        try:
+            browser = webbrowser.get(config['browser']['command'] or None)
+        except webbrowser.Error as exc:
+            srv.log('error', f'Error: {exc}')
+        else:
+            thread = Thread(target=browser.open, args=[url], daemon=True)
+            thread.start()
 
     # start server
     srv.serve_forever()
