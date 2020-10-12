@@ -950,6 +950,47 @@ def get_charset(file):
     return None
 
 
+def load_tree(file):
+    """Load HTML document tree.
+
+    Args:
+        file: str, path-like, or file-like object
+    """
+    try:
+        fh = open(file, 'rb')
+    except TypeError:
+        fh = file
+    except FileNotFoundError:
+        fh = None
+
+    if not fh:
+        return None
+
+    try:
+        # Seek for the correct charset (encoding).
+        # If a charset is not specified, lxml may select a wrong encoding for
+        # the entire document if there is text before first meta charset.
+        # Priority: BOM > meta charset > assume UTF-8
+        charset = sniff_bom(fh)
+        if charset:
+            # lxml does not accept "UTF-16-LE" or so, but can auto-detect
+            # encoding from BOM if encoding is None
+            # ref: https://bugs.launchpad.net/lxml/+bug/1463610
+            charset = None
+        else:
+            charset = get_charset(fh) or 'UTF-8'
+            charset = fix_codec(charset)
+
+        fh.seek(0)
+        try:
+            return etree.parse(fh, etree.HTMLParser(encoding=charset))
+        except etree.Error:
+            return None
+    finally:
+        if fh != file:
+            fh.close()
+
+
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target', 'context'])
 
 META_REFRESH_REGEX_URL = re.compile(r'^\s*url\s*=\s*(.*?)\s*$', re.I)
