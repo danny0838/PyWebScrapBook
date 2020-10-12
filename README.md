@@ -8,7 +8,7 @@ PyWebScrapBook is a command line toolkit and backend server for
 * Directory listing.
 * Create, view, edit, and/or delete files  via the web page or API.
 * HTTP(S) authorization.
-* Toolkit for management of scrapbooks, such as cache generating, data checking, and data conversion.
+* Toolkit for management of scrapbooks, such as cache generating and data checking, exporting, importing, and conversion.
 
 ## Usage
 
@@ -39,6 +39,10 @@ After installation, `wsb`, `webscrapbook`, and `wsbview` will be available from 
                    generate an encrypted password
         cache (a)  update fulltext cache and/or static site pages
         check (k)  check and fix scrapbook data
+        export (x)
+                   export data items into archive files (*.wsba)
+        import (i)
+                   import data items from archive files (*.wsba)
         convert (v)
                    convert scrapbook data between different formats
         help       show detailed information about certain topics
