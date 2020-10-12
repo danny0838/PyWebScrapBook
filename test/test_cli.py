@@ -18,7 +18,7 @@ resource_dir = os.path.join(root_dir, '..', 'webscrapbook', 'resources')
 
 class TestServe(unittest.TestCase):
     @mock.patch('sys.stdout', io.StringIO)
-    @mock.patch('webscrapbook.cli.server.serve')
+    @mock.patch('webscrapbook.cli.server.serve', autospec=True)
     def test_call(self, mock_serve):
         cli.cmd_serve({
             'root': test_dir,
@@ -75,7 +75,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(mock_stdout.getvalue(), '')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch')
+    @mock.patch('webscrapbook.util.launch', autospec=True)
     def test_book_edit(self, mock_launch, mock_stdout):
         cli.cmd_config({
             'root': test_dir,
@@ -95,7 +95,7 @@ class TestConfig(unittest.TestCase):
         self.assertNotEqual(mock_stdout.getvalue(), '')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch')
+    @mock.patch('webscrapbook.util.launch', autospec=True)
     def test_book_edit2(self, mock_launch, mock_stdout):
         os.makedirs(os.path.join(test_dir, WSB_DIR), exist_ok=True)
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini'), 'w') as f:
@@ -214,7 +214,7 @@ class TestConfig(unittest.TestCase):
 
     @mock.patch('webscrapbook.cli.WSB_USER_CONFIG', os.path.join(test_dir, WSB_DIR, 'userconfig.ini'))
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch')
+    @mock.patch('webscrapbook.util.launch', autospec=True)
     def test_user_edit(self, mock_launch, mock_stdout):
         cli.cmd_config({
             'root': test_dir,
@@ -235,7 +235,7 @@ class TestConfig(unittest.TestCase):
 
     @mock.patch('webscrapbook.cli.WSB_USER_CONFIG', os.path.join(test_dir, WSB_DIR, 'userconfig.ini'))
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch')
+    @mock.patch('webscrapbook.util.launch', autospec=True)
     def test_user_edit2(self, mock_launch, mock_stdout):
         os.makedirs(os.path.join(test_dir, WSB_DIR), exist_ok=True)
         with open(os.path.join(test_dir, WSB_DIR, 'userconfig.ini'), 'w') as f:
@@ -283,7 +283,7 @@ class TestConfig(unittest.TestCase):
         mock_die.assert_called_once_with('Use --all in combine with --book.')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.config.getname', return_value='dummy')
+    @mock.patch('webscrapbook.config.getname', return_value='dummy', autospec=True)
     def test_name_call(self, mock_getname, mock_stdout):
         cli.cmd_config({
             'root': test_dir,
@@ -298,7 +298,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(mock_stdout.getvalue(), 'dummy\n')
 
     @mock.patch('webscrapbook.cli.die', side_effect=SystemExit)
-    @mock.patch('webscrapbook.config.getname', return_value=None)
+    @mock.patch('webscrapbook.config.getname', return_value=None, autospec=True)
     def test_name_call2(self, mock_getname, mock_die):
         with self.assertRaises(SystemExit):
             cli.cmd_config({
@@ -313,7 +313,7 @@ class TestConfig(unittest.TestCase):
         mock_getname.assert_called_once_with('unknown.config')
         mock_die.assert_called_once_with('Config entry "unknown.config" does not exist')
 
-    @mock.patch('webscrapbook.config.dump')
+    @mock.patch('webscrapbook.config.dump', autospec=True)
     def test_dump(self, mock_dump):
         cli.cmd_config({
             'root': test_dir,
@@ -328,7 +328,7 @@ class TestConfig(unittest.TestCase):
 
 class TestEncrypt(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.encrypt', return_value='dummy_hash')
+    @mock.patch('webscrapbook.util.encrypt', return_value='dummy_hash', autospec=True)
     def test_call(self, mock_encrypt, mock_stdout):
         cli.cmd_encrypt({
             'password': '1234',
@@ -340,17 +340,10 @@ class TestEncrypt(unittest.TestCase):
         self.assertEqual(mock_stdout.getvalue(), 'dummy_hash\n')
 
 class TestCache(unittest.TestCase):
-    def tearDown(self):
-        try:
-            shutil.rmtree(os.path.join(test_dir, 'temp'))
-        except NotADirectoryError:
-            os.remove(os.path.join(test_dir, 'temp'))
-        except FileNotFoundError:
-            pass
-
-    @mock.patch('webscrapbook.scrapbook.cache.generate')
+    @mock.patch('webscrapbook.scrapbook.cache.generate', autospec=True)
     def test_call(self, mock_func):
         cli.cmd_cache({
+            'root': test_dir,
             'book_ids': ['book1', 'book2'],
             'item_ids': ['item1', 'item2'],
             'fulltext': False,
@@ -364,6 +357,7 @@ class TestCache(unittest.TestCase):
             })
 
         mock_func.assert_called_once_with(
+            root=test_dir,
             book_ids=['book1', 'book2'],
             item_ids=['item1', 'item2'],
             fulltext=False,
@@ -386,7 +380,7 @@ class TestHelp(unittest.TestCase):
             self.assertEqual(mock_stdout.getvalue(), f.read() + '\n')
 
 class TestView(unittest.TestCase):
-    @mock.patch('webscrapbook.cli.view_archive_files')
+    @mock.patch('webscrapbook.cli.view_archive_files', autospec=True)
     def test_call(self, mock_view):
         cli.cmd_view({
             'root': 'config',
