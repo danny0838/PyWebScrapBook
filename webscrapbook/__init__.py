@@ -50,6 +50,7 @@ class Config():
             'theme': 'default',
             'root': '.',
             'base': '',
+            'index': '',
             'content_security_policy': 'strict',
             'allowed_x_for': '0',
             'allowed_x_proto': '0',
@@ -68,7 +69,6 @@ class Config():
             },
         'browser': {
             'command': '',
-            'index': '',
             'cache_prefix': 'webscrapbook.',
             'cache_expire': '259200',
             'use_jar': 'false',

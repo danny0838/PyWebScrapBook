@@ -103,6 +103,15 @@ provided.
 (default: )
 
 
+#### `index`
+
+The index page for the WebScrapBook application. It is, for example, visited
+when server starts and launches the local browser. This is a URL path under
+the (ch)root path the application is served, without leading slash.
+
+(default: )
+
+
 #### `content_security_policy`
 
 Whether to send response with a content security policy header, which restricts
@@ -387,14 +396,6 @@ Example:
 
     # Launch a Firefox private window
     command = "C:\Program Files\Mozilla Firefox\firefox.exe" -private-window %s &
-
-(default: )
-
-
-#### `index`
-
-The index page to visit when the browser is launched. This is a URL path under
-the (ch)root path the application is served, without leading slash.
 
 (default: )
 

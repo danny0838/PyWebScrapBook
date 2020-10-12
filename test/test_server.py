@@ -505,8 +505,6 @@ browse = true
 
 [app]
 base =
-
-[browser]
 index = index.html
 """)
 
@@ -526,8 +524,6 @@ browse = true
 
 [app]
 base = /wsb
-
-[browser]
 index = index.html
 """)
 

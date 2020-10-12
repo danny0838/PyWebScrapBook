@@ -35,6 +35,7 @@ class TestClassConfig(unittest.TestCase):
             ('theme', 'mytheme'),
             ('root', 'myroot'),
             ('base', 'mybase'),
+            ('index', ''),
             ('content_security_policy', 'strict'),
             ('allowed_x_for', 1),
             ('allowed_x_proto', 1),
@@ -53,7 +54,6 @@ class TestClassConfig(unittest.TestCase):
             ]))
         self.assertDictEqual(conf['browser'], OrderedDict([
             ('command', ''),
-            ('index', ''),
             ('cache_prefix', 'wsb.'),
             ('cache_expire', 123456),
             ('use_jar', False),
@@ -102,6 +102,7 @@ class TestClassConfig(unittest.TestCase):
             ('theme', 'default'),
             ('root', '.'),
             ('base', ''),
+            ('index', ''),
             ('content_security_policy', 'strict'),
             ('allowed_x_for', 0),
             ('allowed_x_proto', 0),
@@ -196,6 +197,7 @@ name = mywsb
 theme = mytheme
 root = myroot
 base = mybase
+index = 
 content_security_policy = strict
 allowed_x_for = 1
 allowed_x_proto = 1
@@ -214,7 +216,6 @@ browse = yes
 
 [browser]
 command = 
-index = 
 cache_prefix = wsb.
 cache_expire = 123456
 use_jar = no
@@ -264,6 +265,7 @@ permission = all
                     ('theme', 'mytheme'),
                     ('root', 'myroot'),
                     ('base', 'mybase'),
+                    ('index', ''),
                     ('content_security_policy', 'strict'),
                     ('allowed_x_for', 1),
                     ('allowed_x_proto', 1),
@@ -282,7 +284,6 @@ permission = all
                     ])),
                 ('browser', OrderedDict([
                     ('command', ''),
-                    ('index', ''),
                     ('cache_prefix', 'wsb.'),
                     ('cache_expire', 123456),
                     ('use_jar', False),
