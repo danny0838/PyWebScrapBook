@@ -18,13 +18,13 @@ resource_dir = os.path.join(root_dir, '..', 'webscrapbook', 'resources')
 
 class TestServe(unittest.TestCase):
     @mock.patch('sys.stdout', io.StringIO)
-    @mock.patch('webscrapbook.cli.server')
-    def test_call(self, mock_server):
+    @mock.patch('webscrapbook.cli.server.serve')
+    def test_call(self, mock_serve):
         cli.cmd_serve({
             'root': test_dir,
             })
 
-        self.assertEqual(mock_server.mock_calls[0], ('serve', (test_dir,), {}))
+        mock_serve.assert_called_once_with(test_dir)
 
 class TestConfig(unittest.TestCase):
     def tearDown(self):
