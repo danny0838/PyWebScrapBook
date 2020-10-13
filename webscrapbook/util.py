@@ -210,6 +210,24 @@ def crop(text, width=70, ellipsis='...'):
     return text
 
 
+REGEX_FORMAT_STRING = re.compile(r'%([^%]*)%')
+
+def format_string(text, mapping):
+    """A very simple implementation for string formatting with placeholders.
+
+    - Only single special char '%' is used, making it easy to implement for
+      both Python and JavaScript.
+    - Special char itself can be easily escaped.
+    - Does not raise an exception if not formatted correctly.
+    - Good for user-provided strings.
+    """
+    def formatter(m):
+        return mapping.get(m.group(1), '')
+
+    mapping[''] = '%'
+    return REGEX_FORMAT_STRING.sub(formatter, text)
+
+
 #########################################################################
 # Codecs and text encoding
 #########################################################################

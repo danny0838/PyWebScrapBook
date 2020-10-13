@@ -157,6 +157,19 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.crop('中文字串𠀀', 5), '中文字串𠀀')
         self.assertEqual(util.crop('中文字串𠀀', 4), '中...')
 
+    def test_format_string(self):
+        # %% => %
+        self.assertEqual(util.format_string('format %%', {}), 'format %')
+
+        # %% => %, overwriting mapping
+        self.assertEqual(util.format_string('format %%', {'': '123'}), 'format %')
+
+        # %key% => value
+        self.assertEqual(util.format_string('format %key%', {'key': 'value'}), 'format value')
+
+        # %unknown% => ''
+        self.assertEqual(util.format_string('format %unknown%', {}), 'format ')
+
     def test_fix_codec(self):
         self.assertEqual(util.fix_codec('big5'), 'cp950')
         self.assertEqual(util.fix_codec('BIG5'), 'cp950')
