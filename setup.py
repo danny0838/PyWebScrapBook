@@ -48,6 +48,7 @@ setup(
             'resources/*.*',
             'themes/default/static/*.*',
             'themes/default/templates/*.*',
+            'themes/default/locales/*.*',
             ],
         },
     entry_points={

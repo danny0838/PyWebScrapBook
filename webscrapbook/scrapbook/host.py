@@ -8,6 +8,7 @@ from secrets import token_urlsafe
 from .. import WSB_USER_DIR, WSB_DIR
 from .. import Config
 from .. import util
+from ..locales import I18N
 from .book import Book
 
 
@@ -319,6 +320,7 @@ class Host:
             ]
         self.statics = [os.path.join(t, 'static') for t in self.themes]
         self.templates = [os.path.join(t, 'templates') for t in self.themes]
+        self.locales = [os.path.join(t, 'locales') for t in self.themes]
 
         self.locks = os.path.join(root, WSB_DIR, 'locks')
 
@@ -327,6 +329,9 @@ class Host:
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)
         return f'{self.__class__.__name__}({repr_str})'
+
+    def get_i18n(self, lang=None, domain=None):
+        return I18N(self.locales, lang, domain)
 
     def get_static_file(self, filepath):
         """Search for a static file.

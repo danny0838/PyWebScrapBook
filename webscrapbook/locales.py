@@ -1,14 +1,17 @@
-"""Package for i18n
+"""Module for i18n
 
 Usage:
     from webscrapbook.locales import I18N
-    i18n = I18N('en', 'messages')
+    i18n = I18N(<dirs>, 'en', 'messages')
     i18n('something to translate')
 
 @TODO: Consider using official gettext for i18n.
 """
+import os
 import importlib
 import locale
+import hashlib
+from . import util
 
 
 DEFAULT_LANG = 'en'
@@ -35,10 +38,10 @@ BIDI = {
 class I18N:
     """An i18n translator
     """
-    def __init__(self, lang=None, domain=None):
+    def __init__(self, dirs, lang=None, domain=None):
         """Initialize an i18n translator
 
-        Loads locales/[lang]/[domain].py
+        Loads <dir>/<lang>/<domain>.py where <dir> is listed in dirs.
         """
         if not lang:
             lang, _ = locale.getdefaultlocale()
@@ -56,28 +59,30 @@ class I18N:
         langs = ['_'.join(lang_parts[:i]) for i in range(len(lang_parts), 0, -1)]
         if DEFAULT_LANG not in langs:
             langs.append(DEFAULT_LANG)
-        self.langs = langs
 
-        translators = {}
-        for lang in langs:
-            try:
-                translator = importlib.import_module(f'.{lang}.{domain}', __package__)
-            except ImportError:
-                pass
-            else:
-                translators[lang] = translator
-        self.translators = translators
+        self.translators = []
+        for dir_ in dirs:
+            for lang in langs:
+                file = os.path.join(dir_, lang, domain + '.py')
+                hash_ = hashlib.md5(os.path.normcase(dir_).encode('UTF-8')).hexdigest()
+                try:
+                    mod = util.import_module_file(
+                        f'webscrapbook.locales._{hash_}.{lang}.{domain}',
+                        file)
+                except FileNotFoundError:
+                    pass
+                else:
+                    self.translators.append(mod)
 
     def __call__(self, name):
         """Search for a translate of the given message name.
 
         Fallbacks to non-variant, DEFAULT_LANG, and then the original name if
-            the searching message is not found. For example:
+        the searching message is not found. For example:
 
             zh_TW => zh => en => name
 
-        Also support special entries like the chrome.i18n of browser
-            extensions:
+        Also support special entries like the chrome.i18n of browser extensions:
 
             @@ui_locale
             @@bidi_dir
@@ -97,9 +102,9 @@ class I18N:
         return self._get(name)
             
     def _get(self, name):
-        for lang in self.langs:
+        for translator in self.translators:
             try:
-                return getattr(self.translators[lang], name)
-            except (KeyError, AttributeError):
+                return getattr(translator, name)
+            except AttributeError:
                 pass
         return name

@@ -22,7 +22,6 @@ from lxml import etree
 from .host import Host
 from .. import util
 from ..util import Info
-from ..locales import I18N
 from .._compat import zip_stream
 from .._compat.contextlib import nullcontext
 
@@ -83,7 +82,7 @@ class StaticSiteGenerator():
         self.host = book.host
         self.book = book
         self.static_index = static_index
-        self.i18n = I18N(locale)
+        self.i18n = self.host.get_i18n(locale)
 
         self.rss = rss
 
