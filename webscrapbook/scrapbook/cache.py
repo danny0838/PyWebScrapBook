@@ -90,6 +90,9 @@ class StaticSiteGenerator():
             loader=jinja2.FileSystemLoader(self.host.templates),
             autoescape=jinja2.select_autoescape(['html']),
             )
+        self.template_env.globals.update({
+            'format_string': util.format_string,
+            })
 
         book.load_meta_files()
         book.load_toc_files()

@@ -6,7 +6,7 @@
 <html dir="{{ i18n('@@bidi_dir') }}" data-scrapbook-tree-page="search">
 <head>
 <meta charset="UTF-8">
-<title>{{ i18n('cache_search_title').format(book=title) }}</title>
+<title>{{ format_string(i18n('cache_search_title'), {'book': title}) }}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 html {
