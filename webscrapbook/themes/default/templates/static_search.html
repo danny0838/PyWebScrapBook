@@ -34,6 +34,15 @@ body {
   width: 2em;
 }
 
+#help {
+  padding: .25em;
+  font-size: .9em;
+}
+
+#help > div {
+  white-space: pre-wrap;
+}
+
 #result {
   margin: 0;
   margin-top: 1em;
@@ -889,6 +898,10 @@ const searchEngine = {
   <input id="search" type="submit" value="{{ i18n('cache_search_start') }}" disabled autocomplete="off">
 </form>
 <div>
+<details id="help">
+<summary>{{ i18n('cache_search_help_label') }}</summary>
+<div>{{ i18n('cache_search_help_desc') }}</div>
+</details>
 <ul id="result"></ul>
 </div>
 <div id="support">
