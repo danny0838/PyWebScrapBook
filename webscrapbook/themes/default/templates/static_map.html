@@ -112,6 +112,13 @@ a.scrapbook-external > img {
   vertical-align: top;
 }
 
+a.scrapbook-comment > img {
+  margin: 1.5px .1em 1.5px;
+  width: .7em;
+  height: .7em;
+  vertical-align: top;
+}
+
 .scrapbook-type-bookmark > div > a {
   color: rgb(32,192,32);
 }
@@ -244,6 +251,18 @@ var scrapbook = {
         srcImg.src = 'icon/external.png';
         srcImg.alt = '';
       }
+
+      if (meta.comment) {
+        var commentLink = div.appendChild(document.createElement('a'));
+        commentLink.className = 'scrapbook-comment';
+        commentLink.href = '';
+        commentLink.title = meta.comment;
+        commentLink.onclick = scrapbook.onClickComment;
+
+        var commentImg = commentLink.appendChild(document.createElement('img'));
+        commentImg.src = 'icon/comment.png';
+        commentImg.alt = '';
+      }
     } else {
       var line = div.appendChild(document.createElement('fieldset'));
       line.title = (meta.title || "") + (meta.source ? "\n" + meta.source : "") + (meta.comment ? "\n\n" + meta.comment : "");
@@ -370,6 +389,11 @@ var scrapbook = {
   onClickToggleAll: function (event) {
     event.preventDefault();
     scrapbook.toggleAllElem();
+  },
+
+  onClickComment: function (event) {
+    event.preventDefault();
+    alert(this.title);
   },
 
   toggleElem: function (elem, willOpen) {

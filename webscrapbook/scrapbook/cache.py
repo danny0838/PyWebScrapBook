@@ -60,6 +60,7 @@ class StaticSiteGenerator():
         'icon/collapse.png': 'collapse.png',
         'icon/expand.png': 'expand.png',
         'icon/external.png': 'external.png',
+        'icon/comment.png': 'comment.png',
         'icon/item.png': 'item.png',
         'icon/fclose.png': 'fclose.png',
         'icon/fopen.png': 'fopen.png',
