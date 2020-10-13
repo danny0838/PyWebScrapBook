@@ -2,6 +2,7 @@
 """
 import sys
 import os
+import importlib
 import stat
 import subprocess
 import collections
@@ -85,6 +86,13 @@ def make_hashable(obj):
         return frozendict((k, make_hashable(v)) for k, v in obj.items())
 
     raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
+
+
+def import_module_file(ns, file):
+    spec = importlib.util.spec_from_file_location(ns, file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 #########################################################################

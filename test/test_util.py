@@ -14,6 +14,7 @@ from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
+test_root = os.path.join(root_dir, 'test_util')
 
 class TestUtils(unittest.TestCase):
     @classmethod
@@ -65,6 +66,11 @@ class TestUtils(unittest.TestCase):
             set(util.make_hashable([{'a': 123, 'b': 456}, [1, 2, 3]])),
             {(1, 2, 3), frozendict({'a': 123, 'b': 456})}
             )
+
+    def test_import_module_file(self):
+        mod = util.import_module_file('webscrapbook._test_import_module_file', os.path.join(test_root, 'import_module_file.py'))
+        self.assertEqual(mod.__name__, 'webscrapbook._test_import_module_file')
+        self.assertEqual(mod.test_key, 'test_value')
 
     def test_datetime_to_id(self):
         # create an ID from UTC time
