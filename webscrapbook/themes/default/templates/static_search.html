@@ -363,9 +363,10 @@ const scrapbook = {
     const {id, file, meta, fulltext} = item;
 
     const li = document.createElement("li");
-    if (meta.type) {
-      li.className = "scrapbook-type-" + meta.type;
-    }
+    const classes = [];
+    if (meta.type) { classes.push('scrapbook-type-' + meta.type); }
+    if (meta.marked) { classes.push('scrapbook-marked'); }
+    li.className = classes.join(' ');
 
     const div = li.appendChild(document.createElement("div"));
 
