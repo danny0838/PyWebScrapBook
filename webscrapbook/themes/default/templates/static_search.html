@@ -330,12 +330,23 @@ const scrapbook = {
   },
 
   showResults(results, book) {
-    const name = book.name ? "(" + book.name + ") " : "";
-    this.addMsg(name + "Found " + results.length + " results:");
+    const info = {
+      "": "%",
+      name: book.name,
+      length: results.length,
+    };
+
+    if (book.name) {
+      this.addMsg(this.formatString({{ i18n('cache_search_result_named') | tojson }}, info));
+    } else {
+      this.addMsg(this.formatString({{ i18n('cache_search_result') | tojson }}, info));
+    }
+
     const wrapper = document.getElementById("result");
     for (const item of results) {
       this.addResult(item, book, wrapper);
     }
+
     this.addMsg("\u00A0");
   },
 
@@ -414,6 +425,13 @@ const scrapbook = {
     let result = document.createElement("li");
     result.appendChild(document.createTextNode(msg));
     wrapper.appendChild(result);
+  },
+
+  formatString(text, map) {
+    map[""] = "%";
+    return text.replace(/%([^%]+)%/g, (m, k) => {
+      return map[k] || "";
+    });
   },
 
   resolveUrl(url, base) {
@@ -863,11 +881,10 @@ const searchEngine = {
     <option value="file:">file:</option>
     <option value="root:">root:</option>
     <option value="sort:">sort:</option>
-    <option value="-sort:modify">Last Modified</option>
-    <option value="-sort:create">Last Created</option>
-    <option value="sort:title">Title Ascending</option>
-    <option value="-sort:title">Title Descending</option>
-    <option value="sort:id">ID Sort</option>
+    <option value="-sort:modify">{{ i18n('cache_search_sort_last_modified') }}</option>
+    <option value="-sort:create">{{ i18n('cache_search_sort_last_created') }}</option>
+    <option value="sort:title">{{ i18n('cache_search_sort_title') }}</option>
+    <option value="sort:id">{{ i18n('cache_search_sort_id') }}</option>
   </select>
   <input id="search" type="submit" value="{{ i18n('cache_search_start') }}" disabled autocomplete="off">
 </form>
