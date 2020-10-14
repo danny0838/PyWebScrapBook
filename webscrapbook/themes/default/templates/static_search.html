@@ -614,6 +614,9 @@ const searchEngine = {
         case "source":
           addRule("source", pos ? "include" : "exclude", parseStr(term));
           break;
+        case "icon":
+          addRule("icon", pos ? "include" : "exclude", parseStr(term));
+          break;
         case "tcc":
           addRule("tcc", pos ? "include" : "exclude", parseStr(term));
           break;
@@ -780,6 +783,10 @@ const searchEngine = {
     return this.matchText(rule, item.meta.source);
   },
 
+  _match_icon(rule, item) {
+    return this.matchText(rule, item.meta.icon);
+  },
+
   _match_type(rule, item) {
     return this.matchTextOr(rule, item.meta.type);
   },
@@ -883,6 +890,7 @@ const searchEngine = {
     <option value="content:">content:</option>
     <option value="tcc:">tcc:</option>
     <option value="source:">source:</option>
+    <option value="icon:">icon:</option>
     <option value="type:">type:</option>
     <option value="create:">create:</option>
     <option value="modify:">modify:</option>
