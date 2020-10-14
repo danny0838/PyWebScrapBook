@@ -48,7 +48,7 @@ setup(
             'resources/*.*',
             'themes/default/static/*.*',
             'themes/default/templates/*.*',
-            'themes/default/locales/*.*',
+            'themes/default/locales/*/*.py',
             ],
         },
     entry_points={
