@@ -36,6 +36,8 @@ cache_search_help_desc = """\
   • icon: items whose icon URL contains the keyword.
   • create: items whose create time matches the condition. Time format is an interval with 0-17 digits, followed by a minus sign optionally, and then followed by 0-17 digits. Each omitted digit is assumed to be a "0", except that "999..." is used if the latter date is totally omitted. For example, “create:2014-2015” means 20140000000000000 to 20150000000000000; “create:-201309” means 00000000000000000 to 20130900000000000; and “create:20110825” means 20110825000000000 to 99999999999999999.
   • modify: items whose modify time matches the condition. Time format is same as create.
+  • marked: marked items.
+  • locked: locked items.
   • sort: sort search results using the specific condition, which can be id, title, comment, content, source, type, create, or modify. For example, “sort:id -sort:modify” means sorting by ID in acending order and then sorting by modify time in descending order."""
 cache_search_result = 'Found %length% results:'
 cache_search_result_named = '(%name%) Found %length% results:'

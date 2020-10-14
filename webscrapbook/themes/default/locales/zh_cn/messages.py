@@ -36,6 +36,8 @@ cache_search_help_desc = """\
   • icon：搜索图示网址含有关键词的项目。
   • create：搜索建立时间符合条件的项目。时间格式为 0-17 位数字，后面接负号（可略），再接 0-17 位数字。省略的部分自动补 0，但后面的时间全省略时补 9（即无限大）。例如“create:2014-2015”表示 20140000000000000 到 20150000000000000，“create:-201309”表示 00000000000000000 到 20130900000000000，“create:20110825”表示 20110825000000000 到 99999999999999999。
   • modify：搜索修改时间符合条件的项目。时间格式同 create。
+  • marked：搜索强调标示的项目。
+  • locked：搜索锁定的项目。
   • sort：将搜索结果按指定方式排序，负号表示倒序。可填入 id、title、comment、content、source、type、create、modify。例如“sort:id -sort:modify”表示先按 ID 递增排序再按修改时间递减排序。"""
 cache_search_result = '找到 %length% 笔结果：'
 cache_search_result_named = '(%name%) 找到 %length% 笔结果：'

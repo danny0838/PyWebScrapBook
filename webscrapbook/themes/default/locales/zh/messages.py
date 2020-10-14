@@ -36,6 +36,8 @@ cache_search_help_desc = """\
   • icon：搜尋圖示網址含有關鍵詞的項目。
   • create：搜尋建立時間符合條件的項目。時間格式為 0-17 位數字，後面接負號（可略），再接 0-17 位數字。省略的部分自動補 0，但後面的時間全省略時補 9（即無限大）。例如「create:2014-2015」表示 20140000000000000 到 20150000000000000，「create:-201309」表示 00000000000000000 到 20130900000000000，「create:20110825」表示 20110825000000000 到 99999999999999999。
   • modify：搜尋修改時間符合條件的項目。時間格式同 create。
+  • marked：搜尋強調標示的項目。
+  • locked：搜尋鎖定的項目。
   • sort：將搜尋結果按指定方式排序，負號表示倒序。可填入 id、title、comment、content、source、type、create、modify。例如「sort:id -sort:modify」表示先按 ID 遞增排序再按修改時間遞減排序。"""
 cache_search_result = '找到 %length% 筆結果：'
 cache_search_result_named = '(%name%) 找到 %length% 筆結果：'
