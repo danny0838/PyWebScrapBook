@@ -16,7 +16,7 @@
 -->
 <html dir="{{ i18n('@@bidi_dir') }}" data-scrapbook-tree-page="{{ filename }}">
 <head>
-<base target="main">
+<base target="view">
 <meta charset="UTF-8">
 <title>{{ title }}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -335,7 +335,7 @@ var scrapbook = {
     if (anchor) {
       if (self !== top) {
         top.document.title = anchor.firstChild.nodeValue || scrapbook.data.title;
-        if (anchor.href) { top.frames["main"].location = anchor.href; }
+        if (anchor.href) { top.frames["view"].location = anchor.href; }
       }
     }
   },
