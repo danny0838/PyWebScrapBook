@@ -1,10 +1,13 @@
 {#-
-  The generated page ought to work in most browsers.
- 
+  The generated page ought to work in most browsers. Currently supports
+  down to IE 6. (some CSS breaks in IE5, but still browsable)
+
   Beware of cross-browser compatibility, basicly comply with CSS 2.1 and
   ECMAscript 3 or provide a fallback.
- 
-  - Avoid Node.textContent (broke in IE < 9)
+
+  - Avoid Node.textContent (break in IE < 9)
+  - Avoid Array.prototype.indexOf (break in IE < 9)
+  - Avoid Event.preventDefault (break in IE < 9)
 -#}
 <!DOCTYPE html>
 <!--
@@ -271,7 +274,13 @@ var scrapbook = {
       legend.appendChild(document.createTextNode('\xA0' + (meta.title || '') + '\xA0'));
     }
 
-    if (idChain.indexOf(id) === -1) {
+    addChildren: {
+      for (var i = 0, I = idChain.length; i < I; i++) {
+        if (idChain[i] === id) {
+          break addChildren;
+        }
+      }
+
       idChain.push(id);
       var childIdList = scrapbook.data.toc[id];
       if (childIdList && childIdList.length) {
@@ -348,12 +357,13 @@ var scrapbook = {
   },
 
   onClickFolder: function (event) {
-    event.preventDefault();
+    if (event) { event.preventDefault(); }
     var target = this.previousSibling;
     if (target) {
       target.focus();
       target.click();
     }
+    return false;
   },
 
   onClickItem: function (event) {
@@ -382,18 +392,21 @@ var scrapbook = {
   },
 
   onClickToggle: function (event) {
-    event.preventDefault();
+    if (event) { event.preventDefault(); }
     scrapbook.toggleElem(this.parentNode.nextSibling);
+    return false;
   },
 
   onClickToggleAll: function (event) {
-    event.preventDefault();
+    if (event) { event.preventDefault(); }
     scrapbook.toggleAllElem();
+    return false;
   },
 
   onClickComment: function (event) {
-    event.preventDefault();
+    if (event) { event.preventDefault(); }
     alert(this.title);
+    return false;
   },
 
   toggleElem: function (elem, willOpen) {
