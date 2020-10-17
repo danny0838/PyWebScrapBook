@@ -210,7 +210,7 @@ def crop(text, width=70, ellipsis='...'):
     return text
 
 
-REGEX_FORMAT_STRING = re.compile(r'%([^%]*)%')
+REGEX_FORMAT_STRING = re.compile(r'%(\w*)%')
 
 def format_string(text, mapping):
     """A very simple implementation for string formatting with placeholders.

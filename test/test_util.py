@@ -166,9 +166,14 @@ class TestUtils(unittest.TestCase):
 
         # %key% => value
         self.assertEqual(util.format_string('format %key%', {'key': 'value'}), 'format value')
+        self.assertEqual(util.format_string('format %foo_bar%', {'foo_bar': 'snake_value'}), 'format snake_value')
 
         # %unknown% => ''
         self.assertEqual(util.format_string('format %unknown%', {}), 'format ')
+
+        # %broken key% => not formatted
+        self.assertEqual(util.format_string('format %foo bar%', {}), 'format %foo bar%')
+        self.assertEqual(util.format_string('format 15%, 30%.\nformat 45%.', {}), 'format 15%, 30%.\nformat 45%.')
 
     def test_fix_codec(self):
         self.assertEqual(util.fix_codec('big5'), 'cp950')
