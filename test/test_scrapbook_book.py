@@ -324,7 +324,11 @@ scrapbook.meta({
             book.load_tree_file(os.path.join(self.test_root, 'meta.js'))
 
     def test_load_tree_files01(self):
-        """Test normal loading"""
+        """Test normal loading
+
+        - Item of same ID from the latter overwrites the formatter.
+        - Item with None value should be removed.
+        """
         self.create_general_config()
         os.makedirs(os.path.join(self.test_root, 'tree'))
         with open(os.path.join(self.test_root, 'tree', 'meta.js'), 'w', encoding='UTF-8') as f:
@@ -333,18 +337,28 @@ scrapbook.meta({
  */
 scrapbook.meta({
   "20200101000000000": {
-    "index": "index.html",
+    "index": "20200101000000000/index.html",
     "title": "Dummy",
     "type": "",
     "create": "20200101000000000",
-    "modify": "20200101000000000"
+    "modify": "20200101000000000",
+    "comment": "comment"
   },
   "20200101000000001": {
-    "index": "index.html",
-    "title": "Dummy2",
+    "index": "20200101000000001/index.html",
+    "title": "Dummy1",
     "type": "",
     "create": "20200101000000001",
-    "modify": "20200101000000001"
+    "modify": "20200101000000001",
+    "comment": "comment1"
+  },
+  "20200101000000002": {
+    "index": "20200101000000002/index.html",
+    "title": "Dummy2",
+    "type": "",
+    "create": "20200101000000002",
+    "modify": "20200101000000002",
+    "comment": "comment2"
   }
 })""")
         with open(os.path.join(self.test_root, 'tree', 'meta1.js'), 'w', encoding='UTF-8') as f:
@@ -353,43 +367,47 @@ scrapbook.meta({
  */
 scrapbook.meta({
   "20200101000000001": {
-    "index": "index.html",
-    "title": "Dummy2rev",
+    "index": "20200101000000001/index.html",
+    "title": "Dummy1rev",
     "type": "",
     "create": "20200101000000001",
     "modify": "20200101000000011"
   },
-  "20200101000000002": {
-    "index": "index.html",
+  "20200101000000002": null,
+  "20200101000000003": {
+    "index": "20200101000000003/index.html",
     "title": "Dummy3",
     "type": "",
-    "create": "20200101000000002",
-    "modify": "20200101000000002"
+    "create": "20200101000000003",
+    "modify": "20200101000000003",
+    "comment": "comment3"
   }
 })""")
 
         book = Book(Host(self.test_root))
         self.assertEqual(book.load_tree_files('meta'), {
             '20200101000000000': {
-                'index': 'index.html',
+                'index': '20200101000000000/index.html',
                 'title': 'Dummy',
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
+                'comment': 'comment',
                 },
             '20200101000000001': {
-                'index': 'index.html',
-                'title': 'Dummy2rev',
+                'index': '20200101000000001/index.html',
+                'title': 'Dummy1rev',
                 'type': '',
                 'create': '20200101000000001',
                 'modify': '20200101000000011',
                 },
-            '20200101000000002': {
-                'index': 'index.html',
+            '20200101000000003': {
+                'index': '20200101000000003/index.html',
                 'title': 'Dummy3',
                 'type': '',
-                'create': '20200101000000002',
-                'modify': '20200101000000002',
+                'create': '20200101000000003',
+                'modify': '20200101000000003',
+                'comment': 'comment3',
                 },
             })
 

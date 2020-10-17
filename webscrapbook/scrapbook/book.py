@@ -142,8 +142,14 @@ class Book:
     def load_tree_files(self, name):
         data = {}
         for file in self.iter_tree_files(name):
-            d = self.load_tree_file(file)
-            data.update(d)
+            data.update(self.load_tree_file(file))
+
+        # remove top-level None values to allow quick clear by appending file
+        # e.g. add meta1.js with {'id1': None} to quickly delete 'id1' in meta.js
+        for k in list(data):
+            if data[k] is None:
+                del data[k]
+
         return data
 
     def load_meta_files(self, refresh=False):
