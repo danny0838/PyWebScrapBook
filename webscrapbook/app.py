@@ -340,7 +340,11 @@ def verify_authorization(perm, action):
         return True
 
     if perm == 'read':
-        return action not in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy'}
+        return action not in {
+            'token', 'lock', 'unlock',
+            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
+            'cache', 'check',
+            }
 
     if perm == 'view':
         return action in {'view', 'info', 'source', 'download', 'static'}
