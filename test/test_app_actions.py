@@ -1001,60 +1001,6 @@ class TestList(TestActions):
                     }),
                 })
 
-    def test_directory_recursive(self):
-        with app.test_client() as c:
-            r = c.get('/subdir', query_string={'a': 'list', 'f': 'json', 'recursive': 1})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            data = r.json
-            self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
-                    'name': 'file.txt',
-                    'type': 'file',
-                    'size': 3,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                    }),
-                frozendict({
-                    'name': 'sub',
-                    'type': 'dir',
-                    'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                    }),
-                frozendict({
-                    'name': 'sub/subfile.txt',
-                    'type': 'file',
-                    'size': 6,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                    }),
-                })
-
-            r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json', 'recursive': 1})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/json')
-            data = r.json
-            self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
-                    'name': 'file.txt',
-                    'type': 'file',
-                    'size': 3,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                    }),
-                frozendict({
-                    'name': 'sub',
-                    'type': 'dir',
-                    'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                    }),
-                frozendict({
-                    'name': 'sub/subfile.txt',
-                    'type': 'file',
-                    'size': 6,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                    }),
-                })
-
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file(self, mock_abort):
         with app.test_client() as c:
@@ -1179,36 +1125,6 @@ class TestList(TestActions):
                         }),
                     })
 
-                # implicit dir (recursive)
-                r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'list', 'f': 'json', 'recursive': 1})
-                self.assertEqual(r.status_code, 200)
-                self.assertEqual(r.headers['Content-Type'], 'application/json')
-                self.assertEqual(r.headers['Cache-Control'], 'no-cache')
-                self.assertIsNotNone(r.headers['Last-Modified'])
-                self.assertIsNotNone(r.headers['ETag'])
-                data = r.json
-                self.assertTrue(data['success'])
-                self.assertEqual(set(make_hashable(data['data'])), {
-                    frozendict({
-                        'name': 'index.html',
-                        'type': 'file',
-                        'size': 22,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
-                        }),
-                    frozendict({
-                        'name': 'subdir',
-                        'type': 'dir',
-                        'size': None,
-                        'last_modified': None,
-                        }),
-                    frozendict({
-                        'name': 'subdir/index.html',
-                        'type': 'file',
-                        'size': 12,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 3, 1, 0, 0)),
-                        }),
-                    })
-
                 etag = r.headers['ETag']
                 lm =  r.headers['Last-Modified']
 
@@ -1316,50 +1232,6 @@ class TestList(TestActions):
                 'type': 'dir',
                 'size': None,
                 'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                }), sse)
-            self.assertIn(('complete', None), sse)
-
-    def test_sse_directory_recursive(self):
-        with app.test_client() as c:
-            r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'file.txt',
-                'type': 'file',
-                'size': 3,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }), sse)
-            self.assertIn(('message', {
-                'name': 'sub/subfile.txt',
-                'type': 'file',
-                'size': 6,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
-                }), sse)
-            self.assertIn(('complete', None), sse)
-
-            r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse', 'recursive': 1})
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'file.txt',
-                'type': 'file',
-                'size': 3,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
-                }), sse)
-            self.assertIn(('message', {
-                'name': 'sub',
-                'type': 'dir',
-                'size': None,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
-                }), sse)
-            self.assertIn(('message', {
-                'name': 'sub/subfile.txt',
-                'type': 'file',
-                'size': 6,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub', 'subfile.txt')).st_mtime,
                 }), sse)
             self.assertIn(('complete', None), sse)
 

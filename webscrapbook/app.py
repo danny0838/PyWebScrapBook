@@ -352,7 +352,7 @@ def verify_authorization(perm, action):
     return False
 
 
-def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=False, format=None):
+def handle_directory_listing(paths, zip=None, redirect_slash=True, format=None):
     """List contents in a directory.
 
     Args:
@@ -392,7 +392,7 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
             }
 
         with nullcontext(zip) if zip else open_archive_path(paths) as zip:
-            subentries = util.zip_listdir(zip, paths[-1], recursive)
+            subentries = util.zip_listdir(zip, paths[-1])
 
     else:
         # disallow cache to reflect any content file change
@@ -402,7 +402,7 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, recursive=Fal
             'Last-Modified': http_date(stats.st_mtime),
             }
 
-        subentries = util.listdir(paths[0], recursive)
+        subentries = util.listdir(paths[0])
 
     if format == 'sse':
         def gen():
@@ -892,17 +892,16 @@ def action_list():
     if not format:
         abort(400, "Action not supported.")
 
-    recursive = request.values.get('recursive', type=bool)
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
         try:
-            return handle_directory_listing(localpaths, redirect_slash=False, recursive=recursive, format=format)
+            return handle_directory_listing(localpaths, redirect_slash=False, format=format)
         except util.ZipDirNotFoundError:
             abort(404, "Directory does not exist.")
 
     if os.path.isdir(localpaths[0]):
-        return handle_directory_listing(localpaths, redirect_slash=False, recursive=recursive, format=format)
+        return handle_directory_listing(localpaths, redirect_slash=False, format=format)
 
     abort(404, "Directory does not exist.")
 
