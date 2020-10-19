@@ -2,13 +2,13 @@ PyWebScrapBook is a command line toolkit and backend server for
 [WebScrapBook browser extension](https://github.com/danny0838/webscrapbook).
 
 ## Features
-* Host any directory as a website.
+* Host any directory(s) as website(s).
+* Directory listing.
 * HTZ or MAFF archive file viewing.
 * Markdown file rendering.
-* Directory listing.
-* Create, view, edit, and/or delete files  via the web page or API.
-* HTTP(S) authorization.
-* Toolkit for management of scrapbooks, such as cache generating and data checking, exporting, importing, and conversion.
+* Create, view, edit, and/or delete files via the web interface or API.
+* HTTP(S) authorization and simple ACL.
+* Tools for scrapbooks management, such as cache generating and data checking, exporting, importing, and conversion.
 
 ## Usage
 
