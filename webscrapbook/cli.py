@@ -611,7 +611,7 @@ auto-generate parent folders if not found. (ignores --target and
         description=getdoc(cmd_convert),
         help="""convert scrapbook data between different formats""")
     parser_convert.set_defaults(func=cmd_convert)
-    parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE', required=True,
+    parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE',
         help="""the conversion mode. Get usage help with e.g. %(prog)s sb2wsb -h""")
 
     # -- sb2wsb
@@ -684,6 +684,10 @@ such as:
     except KeyError:
         parser.parse_args(['-h'])
     else:
+        if func is cmd_convert and args['mode'] is None:
+            parser.parse_args(['convert', '-h'])
+            return
+
         func(args)
 
 
