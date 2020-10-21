@@ -374,9 +374,9 @@ def launch(path):
     if sys.platform == "win32":
         os.startfile(path)
     elif sys.platform == "darwin":
-        subprocess.Popen(["open", path])
+        subprocess.run(["open", path])
     else:
-        subprocess.Popen(["xdg-open", path])
+        subprocess.run(["xdg-open", path])
 
 
 def view_in_explorer(path):
@@ -384,16 +384,16 @@ def view_in_explorer(path):
        in the explorer.
     """
     if sys.platform == "win32":
-        subprocess.Popen(["explorer", "/select,", path])
+        subprocess.run(["explorer", "/select,", path])
     elif sys.platform == "darwin":
         try:
-            subprocess.Popen(["open", "-R", path])
+            subprocess.run(["open", "-R", path])
         except OSError:
             # fallback for older OS X
             launch(os.path.dirname(path))
     else:
         try:
-            subprocess.Popen(["nautilus", "--select", path])
+            subprocess.run(["nautilus", "--select", path])
         except OSError:
             # fallback if no nautilus
             launch(os.path.dirname(path))
