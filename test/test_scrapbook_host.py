@@ -65,6 +65,7 @@ class TestHost(TestBase):
 name = myhost
 theme = custom
 root = public
+backup_dir = mybackups
 
 [book ""]
 name = mybook
@@ -78,6 +79,7 @@ name = mybook2
         self.assertEqual(host.name, 'myhost')
 
         self.assertEqual(host.chroot, os.path.join(self.test_root, 'public'))
+        self.assertEqual(host.backup_dir, os.path.join(self.test_root, 'mybackups'))
         self.assertEqual([os.path.normcase(f) for f in host.themes], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom')),
@@ -109,6 +111,7 @@ name = mybook2
 name = myhost
 theme = custom
 root = public
+backup_dir = mybackups
 
 [book "id2"]
 name = mybook2
@@ -122,6 +125,7 @@ name = mybook2
         self.assertEqual(host.name, 'myhost')
 
         self.assertEqual(host.chroot, os.path.join(other_root, 'public'))
+        self.assertEqual(host.backup_dir, os.path.join(other_root, 'mybackups'))
         self.assertEqual([os.path.normcase(f) for f in host.themes], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom')),

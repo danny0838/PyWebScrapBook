@@ -36,6 +36,7 @@ class TestClassConfig(unittest.TestCase):
             ('root', 'myroot'),
             ('base', 'mybase'),
             ('index', ''),
+            ('backup_dir', '.wsb/backup'),
             ('content_security_policy', 'strict'),
             ('allowed_x_for', 1),
             ('allowed_x_proto', 1),
@@ -103,6 +104,7 @@ class TestClassConfig(unittest.TestCase):
             ('root', '.'),
             ('base', ''),
             ('index', ''),
+            ('backup_dir', '.wsb/backup'),
             ('content_security_policy', 'strict'),
             ('allowed_x_for', 0),
             ('allowed_x_proto', 0),
@@ -198,6 +200,7 @@ theme = mytheme
 root = myroot
 base = mybase
 index = 
+backup_dir = .wsb/backup
 content_security_policy = strict
 allowed_x_for = 1
 allowed_x_proto = 1
@@ -266,6 +269,7 @@ permission = all
                     ('root', 'myroot'),
                     ('base', 'mybase'),
                     ('index', ''),
+                    ('backup_dir', '.wsb/backup'),
                     ('content_security_policy', 'strict'),
                     ('allowed_x_for', 1),
                     ('allowed_x_proto', 1),

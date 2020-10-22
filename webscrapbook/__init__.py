@@ -52,6 +52,7 @@ class Config():
             'root': '.',
             'base': '',
             'index': '',
+            'backup_dir': '.wsb/backup',
             'content_security_policy': 'strict',
             'allowed_x_for': '0',
             'allowed_x_proto': '0',

@@ -313,6 +313,7 @@ class Host:
         self.name = config['app']['name']
 
         self.chroot = os.path.normpath(os.path.join(root, self.config['app']['root']))
+        self.backup_dir = os.path.normpath(os.path.join(root, self.config['app']['backup_dir']))
         self.themes = [
             os.path.join(root, WSB_DIR, 'themes', config['app']['theme']),
             os.path.join(WSB_USER_DIR, 'themes', config['app']['theme']),

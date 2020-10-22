@@ -325,7 +325,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
         if ts is True:
             ts = util.datetime_to_id()
 
-        self.backup_dir = os.path.join(self.root, WSB_DIR, 'backup', ts)
+        self.backup_dir = os.path.join(self.host.backup_dir, ts)
 
     def backup(self, file, base=None):
         """Create a backup for the file.

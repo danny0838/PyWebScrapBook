@@ -115,6 +115,14 @@ the (ch)root path the application is served, without leading slash.
 (default: )
 
 
+#### `backup_dir`
+
+The backup directory for the WebScrapBook application to save backup files at.
+It's a directory path under the root, without leading or trailing slash.
+
+(default: `.wsb/backup`)
+
+
 #### `content_security_policy`
 
 Whether to send response with a content security policy header, which restricts
