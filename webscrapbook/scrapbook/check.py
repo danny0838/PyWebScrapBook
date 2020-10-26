@@ -772,7 +772,7 @@ class Indexer:
         if not id:
             id = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
             if id.endswith('/index.html'):
-                id = os.path.dirname(subpath)
+                id = os.path.dirname(id)
             else:
                 id, _ = os.path.splitext(id)
         if id in self.book.SPECIAL_ITEM_ID:
