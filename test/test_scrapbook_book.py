@@ -960,6 +960,16 @@ scrapbook.fulltext({
 
         self.assertListEqual(os.listdir(self.test_wsbdir), [])
 
+    def test_backup06(self):
+        """Test base param."""
+        test_dir = os.path.join(test_root, 'backup')
+        book = Book(Host(self.test_root))
+        book.init_backup()
+        book.backup(os.path.join(test_dir, 'test.txt'), base=test_dir)
+
+        with open(os.path.join(book.backup_dir, 'test.txt'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'ABC123')
+
     @mock.patch('webscrapbook.scrapbook.host.FileLock')
     def test_get_lock01(self, mock_filelock):
         self.create_general_config()
