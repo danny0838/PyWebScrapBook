@@ -1,7 +1,6 @@
 """Scrapbook book handler.
 """
 import os
-import shutil
 import zipfile
 import re
 import json
@@ -327,47 +326,13 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
 
         self.backup_dir = os.path.join(self.host.backup_dir, ts)
 
-    def backup(self, file, base=None, move=False):
-        """Create a backup for the file.
-
-        Args:
-            file: a path-like for the file or directory to backup. Silently
-                skipped if it doesn't exists or the backup cannot be performed.
-            base: an arbitrary base directory (as an absolute path)
-                to calculate the backup file path since, or None to use book
-                root by default.
-            move: True to move file to backup; copy otherwise.
-
-        Raises:
-            OSError: failed to copy or move
+    def backup(self, file, **kwargs):
+        """Create a backup for a file or directory if self.backup_dir is set.
         """
-        if base is None:
-            base = self.root
-
         if not self.backup_dir:
             return
 
-        if not os.path.exists(file):
-            return
-
-        if not os.path.abspath(file).startswith(os.path.join(base, '')):
-            return
-
-        dst = os.path.join(self.backup_dir, os.path.relpath(file, base))
-        if os.path.lexists(dst):
-            try:
-                shutil.rmtree(dst)
-            except NotADirectoryError:
-                os.remove(dst)
-        else:
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-        if move:
-            shutil.move(file, dst)
-        else:
-            try:
-                shutil.copytree(file, dst)
-            except NotADirectoryError:
-                shutil.copy2(file, dst)
+        self.host.backup(file, self.backup_dir, **kwargs)
 
     def get_lock(self, name, *args, **kwargs):
         return self.host.get_lock(f'book-{self.id}-{name}', *args, **kwargs)

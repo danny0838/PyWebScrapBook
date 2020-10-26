@@ -190,6 +190,108 @@ name = mybook2
         mock_filelock.assert_called_once_with(host, 'test',
             timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
 
+    def test_backup01(self):
+        """A common case."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_file = os.path.join(self.test_root, 'tree', 'meta.js')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        host = Host(self.test_root)
+        host.backup(test_file, test_backup_dir)
+
+        with open(os.path.join(test_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
+    def test_backup02(self):
+        """A common directory case."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_dir = os.path.join(self.test_root, 'tree')
+        os.makedirs(test_dir)
+        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('def')
+
+        host = Host(self.test_root)
+        host.backup(test_dir, test_backup_dir)
+
+        with open(os.path.join(test_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+        with open(os.path.join(test_backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'def')
+
+    def test_backup03(self):
+        """Pass if file not exist."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_file = os.path.join(self.test_wsbdir, 'icon', 'nonexist.txt')
+
+        host = Host(self.test_root)
+        host.backup(test_file, test_backup_dir)
+
+        self.assertFalse(os.path.lexists(os.path.join(test_backup_dir, WSB_DIR, 'icon', 'nonexist.txt')))
+
+    def test_backup04(self):
+        """Pass if file outside the host root."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+
+        host = Host(self.test_root)
+        host.backup(__file__, test_backup_dir)
+
+        self.assertListEqual(os.listdir(test_backup_dir), [])
+
+    def test_backup05(self):
+        """Test base param."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_base_dir = os.path.join(test_root, 'backup')
+
+        host = Host(self.test_root)
+        host.backup(os.path.join(test_base_dir, 'test.txt'), test_backup_dir, base=test_base_dir)
+
+        with open(os.path.join(test_backup_dir, 'test.txt'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'ABC123')
+
+    def test_backup06(self):
+        """Test move param."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_dir = os.path.join(self.test_root, 'tree')
+        os.makedirs(test_dir)
+        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('def')
+
+        host = Host(self.test_root)
+        host.backup(test_dir, test_backup_dir, move=True)
+
+        self.assertFalse(os.path.lexists(test_dir))
+        with open(os.path.join(test_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+        with open(os.path.join(test_backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'def')
+
+    def test_backup07(self):
+        """A common case."""
+        test_file = os.path.join(self.test_root, 'tree', 'meta.js')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        host = Host(self.test_root)
+        host.backup(test_file)
+
+        backup_dirname = os.listdir(os.path.join(self.test_wsbdir, 'backup'))[0]
+        self.assertRegex(backup_dirname, r'^\d{17}$')
+        with open(os.path.join(self.test_wsbdir, 'backup', backup_dirname, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
 class TestFileLock(TestBase):
     def test_init01(self):
         """Normal"""

@@ -1,6 +1,7 @@
 """Scrapbook host handler.
 """
 import os
+import shutil
 import time
 from collections import UserDict
 from threading import Thread
@@ -347,3 +348,48 @@ class Host:
         """Get a lock object to control lock.
         """
         return FileLock(self, name, *args, **kwargs)
+
+    def backup(self, file, backup_dir=None, base=None, move=False):
+        """Create a backup for the file or directory.
+
+        Args:
+            file: a path-like for the file or directory to backup. Silently
+                skipped if it doesn't exists or the backup cannot be performed.
+            backup_dir: a path-like for the directory to create a backup, or
+                None to auto-generate one.
+            base: an arbitrary base directory (as an absolute path)
+                to calculate the backup file path since, or None to use book
+                root by default.
+            move: True to move file to backup; copy otherwise.
+
+        Raises:
+            OSError: failed to copy or move
+        """
+        if base is None:
+            base = self.root
+
+        if backup_dir is None:
+            ts = util.datetime_to_id()
+            backup_dir = os.path.join(self.backup_dir, ts)
+
+        if not os.path.exists(file):
+            return
+
+        if not os.path.abspath(file).startswith(os.path.join(base, '')):
+            return
+
+        dst = os.path.join(backup_dir, os.path.relpath(file, base))
+        if os.path.lexists(dst):
+            try:
+                shutil.rmtree(dst)
+            except NotADirectoryError:
+                os.remove(dst)
+        else:
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+        if move:
+            shutil.move(file, dst)
+        else:
+            try:
+                shutil.copytree(file, dst)
+            except NotADirectoryError:
+                shutil.copy2(file, dst)
