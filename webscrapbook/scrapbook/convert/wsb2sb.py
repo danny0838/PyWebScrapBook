@@ -126,10 +126,10 @@ class Converter:
             node.attrib[f'{RDF}about'] = f'urn:scrapbook:item{oid}'
             node.attrib[f'{NS1}id'] = oid
 
-            if meta.get('marked'):
+            otype = LEGACY_TYPE_MAP.get(type, type)
+            if meta.get('marked') and otype == '':
                 node.attrib[f'{NS1}type'] = 'marked'
             else:
-                otype = LEGACY_TYPE_MAP.get(type, type)
                 node.attrib[f'{NS1}type'] = otype
 
             node.attrib[f'{NS1}title'] = meta.get('title', '')

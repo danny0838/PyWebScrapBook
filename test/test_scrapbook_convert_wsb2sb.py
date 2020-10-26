@@ -211,7 +211,7 @@ scrapbook.meta({
         self.assertEqual(tree.find(f'{RDF}Description').attrib[f'{NS1}type'], 'combine')
 
     def test_meta_marked01(self):
-        """marked property => marked type"""
+        """true marked property with "" type => marked type"""
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 scrapbook.meta({
@@ -237,6 +237,32 @@ scrapbook.meta({
         self.assertIsNone(tree.find(f'{RDF}Description').attrib.get(f'{NS1}marked'))
 
     def test_meta_marked02(self):
+        """marked property with other type => discard marked"""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": "file",
+    "marked": true
+  }
+})""")
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write('page content')
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        with open(self.test_output_rdf, 'rb') as fh:
+            tree = etree.parse(fh)
+
+        self.assertEqual(tree.find(f'{RDF}Description').attrib[f'{NS1}type'], 'file')
+        self.assertIsNone(tree.find(f'{RDF}Description').attrib.get(f'{NS1}marked'))
+
+    def test_meta_marked03(self):
         """false marked property => normal type"""
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
             fh.write("""\
