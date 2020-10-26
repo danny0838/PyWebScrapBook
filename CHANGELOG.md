@@ -3,7 +3,16 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
-## [0.26.0] - NOT RELEASED
+## [0.28.0] - 2020-10-26
+* Fixed a conversion error between "site" and legacy "combine" item type.
+* Fixed a conversion error that wsb2sb converter converts an item other than "" type with marked property to "marked" type.
+* Added support to convert data file between "postit" and legacy "note" item type.
+* Added `app.backup_dir` config.
+
+## [0.27.2] - 2020-10-26
+* Fixed bad ID for item added by `wsb check --resolve-unindexed-files`.
+
+## [0.26.0] - 2020-10-14
 * Dropped support for `recursive` parameter of `list` server action.
 * Added support of top-level None value for *.js tree files.
 
