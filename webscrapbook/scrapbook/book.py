@@ -333,8 +333,9 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
         Args:
             file: a path-like for the file or directory to backup. Silently
                 skipped if it doesn't exists or the backup cannot be performed.
-            base: an arbitrary base directory to calculate the backup file
-                path since. Must be an absolute path.
+            base: an arbitrary base directory (as an absolute path)
+                to calculate the backup file path since, or None to use book
+                root by default.
 
         Raises:
             OSError: failed to copy
