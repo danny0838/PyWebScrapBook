@@ -23,7 +23,6 @@ NC = '{http://home.netscape.com/NC-rdf#}'
 LEGACY_TYPE_MAP = {
     "postit": "note",
     "note": "notex",
-    "site": "combine",
     }
 
 

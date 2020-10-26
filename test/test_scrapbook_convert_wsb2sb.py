@@ -191,25 +191,6 @@ scrapbook.meta({
 
         self.assertEqual(tree.find(f'{RDF}Description').attrib[f'{NS1}type'], 'notex')
 
-    def test_meta_type03(self):
-        """site => combine"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "site"
-  }
-})""")
-
-        for info in wsb2sb.run(self.test_input, self.test_output):
-            pass
-
-        with open(self.test_output_rdf, 'rb') as fh:
-            tree = etree.parse(fh)
-
-        self.assertEqual(tree.find(f'{RDF}Description').attrib[f'{NS1}type'], 'combine')
-
     def test_meta_marked01(self):
         """true marked property with "" type => marked type"""
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:

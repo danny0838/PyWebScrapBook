@@ -235,7 +235,7 @@ class TestRun(unittest.TestCase):
 
         self.assertEqual(book.meta['20200101010101']['type'], '')
         self.assertIsNone(book.meta['20200101010101'].get('marked'))
-        self.assertEqual(book.meta['20200101010102']['type'], 'site')
+        self.assertEqual(book.meta['20200101010102']['type'], 'combine')
         self.assertIsNone(book.meta['20200101010102'].get('marked'))
         self.assertEqual(book.meta['20200101010103']['type'], '')
         self.assertTrue(book.meta['20200101010103']['marked'])

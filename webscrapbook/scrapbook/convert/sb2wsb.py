@@ -30,7 +30,6 @@ REGEX_RDF_SEQ_ID = re.compile(r'urn:scrapbook:(?:item(\d{14})|(root))')
 LEGACY_TYPE_MAP = {
     "note": "postit",
     "notex": "note",
-    "combine": "site",
     }
 
 PRUNE_FILES = {
