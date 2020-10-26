@@ -41,6 +41,7 @@ class Book:
     """Main scrapbook book controller.
     """
     REGEX_TREE_FILE_WRAPPER = re.compile(r'^(?:/\*.*\*/|[^(])+\(([\s\S]*)\)(?:/\*.*\*/|[\s;])*$')
+    REGEX_ITEM_NOTE = re.compile(r'^.*?<pre>\n?([^<]*(?:<(?!/pre>)[^<]*)*)\n</pre>.*$', re.S)
     SAVE_META_THRESHOLD = 256 * 1024
     SAVE_TOC_THRESHOLD = 4 * 1024 * 1024
     SAVE_FULLTEXT_THRESHOLD = 128 * 1024 * 1024
@@ -67,6 +68,14 @@ class Book:
         'bookmark',
         }
     META_PROPERTY_PREFIX = 'data-scrapbook-'
+    ITEM_NOTE_FORMATTER = """\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+%NOTE_CONTENT%
+</pre></body></html>"""
 
     def __init__(self, host, book_id=''):
         self.host = host
@@ -424,3 +433,17 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
 
         index = item.get('index', '')
         return os.path.normpath(os.path.join(self.data_dir, os.path.dirname(index), unquote(u.path)))
+
+    def load_note_file(self, file):
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+
+        return self.REGEX_ITEM_NOTE.sub(r'\1', content)
+
+    def save_note_file(self, file, content):
+        data = util.format_string(self.ITEM_NOTE_FORMATTER, {
+            'NOTE_CONTENT': content,
+            })
+        # enforce LF to prevent bad parsing for legacy ScrapBook
+        with open(file, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write(data)

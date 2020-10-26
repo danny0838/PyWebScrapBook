@@ -1117,5 +1117,79 @@ scrapbook.fulltext({
             os.path.join(book.tree_dir, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'),
             )
 
+    def test_load_note_file01(self):
+        """Test for common note file wrapper."""
+        test_file = os.path.join(self.test_root, 'index.html')
+        with open(test_file, 'w', encoding='UTF-8') as f:
+            f.write("""\
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><style>pre{white-space: pre-wrap; overflow-wrap: break-word;}</style></head><body><pre>
+Note content
+2nd line
+3rd line
+</pre></body></html>""")
+
+        book = Book(Host(self.test_root))
+        content = book.load_note_file(test_file)
+        self.assertEqual(content, """\
+Note content
+2nd line
+3rd line""")
+
+    def test_load_note_file02(self):
+        """Test for common legacy note file wrapper."""
+        test_file = os.path.join(self.test_root, 'index.html')
+        with open(test_file, 'w', encoding='UTF-8') as f:
+            f.write("""\
+<html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
+Note content
+2nd line
+3rd line
+</pre></body></html>""")
+
+        book = Book(Host(self.test_root))
+        content = book.load_note_file(test_file)
+        self.assertEqual(content, """\
+Note content
+2nd line
+3rd line""")
+
+    def test_load_note_file03(self):
+        """Return original text if malformatted."""
+        test_file = os.path.join(self.test_root, 'index.html')
+        html = """\
+<html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body>
+Note content
+2nd line
+3rd line
+</body></html>"""
+        with open(test_file, 'w', encoding='UTF-8') as f:
+            f.write(html)
+
+        book = Book(Host(self.test_root))
+        content = book.load_note_file(test_file)
+        self.assertEqual(content, html)
+
+    def test_save_note_file01(self):
+        """Test saving. Enforce LF linefeeds."""
+        test_file = os.path.join(self.test_root, 'index.html')
+
+        book = Book(Host(self.test_root))
+        book.save_note_file(test_file, """\
+Note content
+2nd line
+3rd line""")
+
+        with open(test_file, encoding='UTF-8', newline='') as fh:
+            self.assertEqual(fh.read(), """\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+Note content
+2nd line
+3rd line
+</pre></body></html>""")
+
 if __name__ == '__main__':
     unittest.main()
