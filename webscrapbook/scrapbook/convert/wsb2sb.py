@@ -259,6 +259,16 @@ class Converter:
             except OSError as exc:
                 yield Info('debug', f'Failed to copy data for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
 
+            if type == 'postit':
+                yield Info('debug', f'Converting data file for "{id}": type={type}')
+                file = os.path.join(self.output, 'data', oid, 'index.html')
+                content = book.load_note_file(file)
+                with open(file, 'w', encoding='UTF-8') as fh:
+                    fh.write(f"""\
+<html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
+{content}
+</pre></body></html>""")
+
     def _handle_item_icon(self, book, id):
         yield Info('debug', f'Checking icon for "{id}"')
         icon = book.meta[id].get('icon', '')

@@ -224,6 +224,7 @@ class Converter:
 
             yield Info('info', 'Copying data files...')
             yield from self._copy_data_files(book, book0)
+            yield from self._convert_data_files(book, book0)
 
             yield Info('info', 'Saving tree files...')
             book.save_meta_files()
@@ -369,6 +370,18 @@ class Converter:
                     shutil.copytree(src, dst)
                 except NotADirectoryError:
                     shutil.copy2(src, dst)
+
+    def _convert_data_files(self, book, book0):
+        for id, meta in book.meta.items():
+            if meta['type'] == 'postit':
+                yield Info('debug', f'Converting data file for "{id}": type={meta["type"]}')
+                index_file = os.path.normpath(os.path.join(book.data_dir, meta['index']))
+                try:
+                    content = book.load_note_file(index_file)
+                except OSError:
+                    pass
+                else:
+                    book.save_note_file(index_file, content)
 
 
 def run(input, output, * , no_backup=False):
