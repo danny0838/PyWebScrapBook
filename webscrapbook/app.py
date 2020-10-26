@@ -342,7 +342,7 @@ def verify_authorization(perm, action):
     if perm == 'read':
         return action not in {
             'token', 'lock', 'unlock',
-            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
+            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy', 'backup',
             'cache', 'check',
             }
 
@@ -1523,6 +1523,22 @@ def action_copy(sourcepaths, targetpaths):
     except Exception:
         traceback.print_exc()
         abort(500, 'Unable to copy to the target.')
+
+
+@handle_action_advanced
+@handle_action_token
+def action_backup():
+    """Bakup file or directory."""
+    format = request.format
+    localpaths = request.localpaths
+
+    if len(localpaths) > 1:
+        abort(400, "Unable to backup inside a zip file.")
+
+    ts = request.values.get('ts') or util.datetime_to_id()
+    move = request.values.get('move', default=False, type=bool)
+
+    host.backup(localpaths[0], os.path.join(host.backup_dir, ts), move=move)
 
 
 @handle_action_token

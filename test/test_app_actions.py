@@ -4907,6 +4907,110 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Found something at target.')
 
+class TestBackup(TestActions):
+    def setUp(self):
+        self.test_dir = os.path.join(server_root, 'temp')
+        os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
+            f.write('ABC 你好')
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.test_dir, onerror=self.rmtree_error_handler)
+        except NotADirectoryError:
+            os.remove(self.test_dir)
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_method_check(self, mock_abort):
+        """Require POST."""
+        with app.test_client() as c:
+            r = c.get('/temp/subdir/test.txt', query_string={
+                'token': token(c),
+                'a': 'backup',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(405, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'a': 'backup',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.backup')
+    def test_file01(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'a': 'backup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
+            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            move=False,
+            )
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.backup')
+    def test_file02(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'move': '1',
+                'a': 'backup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
+            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            move=True,
+            )
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.backup')
+    def test_directory01(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'a': 'backup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, 'temp', 'subdir'),
+            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            move=False,
+            )
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.backup')
+    def test_directory02(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'move': '1',
+                'a': 'backup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, 'temp', 'subdir'),
+            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            move=True,
+            )
+
 class TestCache(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
