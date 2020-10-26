@@ -327,7 +327,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
 
         self.backup_dir = os.path.join(self.host.backup_dir, ts)
 
-    def backup(self, file, base=None):
+    def backup(self, file, base=None, move=False):
         """Create a backup for the file.
 
         Args:
@@ -336,9 +336,10 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
             base: an arbitrary base directory (as an absolute path)
                 to calculate the backup file path since, or None to use book
                 root by default.
+            move: True to move file to backup; copy otherwise.
 
         Raises:
-            OSError: failed to copy
+            OSError: failed to copy or move
         """
         if base is None:
             base = self.root
@@ -360,10 +361,13 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
                 os.remove(dst)
         else:
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-        try:
-            shutil.copytree(file, dst)
-        except NotADirectoryError:
-            shutil.copy2(file, dst)
+        if move:
+            shutil.move(file, dst)
+        else:
+            try:
+                shutil.copytree(file, dst)
+            except NotADirectoryError:
+                shutil.copy2(file, dst)
 
     def get_lock(self, name, *args, **kwargs):
         return self.host.get_lock(f'book-{self.id}-{name}', *args, **kwargs)

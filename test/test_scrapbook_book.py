@@ -970,6 +970,25 @@ scrapbook.fulltext({
         with open(os.path.join(book.backup_dir, 'test.txt'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'ABC123')
 
+    def test_backup07(self):
+        """Test move param."""
+        test_dir = os.path.join(self.test_root, 'tree')
+        os.makedirs(test_dir)
+        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('def')
+
+        book = Book(Host(self.test_root))
+        book.init_backup()
+        book.backup(test_dir, move=True)
+
+        self.assertFalse(os.path.lexists(test_dir))
+        with open(os.path.join(book.backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+        with open(os.path.join(book.backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'def')
+
     @mock.patch('webscrapbook.scrapbook.host.FileLock')
     def test_get_lock01(self, mock_filelock):
         self.create_general_config()
