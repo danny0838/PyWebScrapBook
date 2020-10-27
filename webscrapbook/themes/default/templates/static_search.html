@@ -439,7 +439,7 @@ const scrapbook = {
 
   formatString(text, map) {
     map[""] = "%";
-    return text.replace(/%([^%]+)%/g, (m, k) => {
+    return text.replace(/%(\w*)%/g, (m, k) => {
       return typeof map[k] !== 'undefined' ? map[k] : "";
     });
   },
