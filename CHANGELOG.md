@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.29.0] - 2020-10-27
+* Added support for `backup` action.
+* Fixed potential ID overwriting for item added by `wsb check --resolve-unindexed-files`.
+
 ## [0.28.0] - 2020-10-26
 * Fixed a conversion error between "site" and legacy "combine" item type.
 * Fixed a conversion error that wsb2sb converter converts an item other than "" type with marked property to "marked" type.
