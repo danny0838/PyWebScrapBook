@@ -1175,7 +1175,7 @@ page content
             })
 
     def test_item_id_used(self):
-        """Test if id is provided but used."""
+        """Skip if id is provided but used."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -1219,16 +1219,8 @@ page content
         self.assertDictEqual(book.toc, {})
 
     def test_item_id_special(self):
-        """Test if id is special."""
+        """Skip if id is special."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "root-1": {
-    "title": "dummy",
-    "type": "folder"
-  }
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -1253,15 +1245,41 @@ page content
         for info in generator.run([test_index]):
             pass
 
+        self.assertDictEqual(book.meta, {})
+
+        self.assertDictEqual(book.toc, {})
+
+    def test_item_id_filename01(self):
+        """Test if filename corresponds to standard ID format."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
         self.assertDictEqual(book.meta, {
-            'root-1': {
-                'title': 'dummy',
-                'type': 'folder',
-                },
-            'root-2': {
+            '20200101000000000': {
                 'index': '20200101000000000/index.html',
-                'type': '',
                 'title': 'MyTitle 中文',
+                'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '',
@@ -1272,7 +1290,123 @@ page content
 
         self.assertDictEqual(book.toc, {
             'root': [
-                'root-2',
+                '20200101000000000',
+                ],
+            })
+
+    def test_item_id_filename02(self):
+        """Generate new ID if filename corresponds to standard ID format but used."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "title": "dummy",
+    "type": "folder"
+  }
+})""")
+        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "20200101000000000"
+  ]
+})""")
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
+        new_id = list(book.meta.keys())[-1]
+        self.assertRegex(new_id, r'^\d{17}$')
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'title': 'dummy',
+                'type': 'folder',
+                },
+            new_id: {
+                'index': '20200101000000000/index.html',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+                },
+            })
+
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20200101000000000',
+                new_id,
+                ],
+            })
+
+    def test_item_id_filename03(self):
+        """Generate new ID if filename not corresponds to standard ID format."""
+        test_index = os.path.join(self.test_root, 'foo', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
+        new_id = list(book.meta.keys())[-1]
+        self.assertRegex(new_id, r'^\d{17}$')
+
+        self.assertDictEqual(book.meta, {
+            new_id: {
+                'index': 'foo/index.html',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+                },
+            })
+
+        self.assertDictEqual(book.toc, {
+            'root': [
+                new_id,
                 ],
             })
 

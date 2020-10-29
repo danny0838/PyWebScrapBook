@@ -13,7 +13,7 @@ from base64 import b64encode
 from urllib.parse import urlsplit, unquote
 from urllib.request import urlopen
 from urllib.error import URLError
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from lxml import etree
 
@@ -36,19 +36,6 @@ HTML_TITLE_EXCLUDE_PARENTS = {
     'svg',
     'template',
     }
-
-
-def generate_item_id(book, id):
-    """Generate a unique ID for the book.
-
-    This is mostly to prevent using a special ID.
-    """
-    i = 1
-    new_id = f'{id}-{i}'
-    while book.meta.get(new_id):
-        i += 1
-        new_id = f'{id}-{i}'
-    return new_id
 
 
 def generate_item_title(book, id):
@@ -766,17 +753,31 @@ class Indexer:
 
         # id
         id = meta.pop('id')
-        if self.book.meta.get(id):
-            yield Info('error', f'ID "{id}" is already used.')
-            return None
-        if not id:
+        if id:
+            # if explicitly specified in html attributes, use it or fail out.
+            if id in self.book.meta:
+                yield Info('error', f'Specified ID "{id}" is already used.')
+                return None
+
+            if id in self.book.SPECIAL_ITEM_ID:
+                yield Info('error', f'Specified ID "{id}" is invalid.')
+                return None
+
+        else:
+            # Use the id if it corresponds to standard timestamp format and not
+            # used; otherwise generate a new one.
             id = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
             if id.endswith('/index.html'):
                 id = os.path.dirname(id)
             else:
                 id, _ = os.path.splitext(id)
-        if id in self.book.meta or id in self.book.SPECIAL_ITEM_ID:
-            id = generate_item_id(self.book, id)
+
+            if not util.id_to_datetime(id) or id in self.book.meta:
+                ts = datetime.now(timezone.utc)
+                id = util.datetime_to_id(ts)
+                while id in self.book.meta:
+                    ts += timedelta(milliseconds=1)
+                    id = util.datetime_to_id(ts)
 
         # add to meta
         self.book.meta[id] = meta
