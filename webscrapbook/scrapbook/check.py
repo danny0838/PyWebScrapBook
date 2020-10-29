@@ -925,7 +925,7 @@ class FavIconCacher:
             fdst = os.path.join(self.book.tree_dir, 'favicon', hash_ + ext)
 
             if os.path.isfile(fdst):
-                yield Info('info', f'Use saved favicon "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
+                yield Info('info', f'Use saved favicon for "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
                 return fdst
 
             yield Info('info', f'Saving favicon "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
