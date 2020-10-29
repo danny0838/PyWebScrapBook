@@ -1295,6 +1295,51 @@ page content
             })
 
     def test_item_id_filename02(self):
+        """Test if base filename corresponds to standard ID format."""
+        test_index = os.path.join(self.test_root, 'subdir', '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': 'subdir/20200101000000000/index.html',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+                },
+            })
+
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20200101000000000',
+                ],
+            })
+
+    def test_item_id_filename03(self):
         """Generate new ID if filename corresponds to standard ID format but used."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
@@ -1362,7 +1407,7 @@ page content
                 ],
             })
 
-    def test_item_id_filename03(self):
+    def test_item_id_filename04(self):
         """Generate new ID if filename not corresponds to standard ID format."""
         test_index = os.path.join(self.test_root, 'foo', 'index.html')
         os.makedirs(os.path.dirname(test_index))

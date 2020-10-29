@@ -764,13 +764,13 @@ class Indexer:
                 return None
 
         else:
-            # Use the id if it corresponds to standard timestamp format and not
-            # used; otherwise generate a new one.
-            id = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
-            if id.endswith('/index.html'):
-                id = os.path.dirname(id)
-            else:
-                id, _ = os.path.splitext(id)
+            # Take base filename as id if it corresponds to standard timestamp
+            # format and not used; otherwise generate a new one.
+            basepath = os.path.relpath(file, self.book.data_dir)
+            basename = os.path.basename(basepath)
+            if basename == 'index.html':
+                basename = os.path.basename(os.path.dirname(basepath))
+            id, _ = os.path.splitext(basename)
 
             if not util.id_to_datetime(id) or id in self.book.meta:
                 ts = datetime.now(timezone.utc)
