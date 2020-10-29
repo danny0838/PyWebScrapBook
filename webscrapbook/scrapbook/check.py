@@ -721,7 +721,7 @@ class Indexer:
         for file in files:
             id = yield from self._index_file(file)
             if id:
-                yield Info('info', f'Added item "{id}".')
+                yield Info('info', f'Added item "{id}" for "{self.book.get_subpath(file)}".')
                 indexed[id] = True
 
         return indexed
