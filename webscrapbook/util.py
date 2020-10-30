@@ -123,16 +123,19 @@ def id_to_datetime(id):
     """
     m = REGEX_ID_TO_DATETIME.search(id)
     if m:
-        return datetime(
-            int(m.group(1)),
-            int(m.group(2)),
-            int(m.group(3)),
-            int(m.group(4)),
-            int(m.group(5)),
-            int(m.group(6)),
-            int(m.group(7)) * 1000,
-            timezone.utc,
-            )
+        try:
+            return datetime(
+                int(m.group(1)),
+                int(m.group(2)),
+                int(m.group(3)),
+                int(m.group(4)),
+                int(m.group(5)),
+                int(m.group(6)),
+                int(m.group(7)) * 1000,
+                timezone.utc,
+                )
+        except ValueError:
+            pass
     return None
 
 
@@ -156,14 +159,17 @@ def id_to_datetime_legacy(id):
     """
     m = REGEX_ID_TO_DATETIME_LEGACY.search(id)
     if m:
-        return datetime(
-            int(m.group(1)),
-            int(m.group(2)),
-            int(m.group(3)),
-            int(m.group(4)),
-            int(m.group(5)),
-            int(m.group(6)),
-            )
+        try:
+            return datetime(
+                int(m.group(1)),
+                int(m.group(2)),
+                int(m.group(3)),
+                int(m.group(4)),
+                int(m.group(5)),
+                int(m.group(6)),
+                )
+        except ValueError:
+            pass
     return None
 
 

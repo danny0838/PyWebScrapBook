@@ -110,12 +110,22 @@ class TestUtils(unittest.TestCase):
     def test_id_to_datetime(self):
         self.assertEqual(util.id_to_datetime('20200102030405067'),
             datetime(2020, 1, 2, 3, 4, 5, 67000, timezone.utc))
-        self.assertIsNone(util.id_to_datetime('20200102030405'), None)
+
+        # invalid format (not match regex)
+        self.assertIsNone(util.id_to_datetime('20200102030405'))
+
+        # invalid format (number out of range)
+        self.assertIsNone(util.id_to_datetime('20200102030465067'))
 
     def test_id_to_datetime_legacy(self):
         self.assertEqual(util.id_to_datetime_legacy('20200102030405'),
             datetime(2020, 1, 2, 3, 4, 5))
-        self.assertIsNone(util.id_to_datetime_legacy('20200102'), None)
+
+        # invalid format (not match regex)
+        self.assertIsNone(util.id_to_datetime_legacy('20200102'))
+
+        # invalid format (number out of range)
+        self.assertIsNone(util.id_to_datetime_legacy('20200102036505'))
 
     def test_validate_filename(self):
         self.assertEqual(

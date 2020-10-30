@@ -87,6 +87,7 @@ class Converter:
 
         # map convertable IDs
         for id in book.meta:
+            yield Info('debug', f'Createding ID mapping: "{id}"')
             oid = get_legacy_id(id)
             if oid and oid not in self.oid_to_id:
                 self.id_to_oid[id] = oid
