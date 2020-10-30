@@ -84,7 +84,7 @@ class Exporter():
         except Exception as exc:
             # other unexpected error
             traceback.print_exc()
-            yield Info('error', f'Failed to export "{id}" {exc}', exc=exc)
+            yield Info('error', f'Failed to export "{id}": {exc}', exc=exc)
 
     def _export_item_internal(self, id, id_chain):
         meta = self.book.meta[id]
