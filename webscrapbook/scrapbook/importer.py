@@ -71,12 +71,8 @@ class Importer():
                 except RuntimeError as exc:
                     # intended raise to skip the import
                     yield Info('error', f'Failed to import file "{os.path.basename(src)}": {exc}')
-                except OSError as exc:
-                    # unexpected OSError
-                    traceback.print_exc()
-                    yield Info('error', f'Failed to import file "{os.path.basename(src)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
                 except Exception as exc:
-                    # other unexpected error
+                    # unexpected error
                     traceback.print_exc()
                     yield Info('error', f'Failed to import file "{os.path.basename(src)}": {exc}', exc=exc)
                 else:

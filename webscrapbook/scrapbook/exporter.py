@@ -77,12 +77,8 @@ class Exporter():
         yield Info('debug', f'Exporting item "{id}"')
         try:
             yield from self._export_item_internal(id, id_chain)
-        except OSError as exc:
-            # unexpected OSError
-            traceback.print_exc()
-            yield Info('error', f'Failed to export "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
         except Exception as exc:
-            # other unexpected error
+            # unexpected error
             traceback.print_exc()
             yield Info('error', f'Failed to export "{id}": {exc}', exc=exc)
 
