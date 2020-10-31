@@ -258,7 +258,7 @@ class Converter:
                             f'<meta http-equiv="refresh" content="0;URL=./{quote(basename)}">'
                             '</head><body></body></html>')
             except OSError as exc:
-                yield Info('debug', f'Failed to copy data for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                yield Info('error', f'Failed to copy data for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
 
             if type == 'postit':
                 yield Info('debug', f'Converting data file for "{id}": type={type}')
