@@ -658,6 +658,25 @@ such as:
     parser_convert_wsb2sb.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
+    # -- wsb2file
+    parser_convert_wsb2file = parser_convert_sub.add_parser('wsb2file',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""Convert from WebScrapBook to hierarchical files""",
+        help="""convert from WebScrapBook to hierarchical files""")
+    parser_convert_wsb2file.add_argument('input', action='store',
+        help="""the input directory""")
+    parser_convert_wsb2file.add_argument('output', action='store',
+        help="""the output directory""")
+    parser_convert_wsb2file.add_argument('--book', dest='book_id', metavar='ID',
+        default='', action='store',
+        help="""the book ID to convert. (default: "")""")
+    parser_convert_wsb2file.add_argument('--no-prefix', dest='prefix', default=True, action='store_false',
+        help="""don't prefix output files with position number.""")
+    parser_convert_wsb2file.add_argument('--force', default=False, action='store_true',
+        help="""overwrite everything in the output directory""")
+    parser_convert_wsb2file.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
     # subcommand: help
     parser_help = subparsers.add_parser('help',
         formatter_class=argparse.RawDescriptionHelpFormatter,
