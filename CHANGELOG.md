@@ -3,6 +3,9 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.32.0] - 2020-11-05
+* Added `file2wsb` and `wsb2file` converters.
+
 ## [0.30.0] - 2020-10-29
 * ID for item added by `wsb check --resolve-unindexed-files` is now always in standard format.
 
