@@ -1597,6 +1597,324 @@ page content
                 },
             })
 
+    def test_param_handle_ie_meta01(self):
+        """handle_ie_meta=True"""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<!-- saved from url=(0029)http://example.com/?a=123#456 -->
+<html>
+<head>
+<meta charset="UTF-8">
+<title>mytitle</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_ie_meta=True)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': 'http://example.com/?a=123#456',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_ie_meta02(self):
+        """handle_ie_meta=False"""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<!-- saved from url=(0029)http://example.com/?a=123#456 -->
+<html>
+<head>
+<meta charset="UTF-8">
+<title>mytitle</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_ie_meta=False)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': '',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_singlefile_meta01(self):
+        """handle_singlefile_meta=True"""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html><html><!--
+ Page saved with SingleFile 
+ url: http://example.com/?a=123#456 
+ saved date: Wed Jan 01 2020 10:00:00 GMT+0800 (台北標準時間)
+--><head>
+<meta charset="UTF-8">
+<title>mytitle</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_singlefile_meta=True)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101020000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': 'http://example.com/?a=123#456',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_singlefile_meta02(self):
+        """handle_singlefile_meta=False"""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html><html><!--
+ Page saved with SingleFile 
+ url: http://example.com/?a=123#456 
+ saved date: Wed Jan 01 2020 10:00:00 GMT+0800 (台北標準時間)
+--><head>
+<meta charset="UTF-8">
+<title>mytitle</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_singlefile_meta=False)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': '',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_savepagewe_meta01(self):
+        """handle_savepagewe_meta=True"""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html>
+<head>
+<base href="http://example.com/?a=123#456">
+<meta charset="UTF-8">
+<title>mytitle</title>
+<meta name="savepage-url" content="http://example.com/?a=123#456">
+<meta name="savepage-title" content="MY TITLE">
+<meta name="savepage-from" content="http://example.com/?a=123#456">
+<meta name="savepage-date" content="Wed Jan 01 2020 10:00:00 GMT+0800 (台北標準時間)">
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_savepagewe_meta=True)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'title': 'MY TITLE',
+                'type': '',
+                'create': '20200101020000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': 'http://example.com/?a=123#456',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_savepagewe_meta02(self):
+        """handle_savepagewe_meta=False"""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html>
+<head>
+<base href="http://example.com/?a=123#456">
+<meta charset="UTF-8">
+<title>mytitle</title>
+<meta name="savepage-url" content="http://example.com/?a=123#456">
+<meta name="savepage-title" content="MY TITLE">
+<meta name="savepage-from" content="http://example.com/?a=123#456">
+<meta name="savepage-date" content="Wed Jan 01 2020 10:00:00 GMT+0800 (台北標準時間)">
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_savepagewe_meta=False)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': '',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_maoxian_meta01(self):
+        """handle_maoxian_meta=True"""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html>
+<!-- OriginalSrc: http://example.com/?a=123#456 -->
+<head>
+<meta charset="UTF-8">
+<title>mytitle</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_maoxian_meta=True)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': 'http://example.com/?a=123#456',
+                'comment': '',
+                },
+            })
+
+    def test_param_handle_maoxian_meta02(self):
+        """handle_maoxian_meta=False"""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html>
+<!-- OriginalSrc: http://example.com/?a=123#456 -->
+<head>
+<meta charset="UTF-8">
+<title>mytitle</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book, handle_maoxian_meta=False)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'mytitle',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': '',
+                'comment': '',
+                },
+            })
+
 class FavIconCacher(TestCheck):
     def test_cache01(self):
         """Cache absolute URL.
