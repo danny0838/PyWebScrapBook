@@ -1120,12 +1120,6 @@ page content
                 },
             })
 
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
-            })
-
     def test_item_id(self):
         """Test if id is provided."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
@@ -1166,12 +1160,6 @@ page content
                 'source': 'http://example.com',
                 'comment': '',
                 },
-            })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                'myid',
-                ],
             })
 
     def test_item_id_used(self):
@@ -1216,8 +1204,6 @@ page content
                 },
             })
 
-        self.assertDictEqual(book.toc, {})
-
     def test_item_id_special(self):
         """Skip if id is special."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
@@ -1246,8 +1232,6 @@ page content
             pass
 
         self.assertDictEqual(book.meta, {})
-
-        self.assertDictEqual(book.toc, {})
 
     def test_item_id_filename01(self):
         """Test if filename corresponds to standard ID format."""
@@ -1288,12 +1272,6 @@ page content
                 },
             })
 
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
-            })
-
     def test_item_id_filename02(self):
         """Test if base filename corresponds to standard ID format."""
         test_index = os.path.join(self.test_root, 'subdir', '20200101000000000', 'index.html')
@@ -1331,12 +1309,6 @@ page content
                 'source': 'http://example.com',
                 'comment': '',
                 },
-            })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
             })
 
     def test_item_id_filename03(self):
@@ -1400,13 +1372,6 @@ page content
                 },
             })
 
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                new_id,
-                ],
-            })
-
     def test_item_id_filename04(self):
         """Generate new ID if filename not corresponds to standard ID format."""
         test_index = os.path.join(self.test_root, 'foo', 'index.html')
@@ -1449,12 +1414,6 @@ page content
                 },
             })
 
-        self.assertDictEqual(book.toc, {
-            'root': [
-                new_id,
-                ],
-            })
-
     def test_item_title01(self):
         """Test title with descendant tags."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
@@ -1489,12 +1448,6 @@ page content
                 'source': 'http://example.com/mypage.html',
                 'comment': '',
                 },
-            })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
             })
 
     def test_item_title02(self):
@@ -1532,12 +1485,6 @@ page content
                 },
             })
 
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
-            })
-
     def test_item_title03(self):
         """Infer from ID if not separator."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
@@ -1571,12 +1518,6 @@ page content
                 'source': 'http://example.com',
                 'comment': '',
                 },
-            })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
             })
 
     def test_item_title04(self):
@@ -1614,12 +1555,6 @@ page content
                 'source': 'http://example.com',
                 'comment': '',
                 },
-            })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
             })
 
     def test_item_icon(self):
@@ -1660,12 +1595,6 @@ page content
                 'source': '',
                 'comment': '',
                 },
-            })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                ],
             })
 
 class FavIconCacher(TestCheck):

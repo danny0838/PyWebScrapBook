@@ -670,7 +670,14 @@ class BookChecker:
         indexed = yield from indexer.run(files)
 
         favicon_dir = os.path.join(self.book.tree_dir, 'favicon', '')
+
         for id in indexed:
+            # add to TOC if not seen
+            if id not in self.seen_in_toc:
+                self.book.toc.setdefault('root', []).append(id)
+                self.seen_in_toc.add(id)
+
+            # record added cached favicons
             index = self.book.meta[id].get('index')
             icon = self.book.meta[id].get('icon')
             file = os.path.normpath(os.path.join(self.book.data_dir, os.path.dirname(index), unquote(icon)))
@@ -678,6 +685,7 @@ class BookChecker:
             is_in_favicon_dir = file_ci.startswith(os.path.normcase(favicon_dir))
             if is_in_favicon_dir:
                 self.used_favicons.add(file_ci)
+
             self.cnt_resolves += 1
 
     def _resolve_absolute_icon(self, ids):
@@ -703,21 +711,15 @@ class BookChecker:
 
 
 class Indexer:
+    """A class that generates item metadata for files.
+    """
     def __init__(self, book):
         self.book = book
-        self.seen_in_toc = set()
 
     def run(self, files):
         self.book.load_meta_files()
-        self.book.load_toc_files()
 
         indexed = {}
-
-        # collect seen IDs in the toc
-        for id, ref_ids in self.book.toc.items():
-            for ref_id in ref_ids:
-                self.seen_in_toc.add(ref_id)
-
         for file in files:
             id = yield from self._index_file(file)
             if id:
@@ -825,11 +827,6 @@ class Indexer:
         # comment
         if meta['comment'] is None:
             meta['comment'] = ''
-
-        # add to toc if not seen
-        if id not in self.seen_in_toc:
-            self.book.toc.setdefault('root', []).append(id)
-            self.seen_in_toc.add(id)
 
         return id
 
