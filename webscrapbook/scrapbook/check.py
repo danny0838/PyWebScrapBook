@@ -748,7 +748,7 @@ class Indexer:
 
     def _index_file(self, file):
         subpath = self.book.get_subpath(file)
-        yield Info('info', f'Indexing "{subpath}"...')
+        yield Info('debug', f'Indexing "{subpath}"...')
 
         if not os.path.isfile(file):
             yield Info('error', f'File "{subpath}" does not exist.')
