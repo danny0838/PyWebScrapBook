@@ -658,6 +658,27 @@ such as:
     parser_convert_wsb2sb.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
+    # -- file2wsb
+    parser_convert_file2wsb = parser_convert_sub.add_parser('file2wsb',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""Convert from hierarchical files to WebScrapBook.
+
+Supports metadata recognition of web pages saved via:
+- Built-in save of Internet Explorer or a Chromium-based browser
+- SingleFile
+- Save Page WE
+- MaoXian web clipper
+""",
+        help="""convert from hierarchical files to WebScrapBook""")
+    parser_convert_file2wsb.add_argument('input', action='store',
+        help="""the input directory""")
+    parser_convert_file2wsb.add_argument('output', action='store',
+        help="""the output directory""")
+    parser_convert_file2wsb.add_argument('--force', default=False, action='store_true',
+        help="""overwrite everything in the output directory""")
+    parser_convert_file2wsb.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
     # -- wsb2file
     parser_convert_wsb2file = parser_convert_sub.add_parser('wsb2file',
         formatter_class=argparse.RawDescriptionHelpFormatter,
