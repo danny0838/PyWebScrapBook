@@ -626,7 +626,7 @@ class FulltextCacheGenerator():
             return os.stat(file).st_mtime
         except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
             return None
-        except OSError:
+        except OSError as exc:
             yield Info('error', f'Failed to access file for "{path}" of "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
             return None
 
