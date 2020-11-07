@@ -583,12 +583,7 @@ class FulltextCacheGenerator():
 
             # set updated fulltext
             yield Info('debug', f'Generating cache for "{path}" of "{id}"')
-            try:
-                fulltext = yield from self._get_fulltext_cache(item, path)
-            except Exception as exc:
-                fulltext = ''
-                traceback.print_exc()
-                yield Info('error', f'Failed to generate cache for "{id}" ({path}): {exc}', exc=exc)
+            fulltext = yield from self._get_fulltext_cache(item, path)
 
             if fulltext is not None:
                 book.fulltext[id][path] = {
@@ -669,6 +664,10 @@ class FulltextCacheGenerator():
         try:
             mime, _ = mimetypes.guess_type(path)
             return (yield from self._get_fulltext_cache_for_fh(item, path, fh, mime))
+        except Exception as exc:
+            traceback.print_exc()
+            yield Info('error', f'Failed to generate cache for "{item.id}" ({path}): {exc}', exc=exc)
+            return ''
         finally:
             fh.close()
 
