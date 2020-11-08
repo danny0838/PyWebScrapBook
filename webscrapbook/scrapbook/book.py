@@ -137,6 +137,10 @@ class Book:
         with open(file, encoding='UTF-8') as fh:
             text = fh.read()
 
+        # avoid error if file is empty
+        if text == '':
+            return {}
+
         m = self.REGEX_TREE_FILE_WRAPPER.search(text)
 
         if not m:

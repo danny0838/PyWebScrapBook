@@ -323,6 +323,15 @@ scrapbook.meta({
         with self.assertRaises(wsb_book.TreeFileMalformedJsonError):
             book.load_tree_file(os.path.join(self.test_root, 'meta.js'))
 
+    def test_load_tree_file06(self):
+        """Test empty file should not error out."""
+        self.create_general_config()
+        with open(os.path.join(self.test_root, 'meta.js'), 'w', encoding='UTF-8') as f:
+            f.write('')
+
+        book = Book(Host(self.test_root))
+        self.assertEqual(book.load_tree_file(os.path.join(self.test_root, 'meta.js')), {})
+
     def test_load_tree_files01(self):
         """Test normal loading
 
