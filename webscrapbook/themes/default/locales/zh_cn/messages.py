@@ -39,7 +39,7 @@ cache_search_help_desc = """\
   • file：搜索档名含有关键词的项目。
   • root：搜索此 ID 项目下的子项目。多次指定时以“或”连接。
   • book：搜索指定剪贴簿（依名称）中的项目。多次指定时以“或”连接。
-  • sort：将搜索结果按指定方式排序，负号表示倒序。可填入 id、title、comment、content、source、type、create、modify。例如“sort:id -sort:modify”表示先按 ID 递增排序再按修改时间递减排序。"""
+  • sort：将搜索结果按指定方式排序，负号表示倒序。可填入 id、title、comment、file、content、source、type、create、modify。例如“sort:id -sort:modify”表示先按 ID 递增排序再按修改时间递减排序。"""
 cache_search_result = '找到 %length% 笔结果：'
 cache_search_result_named = '(%name%) 找到 %length% 笔结果：'
 cache_search_sort_last_created = '最后创建'

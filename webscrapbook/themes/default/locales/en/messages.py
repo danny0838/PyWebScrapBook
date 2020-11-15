@@ -39,7 +39,7 @@ cache_search_help_desc = """\
   • file: items whose filename contains the keyword.
   • root: items under the item of ID. Multiple values are “or”-connected.
   • book: items in the specific scrapbook (by name). Multiple values are “or”-connected.
-  • sort: sort search results using the specific condition, which can be id, title, comment, content, source, type, create, or modify. For example, “sort:id -sort:modify” means sorting by ID in acending order and then sorting by modify time in descending order."""
+  • sort: sort search results using the specific condition, which can be id, title, comment, file, content, source, type, create, or modify. For example, “sort:id -sort:modify” means sorting by ID in acending order and then sorting by modify time in descending order."""
 cache_search_result = 'Found %length% results:'
 cache_search_result_named = '(%name%) Found %length% results:'
 cache_search_sort_last_created = 'Last Created'
