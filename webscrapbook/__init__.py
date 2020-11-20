@@ -21,7 +21,7 @@ WSB_EXTENSION_MIN_VERSION = '0.79.0'
 WSB_USER_DIR = os.path.join(os.path.expanduser('~'), '.config', 'wsb')  # affected by $HOME
 WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affected by $HOME
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
-WSB_CONFIG = 'config.ini'
+WSB_CONFIG = os.environ.get('WSB_CONFIG') or 'config.ini'
 
 mimetypes.add_type("application/rss+xml", ".rss")
 mimetypes.add_type("application/atom+xml", ".atom")
