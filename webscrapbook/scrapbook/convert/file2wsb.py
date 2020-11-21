@@ -17,8 +17,6 @@ from ..check import Indexer
 
 FIND_INDEX_EXT = {'.html', '.htz', '.maff', '.htm'}
 
-REGEX_SF_DOC_COMMENT = re.compile(r'^\s+Page saved with SingleFile\s+url: (\S+)\s+saved date: ([^()]+)')
-
 
 class Converter:
     def __init__(self, input, output):
@@ -220,7 +218,7 @@ class Converter:
         return id
 
 
-def run(input, output, * , no_backup=False):
+def run(input, output):
     start = time.time()
     yield Info('info', 'conversion mode: hierarchial files --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
