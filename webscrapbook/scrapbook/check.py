@@ -846,7 +846,7 @@ class Indexer:
         if meta['icon'] is None:
             favicon_elem = next(iter_favicon_elems(tree), None)
             icon = favicon_elem.attrib.get('href', '') if favicon_elem is not None else ''
-            if util.is_archive(index):
+            if icon and util.is_archive(index):
                 icon = yield from self._get_archive_favicon(index, icon)
             meta['icon'] = icon
 
