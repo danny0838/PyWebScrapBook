@@ -3,6 +3,7 @@ import unittest
 import os
 import shutil
 import glob
+import zipfile
 import time
 
 from lxml import etree
@@ -383,6 +384,132 @@ page content
             os.path.join(self.test_output, id_item, 'mypage.html'),
             os.path.join(self.test_output, id_item, 'mypage_files'),
             os.path.join(self.test_output, id_item, 'mypage_files', 'picture.bmp'),
+            })
+
+    def test_htz(self):
+        """Test hierarchical folders for *.htz
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.htz')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('index.html', """\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        for info in file2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        ids = list(book.meta.keys())
+        id_folder1 = ids[0]
+        id_item = ids[1]
+        self.assertDictEqual(book.meta, {
+            id_folder1: {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': id_folder1,
+                'modify': id_folder1,
+                },
+            id_item: {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': f'{id_item}.htz',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'http://example.com',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_folder1,
+                ],
+            id_folder1: [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.htz'),
+            })
+
+    def test_maff(self):
+        """Test hierarchical folders for *.maff
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.maff')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('20200101000000000/index.html', """\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        for info in file2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        ids = list(book.meta.keys())
+        id_folder1 = ids[0]
+        id_item = ids[1]
+        self.assertDictEqual(book.meta, {
+            id_folder1: {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': id_folder1,
+                'modify': id_folder1,
+                },
+            id_item: {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': f'{id_item}.maff',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'http://example.com',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_folder1,
+                ],
+            id_folder1: [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.maff'),
             })
 
 if __name__ == '__main__':
