@@ -1,5 +1,6 @@
 from unittest import mock
 import unittest
+import mimetypes
 import os
 import shutil
 import zipfile
@@ -24,6 +25,9 @@ def setUpModule():
         ]
     for mocking in mockings:
         mocking.start()
+
+    # only 'image/x-ms-bmp' is available on Linux by default
+    mimetypes.add_type('image/bmp', '.bmp')
 
 def tearDownModule():
     # stop mock
