@@ -2,6 +2,7 @@
 """
 import os
 import shutil
+import stat
 import time
 from collections import UserDict
 from threading import Thread
@@ -180,7 +181,12 @@ class FileLock:
                         name=self.name, file=self.file)
 
                 try:
-                    stale_time = os.stat(self.file).st_mtime + self.stale
+                    st = os.stat(self.file)
+                    if not stat.S_ISREG(st.st_mode):
+                        raise LockGenerateError(
+                            f'unable to create lock "{self.name}" is not a regular file',
+                            name=self.name, file=self.file)
+                    stale_time = st.st_mtime + self.stale
                 except FileNotFoundError:
                     # A rare case that lock file has been removed during the
                     # short inverval. Try acquire again.
