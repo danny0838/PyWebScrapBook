@@ -2316,7 +2316,7 @@ class TestLock(unittest.TestCase):
                 'a': 'lock',
                 'f': 'json',
                 'name': 'test',
-                'chkt': 0,
+                'chkt': 0.1,
                 })
 
             mock_abort.assert_called_once_with(500, 'Unable to create lock "test".')
