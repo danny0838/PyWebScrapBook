@@ -88,6 +88,7 @@ class Exporter():
 
         # generate a unique timestamp as prefix
         ts = datetime.now(timezone.utc)
+        ts = ts.replace(microsecond=(ts.microsecond // 1000)*1000)
         while ts in self.used_ts:
             ts += timedelta(milliseconds=1)
         self.used_ts.add(ts)
