@@ -88,10 +88,11 @@ class Exporter():
 
         # generate a unique timestamp as prefix
         ts = datetime.now(timezone.utc)
-        while ts in self.used_ts:
-            ts += timedelta(milliseconds=1)
-        self.used_ts.add(ts)
         ets = util.datetime_to_id(ts)
+        while ets in self.used_ts:
+            ts += timedelta(milliseconds=1)
+            ets = util.datetime_to_id(ts)
+        self.used_ts.add(ets)
 
         # setup an export id (eid), which is unique and is same among all
         # occurrences of the same id, to the ets of the first occurrence
