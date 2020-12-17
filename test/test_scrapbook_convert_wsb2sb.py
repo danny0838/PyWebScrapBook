@@ -435,12 +435,14 @@ scrapbook.meta({
         with open(self.test_output_rdf, 'rb') as fh:
             tree = etree.parse(fh)
 
+        dt = datetime(2020, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc).astimezone()
+        local_time_str = f'{dt:%Y%m%d%H%M%S}'
         self.assertEqual(
             tree.find(f'{RDF}Description').attrib[f'{NS1}icon'],
-            'resource://scrapbook/data/20200101080000/favicon.bmp'
+            f'resource://scrapbook/data/{local_time_str}/favicon.bmp'
             )
         self.assertTrue(
-            os.path.isfile(os.path.join(self.test_output, 'data', '20200101080000', 'favicon.bmp'))
+            os.path.isfile(os.path.join(self.test_output, 'data', local_time_str, 'favicon.bmp'))
             )
 
     def test_meta_icon06(self):
