@@ -2938,6 +2938,15 @@ class TestStaticSiteGenerator(TestCache):
 
         os.makedirs(self.test_tree)
 
+    def assertStatEqual(self, first, second, msg=None):
+        def accept(key):
+            return key.startswith('st_') and not key.startswith('st_atime')
+
+        def to_dict(x):
+            return dict(((k, getattr(x, k)) for k in dir(x) if accept(k)))
+
+        self.assertEqual(to_dict(first), to_dict(second), msg)
+
     def test_update01(self):
         """Create nonexisting files"""
         check_files = [
@@ -2980,7 +2989,7 @@ class TestStaticSiteGenerator(TestCache):
         for path in check_files:
             with self.subTest(path=path):
                 file = os.path.normpath(os.path.join(self.test_tree, path))
-                self.assertEqual(os.stat(file), orig_stats[file])
+                self.assertStatEqual(os.stat(file), orig_stats[file])
 
     def test_update02(self):
         """Overwrite existing different files"""
