@@ -99,6 +99,7 @@ class TestActions(unittest.TestCase):
         Args:
             *datas: compatible data format with get_file_data()
             is_move: requires strict equivalent of stat
+                     except st_atime and st_ctime fields
         """
         datas = [self.get_file_data(data, follow_symlinks=not is_move) for data in datas]
         for i in range(1, len(datas)):
@@ -107,7 +108,15 @@ class TestActions(unittest.TestCase):
                     and isinstance(datas[0]['stat'], os.stat_result)
                     and isinstance(datas[i]['stat'], os.stat_result)
                     ):
-                self.assertEqual(datas[0]['stat'], datas[i]['stat'])
+
+                def accept(key):
+                    return key.startswith('st_') and not (
+                            key.startswith('st_ctime') or key.startswith('st_atime'))
+
+                def to_dict(x):
+                    return dict(((k, getattr(x, k)) for k in dir(x) if accept(k)))
+
+                self.assertEqual(to_dict(datas[0]['stat']), to_dict(datas[i]['stat']))
                 return
 
             if isinstance(datas[0]['stat'], os.stat_result):
