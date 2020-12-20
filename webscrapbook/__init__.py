@@ -23,20 +23,20 @@ WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affecte
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
 WSB_CONFIG = os.environ.get('WSB_CONFIG') or 'config.ini'
 
-mimetypes.add_type("application/rss+xml", ".rss")
-mimetypes.add_type("application/atom+xml", ".atom")
-mimetypes.add_type("text/markdown", ".md")
-mimetypes.add_type("text/markdown", ".mkd")
-mimetypes.add_type("text/markdown", ".mkdn")
-mimetypes.add_type("text/markdown", ".mdwn")
-mimetypes.add_type("text/markdown", ".mdown")
-mimetypes.add_type("text/markdown", ".markdown")
-mimetypes.add_type("application/html+zip", ".htz")
-mimetypes.add_type("application/x-maff", ".maff")
-mimetypes.add_type("application/wsba+zip", ".wsba")
+mimetypes.add_type('application/rss+xml', '.rss')
+mimetypes.add_type('application/atom+xml', '.atom')
+mimetypes.add_type('text/markdown', '.md')
+mimetypes.add_type('text/markdown', '.mkd')
+mimetypes.add_type('text/markdown', '.mkdn')
+mimetypes.add_type('text/markdown', '.mdwn')
+mimetypes.add_type('text/markdown', '.mdown')
+mimetypes.add_type('text/markdown', '.markdown')
+mimetypes.add_type('application/html+zip', '.htz')
+mimetypes.add_type('application/x-maff', '.maff')
+mimetypes.add_type('application/wsba+zip', '.wsba')
 
-# seems to be set to x-zip-compressed on Windows
-mimetypes.add_type("application/zip", ".zip")
+# .zip is mapped to application/x-zip-compressed on Windows
+mimetypes.add_type('application/zip', '.zip')
 
 
 class Config():
