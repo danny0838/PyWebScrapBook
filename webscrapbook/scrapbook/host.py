@@ -2,6 +2,7 @@
 """
 import os
 import shutil
+import stat
 import time
 from collections import UserDict
 from threading import Thread
@@ -172,22 +173,32 @@ class FileLock:
             try:
                 with open(self.file, 'x', encoding='UTF-8') as fh:
                     fh.write(self.id)
-            except FileExistsError:
+            except FileExistsError as exc:
+                try:
+                    st = os.lstat(self.file)
+                except FileNotFoundError:
+                    # A rare case that lock file has been removed during the
+                    # short inverval. Try acquire again.
+                    continue
+                except OSError as exc:
+                    # error out if self.file cannot be stated
+                    raise LockGenerateError(f'unable to create lock "{self.name}"',
+                        name=self.name, file=self.file) from exc
+
+                # error out if self.file is not a regular file in POSIX
+                # (Windows raises PermissionError rather than FileExistsError
+                # in such case)
+                if not stat.S_ISREG(st.st_mode):
+                    raise LockGenerateError(f'unable to create lock "{self.name}"',
+                        name=self.name, file=self.file) from exc
+
                 t = time.time()
 
                 if t >= timeout_time:
                     raise LockTimeoutError(f'timeout when acquiring lock "{self.name}"',
                         name=self.name, file=self.file)
 
-                try:
-                    stale_time = os.stat(self.file).st_mtime + self.stale
-                except FileNotFoundError:
-                    # A rare case that lock file has been removed during the
-                    # short inverval. Try acquire again.
-                    continue
-                except OSError as exc:
-                    raise LockGenerateError(f'unable to create lock "{self.name}"',
-                        name=self.name, file=self.file) from exc
+                stale_time = st.st_mtime + self.stale
 
                 if t >= stale_time:
                     # Current lock file is stale. Rewrite with current ID.
