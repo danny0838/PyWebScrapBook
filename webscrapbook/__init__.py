@@ -35,6 +35,10 @@ mimetypes.add_type('application/html+zip', '.htz')
 mimetypes.add_type('application/x-maff', '.maff')
 mimetypes.add_type('application/wsba+zip', '.wsba')
 
+# .bmp is mapped to image/x-ms-bmp on POSIX
+# ref: https://bugs.python.org/issue42028
+mimetypes.add_type('image/bmp', '.bmp')
+
 # .zip is mapped to application/x-zip-compressed on Windows
 mimetypes.add_type('application/zip', '.zip')
 
