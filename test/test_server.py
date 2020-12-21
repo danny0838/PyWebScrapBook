@@ -215,7 +215,7 @@ command =
     def test_command3(self, mock_make_server, mock_browser):
         # server.browse = true, browser.command set
         with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+            f.write(r"""[server]
 host = 127.0.0.1
 port = 80
 
@@ -224,7 +224,7 @@ command = "C:\Program Files\Mozilla Firefox\firefox.exe" %s &
 """)
 
         server.serve(server_root)
-        mock_browser.assert_called_once_with('"C:\Program Files\Mozilla Firefox\firefox.exe" %s &')
+        mock_browser.assert_called_once_with(r'"C:\Program Files\Mozilla Firefox\firefox.exe" %s &')
 
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
