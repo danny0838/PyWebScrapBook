@@ -2,6 +2,7 @@ from unittest import mock
 import unittest
 import os
 import shutil
+import glob
 import zipfile
 import time
 from base64 import b64decode
@@ -770,13 +771,14 @@ scrapbook.meta({
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data'))),
-            {oid},
-            )
-        self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid))),
-            {'index.html', 'page.html'},
-            )
+            set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, 'scrapbook.rdf'),
+            os.path.join(self.test_output, 'data'),
+            os.path.join(self.test_output, 'data', oid),
+            os.path.join(self.test_output, 'data', oid, 'index.html'),
+            os.path.join(self.test_output, 'data', oid, 'page.html'),
+            })
 
     def test_copy_data_files02(self):
         """###.html => copy ###.html to <ID>/*"""
@@ -799,13 +801,13 @@ scrapbook.meta({
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data'))),
-            {oid},
-            )
-        self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid))),
-            {'index.html'},
-            )
+            set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, 'scrapbook.rdf'),
+            os.path.join(self.test_output, 'data'),
+            os.path.join(self.test_output, 'data', oid),
+            os.path.join(self.test_output, 'data', oid, 'index.html'),
+            })
 
     def test_copy_data_files03(self):
         """###.htz => copy internal files to <ID>/*"""
@@ -828,17 +830,16 @@ scrapbook.meta({
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data'))),
-            {oid},
-            )
-        self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid))),
-            {'index.html', 'page.html', 'subdir'},
-            )
-        self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid, 'subdir'))),
-            {'page2.html'},
-            )
+            set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, 'scrapbook.rdf'),
+            os.path.join(self.test_output, 'data'),
+            os.path.join(self.test_output, 'data', oid),
+            os.path.join(self.test_output, 'data', oid, 'index.html'),
+            os.path.join(self.test_output, 'data', oid, 'page.html'),
+            os.path.join(self.test_output, 'data', oid, 'subdir'),
+            os.path.join(self.test_output, 'data', oid, 'subdir', 'page2.html'),
+            })
 
     def test_copy_data_files04(self):
         """###.maff => copy internal files of first topdir to <ID>/*"""
@@ -862,17 +863,16 @@ scrapbook.meta({
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data'))),
-            {oid},
-            )
-        self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid))),
-            {'index.html', 'page.html', 'subdir'},
-            )
-        self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid, 'subdir'))),
-            {'page2.html'},
-            )
+            set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, 'scrapbook.rdf'),
+            os.path.join(self.test_output, 'data'),
+            os.path.join(self.test_output, 'data', oid),
+            os.path.join(self.test_output, 'data', oid, 'index.html'),
+            os.path.join(self.test_output, 'data', oid, 'page.html'),
+            os.path.join(self.test_output, 'data', oid, 'subdir'),
+            os.path.join(self.test_output, 'data', oid, 'subdir', 'page2.html'),
+            })
 
     def test_copy_data_files05(self):
         """###.maff => copy nothing if no page"""
@@ -892,7 +892,11 @@ scrapbook.meta({
             pass
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
-        self.assertFalse(os.path.lexists(os.path.join(self.test_output, 'data', oid)))
+        self.assertEqual(
+            set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, 'scrapbook.rdf'),
+            })
 
     def test_copy_data_files06(self):
         """foo.bar => copy it and create meta refresh"""
@@ -923,9 +927,14 @@ some content
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(
-            set(os.listdir(os.path.join(self.test_output, 'data', oid))),
-            {'index.html', '中文#1.xhtml'},
-            )
+            set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, 'scrapbook.rdf'),
+            os.path.join(self.test_output, 'data'),
+            os.path.join(self.test_output, 'data', oid),
+            os.path.join(self.test_output, 'data', oid, 'index.html'),
+            os.path.join(self.test_output, 'data', oid, '中文#1.xhtml'),
+            })
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(self.test_output, 'data', oid, 'index.html')).target,
             './%E4%B8%AD%E6%96%87%231.xhtml'
