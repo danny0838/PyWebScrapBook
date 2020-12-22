@@ -165,6 +165,18 @@ scrapbook.meta({
   }
 })""")
 
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+postit page content
+</pre></body></html>""")
+
         for info in wsb2sb.run(self.test_input, self.test_output):
             pass
 
@@ -172,6 +184,14 @@ scrapbook.meta({
             tree = etree.parse(fh)
 
         self.assertEqual(tree.find(f'{RDF}Description').attrib[f'{NS1}type'], 'note')
+
+        # check output legacy note format
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), """\
+<html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
+postit page content
+</pre></body></html>""")
 
     def test_meta_type02(self):
         """note => notex"""
@@ -183,6 +203,11 @@ scrapbook.meta({
     "type": "note"
   }
 })""")
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write('note page content')
 
         for info in wsb2sb.run(self.test_input, self.test_output):
             pass
