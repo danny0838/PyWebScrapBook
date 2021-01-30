@@ -636,8 +636,9 @@ auto-generate parent folders if not found. (ignores --target and
         description="""Convert from WebScrapBook to legacy ScrapBook X
 
 Note that certain information may lose permanently, such as:
-* item appended to multiple parents (preserve only the first occurence)
-* item in the recycle bin
+* items appended to multiple parents (preserve only the first occurence)
+* items in the recycle bin
+* inter-item links may break
 
 Also note that compatibility validation of this tool is targeting ScrapBook X.
 There may be minor compatibility issues if the output scrapbook is used by a
