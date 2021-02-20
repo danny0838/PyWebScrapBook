@@ -1025,7 +1025,7 @@ class FavIconCacher:
 
             fsrc.seek(0)
             hash_ = util.checksum(fsrc)
-            ext = mimetypes.guess_extension(mime)
+            ext = mimetypes.guess_extension(mime) or ''
             fdst = os.path.join(self.book.tree_dir, 'favicon', hash_ + ext)
 
             if os.path.isfile(fdst):
