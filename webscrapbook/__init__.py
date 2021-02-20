@@ -39,6 +39,9 @@ mimetypes.add_type('application/wsba+zip', '.wsba')
 # ref: https://bugs.python.org/issue42028
 mimetypes.add_type('image/bmp', '.bmp')
 
+# .ico is mapped to image/vnd.microsoft.icon on POSIX
+mimetypes.add_type('image/x-icon', '.ico')
+
 # .zip is mapped to application/x-zip-compressed on Windows
 mimetypes.add_type('application/zip', '.zip')
 
