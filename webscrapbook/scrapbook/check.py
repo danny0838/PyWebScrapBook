@@ -847,7 +847,7 @@ class Indexer:
             favicon_elem = next(iter_favicon_elems(tree), None)
             icon = favicon_elem.attrib.get('href', '') if favicon_elem is not None else ''
             if icon and util.is_archive(index):
-                icon = yield from self._get_archive_favicon(index, icon)
+                icon = yield from self._get_archive_favicon(id, index, icon)
             meta['icon'] = icon
 
         generator = FavIconCacher(self.book)
@@ -937,7 +937,7 @@ class Indexer:
 
         meta['source'] = source
 
-    def _get_archive_favicon(self, index, url):
+    def _get_archive_favicon(self, id, index, url):
         """Convert in-zip relative favicon path to data URL.
         """
         # skip invalid in-zip-path
