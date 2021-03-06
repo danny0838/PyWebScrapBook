@@ -100,7 +100,7 @@ def import_module_file(ns, file):
 #########################################################################
 
 REGEX_ID_TO_DATETIME = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$')
-REGEX_ID_TO_DATETIME_LEGACY = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$')
+REGEX_ID_TO_DATETIME_LEGACY = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{0,9})$')
 
 def datetime_to_id(t=None):
     """Convert a datetime to webscrapbook ID.
@@ -160,6 +160,12 @@ def id_to_datetime_legacy(id):
     m = REGEX_ID_TO_DATETIME_LEGACY.search(id)
     if m:
         try:
+            ms = m.group(7)
+            try:
+                ms = int(ms) * 10 ** (6 - len(ms))
+            except ValueError:
+                ms = 0
+
             return datetime(
                 int(m.group(1)),
                 int(m.group(2)),
@@ -167,6 +173,7 @@ def id_to_datetime_legacy(id):
                 int(m.group(4)),
                 int(m.group(5)),
                 int(m.group(6)),
+                int(ms),
                 )
         except ValueError:
             pass

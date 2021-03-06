@@ -121,6 +121,20 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.id_to_datetime_legacy('20200102030405'),
             datetime(2020, 1, 2, 3, 4, 5))
 
+        # accuracy below seconds
+        self.assertEqual(util.id_to_datetime_legacy('20200102030405123'),
+            datetime(2020, 1, 2, 3, 4, 5, 123000))
+
+        self.assertEqual(util.id_to_datetime_legacy('20200102030405123456'),
+            datetime(2020, 1, 2, 3, 4, 5, 123456))
+
+        # accuracy below microseconds are dropped
+        self.assertEqual(util.id_to_datetime_legacy('202001020304051234567'),
+            datetime(2020, 1, 2, 3, 4, 5, 123456))
+
+        self.assertEqual(util.id_to_datetime_legacy('20200102030405123456789'),
+            datetime(2020, 1, 2, 3, 4, 5, 123456))
+
         # invalid format (not match regex)
         self.assertIsNone(util.id_to_datetime_legacy('20200102'))
 
