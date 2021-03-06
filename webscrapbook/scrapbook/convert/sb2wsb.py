@@ -277,7 +277,10 @@ class Converter:
             # meta['icon']
             # resolve resource://scrapbook/* and moz-icon://*
             if meta.get('icon', '').startswith(RES_PROTOCOL_BASE):
-                src = os.path.normpath(os.path.join(book.data_dir, id))
+                if meta.get('index'):
+                    src = os.path.normpath(os.path.join(book.data_dir, id))
+                else:
+                    src = os.path.normpath(book.data_dir)
                 dst = os.path.normpath(os.path.join(book.top_dir, unquote(meta['icon'][len(RES_PROTOCOL_BASE):])))
                 rel_path = os.path.relpath(dst, src)
                 meta['icon'] = pathname2url(rel_path)  # this quotes URL

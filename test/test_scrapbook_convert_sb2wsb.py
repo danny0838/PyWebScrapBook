@@ -467,6 +467,28 @@ class TestRun(unittest.TestCase):
 
         self.assertEqual(book.meta['20200102030405']['icon'], '../../%E4%B8%AD%E6%96%87%25%23abc.png')
 
+    def test_meta_icon06(self):
+        """Special handling for an item without index file."""
+        with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<RDF:RDF xmlns:NS1="http://amb.vis.ne.jp/mozilla/scrapbook-rdf#"
+         xmlns:NC="http://home.netscape.com/NC-rdf#"
+         xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <RDF:Description RDF:about="urn:scrapbook:item20200102030405"
+                   NS1:type="bookmark"
+                   NS1:icon="resource://scrapbook/data/20200102030405/favicon.ico" />
+</RDF:RDF>
+""")
+
+        for info in sb2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+
+        self.assertEqual(book.meta['20200102030405']['icon'], '20200102030405/favicon.ico')
+
     def test_toc(self):
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
             fh.write("""\
