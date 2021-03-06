@@ -275,7 +275,7 @@ class TestRun(unittest.TestCase):
         self.assertTrue(book.meta['20200101010101']['marked'])
 
     def test_meta_modify01(self):
-        """Take mtime of index.html if newer."""
+        """Take modify if defined."""
         index_file = os.path.join(self.test_input, 'data', '20200102030405', 'index.html')
         os.makedirs(os.path.dirname(index_file))
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -304,15 +304,15 @@ class TestRun(unittest.TestCase):
         book.load_meta_files()
 
         self.assertEqual(book.meta['20200102030405']['modify'],
-            util.datetime_to_id(util.id_to_datetime_legacy('20200103000000')))
+            util.datetime_to_id(util.id_to_datetime_legacy('20200102030407')))
 
     def test_meta_modify02(self):
-        """Don't take mtime of index.html if not newer."""
+        """Take mtime of index.html if modify not defined."""
         index_file = os.path.join(self.test_input, 'data', '20200102030405', 'index.html')
         os.makedirs(os.path.dirname(index_file))
         with open(index_file, 'w', encoding='UTF-8') as fh:
             pass
-        t = time.mktime((2020, 1, 1, 0, 0, 0, 0, 0, -1))
+        t = time.mktime((2020, 1, 3, 0, 0, 0, 0, 0, -1))
         os.utime(index_file, (t, t))
         
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
@@ -324,8 +324,7 @@ class TestRun(unittest.TestCase):
   <RDF:Description RDF:about="urn:scrapbook:item20200102030405"
                    NS1:id="20200102030405"
                    NS1:type=""
-                   NS1:create="20200102030406"
-                   NS1:modify="20200102030407" />
+                   NS1:create="20200102030406" />
 </RDF:RDF>
 """)
 
@@ -336,7 +335,31 @@ class TestRun(unittest.TestCase):
         book.load_meta_files()
 
         self.assertEqual(book.meta['20200102030405']['modify'],
-            util.datetime_to_id(util.id_to_datetime_legacy('20200102030407')))
+            util.datetime_to_id(util.id_to_datetime_legacy('20200103000000')))
+
+    def test_meta_modify03(self):
+        """Take create if modify not defined and no index.html."""
+        with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<RDF:RDF xmlns:NS1="http://amb.vis.ne.jp/mozilla/scrapbook-rdf#"
+         xmlns:NC="http://home.netscape.com/NC-rdf#"
+         xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <RDF:Description RDF:about="urn:scrapbook:item20200102030405"
+                   NS1:id="20200102030405"
+                   NS1:type=""
+                   NS1:create="20200102030406" />
+</RDF:RDF>
+""")
+
+        for info in sb2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+
+        self.assertEqual(book.meta['20200102030405']['modify'],
+            util.datetime_to_id(util.id_to_datetime_legacy('20200102030406')))
 
     def test_meta_icon01(self):
         """Resolve resource://scrapbook/data/<self-id>/..."""

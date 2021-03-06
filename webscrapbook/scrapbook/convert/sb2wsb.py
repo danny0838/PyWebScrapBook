@@ -266,21 +266,14 @@ class Converter:
                 meta['create'] = util.datetime_to_id(util.id_to_datetime_legacy(id))
 
             # meta['modify']
-            # fallback to create (and then id)
+            # fallback to mtime of index.html and then create (and then id)
             if meta.get('modify'):
                 meta['modify'] = util.datetime_to_id(util.id_to_datetime_legacy(meta['modify']))
             else:
-                meta['modify'] = meta['create']
-
-            # take mtime of index.html if newer
-            try:
-                mtime = book0.modifies[id]
-            except KeyError:
-                pass
-            else:
-                if mtime > meta['modify']:
-                    yield Info('debug', f'Taking newer timestamp from "index.html" as modify time for "{id}"')
-                    meta['modify'] = mtime
+                try:
+                    meta['modify'] = book0.modifies[id]
+                except KeyError:
+                    meta['modify'] = meta['create']
 
             # meta['icon']
             # resolve resource://scrapbook/* and moz-icon://*
