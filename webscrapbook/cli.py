@@ -617,8 +617,14 @@ auto-generate parent folders if not found. (ignores --target and
     # -- sb2wsb
     parser_convert_sb2wsb = parser_convert_sub.add_parser('sb2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from legacy ScrapBook (X) to WebScrapBook.""",
-        help="""convert from legacy ScrapBook (X) to WebScrapBook""")
+        description="""Convert from legacy ScrapBook to WebScrapBook.
+
+Known supported legacy scrapbook implementations:
+- ScrapBook X (legacy Firefox Add-on)
+- ScrapBook (legacy Firefox Add-on)
+- ScrapBook Plus (legacy Firefox Add-on)
+- ScrapBee (Firefox Quantum Add-on)""",
+        help="""convert from legacy ScrapBook to WebScrapBook""")
     parser_convert_sb2wsb.add_argument('input', action='store',
         help="""the input directory""")
     parser_convert_sb2wsb.add_argument('output', action='store',
@@ -633,7 +639,7 @@ auto-generate parent folders if not found. (ignores --target and
     # -- wsb2sb
     parser_convert_wsb2sb = parser_convert_sub.add_parser('wsb2sb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from WebScrapBook to legacy ScrapBook X
+        description="""Convert from WebScrapBook to legacy ScrapBook
 
 Note that certain information may lose permanently, such as:
 * items appended to multiple parents (preserve only the first occurence)
@@ -646,7 +652,7 @@ legacy ScrapBook implementation without features introduced by ScrapBook X,
 such as:
 * file with special or non-ASCII chars in filename
 * container item whose type property is not "folder" """,
-        help="""convert from WebScrapBook to legacy ScrapBook X""")
+        help="""convert from WebScrapBook to legacy ScrapBook""")
     parser_convert_wsb2sb.add_argument('input', action='store',
         help="""the input directory""")
     parser_convert_wsb2sb.add_argument('output', action='store',
