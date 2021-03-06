@@ -19,13 +19,14 @@ from .. import book as wsb_book
 
 RDF = '{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
 NS1 = '{http://amb.vis.ne.jp/mozilla/scrapbook-rdf#}'
+NS2 = '{scrapbee@163.com}' # ScrapBee
 NC = '{http://home.netscape.com/NC-rdf#}'
 RES_PROTOCOL_BASE = 'resource://scrapbook/'
 MOZ_ICON_BASE = 'moz-icon://'
 
-REGEX_ID = re.compile(r'\d{14}')
-REGEX_RDF_ID = re.compile(r'urn:scrapbook:item(\d{14})')
-REGEX_RDF_SEQ_ID = re.compile(r'urn:scrapbook:(?:item(\d{14})|(root))')
+REGEX_ID = re.compile(r'\d{14,23}')
+REGEX_RDF_ID = re.compile(r'urn:scrapbook:item(\d{14,23})')
+REGEX_RDF_SEQ_ID = re.compile(r'urn:scrapbook:(?:item(\d{14,23})|(root))')
 
 LEGACY_TYPE_MAP = {
     "note": "postit",
@@ -94,6 +95,8 @@ class LegacyBook:
                 for attr, value in elem.attrib.items():
                     if attr.startswith(NS1) and attr != f'{NS1}id':
                         meta[attr[len(NS1):]] = value
+                    elif attr.startswith(NS2) and attr != f'{NS2}id':
+                        meta[attr[len(NS2):]] = value
                 self.meta.setdefault(id, {}).update(meta)
 
             elif elem.tag == f'{RDF}Seq':
@@ -189,6 +192,8 @@ class Converter:
         self.output = output
         self.no_backup = no_backup
 
+        self.index_files = {}
+
     def run(self):
         fsrc = os.path.normpath(os.path.join(__file__, '..', '..', '..', 'resources', 'config.ini'))
         fdst = os.path.normpath(os.path.join(self.output, WSB_DIR, WSB_CONFIG))
@@ -256,6 +261,12 @@ class Converter:
             # meta['index']
             if meta['type'] not in wsb_book.Book.TYPES_OPTIONAL_INDEX:
                 meta['index'] = f'{id}/index.html'
+            elif meta.get('icon', '').startswith(RES_PROTOCOL_BASE):
+                # Add a dummy index.html to relate the icon file with the item
+                # if it's saved in the item directory. (mainly for ScrapBee)
+                meta['index'] = f'{id}/index.html'
+                self.index_files[os.path.normpath(os.path.join(book.data_dir, id, 'index.html'))] = True
+                yield Info('debug', f'Registering dummy file "{meta["index"]}"')
 
             # meta['create']
             # fallback to id
@@ -365,6 +376,13 @@ class Converter:
                     shutil.copytree(src, dst)
                 except NotADirectoryError:
                     shutil.copy2(src, dst)
+
+        # generate registered dummy index files
+        for path in self.index_files:
+            if not os.path.lexists(path):
+                yield Info('debug', f'Generating registered dummy file "{path}"')
+                with open(path, 'wb') as f:
+                    pass
 
     def _convert_data_files(self, book, book0):
         for id, meta in book.meta.items():
