@@ -89,8 +89,7 @@ class LegacyBook:
                 if not rid_match:
                     continue
 
-                id = elem.attrib.get(f'{NS1}id') or rid_match.group(1)
-
+                id = rid_match.group(1)
                 meta = {'id': id}
                 for attr, value in elem.attrib.items():
                     if attr.startswith(NS1) and attr != f'{NS1}id':
