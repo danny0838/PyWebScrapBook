@@ -1,10 +1,6 @@
 ## Unit Test
 
-Enter this project directory and install it (adding `-e` is recommended):
-
-    pip install -e .
-
-Perform the unit tests:
+Enter this project directory and perform the unit tests through:
 
     python -m unittest -v
 
