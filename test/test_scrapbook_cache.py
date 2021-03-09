@@ -2237,6 +2237,43 @@ Iframe page content. 中文
                 }
             })
 
+    def test_html_iframe_srcdoc01(self):
+        """Include srcdoc content"""
+        self.create_meta()
+        linked_file = os.path.join(self.test_dir, 'linked.html')
+        with open(self.test_file, 'w', encoding='UTF-8') as f:
+            f.write("""<!DOCTYPE html>
+<html>
+<body>
+<iframe src="data:text/plain;base64,QUJDMTIz5Lit5paH" srcdoc="XYZ987<a href=&quot;linked.html&quot;>中文</a>">Frame label 中文</iframe>
+</body>
+</html>
+""")
+        with open(linked_file, 'w', encoding='UTF-8') as f:
+            f.write("""<!DOCTYPE html>
+<html>
+<body>
+Linked page content.
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for info in generator.run():
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'XYZ987 中文'
+                    },
+                'linked.html': {
+                    'content': 'Linked page content.'
+                    },
+                }
+            })
+
     def test_html_frame01(self):
         """Include frame content in index page"""
         self.create_meta()

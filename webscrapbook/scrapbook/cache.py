@@ -671,13 +671,13 @@ class FulltextCacheGenerator():
         finally:
             fh.close()
 
-    def _get_fulltext_cache_for_fh(self, item, path, fh, mime):
+    def _get_fulltext_cache_for_fh(self, item, path, fh, mime, *, is_srcdoc=False):
         if not mime:
             yield Info('debug', f'Skipped "{path}" of "{item.id}" (unknown type)')
             return None
 
         if util.mime_is_html(mime):
-            return (yield from self._get_fulltext_cache_html(item, path, fh))
+            return (yield from self._get_fulltext_cache_html(item, path, fh, is_srcdoc=is_srcdoc))
 
         if mime.startswith('text/'):
             return (yield from self._get_fulltext_cache_txt(item, path, fh))
@@ -685,7 +685,7 @@ class FulltextCacheGenerator():
         yield Info('debug', f'Skipped "{path}" of "{item.id}" ("{mime}" not supported)')
         return None
 
-    def _get_fulltext_cache_html(self, item, path, fh):
+    def _get_fulltext_cache_html(self, item, path, fh, *, is_srcdoc=False):
         def get_relative_file_path(url):
             # skip when inside a data URL page (can't resolve)
             if path is None:
@@ -732,7 +732,10 @@ class FulltextCacheGenerator():
             if fulltext:
                 results.append(fulltext)
 
-        yield Info('debug', f'Retrieving HTML content for "{path}" of "{item.id}"')
+        if is_srcdoc:
+            yield Info('debug', f'Retrieving HTML content for "{path}" (srcdoc) of "{item.id}"')
+        else:
+            yield Info('debug', f'Retrieving HTML content for "{path}" of "{item.id}"')
 
         # Seek for the correct charset (encoding).
         # If a charset is not specified, lxml may select a wrong encoding for
@@ -821,29 +824,37 @@ class FulltextCacheGenerator():
                 elif elem.tag in ('iframe', 'frame'):
                     # include frame page in fulltext index
                     try:
-                        url = elem.attrib['src']
+                        srcdoc = elem.attrib['srcdoc']
                     except KeyError:
-                        pass
-                    else:
-                        if url.startswith('data:'):
-                            yield from add_datauri_content(url)
+                        try:
+                            url = elem.attrib['src']
+                        except KeyError:
+                            pass
                         else:
-                            target = get_relative_file_path(url)
-                            if target:
-                                if self.inclusive_frames:
-                                    # Add frame content to the current page
-                                    # content if the targeted file hasn't
-                                    # been indexed.
-                                    if item.files_to_update.get(target) is not False:
-                                        yield Info('debug', f'Caching "{target}" of "{item.id}" as inline (from <{elem.tag}>)')
-                                        item.files_to_update[target] = False
-                                        fulltext = yield from self._get_fulltext_cache(item, target)
-                                        if fulltext:
-                                            results.append(fulltext)
-                                else:
-                                    if target not in item.files_to_update:
-                                        yield Info('debug', f'Adding "{target}" of "{item.id}" to check list (from <{elem.tag}>)')
-                                        item.files_to_update[target] = True
+                            if url.startswith('data:'):
+                                yield from add_datauri_content(url)
+                            else:
+                                target = get_relative_file_path(url)
+                                if target:
+                                    if self.inclusive_frames:
+                                        # Add frame content to the current page
+                                        # content if the targeted file hasn't
+                                        # been indexed.
+                                        if item.files_to_update.get(target) is not False:
+                                            yield Info('debug', f'Caching "{target}" of "{item.id}" as inline (from <{elem.tag}>)')
+                                            item.files_to_update[target] = False
+                                            fulltext = yield from self._get_fulltext_cache(item, target)
+                                            if fulltext:
+                                                results.append(fulltext)
+                                    else:
+                                        if target not in item.files_to_update:
+                                            yield Info('debug', f'Adding "{target}" of "{item.id}" to check list (from <{elem.tag}>)')
+                                            item.files_to_update[target] = True
+                    else:
+                        fh = io.BytesIO(srcdoc.encode('UTF-8-SIG'))
+                        fulltext = yield from self._get_fulltext_cache_for_fh(item, path, fh, 'text/html', is_srcdoc=True)
+                        if fulltext:
+                            results.append(fulltext)
 
                 # exclude everything inside certain tags
                 if elem.tag in self.FULLTEXT_EXCLUDE_TAGS:
