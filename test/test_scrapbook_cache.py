@@ -2238,7 +2238,7 @@ Iframe page content. 中文
             })
 
     def test_html_frame01(self):
-        """Include iframe content in index page"""
+        """Include frame content in index page"""
         self.create_meta()
         with open(self.test_file, 'w', encoding='UTF-8') as f:
             f.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -2280,7 +2280,7 @@ Frame page content 1.
             })
 
     def test_html_frame02(self):
-        """Treat iframe content as another page if specified"""
+        """Treat frame content as another page if specified"""
         self.create_meta()
         with open(self.test_file, 'w', encoding='UTF-8') as f:
             f.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
