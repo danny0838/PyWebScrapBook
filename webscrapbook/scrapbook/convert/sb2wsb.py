@@ -381,6 +381,7 @@ class Converter:
         for path in self.index_files:
             if not os.path.lexists(path):
                 yield Info('debug', f'Generating registered dummy file "{path}"')
+                os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, 'wb') as f:
                     pass
 
