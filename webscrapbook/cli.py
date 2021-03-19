@@ -619,6 +619,8 @@ auto-generate parent folders if not found. (ignores --target and
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Convert from legacy ScrapBook to WebScrapBook.
 
+Fulltext cache is not converted and requires a manually rebuild.
+
 Known supported legacy scrapbook implementations:
 - ScrapBook X (legacy Firefox Add-on)
 - ScrapBook (legacy Firefox Add-on)
@@ -639,7 +641,9 @@ Known supported legacy scrapbook implementations:
     # -- wsb2sb
     parser_convert_wsb2sb = parser_convert_sub.add_parser('wsb2sb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from WebScrapBook to legacy ScrapBook
+        description="""Convert from WebScrapBook to legacy ScrapBook.
+
+Fulltext cache is not converted and requires a manually rebuild.
 
 Note that certain information may lose permanently, such as:
 * items appended to multiple parents (preserve only the first occurence)
