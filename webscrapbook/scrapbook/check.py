@@ -146,7 +146,7 @@ class BookChecker:
     def __init__(self, book, resolve_all=False, **kwargs):
         self.book = book
 
-        # init resolve* attributes
+        # init resolve* arguments
         self.resolve = False
         for k in self.RESOLVE_METHODS:
             if not resolve_all:

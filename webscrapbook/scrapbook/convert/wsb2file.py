@@ -1,6 +1,5 @@
 import os
 import shutil
-import zipfile
 import traceback
 import time
 import html

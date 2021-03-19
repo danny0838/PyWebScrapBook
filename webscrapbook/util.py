@@ -993,10 +993,10 @@ def parse_datauri(datauri):
 #########################################################################
 
 def get_charset(file):
-    """Search for a defined charset.
+    """Search for meta charset.
 
     Args:
-        file: str, path-like, or file-like object
+        file: str, path-like, or file-like bytes object
     """
     try:
         fh = open(file, 'rb')
@@ -1043,7 +1043,7 @@ def load_tree(file):
     """Load HTML document tree.
 
     Args:
-        file: str, path-like, or file-like object
+        file: str, path-like, or file-like bytes object
     """
     try:
         fh = open(file, 'rb')
@@ -1113,7 +1113,7 @@ def iter_meta_refresh(file):
     """Iterate through meta refreshes from a file.
 
     Args:
-        file: str, path-like, or file-like object
+        file: str, path-like, or file-like bytes object
     """
     try:
         fh = open(file, 'rb')
@@ -1169,7 +1169,7 @@ def parse_meta_refresh(file):
     """Retrieve meta refresh target from a file.
 
     Args:
-        file: str, path-like, or file-like object
+        file: str, path-like, or file-like bytes object
     """
     for info in iter_meta_refresh(file):
         if info.time == 0 and info.target is not None and not info.context:

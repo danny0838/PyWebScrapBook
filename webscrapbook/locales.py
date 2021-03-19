@@ -8,7 +8,6 @@ Usage:
 @TODO: Consider using official gettext for i18n.
 """
 import os
-import importlib
 import locale
 import hashlib
 from . import util

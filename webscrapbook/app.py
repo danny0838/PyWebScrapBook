@@ -989,7 +989,7 @@ def action_editx():
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
             try:
-                info = zip.getinfo(localpaths[-1])
+                zip.getinfo(localpaths[-1])
             except KeyError:
                 abort(404)
     else:
@@ -1252,7 +1252,7 @@ def action_mkzip():
             abort(500, "Unable to write to this path.")
 
         try:
-            with zipfile.ZipFile(localpath, 'w') as f:
+            with zipfile.ZipFile(localpath, 'w'):
                 pass
         except Exception:
             traceback.print_exc()
@@ -1343,7 +1343,7 @@ def action_delete():
 
     if len(localpaths) > 1:
         try:
-            with open_archive_path(localpaths, 'w', [localpaths[-1]]) as zip:
+            with open_archive_path(localpaths, 'w', [localpaths[-1]]):
                 pass
         except KeyError:
             # fail since nothing is deleted

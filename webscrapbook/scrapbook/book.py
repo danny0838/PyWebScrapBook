@@ -4,11 +4,8 @@ import os
 import zipfile
 import re
 import json
-from urllib.parse import urlsplit, quote, unquote
+from urllib.parse import urlsplit, unquote
 
-from lxml import etree
-
-from .. import WSB_DIR
 from .. import util
 from .._compat import zip_stream
 

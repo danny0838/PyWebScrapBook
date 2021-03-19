@@ -1,12 +1,9 @@
 import os
 import shutil
 import traceback
-import re
 import time
 from datetime import datetime, timezone, timedelta
 from urllib.parse import quote
-
-from lxml import etree
 
 from ... import WSB_DIR
 from ... import util

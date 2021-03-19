@@ -1,13 +1,11 @@
 import os
 import shutil
-import zipfile
 import traceback
 import time
-from urllib.parse import urlsplit, quote, unquote
+from urllib.parse import urlsplit, quote
 from urllib.request import pathname2url, url2pathname
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from ... import WSB_DIR, WSB_CONFIG
 from ... import util
 from ...util import Info
 from ..host import Host
@@ -118,7 +116,6 @@ class Converter:
             yield Info('debug', f'Generating meta node for "{id}"')
 
             oid = self.id_to_oid[id]
-            ometa = {}
             type = meta.get('type', '')
             tagname = f'{NC}BookmarkSeparator' if type == 'separator' else f'{RDF}Description'
 
@@ -245,8 +242,7 @@ class Converter:
                         topdir, _, _ = page.indexfilename.partition('/')
 
                     os.makedirs(os.path.dirname(fdst), exist_ok=True)
-                    with zipfile.ZipFile(fsrc) as zh:
-                        util.zip_extract(fsrc, fdst, topdir)
+                    util.zip_extract(fsrc, fdst, topdir)
                 else:
                     basename = os.path.basename(index)
                     fsrc = os.path.normpath(os.path.join(book.data_dir, index))

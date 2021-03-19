@@ -3,7 +3,6 @@ import shutil
 import traceback
 import re
 import time
-import functools
 from datetime import datetime
 from urllib.parse import unquote
 from urllib.request import pathname2url
@@ -187,7 +186,7 @@ class LegacyBook:
 
 
 class Converter:
-    def __init__(self, input, output, * , no_backup=False):
+    def __init__(self, input, output, *, no_backup=False):
         self.input = input
         self.output = output
         self.no_backup = no_backup
@@ -369,8 +368,8 @@ class Converter:
                         yield Info('debug', f'Backup legacy scrapbook entry "{src.name}"')
                         book.backup(src, base=self.input)
                         continue
-                else:
-                    dst = os.path.join(self.output, src.name)
+
+                dst = os.path.join(book.top_dir, src.name)
 
                 try:
                     shutil.copytree(src, dst)
@@ -382,7 +381,7 @@ class Converter:
             if not os.path.lexists(path):
                 yield Info('debug', f'Generating registered dummy file "{path}"')
                 os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, 'wb') as f:
+                with open(path, 'wb'):
                     pass
 
     def _convert_data_files(self, book, book0):
@@ -398,7 +397,7 @@ class Converter:
                     book.save_note_file(index_file, content)
 
 
-def run(input, output, * , no_backup=False):
+def run(input, output, *, no_backup=False):
     start = time.time()
     yield Info('info', 'conversion mode: ScrapBook --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
