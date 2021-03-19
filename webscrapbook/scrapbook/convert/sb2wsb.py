@@ -391,8 +391,8 @@ class Converter:
                 index_file = os.path.normpath(os.path.join(book.data_dir, meta['index']))
                 try:
                     content = book.load_note_file(index_file)
-                except OSError:
-                    pass
+                except OSError as exc:
+                    yield Info('error', f'Failed to convert "{meta["index"]}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
                 else:
                     book.save_note_file(index_file, content)
 
