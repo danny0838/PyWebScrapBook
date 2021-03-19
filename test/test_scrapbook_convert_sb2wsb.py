@@ -6,6 +6,7 @@ import time
 from webscrapbook import WSB_DIR
 from webscrapbook import util
 from webscrapbook.scrapbook.host import Host
+from webscrapbook.scrapbook.book import Book
 from webscrapbook.scrapbook.convert import sb2wsb
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
@@ -659,6 +660,42 @@ class TestRun(unittest.TestCase):
             pass
 
         self.assertFalse(os.path.exists(os.path.join(self.test_output, WSB_DIR, 'backup')))
+
+    @mock.patch('webscrapbook.scrapbook.convert.migrate0.ConvertLegacyDataFiles')
+    def test_data01(self, mock_convert):
+        with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<RDF:RDF xmlns:NS1="http://amb.vis.ne.jp/mozilla/scrapbook-rdf#"
+         xmlns:NC="http://home.netscape.com/NC-rdf#"
+         xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+</RDF:RDF>
+""")
+
+        for info in sb2wsb.run(self.test_input, self.test_output):
+            pass
+
+        mock_convert.assert_called_once()
+        self.assertIsInstance(mock_convert.mock_calls[0][1][0], Book)
+        self.assertEqual(mock_convert.mock_calls[0][1][0].id, '')
+        self.assertEqual(mock_convert.mock_calls[0][1][0].top_dir, self.test_output)
+        mock_convert.return_value.run.assert_called_once_with()
+
+    @mock.patch('webscrapbook.scrapbook.convert.migrate0.ConvertLegacyDataFiles')
+    def test_data02(self, mock_convert):
+        with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<RDF:RDF xmlns:NS1="http://amb.vis.ne.jp/mozilla/scrapbook-rdf#"
+         xmlns:NC="http://home.netscape.com/NC-rdf#"
+         xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+</RDF:RDF>
+""")
+
+        for info in sb2wsb.run(self.test_input, self.test_output, no_data_files=True):
+            pass
+
+        mock_convert.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()

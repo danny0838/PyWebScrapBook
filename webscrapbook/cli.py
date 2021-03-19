@@ -617,6 +617,35 @@ auto-generate parent folders if not found. (ignores --target and
     parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE',
         help="""the conversion mode. Get usage help with e.g. %(prog)s sb2wsb -h""")
 
+    # -- migrate0
+    parser_convert_migrate0 = parser_convert_sub.add_parser('migrate0',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""Migrate data to be compatible with latest WebScrapBook 0.* version.
+
+This tool fixes incomplete conversion from legacy ScrapBook to WebScrapBook 0.*
+or migrate from older WebScrapBook 0.* to latest.
+
+- Convert the index file of "postit" items for canonical wrapper and styling.
+""",
+        help="""migrate to latest WebScrapBook 0.*""")
+    parser_convert_migrate0.add_argument('input', action='store',
+        help="""the input directory""")
+    parser_convert_migrate0.add_argument('output', action='store',
+        help="""the output directory""")
+    parser_convert_migrate0.add_argument('--book', dest='book_ids', metavar='ID',
+        nargs='+', action='store',
+        help="""the book ID(s) to convert. (default: all books)""")
+    parser_convert_migrate0.add_argument('--convert-data-files', default=True,
+        action='store_true',
+        help="""convert data files for items (default)""")
+    parser_convert_migrate0.add_argument('--no-convert-data-files', dest='convert_data_files', 
+        action='store_false',
+        help="""inverse of --convert-data-files""")
+    parser_convert_migrate0.add_argument('--force', default=False, action='store_true',
+        help="""overwrite everything in the output directory""")
+    parser_convert_migrate0.add_argument('--debug', default=False, action='store_true',
+        help="""include debug output""")
+
     # -- sb2wsb
     parser_convert_sb2wsb = parser_convert_sub.add_parser('sb2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -634,6 +663,9 @@ Known supported legacy scrapbook implementations:
         help="""the input directory""")
     parser_convert_sb2wsb.add_argument('output', action='store',
         help="""the output directory""")
+    parser_convert_sb2wsb.add_argument('--no-data-files', default=False, action='store_true',
+        help="""do not convert data files (set this if there's something wrong
+for the conversion, and run migrate* converter for advanced options)""")
     parser_convert_sb2wsb.add_argument('--no-backup', default=False, action='store_true',
         help="""do not backup unneeded legacy scrapbook files""")
     parser_convert_sb2wsb.add_argument('--force', default=False, action='store_true',

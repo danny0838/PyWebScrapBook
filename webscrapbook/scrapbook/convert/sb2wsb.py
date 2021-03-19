@@ -186,9 +186,10 @@ class LegacyBook:
 
 
 class Converter:
-    def __init__(self, input, output, *, no_backup=False):
+    def __init__(self, input, output, *, no_data_files=False, no_backup=False):
         self.input = input
         self.output = output
+        self.no_data_files = no_data_files
         self.no_backup = no_backup
 
         self.index_files = {}
@@ -227,7 +228,9 @@ class Converter:
 
             yield Info('info', 'Copying data files...')
             yield from self._copy_data_files(book, book0)
-            yield from self._convert_data_files(book, book0)
+
+            if not self.no_data_files:
+                yield from self._convert_data_files(book, book0)
 
             yield Info('info', 'Saving tree files...')
             book.save_meta_files()
@@ -385,28 +388,22 @@ class Converter:
                     pass
 
     def _convert_data_files(self, book, book0):
-        for id, meta in book.meta.items():
-            if meta['type'] == 'postit':
-                yield Info('debug', f'Converting data file for "{id}": type={meta["type"]}')
-                index_file = os.path.normpath(os.path.join(book.data_dir, meta['index']))
-                try:
-                    content = book.load_note_file(index_file)
-                except OSError as exc:
-                    yield Info('error', f'Failed to convert "{meta["index"]}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
-                else:
-                    book.save_note_file(index_file, content)
+        from .migrate0 import ConvertLegacyDataFiles
+        converter = ConvertLegacyDataFiles(book)
+        yield from converter.run()
 
 
-def run(input, output, *, no_backup=False):
+def run(input, output, *, no_data_files=False, no_backup=False):
     start = time.time()
     yield Info('info', 'conversion mode: ScrapBook --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
+    yield Info('info', f'no-data-files: {no_data_files}')
     yield Info('info', f'no-backup: {no_backup}')
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output, no_backup=no_backup)
+        conv = Converter(input, output, no_data_files=no_data_files, no_backup=no_backup)
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()
