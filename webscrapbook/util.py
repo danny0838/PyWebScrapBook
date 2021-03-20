@@ -1078,11 +1078,12 @@ def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
     return default
 
 
-def load_html_tree(file):
+def load_html_tree(file, options={}):
     """Load HTML document tree.
 
     Args:
         file: str, path-like, or file-like bytes object
+        options: additional options for the HTML parser
     """
     try:
         fh = open(file, 'rb')
@@ -1099,7 +1100,7 @@ def load_html_tree(file):
         fh.seek(0)
 
         try:
-            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset))
+            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset, **options))
         except etree.Error:
             return None
     finally:
