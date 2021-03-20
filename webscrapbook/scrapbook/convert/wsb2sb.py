@@ -2,12 +2,14 @@ import os
 import shutil
 import traceback
 import time
+import re
 from urllib.parse import urlsplit, quote
 from urllib.request import pathname2url, url2pathname
 from datetime import timedelta
 
 from ... import util
 from ...util import Info
+from ...util.html import Markup, MarkupTag
 from ..host import Host
 from .. import book as wsb_book
 
@@ -23,12 +25,16 @@ LEGACY_TYPE_MAP = {
     "note": "notex",
     }
 
+HTML_FILE_FILTER = re.compile(r'^.+\.x?html$', re.I)
+REGEX_LINEFEED = re.compile(r'\r\n?|\n')
+
 
 class Converter:
-    def __init__(self, input, output, book_id=''):
+    def __init__(self, input, output, book_id='', no_data_files=False):
         self.input = input
         self.output = output
         self.book_id = book_id
+        self.no_data_files = no_data_files
 
         self.id_to_oid = {}
         self.oid_to_id = {}
@@ -257,14 +263,31 @@ class Converter:
                 yield Info('error', f'Failed to copy data for "{id}": {exc}', exc=exc)
 
             if type == 'postit':
-                yield Info('debug', f'Converting data file for "{id}": type={type}')
+                yield Info('debug', f'Converting data file for "{id}" (type={type})')
                 file = os.path.join(self.output, 'data', oid, 'index.html')
-                content = book.load_note_file(file)
-                with open(file, 'w', encoding='UTF-8') as fh:
-                    fh.write(f"""\
+                try:
+                    content = book.load_note_file(file)
+                except OSError as exc:
+                    yield Info('error', f'Failed to convert "index.html" for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                else:
+                    with open(file, 'w', encoding='UTF-8') as fh:
+                        fh.write(f"""\
 <html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
 {content}
 </pre></body></html>""")
+            elif not self.no_data_files:
+                yield Info('debug', f'Converting data files for "{id}" (type={type})')
+                index_dir = os.path.join(self.output, 'data', oid)
+                for root, dirs, files in os.walk(index_dir):
+                    for file in files:
+                        if HTML_FILE_FILTER.search(file):
+                            file = os.path.join(root, file)
+                            yield Info('debug', f'Checking: {file}...')
+                            try:
+                                self._convert_html_file(file)
+                            except Exception as exc:
+                                traceback.print_exc()
+                                yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
     def _handle_item_icon(self, book, id):
         yield Info('debug', f'Checking icon for "{id}"')
@@ -339,17 +362,285 @@ class Converter:
                 os.makedirs(os.path.dirname(fdst), exist_ok=True)
                 shutil.copy2(fsrc, fdst)
 
+    def _convert_html_file(self, file):
+        markups = util.load_html_markups(file)
+        encoding = util.load_html_markups.last_encoding
+        is_xhtml = util.is_xhtml(file)
+        converter = ConvertHtmlFile(markups,
+            encoding=encoding,
+            is_xhtml=is_xhtml,
+            )
+        converter.run()
 
-def run(input, output, book_id=''):
+        # save rewritten markups
+        if converter.changed:
+            with open(file, 'w', encoding=encoding, newline='\n') as fh:
+                for markup in converter.output:
+                    if not markup.hidden:
+                        fh.write(str(markup))
+
+
+class ConvertHtmlFile:
+    def __init__(self, markups, encoding='UTF-8', is_xhtml=False):
+        self.markups = markups
+        self.encoding = encoding
+        self.is_xhtml = is_xhtml
+
+        self.changed = False
+        self.output = []
+
+    def run(self):
+        rv, _ = self.convert()
+        self.output = rv
+
+    def convert(self, start=0, endtag=None):
+        rv = []
+        i = start
+        while True:
+            try:
+                markup = self.markups[i]
+            except IndexError:
+                break
+
+            if markup.type == 'starttag':
+                # handle annotations
+                type = markup.getattr('data-scrapbook-elem')
+
+                # linemarker / inline
+                if type == 'linemarker':
+                    id = markup.getattr('data-scrapbook-id')
+                    title = markup.getattr('title')
+                    style = markup.getattr('style')
+
+                    tag = 'span'
+                    attrs = {
+                        'data-sb-id': id,
+                        'data-sb-obj': 'inline' if title else 'linemarker',
+                        'class': ['scrapbook-inline' if title else 'linemarker-marked-line'],
+                        }
+
+                    if style:
+                        attrs['style'] = style
+
+                    if title:
+                        attrs['title'] = title
+
+                    attrs['class'] = ' '.join(attrs['class'])
+                    attrs = [(a, v) for a, v in attrs.items() if v]
+                    rv.append(MarkupTag(
+                        type='starttag',
+                        tag=tag,
+                        attrs=attrs,
+                        ))
+
+                    _rv, _i = self.convert(i + 1, markup.endtag)
+                    rv.extend(_rv)
+                    rv.append(MarkupTag(
+                        type='endtag',
+                        tag=tag,
+                        ))
+
+                    i = _i + 1
+                    self.changed = True
+                    continue
+
+                # freenote / sticky
+                elif type == 'sticky' and 'styled' in markup.classes:
+                    is_relative = 'relative' in markup.classes
+                    is_plaintext = 'plaintext' in markup.classes
+
+                    tag = 'div'
+                    attrs = {
+                        'data-sb-obj': 'freenote',
+                        'style': None,
+                        }
+
+                    # style
+                    attrs['style'] = ' '.join([
+                        'cursor: help;',
+                        'overflow: visible;',
+                        ('margin: 16px auto; ' if is_relative else '') + 'border: 1px solid #CCCCCC;',
+                        'border-top-width: 12px;',
+                        'background: #FAFFFA;',
+                        'opacity: 0.95;',
+                        'padding: 0px;',
+                        'z-index: 500000;',
+                        'text-align: start;',
+                        'font-size: small;',
+                        'line-height: 1.2em;',
+                        'word-wrap: break-word;',
+                        f'position: {"static" if is_relative else "absolute"};',
+                        ])
+
+                    style = markup.getattr('style')
+                    if style:
+                        attrs['style'] += ' ' + style
+
+                    attrs = [(a, v) for a, v in attrs.items() if v]
+                    rv.append(MarkupTag(
+                        type='starttag',
+                        tag=tag,
+                        attrs=attrs,
+                        ))
+
+                    if is_plaintext:
+                        iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+
+                        last_child_i = i
+                        for j in self.iterfind(lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                            last_child_i = j
+                        text = ''.join(str(d) for d in self.markups[last_child_i + 1:iend] if d.type == 'data')
+
+                        for line in REGEX_LINEFEED.split(text):
+                            rv.append(Markup(
+                                type='data',
+                                data=line,
+                                convert_charrefs=False,
+                                ))
+                            rv.append(MarkupTag(
+                                type='starttag',
+                                tag='br',
+                                attrs=[],
+                                is_self_end=self.is_xhtml,
+                                ))
+                        rv.pop()  # pop an extra <br>
+
+                        rv.append(MarkupTag(
+                            type='endtag',
+                            tag=tag,
+                            ))
+                        i = iend + 1
+
+                    else:
+                        _rv, _i = self.convert(i + 1, markup.endtag)
+                        rv.extend(_rv)
+                        rv.append(MarkupTag(
+                            type='endtag',
+                            tag=tag,
+                            ))
+
+                        i = _i + 1
+
+                    self.changed = True
+                    continue
+
+                # block-comment
+                elif (type == 'sticky'
+                        and 'styled' not in markup.classes
+                        and 'relative' in markup.classes
+                        and 'plaintext' in markup.classes
+                        ):
+                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+
+                    tag = 'div'
+                    attrs = {
+                        'class': ['scrapbook-block-comment'],
+                        'style': markup.getattr('style'),
+                        }
+
+                    last_child_i = i
+                    for j in self.iterfind(lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                        last_child_i = j
+                    text = ''.join(str(d) for d in self.markups[last_child_i + 1:iend] if d.type == 'data')
+
+                    attrs['class'] = ' '.join(attrs['class'])
+                    attrs = [(a, v) for a, v in attrs.items() if v]
+                    rv.append(MarkupTag(
+                        type='starttag',
+                        tag=tag,
+                        attrs=attrs,
+                        ))
+                    rv.append(Markup(
+                        type='data',
+                        data=text,
+                        convert_charrefs=False,
+                        ))
+                    rv.append(MarkupTag(
+                        type='endtag',
+                        tag=tag,
+                        ))
+
+                    i = iend + 1
+                    self.changed = True
+                    continue
+
+                # remove WebScrapBook-specific elements
+                elif type in ('annotation-css', 'annotation-loader'):
+                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    i = iend + 1
+                    self.changed = True
+                    continue
+
+                else:
+                    markup_changed = False
+                    for j, attr_value in enumerate(markup.attrs):
+                        attr, value = attr_value
+
+                        # convert data-scrapbook-elem
+                        if attr == 'data-scrapbook-elem':
+                            markup.attrs[j] = ('data-sb-obj', type)
+                            markup_changed = True
+
+                        # convert id attribute
+                        elif attr == 'data-scrapbook-id':
+                            markup.attrs[j] = ('data-sb-id', value)
+                            markup_changed = True
+
+                    if markup_changed:
+                        rv.append(MarkupTag(
+                            type='starttag',
+                            tag=markup.tag,
+                            attrs=markup.attrs,
+                            is_self_end=markup.is_self_end,
+                            ))
+
+                        i += 1
+                        self.changed = True
+                        continue
+
+            elif markup.type == 'endtag':
+                if endtag is not None:
+                    if markup == endtag:
+                        break
+
+            rv.append(markup)
+            i += 1
+
+        return rv, i
+
+    def find(self, filter, start=0, endtag=None):
+        return next(self.iterfind(filter, start, endtag), None)
+
+    def iterfind(self, filter, start=0, endtag=None):
+        i = start
+        while True:
+            try:
+                markup = self.markups[i]
+            except IndexError:
+                break
+
+            if filter(markup):
+                yield i
+
+            if markup.type == 'endtag':
+                if endtag is not None:
+                    if markup == endtag:
+                        break
+
+            i += 1
+
+
+def run(input, output, book_id='', no_data_files=False):
     start = time.time()
     yield Info('info', 'conversion mode: WebScrapBook --> ScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
     yield Info('info', f'book ID: "{book_id}"')
+    yield Info('info', f'no-data-files: {no_data_files}')
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output, book_id=book_id)
+        conv = Converter(input, output, book_id=book_id, no_data_files=no_data_files)
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

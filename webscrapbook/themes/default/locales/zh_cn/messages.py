@@ -46,3 +46,10 @@ cache_search_sort_last_created = '最后创建'
 cache_search_sort_last_modified = '最后修改'
 cache_search_sort_title = '标题排序'
 cache_search_sort_id = 'ID 排序'
+
+
+#########################################################################
+# WebScrapBook
+#########################################################################
+
+EditorDeleteAnnotationConfirm = '删除这个批注吗？'

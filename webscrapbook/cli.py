@@ -626,6 +626,8 @@ auto-generate parent folders if not found. (ignores --target and
 This tool fixes incomplete conversion from legacy ScrapBook to WebScrapBook 0.*
 or migrate from older WebScrapBook 0.* to latest.
 
+- Convert legacy annotations and resources at chrome://scrapbook/skin/* for all
+  web pages in an item.
 - Convert the index file of "postit" items for canonical wrapper and styling.
 """,
         help="""migrate to latest WebScrapBook 0.*""")
@@ -642,6 +644,14 @@ or migrate from older WebScrapBook 0.* to latest.
     parser_convert_migrate0.add_argument('--no-convert-data-files', dest='convert_data_files', 
         action='store_false',
         help="""inverse of --convert-data-files""")
+    parser_convert_migrate0.add_argument('--use-native-tags', default=False,
+        action='store_true',
+        help="""use native HTML tags for converted annotations for better
+compatibility with very old browsers (e.g. IE < 9), with the cost of increased possibility
+to conflict with the web page stylesheets (default)""")
+    parser_convert_migrate0.add_argument('--no-use-native-tags', dest='use_native_tags', 
+        action='store_false',
+        help="""inverse of --use-native-tags (default)""")
     parser_convert_migrate0.add_argument('--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
     parser_convert_migrate0.add_argument('--debug', default=False, action='store_true',
@@ -700,6 +710,9 @@ such as:
     parser_convert_wsb2sb.add_argument('--book', dest='book_id', metavar='ID',
         default='', action='store',
         help="""the book ID to convert. (default: "")""")
+    parser_convert_wsb2sb.add_argument('--no-data-files', default=False, action='store_true',
+        help="""do not convert data files (set this if there's something wrong
+for the conversion)""")
     parser_convert_wsb2sb.add_argument('--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
     parser_convert_wsb2sb.add_argument('--debug', default=False, action='store_true',

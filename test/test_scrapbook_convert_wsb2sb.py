@@ -965,5 +965,251 @@ some content
             './%E4%B8%AD%E6%96%87%231.xhtml'
             )
 
+    def test_convert_html_file_linemarker01(self):
+        """Convert linemarker."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);" class="first">Lorem ipsum dolor </scrapbook-linemarker><strong><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);">sit amet</scrapbook-linemarker></strong><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);" class="last">, consectetur adipiscing elit.</scrapbook-linemarker></body></html>"""
+
+        expected = """<html><body><span data-sb-id="20200101000000000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);">Lorem ipsum dolor </span><strong><span data-sb-id="20200101000000000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);">sit amet</span></strong><span data-sb-id="20200101000000000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);">, consectetur adipiscing elit.</span></body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_linemarker02(self):
+        """Convert annotated linemarker."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="first" title="inline annotation
+2nd line">Suspendisse eget</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="last" title="inline annotation
+2nd line"> interdum quam, eu semper ipsum</scrapbook-linemarker>.<style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""
+
+        expected = """<html><body><span data-sb-id="20200101000000000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted #FF0000;" title="inline annotation
+2nd line">Suspendisse eget</span></b><span data-sb-id="20200101000000000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted #FF0000;" title="inline annotation
+2nd line"> interdum quam, eu semper ipsum</span>.</body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_sticky01(self):
+        """Convert sticky (styled plaintext)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled plaintext" style="width: 250px; height: 100px; left: 572px; top: 83px;">annotation
+2nd line</scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""
+
+        expected = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; border: 1px solid #CCCCCC; border-top-width: 12px; background: #FAFFFA; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; word-wrap: break-word; position: absolute; width: 250px; height: 100px; left: 572px; top: 83px;">annotation<br>2nd line</div></body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_sticky02(self):
+        """Convert sticky (styled plaintext relative)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled plaintext relative">annotation
+2nd line</scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""
+
+        expected = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 16px auto; border: 1px solid #CCCCCC; border-top-width: 12px; background: #FAFFFA; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; word-wrap: break-word; position: static;">annotation<br>2nd line</div></body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_sticky03(self):
+        """Convert sticky (styled)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled" style="left: 367px; top: 323px; width: 250px; height: 100px;">annotation<div><b>2nd</b> line</div></scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""
+
+        expected = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; border: 1px solid #CCCCCC; border-top-width: 12px; background: #FAFFFA; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; word-wrap: break-word; position: absolute; left: 367px; top: 323px; width: 250px; height: 100px;">annotation<div><b>2nd</b> line</div></div></body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_sticky04(self):
+        """Convert sticky (styled relative)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled relative" style="height: 42.6px;">annotation<div><b>2nd</b> line</div></scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""
+
+        expected = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 16px auto; border: 1px solid #CCCCCC; border-top-width: 12px; background: #FAFFFA; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; word-wrap: break-word; position: static; height: 42.6px;">annotation<div><b>2nd</b> line</div></div></body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_sticky05(self):
+        """Convert sticky (plaintext relative)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="plaintext relative" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important; white-space: pre-wrap;">Legacy block comment.
+Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""
+
+        expected = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important; white-space: pre-wrap;">Legacy block comment.
+Second line.</div></body></html>"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
+    def test_convert_html_file_other(self):
+        """Convert other elements."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": ""
+  }
+})""")
+
+        input = """\
+<!DOCTYPE html>
+<html>
+<head>
+<title data-scrapbook-elem="title">My page</title>
+</head>
+<body>
+Donec nec lacus<span data-scrapbook-elem="annotation">(my legacy <em>inline</em>annotation)</span> efficitur.
+<a data-scrapbook-elem="link-url" href="http://example.com">Suspendisse eget interdum quam</a>, eu semper <span data-scrapbook-id="20200101000000000">ipsum</span>.
+</body>
+</html>
+"""
+
+        expected = """\
+<!DOCTYPE html>
+<html>
+<head>
+<title data-sb-obj="title">My page</title>
+</head>
+<body>
+Donec nec lacus<span data-sb-obj="annotation">(my legacy <em>inline</em>annotation)</span> efficitur.
+<a data-sb-obj="link-url" href="http://example.com">Suspendisse eget interdum quam</a>, eu semper <span data-sb-id="20200101000000000">ipsum</span>.
+</body>
+</html>
+"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
 if __name__ == '__main__':
     unittest.main()
