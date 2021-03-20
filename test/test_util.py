@@ -10,7 +10,7 @@ import time
 import zipfile
 import collections
 from datetime import datetime, timezone, timedelta
-from lxml import etree
+import lxml.html
 from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
 
@@ -1323,7 +1323,7 @@ foo&nbsp;&nbsp;&nbsp;中文<br>
 """
         fh = io.BytesIO(html.encode('UTF-8'))
         tree = util.load_tree(fh)
-        html1 = etree.tostring(tree, encoding='unicode', method='html')
+        html1 = lxml.html.tostring(tree, encoding='unicode', method='html')
         self.assertEqual(html1, """<!DOCTYPE html>
 <html>
 <head>
@@ -1379,7 +1379,7 @@ foo&nbsp;&nbsp;&nbsp;中文<br/>
 """
         fh = io.BytesIO(html.encode('UTF-8'))
         tree = util.load_tree(fh)
-        html1 = etree.tostring(tree, encoding='unicode',  method='xml')
+        html1 = lxml.html.tostring(tree, encoding='unicode',  method='xml')
         self.assertEqual(html1, """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <?xml version="1.0" encoding="UTF-8"??><html xmlns="http://www.w3.org/1999/xhtml">
 <head>

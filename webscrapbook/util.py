@@ -23,6 +23,7 @@ from urllib.request import pathname2url
 from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
 from lxml import etree
+import lxml.html
 from ._compat.contextlib import nullcontext
 
 
@@ -1072,7 +1073,7 @@ def load_tree(file):
 
         fh.seek(0)
         try:
-            return etree.parse(fh, etree.HTMLParser(encoding=charset))
+            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset))
         except etree.Error:
             return None
     finally:
