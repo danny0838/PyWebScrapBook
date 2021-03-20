@@ -10,6 +10,7 @@ import time
 import zipfile
 import collections
 from datetime import datetime, timezone, timedelta
+from lxml import etree
 from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
 
@@ -1291,6 +1292,116 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.get_charset(os.path.join(root, 'charset3.html')), 'Big5')
         self.assertEqual(util.get_charset(os.path.join(root, 'charset4.html')), 'UTF-8')
         self.assertEqual(util.get_charset(os.path.join(root, 'charset5.html')), 'BIG5')
+
+    def test_load_tree(self):
+        # HTML5
+        # @FIXME: &nbsp; becomes unescaped \u00A0
+        # @FIXME: < & > becomes escaped &lt; &amp; &gt;
+        html = """<!DOCTYPE html>
+<html>
+<head>
+<title>中文</title>
+<meta charset="UTF-8">
+<style>
+<!--/*--><![CDATA[/*><!--*/
+body::after { content: "<my> <" "/style> & godness"; }
+/*]]>*/-->
+</style>
+<script>
+<!--//--><![CDATA[//><!--
+console.log('test <my> <' + '/script> & tag');
+//--><!]]>
+</script>
+</head>
+<body>
+foo&nbsp;&nbsp;&nbsp;中文<br>
+&quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br>
+"123" < & > 456 (unescaped)<br>
+<input type="checkbox" checked>
+</body>
+</html>
+"""
+        fh = io.BytesIO(html.encode('UTF-8'))
+        tree = util.load_tree(fh)
+        html1 = etree.tostring(tree, encoding='unicode', method='html')
+        self.assertEqual(html1, """<!DOCTYPE html>
+<html>
+<head>
+<title>中文</title>
+<meta charset="UTF-8">
+<style>
+<!--/*--><![CDATA[/*><!--*/
+body::after { content: "<my> <" "/style> & godness"; }
+/*]]>*/-->
+</style>
+<script>
+<!--//--><![CDATA[//><!--
+console.log('test <my> <' + '/script> & tag');
+//--><!]]>
+</script>
+</head>
+<body>
+foo   中文<br>
+"123" &lt; &amp; &gt; 456 (escaped)<br>
+"123" &lt; &amp; &gt; 456 (unescaped)<br>
+<input type="checkbox" checked>
+</body>
+</html>""")
+
+        # XHTML1.1
+        # @FIXME: bad order for doctype and XML declaration
+        # @FIXME: bad format for XML declaration
+        # @FIXME: &nbsp; becomes unescaped \u00A0
+        # @FIXME: < & > etc. escaped in <style> and <script>
+        html = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>中文</title>
+<meta charset="UTF-8" />
+<style>
+<!--/*--><![CDATA[/*><!--*/
+body::after { content: "<my> <" "/style> & godness"; }
+/*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+console.log('test <my> <' + '/script> & tag');
+//--><!]]>
+</script>
+</head>
+<body>
+foo&nbsp;&nbsp;&nbsp;中文<br/>
+&quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br/>
+<input type="checkbox" checked="checked" />
+</body>
+</html>
+"""
+        fh = io.BytesIO(html.encode('UTF-8'))
+        tree = util.load_tree(fh)
+        html1 = etree.tostring(tree, encoding='unicode',  method='xml')
+        self.assertEqual(html1, """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<?xml version="1.0" encoding="UTF-8"??><html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>中文</title>
+<meta charset="UTF-8"/>
+<style>
+&lt;!--/*--&gt;&lt;![CDATA[/*&gt;&lt;!--*/
+body::after { content: "&lt;my&gt; &lt;" "/style&gt; &amp; godness"; }
+/*]]&gt;*/--&gt;
+</style>
+<script type="text/javascript">
+&lt;!--//--&gt;&lt;![CDATA[//&gt;&lt;!--
+console.log('test &lt;my&gt; &lt;' + '/script&gt; &amp; tag');
+//--&gt;&lt;!]]&gt;
+</script>
+</head>
+<body>
+foo   中文<br/>
+"123" &lt; &amp; &gt; 456 (escaped)<br/>
+<input type="checkbox" checked="checked"/>
+</body>
+</html>""")
 
     def test_iter_meta_refresh(self):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
