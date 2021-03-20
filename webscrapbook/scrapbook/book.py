@@ -355,13 +355,13 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
         try:
             if util.is_html(file):
                 with open(file, 'rb') as fh:
-                    return util.load_tree(fh)
+                    return util.load_html_tree(fh)
 
             if util.is_htz(file):
                 with zipfile.ZipFile(file) as zh:
                     with zh.open('index.html') as fh:
                         fh = zip_stream(fh)
-                        return util.load_tree(fh)
+                        return util.load_html_tree(fh)
 
             if util.is_maff(file):
                 info = next(iter(util.get_maff_pages(file)), None)
@@ -371,7 +371,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
                 with zipfile.ZipFile(file) as zh:
                     with zh.open(info.indexfilename) as fh:
                         fh = zip_stream(fh)
-                        return util.load_tree(fh)
+                        return util.load_html_tree(fh)
         except (OSError, zipfile.BadZipFile, KeyError):
             return None
 

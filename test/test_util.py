@@ -1285,15 +1285,15 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(util.DataUriMalformedError):
             util.parse_datauri('data:text/plain;base64,ABC')
 
-    def test_get_charset(self):
-        root = os.path.join(root_dir, 'test_util', 'get_charset')
-        self.assertIsNone(util.get_charset(os.path.join(root, 'charset1.html')))
-        self.assertEqual(util.get_charset(os.path.join(root, 'charset2.html')), 'UTF-8')
-        self.assertEqual(util.get_charset(os.path.join(root, 'charset3.html')), 'Big5')
-        self.assertEqual(util.get_charset(os.path.join(root, 'charset4.html')), 'UTF-8')
-        self.assertEqual(util.get_charset(os.path.join(root, 'charset5.html')), 'BIG5')
+    def test_get_html_charset(self):
+        root = os.path.join(root_dir, 'test_util', 'get_html_charset')
+        self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset1.html')))
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset2.html')), 'UTF-8')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset3.html')), 'Big5')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset4.html')), 'UTF-8')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset5.html')), 'BIG5')
 
-    def test_load_tree(self):
+    def test_load_html_tree(self):
         # HTML5
         # @FIXME: &nbsp; becomes unescaped \u00A0
         # @FIXME: < & > becomes escaped &lt; &amp; &gt;
@@ -1322,7 +1322,7 @@ foo&nbsp;&nbsp;&nbsp;中文<br>
 </html>
 """
         fh = io.BytesIO(html.encode('UTF-8'))
-        tree = util.load_tree(fh)
+        tree = util.load_html_tree(fh)
         html1 = lxml.html.tostring(tree, encoding='unicode', method='html')
         self.assertEqual(html1, """<!DOCTYPE html>
 <html>
@@ -1378,7 +1378,7 @@ foo&nbsp;&nbsp;&nbsp;中文<br/>
 </html>
 """
         fh = io.BytesIO(html.encode('UTF-8'))
-        tree = util.load_tree(fh)
+        tree = util.load_html_tree(fh)
         html1 = lxml.html.tostring(tree, encoding='unicode',  method='xml')
         self.assertEqual(html1, """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <?xml version="1.0" encoding="UTF-8"??><html xmlns="http://www.w3.org/1999/xhtml">

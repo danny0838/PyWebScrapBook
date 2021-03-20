@@ -749,7 +749,7 @@ class FulltextCacheGenerator():
             charset = None
             fh.seek(0)
         else:
-            charset = util.get_charset(fh) or item.meta.get('charset') or 'UTF-8'
+            charset = util.get_html_charset(fh) or item.meta.get('charset') or 'UTF-8'
             charset = util.fix_codec(charset)
             fh.seek(0)
 

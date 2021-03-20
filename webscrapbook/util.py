@@ -993,7 +993,7 @@ def parse_datauri(datauri):
 # HTML manipulation
 #########################################################################
 
-def get_charset(file):
+def get_html_charset(file):
     """Search for meta charset.
 
     Args:
@@ -1040,7 +1040,7 @@ def get_charset(file):
     return None
 
 
-def load_tree(file):
+def load_html_tree(file):
     """Load HTML document tree.
 
     Args:
@@ -1068,7 +1068,7 @@ def load_tree(file):
             # ref: https://bugs.launchpad.net/lxml/+bug/1463610
             charset = None
         else:
-            charset = get_charset(fh) or 'UTF-8'
+            charset = get_html_charset(fh) or 'UTF-8'
             charset = fix_codec(charset)
 
         fh.seek(0)
