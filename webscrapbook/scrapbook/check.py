@@ -650,9 +650,13 @@ class BookChecker:
 
         for id, ref_ids in ref_items_invalid.items():
             for ref_id in ref_ids:
-                self.book.toc[id].remove(ref_id)
-                yield Info('info', f'Removed "{ref_id}" from the subtree of "{id}".')
-                self.cnt_resolves += 1
+                try:
+                    self.book.toc[id].remove(ref_id)
+                except (KeyError, ValueError):
+                    pass
+                else:
+                    yield Info('info', f'Removed "{ref_id}" from the subtree of "{id}".')
+                    self.cnt_resolves += 1
 
     def _resolve_toc_unreachable(self, ids):
         yield Info('info', 'Adding unreachable items to root TOC...')

@@ -667,7 +667,7 @@ scrapbook.toc({
                 ],
             })
 
-    def test_resolve_toc_invalid(self):
+    def test_resolve_toc_invalid01(self):
         """Remove invalid items from TOC."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -728,6 +728,35 @@ scrapbook.toc({
                 'item2',
                 ],
             'recycle': [],
+            })
+
+    def test_resolve_toc_invalid02(self):
+        """Don't error if toc[id] has been removed when checking its ref IDs."""
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+})""")
+        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "unknown"
+  ],
+  "unknown": [
+    "item1"
+  ]
+})""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.BookChecker(book, resolve_toc_invalid=True, resolve_missing_index=True)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            })
+
+        self.assertDictEqual(book.toc, {
+            'root': [],
             })
 
     def test_resolve_toc_unreachable(self):
