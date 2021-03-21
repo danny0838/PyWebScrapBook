@@ -230,38 +230,41 @@ def cmd_convert(args):
         die(f'Unsupported conversion mode: "{mode}".')
 
     # validate input and output directory
-    args['input'] = os.path.realpath(args['input'])
-    args['output'] = os.path.realpath(args['output'])
+    input = args['input']
+    input = os.path.realpath(input)
 
-    if os.path.normcase(args['output']) == os.path.normcase(args['input']):
+    if not os.path.isdir(input):
+        die(f'''Input directory not available: "{input}"''')
+
+    output = args['output']
+    output = os.path.realpath(output)
+
+    if os.path.normcase(output) == os.path.normcase(input):
         die(f'''Unable to output to the input directory''')
 
-    if os.path.normcase(args['output']).startswith(os.path.normcase(os.path.join(args['input'], ''))):
+    if os.path.normcase(output).startswith(os.path.normcase(os.path.join(input, ''))):
         die(f'''Unable to output to a descendant of the input directory''')
 
-    if os.path.normcase(args['input']).startswith(os.path.normcase(os.path.join(args['output'], ''))):
+    if os.path.normcase(input).startswith(os.path.normcase(os.path.join(output, ''))):
         die(f'''Unable to output to an ancestor of the input directory''')
 
-    if not os.path.isdir(args['input']):
-        die(f'''Input directory not available: "{args['input']}"''')
-
-    if not os.path.lexists(args['output']):
+    if not os.path.lexists(output):
         pass
-    elif not os.path.isdir(args['output']):
-        die(f'''Output directory not available: "{args['output']}"''')
+    elif not os.path.isdir(output):
+        die(f'''Output directory not available: "{output}"''')
     else:
         if force:
             # using os.rmtree() frequently cause an error on Windows
-            with os.scandir(args['output']) as dirs:
+            with os.scandir(output) as dirs:
                 for entry in dirs:
                     try:
                         shutil.rmtree(entry)
                     except NotADirectoryError:
                         os.remove(entry)
         else:
-            with os.scandir(args['output']) as dirs:
+            with os.scandir(output) as dirs:
                 if next(dirs, None):
-                    die(f'''Output directory not empty: "{args['output']}"''')
+                    die(f'''Output directory not empty: "{output}"''')
 
     for info in conv.run(**kwargs):
         if info.type != 'debug' or debug:
