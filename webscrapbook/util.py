@@ -1033,6 +1033,8 @@ def get_html_charset(file):
                     except TypeError:
                         # broken html may generate extra root elem
                         break
+        except etree.Error:
+            pass
         finally:
             if fh != file:
                 fh.close()
