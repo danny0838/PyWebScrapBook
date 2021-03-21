@@ -245,6 +245,12 @@ def format_string(text, mapping):
     return REGEX_FORMAT_STRING.sub(formatter, text)
 
 
+REGEX_COMPRESS_CODE = re.compile(r'[^\S　]+')
+
+def compress_code(code):
+    return REGEX_COMPRESS_CODE.sub(' ', code)
+
+
 #########################################################################
 # Codecs and text encoding
 #########################################################################
