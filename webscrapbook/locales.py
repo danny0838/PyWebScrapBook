@@ -99,6 +99,13 @@ class I18N:
                 return name
 
         return self._get(name)
+
+    def get(self, name, default=None):
+        """Simulates dict.get()
+
+        - default param is actually not used.
+        """
+        return self.__call__(name)
             
     def _get(self, name):
         for translator in self.translators:
