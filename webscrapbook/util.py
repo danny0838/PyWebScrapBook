@@ -236,9 +236,11 @@ def format_string(text, mapping):
     - Good for user-provided strings.
     """
     def formatter(m):
-        return mapping.get(m.group(1), '')
+        k = m.group(1)
+        if k == '':
+            return '%'
+        return mapping.get(k, '')
 
-    mapping[''] = '%'
     return REGEX_FORMAT_STRING.sub(formatter, text)
 
 
