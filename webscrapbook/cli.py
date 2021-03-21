@@ -237,34 +237,35 @@ def cmd_convert(args):
         die(f'''Input directory not available: "{input}"''')
 
     output = args['output']
-    output = os.path.realpath(output)
+    if output is not None:
+        output = os.path.realpath(output)
 
-    if os.path.normcase(output) == os.path.normcase(input):
-        die(f'''Unable to output to the input directory''')
+        if os.path.normcase(output) == os.path.normcase(input):
+            die(f'''Unable to output to the input directory''')
 
-    if os.path.normcase(output).startswith(os.path.normcase(os.path.join(input, ''))):
-        die(f'''Unable to output to a descendant of the input directory''')
+        if os.path.normcase(output).startswith(os.path.normcase(os.path.join(input, ''))):
+            die(f'''Unable to output to a descendant of the input directory''')
 
-    if os.path.normcase(input).startswith(os.path.normcase(os.path.join(output, ''))):
-        die(f'''Unable to output to an ancestor of the input directory''')
+        if os.path.normcase(input).startswith(os.path.normcase(os.path.join(output, ''))):
+            die(f'''Unable to output to an ancestor of the input directory''')
 
-    if not os.path.lexists(output):
-        pass
-    elif not os.path.isdir(output):
-        die(f'''Output directory not available: "{output}"''')
-    else:
-        if force:
-            # using os.rmtree() frequently cause an error on Windows
-            with os.scandir(output) as dirs:
-                for entry in dirs:
-                    try:
-                        shutil.rmtree(entry)
-                    except NotADirectoryError:
-                        os.remove(entry)
+        if not os.path.lexists(output):
+            pass
+        elif not os.path.isdir(output):
+            die(f'''Output directory not available: "{output}"''')
         else:
-            with os.scandir(output) as dirs:
-                if next(dirs, None):
-                    die(f'''Output directory not empty: "{output}"''')
+            if force:
+                # using os.rmtree() frequently cause an error on Windows
+                with os.scandir(output) as dirs:
+                    for entry in dirs:
+                        try:
+                            shutil.rmtree(entry)
+                        except NotADirectoryError:
+                            os.remove(entry)
+            else:
+                with os.scandir(output) as dirs:
+                    if next(dirs, None):
+                        die(f'''Output directory not empty: "{output}"''')
 
     for info in conv.run(**kwargs):
         if info.type != 'debug' or debug:
@@ -630,8 +631,8 @@ or migrate from older WebScrapBook 0.* to latest.
         help="""migrate to latest WebScrapBook 0.*""")
     parser_convert_migrate0.add_argument('input', action='store',
         help="""the input directory""")
-    parser_convert_migrate0.add_argument('output', action='store',
-        help="""the output directory""")
+    parser_convert_migrate0.add_argument('output', action='store', nargs='?',
+        help="""the output directory (default: in-place)""")
     parser_convert_migrate0.add_argument('--book', dest='book_ids', metavar='ID',
         nargs='+', action='store',
         help="""the book ID(s) to convert. (default: all books)""")

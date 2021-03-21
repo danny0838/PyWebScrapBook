@@ -15,8 +15,9 @@ class Converter:
         self.convert_data_files = convert_data_files
 
     def run(self):
-        yield Info('info', 'Copying files...')
-        self._copy_files()
+        if self.input != self.output:
+            yield Info('info', 'Copying files...')
+            self._copy_files()
 
         yield Info('info', 'Applying migration...')
         host = Host(self.output)
@@ -89,10 +90,13 @@ def run(input, output, book_ids=None, *, convert_data_files=False):
     ids = ', '.join(f'"{id}"' for id in book_ids) if book_ids else '(all)'
     yield Info('info', 'conversion mode: migrate0')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
-    yield Info('info', f'output directory: {os.path.abspath(output)}')
+    yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')
     yield Info('info', f'book ID(s): {ids}')
     yield Info('info', f'convert data files: {convert_data_files}')
     yield Info('info', '')
+
+    if output is None:
+        output = input
 
     try:
         conv = Converter(input, output, book_ids=book_ids, convert_data_files=convert_data_files)
