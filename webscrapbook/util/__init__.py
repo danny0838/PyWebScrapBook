@@ -825,6 +825,10 @@ def mime_is_html(mime):
     return mime in {'text/html', 'application/xhtml+xml'}
 
 
+def mime_is_xhtml(mime):
+    return mime == 'application/xhtml+xml'
+
+
 def mime_is_archive(mime):
     return mime in {'application/html+zip', 'application/x-maff'}
 
@@ -848,6 +852,11 @@ def mime_is_wsba(mime):
 def is_html(filename):
     mime, _ = mimetypes.guess_type(filename)
     return mime_is_html(mime)
+
+
+def is_xhtml(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_xhtml(mime)
 
 
 def is_archive(filename):

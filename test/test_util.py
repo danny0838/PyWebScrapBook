@@ -697,6 +697,17 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(util.mime_is_html('image/svg+xml'))
         self.assertFalse(util.mime_is_html('application/octet-stream'))
 
+    def test_mime_is_xhtml(self):
+        self.assertFalse(util.mime_is_xhtml('text/html'))
+        self.assertTrue(util.mime_is_xhtml('application/xhtml+xml'))
+        self.assertFalse(util.mime_is_xhtml('application/html+zip'))
+        self.assertFalse(util.mime_is_xhtml('application/x-maff'))
+        self.assertFalse(util.mime_is_xhtml('text/plain'))
+        self.assertFalse(util.mime_is_xhtml('text/markdown'))
+        self.assertFalse(util.mime_is_xhtml('text/xml'))
+        self.assertFalse(util.mime_is_xhtml('image/svg+xml'))
+        self.assertFalse(util.mime_is_xhtml('application/octet-stream'))
+
     def test_mime_is_archive(self):
         self.assertFalse(util.mime_is_archive('text/html'))
         self.assertFalse(util.mime_is_archive('application/xhtml+xml'))
@@ -763,6 +774,17 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(util.is_html('20200101000000000/test.xml'))
         self.assertFalse(util.is_html('20200101000000000/test.svg'))
         self.assertFalse(util.is_html('20200101000000000/whatever'))
+
+    def test_is_xhtml(self):
+        self.assertFalse(util.is_xhtml('index.html'))
+        self.assertTrue(util.is_xhtml('index.xhtml'))
+        self.assertFalse(util.is_xhtml('20200101000000000.htz'))
+        self.assertFalse(util.is_xhtml('20200101000000000.maff'))
+        self.assertFalse(util.is_xhtml('20200101000000000/index.md'))
+        self.assertFalse(util.is_xhtml('20200101000000000/test.txt'))
+        self.assertFalse(util.is_xhtml('20200101000000000/test.xml'))
+        self.assertFalse(util.is_xhtml('20200101000000000/test.svg'))
+        self.assertFalse(util.is_xhtml('20200101000000000/whatever'))
 
     def test_is_archive(self):
         self.assertFalse(util.is_archive('index.html'))
