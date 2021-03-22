@@ -24,7 +24,7 @@ from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
 from lxml import etree
 import lxml.html
-from ._compat.contextlib import nullcontext
+from .._compat.contextlib import nullcontext
 
 
 #########################################################################
