@@ -755,7 +755,7 @@ class FulltextCacheGenerator():
 
         results = []
         has_instant_redirect = False
-        for time_, url, context in util.iter_meta_refresh(fh):
+        for time_, url, context in util.iter_meta_refresh(fh, encoding=charset):
             if time_ == 0 and not context:
                 has_instant_redirect = True
 

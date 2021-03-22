@@ -1114,11 +1114,12 @@ META_REFRESH_FORBID_TAGS = {
     'xmp',
     }
 
-def iter_meta_refresh(file):
+def iter_meta_refresh(file, encoding='ISO-8859-1'):
     """Iterate through meta refreshes from a file.
 
     Args:
         file: str, path-like, or file-like bytes object
+        encoding: encoding for the HTML file
     """
     try:
         fh = open(file, 'rb')
@@ -1132,7 +1133,7 @@ def iter_meta_refresh(file):
 
     try:
         contexts = []
-        for event, elem in etree.iterparse(fh, html=True, events=('start', 'end')):
+        for event, elem in etree.iterparse(fh, encoding=encoding, html=True, events=('start', 'end')):
             if event == 'start':
                 if elem.tag in META_REFRESH_CONTEXT_TAGS:
                     contexts.append(elem.tag)
