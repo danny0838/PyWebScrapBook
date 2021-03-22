@@ -1292,6 +1292,11 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset3.html')), 'Big5')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset4.html')), 'UTF-8')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset5.html')), 'BIG5')
+        self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset6.html')))
+
+        self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset7.html')))
+        self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=True))
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=False), 'Big5')
 
     def test_load_html_tree(self):
         # HTML5

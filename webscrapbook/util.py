@@ -993,11 +993,12 @@ def parse_datauri(datauri):
 # HTML manipulation
 #########################################################################
 
-def get_html_charset(file):
+def get_html_charset(file, quickly=True):
     """Search for meta charset.
 
     Args:
         file: str, path-like, or file-like bytes object
+        quickly: True to exit early for normal HTML files
     """
     try:
         fh = open(file, 'rb')
@@ -1008,7 +1009,7 @@ def get_html_charset(file):
 
     if fh:
         try:
-            for event, elem in etree.iterparse(fh, html=True, events=('start',), tag=('meta', 'body')):
+            for event, elem in etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body')):
                 if elem.tag == 'meta':
                     charset = elem.attrib.get('charset')
                     if charset:
@@ -1023,7 +1024,8 @@ def get_html_charset(file):
                 elif elem.tag == 'body':
                     # presume that no <meta> will appear after <body> start
                     # for a normal HTML to exit early
-                    return None
+                    if quickly:
+                        return None
 
                 # clean up to save memory
                 elem.clear()
