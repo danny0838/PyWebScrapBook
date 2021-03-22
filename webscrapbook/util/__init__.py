@@ -24,6 +24,7 @@ from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
 from lxml import etree
 import lxml.html
+from .html import HTMLParser
 from .._compat.contextlib import nullcontext
 
 
@@ -1345,6 +1346,40 @@ def load_html_tree(file, options={}):
             return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset, **options))
         except etree.Error:
             return None
+    finally:
+        if fh != file:
+            fh.close()
+
+
+def load_html_markups(file, parser=HTMLParser, **kwargs):
+    """Load HTML document markups using native html.parser.
+
+    Args:
+        file: str, path-like, or file-like bytes object
+    """
+    try:
+        fh = open(file, 'rb')
+    except TypeError:
+        fh = file
+    except FileNotFoundError:
+        fh = None
+
+    if not fh:
+        return None
+
+    try:
+        charset = get_html_charset(fh)
+        fh.seek(0)
+
+        p = parser(**kwargs)
+        for s in codecs.iterdecode(fh, charset):
+            if not s:
+                break
+            p.feed(s)
+        p.close()
+
+        setattr(load_html_markups, 'last_encoding', charset)
+        return p._rv
     finally:
         if fh != file:
             fh.close()

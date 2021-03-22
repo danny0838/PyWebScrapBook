@@ -1415,6 +1415,25 @@ foo   中文<br/>
 </body>
 </html>""")
 
+    def test_load_html_markups(self):
+        # HTML5
+        markups = util.load_html_markups(os.path.join(root_dir, 'test_util', 'load_html_markups', 'sample.html'))
+        with open(os.path.join(root_dir, 'test_util', 'load_html_markups', 'sample.html'), encoding='UTF-8', newline='\n') as fh:
+            input = fh.read()
+        with open(os.path.join(root_dir, 'test_util', 'load_html_markups', 'sample.html.expected'), encoding='UTF-8', newline='\n') as fh:
+            expected = fh.read()
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+        self.assertEqual(''.join(str(m) for m in markups), expected)
+
+        # XHTML
+        markups = util.load_html_markups(os.path.join(root_dir, 'test_util', 'load_html_markups', 'sample.xhtml'), is_xhtml=True)
+        with open(os.path.join(root_dir, 'test_util', 'load_html_markups', 'sample.xhtml'), encoding='UTF-8', newline='\n') as fh:
+            input = fh.read()
+        with open(os.path.join(root_dir, 'test_util', 'load_html_markups', 'sample.xhtml.expected'), encoding='UTF-8', newline='\n') as fh:
+            expected = fh.read()
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+        self.assertEqual(''.join(str(m) for m in markups), expected)
+
     def test_iter_meta_refresh(self):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(
