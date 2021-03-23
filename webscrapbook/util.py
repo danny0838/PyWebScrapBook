@@ -993,11 +993,49 @@ def parse_datauri(datauri):
 # HTML manipulation
 #########################################################################
 
-def get_html_charset(file, quickly=True):
-    """Search for meta charset.
+def _get_html_charset(fh, quickly=True):
+    """Internal method to read a charset from meta charset.
+    """
+    try:
+        for event, elem in etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body')):
+            if elem.tag == 'meta':
+                charset = elem.attrib.get('charset')
+                if charset:
+                    return charset.strip()
+
+                if elem.attrib.get('http-equiv', '').lower() == 'content-type':
+                    _, params = parse_content_type(elem.attrib.get('content', ''))
+                    charset = params.get('charset')
+                    if charset:
+                        return charset
+
+            elif elem.tag == 'body':
+                # presume that no <meta> will appear after <body> start
+                # for a normal HTML to exit early
+                if quickly:
+                    return None
+
+            # clean up to save memory
+            elem.clear()
+            while elem.getprevious() is not None:
+                try:
+                    del elem.getparent()[0]
+                except TypeError:
+                    # broken html may generate extra root elem
+                    break
+    except etree.Error:
+        pass
+
+    return None
+
+def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
+    """Search for the correct charset to read an HTML file.
 
     Args:
         file: str, path-like, or file-like bytes object
+        default: fallback encoding if not found
+        none_from_bom: True to return None if charset is determined from BOM
+            (to prevent error for lxml)
         quickly: True to exit early for normal HTML files
     """
     try:
@@ -1009,39 +1047,33 @@ def get_html_charset(file, quickly=True):
 
     if fh:
         try:
-            for event, elem in etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body')):
-                if elem.tag == 'meta':
-                    charset = elem.attrib.get('charset')
-                    if charset:
-                        return charset.strip()
+            # Seek for the correct charset (encoding).
+            # If a charset is not specified, lxml may select a wrong encoding for
+            # the entire document if there is text before first meta charset.
+            charset = sniff_bom(fh)
+            if charset:
+                if none_from_bom:
+                    # lxml does not accept "UTF-16-LE" or so, but can auto-detect
+                    # encoding from BOM if encoding is None
+                    # ref: https://bugs.launchpad.net/lxml/+bug/1463610
+                    return None
 
-                    if elem.attrib.get('http-equiv', '').lower() == 'content-type':
-                        _, params = parse_content_type(elem.attrib.get('content', ''))
-                        charset = params.get('charset')
-                        if charset:
-                            return charset
+                return charset
 
-                elif elem.tag == 'body':
-                    # presume that no <meta> will appear after <body> start
-                    # for a normal HTML to exit early
-                    if quickly:
-                        return None
+            charset = _get_html_charset(fh, quickly=quickly)
 
-                # clean up to save memory
-                elem.clear()
-                while elem.getprevious() is not None:
-                    try:
-                        del elem.getparent()[0]
-                    except TypeError:
-                        # broken html may generate extra root elem
-                        break
-        except etree.Error:
-            pass
+            if charset is None:
+                charset = default
+
+            if charset is not None:
+                charset = fix_codec(charset)
+
+            return charset
         finally:
             if fh != file:
                 fh.close()
 
-    return None
+    return default
 
 
 def load_html_tree(file):
@@ -1061,21 +1093,9 @@ def load_html_tree(file):
         return None
 
     try:
-        # Seek for the correct charset (encoding).
-        # If a charset is not specified, lxml may select a wrong encoding for
-        # the entire document if there is text before first meta charset.
-        # Priority: BOM > meta charset > assume UTF-8
-        charset = sniff_bom(fh)
-        if charset:
-            # lxml does not accept "UTF-16-LE" or so, but can auto-detect
-            # encoding from BOM if encoding is None
-            # ref: https://bugs.launchpad.net/lxml/+bug/1463610
-            charset = None
-        else:
-            charset = get_html_charset(fh) or 'UTF-8'
-            charset = fix_codec(charset)
-
+        charset = get_html_charset(fh)
         fh.seek(0)
+
         try:
             return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset))
         except etree.Error:

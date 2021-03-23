@@ -737,21 +737,8 @@ class FulltextCacheGenerator():
         else:
             yield Info('debug', f'Retrieving HTML content for "{path}" of "{item.id}"')
 
-        # Seek for the correct charset (encoding).
-        # If a charset is not specified, lxml may select a wrong encoding for
-        # the entire document if there is text before first meta charset.
-        # Priority: BOM > meta charset > item charset > assume UTF-8
-        charset = util.sniff_bom(fh)
-        if charset:
-            # lxml does not accept "UTF-16-LE" or so, but can auto-detect
-            # encoding from BOM if encoding is None
-            # ref: https://bugs.launchpad.net/lxml/+bug/1463610
-            charset = None
-            fh.seek(0)
-        else:
-            charset = util.get_html_charset(fh) or item.meta.get('charset') or 'UTF-8'
-            charset = util.fix_codec(charset)
-            fh.seek(0)
+        charset = util.get_html_charset(fh, default=item.meta.get('charset') or 'UTF-8')
+        fh.seek(0)
 
         results = []
         has_instant_redirect = False
