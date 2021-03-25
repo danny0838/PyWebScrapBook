@@ -889,8 +889,7 @@ class FulltextCacheGenerator():
 
     def _get_fulltext_cache_txt(self, item, path, fh):
         yield Info('debug', f'Retrieving text content for "{path}" of "{item.id}"')
-        charset = util.sniff_bom(fh) or item.meta.get('charset') or 'UTF-8'
-        charset = util.fix_codec(charset)
+        charset = util.sniff_bom(fh) or util.fix_codec(item.meta.get('charset', '')) or 'UTF-8'
         text = fh.read().decode(charset, errors='replace')
         return self.FULLTEXT_SPACE_REPLACER(text).strip()
 

@@ -201,9 +201,11 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.format_string('format 15%, 30%.\nformat 45%.', {}), 'format 15%, 30%.\nformat 45%.')
 
     def test_fix_codec(self):
-        self.assertEqual(util.fix_codec('big5'), 'cp950')
-        self.assertEqual(util.fix_codec('BIG5'), 'cp950')
+        self.assertEqual(util.fix_codec('big5'), 'big5hkscs')
+        self.assertEqual(util.fix_codec('BIG5'), 'big5hkscs')
+        self.assertEqual(util.fix_codec('gb_2312-80'), 'GBK')
         self.assertEqual(util.fix_codec('UTF-8'), 'UTF-8')
+        self.assertEqual(util.fix_codec('unicode-1-1-utf-8'), 'UTF-8')
 
     def test_sniff_bom(self):
         fh = io.BytesIO(b'\xef\xbb\xbf' + '中文'.encode('UTF-8'))
@@ -1288,12 +1290,12 @@ class TestUtils(unittest.TestCase):
     def test_get_html_charset(self):
         root = os.path.join(root_dir, 'test_util', 'get_html_charset')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html'), default='Big5'), 'cp950')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html'), default='Big5'), 'big5hkscs')
 
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset2.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset3.html')), 'cp950')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset3.html')), 'big5hkscs')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset4.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset5.html')), 'cp950')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset5.html')), 'big5hkscs')
 
         self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset6.html')))
         self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset6.html'), none_from_bom=True))
@@ -1301,7 +1303,7 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html')), 'UTF-8')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=True), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=False), 'cp950')
+        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=False), 'big5hkscs')
 
     def test_load_html_tree(self):
         # HTML5
