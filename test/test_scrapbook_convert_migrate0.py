@@ -322,6 +322,62 @@ Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
             self.assertEqual(output[:len(expected)], expected)
             self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
 
+    def test_data_annotations_sticky03(self):
+        """Convert improperly saved legacy ScrapBook sticky (absolute)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """<html><head><div style="left: 303px; top: 212px; position: absolute; width: 250px; height: 100px;" class="scrapbook-sticky"><div class="scrapbook-sticky-header"></div><textarea style="height: 74px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""
+
+        expected = """<html><head><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext" style="left: 303px; top: 212px; width: 250px; height: 100px;"></scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output[:len(expected)], expected)
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+
+    def test_data_annotations_sticky04(self):
+        """Convert improperly saved legacy ScrapBook sticky (relative)."""
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """<html><head><div style="width: 640px; height: 92px;" class="scrapbook-sticky scrapbook-sticky-relative"><div class="scrapbook-sticky-header"></div><textarea style="height: 66px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""
+
+        expected = """<html><head><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext relative" style="width: 640px; height: 92px;"></scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output[:len(expected)], expected)
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+
     def test_data_annotations_block_comment01(self):
         """Convert legacy ScrapBook block comment."""
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
