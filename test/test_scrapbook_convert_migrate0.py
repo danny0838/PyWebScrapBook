@@ -82,7 +82,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 <html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
-postit page content
+postit page content < & > &lt; &amp; &gt;
 </pre></body></html>""")
 
         for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
@@ -95,7 +95,7 @@ postit page content
 <meta name="viewport" content="width=device-width">\
 <style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
 </head><body><pre>
-postit page content
+postit page content < & > &lt; &amp; &gt;
 </pre></body></html>""")
 
     def test_data_annotations_linemarker01(self):

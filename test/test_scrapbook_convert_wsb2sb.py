@@ -174,7 +174,7 @@ scrapbook.meta({
 <meta name="viewport" content="width=device-width">\
 <style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
 </head><body><pre>
-postit page content
+postit page content < & > &lt; &amp; &gt;
 </pre></body></html>""")
 
         for info in wsb2sb.run(self.test_input, self.test_output):
@@ -190,7 +190,7 @@ postit page content
         with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """\
 <html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
-postit page content
+postit page content < & > &lt; &amp; &gt;
 </pre></body></html>""")
 
     def test_meta_type02(self):
