@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.35.0] - 2021-03-27
+* Fixed an issue that fulltext cache does not work for iframes with srcdoc attribute. (Rebuild the fulltext cache to correct existing caches.)
+* Added support of page conversion for `sb2wsb` and `wsb2sb` converters.
+* Added `migrate0` converter.
+
 ## [0.32.0] - 2020-11-05
 * Added `file2wsb` and `wsb2file` converters.
 
