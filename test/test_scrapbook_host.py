@@ -294,6 +294,25 @@ name = mybook2
         with open(os.path.join(self.test_wsbdir, 'backup', backup_dirname, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
 
+    def test_unbackup01(self):
+        """A common case."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+
+        host = Host(self.test_root)
+        host.unbackup(test_backup_dir)
+
+        self.assertFalse(os.path.lexists(test_backup_dir))
+
+    def test_unbackup02(self):
+        """Pass if backup dir not exist."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+
+        host = Host(self.test_root)
+        host.unbackup(test_backup_dir)
+
+        self.assertFalse(os.path.lexists(test_backup_dir))
+
     def test_init_backup01(self):
         """Test ts param."""
         host = Host(self.test_root)

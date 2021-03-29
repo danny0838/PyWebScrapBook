@@ -342,8 +342,8 @@ def verify_authorization(perm, action):
     if perm == 'read':
         return action not in {
             'token', 'lock', 'unlock',
-            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy', 'backup',
-            'cache', 'check',
+            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
+            'backup', 'unbackup', 'cache', 'check',
             }
 
     if perm == 'view':
@@ -1541,6 +1541,20 @@ def action_backup():
     host.init_backup(ts, note=note)
     try:
         host.auto_backup(localpaths[0], move=move)
+    finally:
+        host.init_backup(False)
+
+
+@handle_action_advanced
+@handle_action_token
+def action_unbackup():
+    """Remove a backup."""
+    ts = request.values.get('ts') or util.datetime_to_id()
+    note = request.values.get('note')
+
+    host.init_backup(ts, note=note)
+    try:
+        host.unbackup(host._backup_dir)
     finally:
         host.init_backup(False)
 

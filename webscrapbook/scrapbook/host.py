@@ -415,6 +415,17 @@ class Host:
             except NotADirectoryError:
                 shutil.copy2(file, dst)
 
+    def unbackup(self, backup_dir):
+        """Remove a backup.
+
+        Args:
+            backup_dir: a path-like for the backup.
+        """
+        try:
+            shutil.rmtree(backup_dir)
+        except FileNotFoundError:
+            pass
+
     def init_backup(self, ts=True, note=None):
         """Setup a backup dir for following auto backups until next set.
 

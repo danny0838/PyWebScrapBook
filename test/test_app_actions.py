@@ -5033,6 +5033,59 @@ class TestBackup(TestActions):
             move=True,
             )
 
+class TestUnbackup(TestActions):
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_method_check(self, mock_abort):
+        """Require POST."""
+        with app.test_client() as c:
+            r = c.get('/', query_string={
+                'token': token(c),
+                'a': 'unbackup',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(405, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'a': 'unbackup',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.unbackup')
+    def test_params01(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'a': 'unbackup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            )
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.unbackup')
+    def test_params02(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'note': 'foo:bar:中文?',
+                'a': 'unbackup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
+            )
+
 class TestCache(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
