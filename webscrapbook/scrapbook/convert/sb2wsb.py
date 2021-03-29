@@ -187,8 +187,8 @@ class LegacyBook:
 
 class Converter:
     def __init__(self, input, output, *, no_data_files=False, no_backup=False):
-        self.input = input
-        self.output = output
+        self.input = os.path.realpath(input)
+        self.output = os.path.realpath(output)
         self.no_data_files = no_data_files
         self.no_backup = no_backup
 
