@@ -224,7 +224,7 @@ no_tree = true
         for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
             pass
 
-        self.assertEqual(mock_func.call_args_list, [mock.call(), mock.call(False)])
+        self.assertEqual(mock_func.call_args_list, [mock.call(note='cache'), mock.call(False)])
 
     @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
     def test_no_backup02(self, mock_func):

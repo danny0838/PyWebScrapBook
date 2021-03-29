@@ -1089,7 +1089,7 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
     host = Host(root, config)
 
     if not no_backup:
-        host.init_backup()
+        host.init_backup(note='check')
         yield Info('info', f'Prepared backup at "{host.get_subpath(host._backup_dir)}".')
 
     try:

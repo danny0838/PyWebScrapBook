@@ -904,7 +904,7 @@ def generate(root, book_ids=None, item_ids=None, *,
     host = Host(root, config)
 
     if not no_backup:
-        host.init_backup()
+        host.init_backup(note='cache')
         yield Info('info', f'Prepared backup at "{host.get_subpath(host._backup_dir)}".')
 
     try:

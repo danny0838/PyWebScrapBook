@@ -215,7 +215,7 @@ class Converter:
         book.load_toc_files()
 
         if not self.no_backup:
-            host.init_backup()
+            host.init_backup(note='convert-sb2wsb')
 
         try:
             yield Info('info', 'Loading legacy scrapbook data...')
