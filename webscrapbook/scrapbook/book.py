@@ -38,9 +38,20 @@ class Book:
     """
     REGEX_TREE_FILE_WRAPPER = re.compile(r'^(?:/\*.*\*/|[^(])+\(([\s\S]*)\)(?:/\*.*\*/|[\s;])*$')
     REGEX_ITEM_NOTE = re.compile(r'^.*?<pre>\n?([^<]*(?:<(?!/pre>)[^<]*)*)\n</pre>.*$', re.S)
+
+    # A javascript string >= 256 MiB (UTF-16 chars) causes an error in some
+    # older browsers. Split into several smaller JavaScript files to prevent
+    # such issue.
+
+    # Split at around 256 K items (a meta item is mostly < 512 bytes)
     SAVE_META_THRESHOLD = 256 * 1024
+
+    # Split at around 4 M entries (a TOC entry is mostly < 32 bytes)
     SAVE_TOC_THRESHOLD = 4 * 1024 * 1024
+
+    # Split at at around 128 MiB
     SAVE_FULLTEXT_THRESHOLD = 128 * 1024 * 1024
+
     REPR_ATTRS = ('id', 'name', 'top_dir')
     DEFAULT_META = {
         'id': None,
@@ -192,10 +203,6 @@ scrapbook.meta({json.dumps(data, ensure_ascii=False, indent=2)})""")
 
     def save_meta_files(self):
         """Save to tree/meta#.js
-
-        A javascript string >= 256 MiB (UTF-16 chars) causes an error
-        in the browser. Split each js file at around 256 K items to
-        prevent the issue. (An item is mostly < 512 bytes)
         """
         os.makedirs(os.path.join(self.tree_dir), exist_ok=True)
         i = 0
@@ -234,10 +241,6 @@ scrapbook.toc({json.dumps(data, ensure_ascii=False, indent=2)})""")
 
     def save_toc_files(self):
         """Save to tree/toc#.js
-
-        A javascript string >= 256 MiB (UTF-16 chars) causes an error
-        in the browser. Split each js file at around 4 M entries to
-        prevent the issue. (An entry is mostly < 32 bytes)
         """
         os.makedirs(os.path.join(self.tree_dir), exist_ok=True)
         i = 0
@@ -276,10 +279,6 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
 
     def save_fulltext_files(self):
         """Save to tree/fulltext#.js
-
-        A javascript string >= 256 MiB (UTF-16 chars) causes an error
-        in the browser. Split each js file at at around 128 MiB to
-        prevent the issue.
         """
         os.makedirs(os.path.join(self.tree_dir), exist_ok=True)
         i = 0
