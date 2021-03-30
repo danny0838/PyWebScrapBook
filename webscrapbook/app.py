@@ -1529,7 +1529,6 @@ def action_copy(sourcepaths, targetpaths):
 @handle_action_token
 def action_backup():
     """Bakup file or directory."""
-    format = request.format
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
