@@ -4957,7 +4957,8 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
-            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            base=None,
             move=False,
             )
 
@@ -4974,7 +4975,8 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
-            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            base=None,
             move=True,
             )
 
@@ -4990,7 +4992,8 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(server_root, 'temp', 'subdir'),
-            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            base=None,
             move=False,
             )
 
@@ -5007,7 +5010,8 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(server_root, 'temp', 'subdir'),
-            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            base=None,
             move=True,
             )
 

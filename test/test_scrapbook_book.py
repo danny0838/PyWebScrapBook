@@ -887,168 +887,17 @@ scrapbook.fulltext({
         self.assertFalse(os.path.exists(os.path.join(self.test_root, 'tree', 'fulltext5.js')))
         self.assertTrue(os.path.exists(os.path.join(self.test_root, 'tree', 'fulltext6.js')))
 
-    def test_init_backup(self):
-        book = Book(Host(self.test_root))
-
-        book.init_backup(True)
-        self.assertRegex(
-            book.backup_dir,
-            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
-            )
-
-        ts = util.datetime_to_id()
-        book.init_backup(ts)
-        self.assertEqual(
-            book.backup_dir,
-            os.path.join(self.test_root, WSB_DIR, 'backup', ts),
-            )
-
-        book.init_backup(False)
-        self.assertIsNone(book.backup_dir)
-
-    def test_backup01(self):
-        """A common case."""
+    @mock.patch('webscrapbook.scrapbook.host.Host.auto_backup')
+    def test_backup(self, mock_func):
         test_file = os.path.join(self.test_root, 'tree', 'meta.js')
-        os.makedirs(os.path.dirname(test_file))
-        with open(test_file, 'w', encoding='UTF-8') as fh:
-            fh.write('abc')
+        host = Host(self.test_root)
+        book = Book(host)
 
-        book = Book(Host(self.test_root))
-        book.init_backup()
         book.backup(test_file)
+        mock_func.assert_called_with(test_file)
 
-        with open(os.path.join(book.backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), 'abc')
-
-    def test_backup02(self):
-        """A common directory case."""
-        test_dir = os.path.join(self.test_root, 'tree')
-        os.makedirs(test_dir)
-        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write('abc')
-        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write('def')
-
-        book = Book(Host(self.test_root))
-        book.init_backup()
-        book.backup(test_dir)
-
-        with open(os.path.join(book.backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), 'abc')
-        with open(os.path.join(book.backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), 'def')
-
-    def test_backup03(self):
-        """Pass if backup_dir not set."""
-        test_file = os.path.join(self.test_wsbdir, 'icon', 'test.txt')
-        os.makedirs(os.path.dirname(test_file))
-        with open(test_file, 'w', encoding='UTF-8') as fh:
-            fh.write('abc')
-        test_stat = os.stat(test_file)
-
-        book = Book(Host(self.test_root))
-        book.backup(test_file)
-
-        self.assertListEqual(os.listdir(self.test_wsbdir), ['icon'])
-
-    def test_backup04(self):
-        """Auto backup tree files if backup_dir is set."""
-        test_dir = os.path.join(self.test_root, WSB_DIR, 'tree')
-        os.makedirs(test_dir)
-
-        meta0 = """
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "Dummy",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000"
-  }
-})"""
-        meta1 = """
-scrapbook.meta({
-  "20200101000000001": {
-    "index": "20200101000000001/index.html",
-    "title": "Dummy",
-    "type": "",
-    "create": "20200101000000001",
-    "modify": "20200101000000001"
-  }
-})"""
-        toc0 = """
-scrapbook.toc({
-  "root": [
-    "20200101000000000",
-    "20200101000000001",
-    "20200101000000002"
-  ],
-  "20200101000000000": [
-    "20200101000000003"
-  ]
-})"""
-        toc1 = """
-scrapbook.toc({
-  "20200101000000001": [
-    "20200101000000004"
-  ]
-})"""
-        fulltext0 = """
-scrapbook.fulltext({
- "20200101000000000": {
-  "index.html": {
-   "content": "dummy text 1 中文"
-  }
- },
- "20200101000000001": {
-  "index.html": {
-   "content": "dummy text 2 中文"
-  }
- }
-})"""
-        fulltext1 = """
-scrapbook.fulltext({
- "20200101000000002": {
-  "index.html": {
-   "content": "dummy text 2 中文"
-  }
- }
-})"""
-
-        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write(meta0)
-        with open(os.path.join(test_dir, 'meta1.js'), 'w', encoding='UTF-8') as fh:
-            fh.write(meta1)
-        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write(toc0)
-        with open(os.path.join(test_dir, 'toc1.js'), 'w', encoding='UTF-8') as fh:
-            fh.write(toc1)
-        with open(os.path.join(test_dir, 'fulltext.js'), 'w', encoding='UTF-8') as fh:
-            fh.write(fulltext0)
-        with open(os.path.join(test_dir, 'fulltext1.js'), 'w', encoding='UTF-8') as fh:
-            fh.write(fulltext1)
-
-        book = Book(Host(self.test_root))
-        book.init_backup()
-        book.load_meta_files()
-        book.load_toc_files()
-        book.load_fulltext_files()
-        book.save_meta_files()
-        book.save_toc_files()
-        book.save_fulltext_files()
-        
-        with open(os.path.join(book.backup_dir, WSB_DIR, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), meta0)
-        with open(os.path.join(book.backup_dir, WSB_DIR, 'tree', 'meta1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), meta1)
-        with open(os.path.join(book.backup_dir, WSB_DIR, 'tree', 'toc.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), toc0)
-        with open(os.path.join(book.backup_dir, WSB_DIR, 'tree', 'toc1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), toc1)
-        with open(os.path.join(book.backup_dir, WSB_DIR, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), fulltext0)
-        with open(os.path.join(book.backup_dir, WSB_DIR, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), fulltext1)
+        book.backup(test_file, base=self.test_wsbdir, move=False)
+        mock_func.assert_called_with(test_file, base=self.test_wsbdir, move=False)
 
     @mock.patch('webscrapbook.scrapbook.host.FileLock')
     def test_get_lock01(self, mock_filelock):
@@ -1280,6 +1129,106 @@ Note content
 2nd line
 3rd line
 </pre></body></html>""")
+
+    def test_auto_backup(self):
+        """Auto backup tree files if backup_dir is set."""
+        test_dir = os.path.join(self.test_root, WSB_DIR, 'tree')
+        os.makedirs(test_dir)
+
+        meta0 = """
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "title": "Dummy",
+    "type": "",
+    "create": "20200101000000000",
+    "modify": "20200101000000000"
+  }
+})"""
+        meta1 = """
+scrapbook.meta({
+  "20200101000000001": {
+    "index": "20200101000000001/index.html",
+    "title": "Dummy",
+    "type": "",
+    "create": "20200101000000001",
+    "modify": "20200101000000001"
+  }
+})"""
+        toc0 = """
+scrapbook.toc({
+  "root": [
+    "20200101000000000",
+    "20200101000000001",
+    "20200101000000002"
+  ],
+  "20200101000000000": [
+    "20200101000000003"
+  ]
+})"""
+        toc1 = """
+scrapbook.toc({
+  "20200101000000001": [
+    "20200101000000004"
+  ]
+})"""
+        fulltext0 = """
+scrapbook.fulltext({
+ "20200101000000000": {
+  "index.html": {
+   "content": "dummy text 1 中文"
+  }
+ },
+ "20200101000000001": {
+  "index.html": {
+   "content": "dummy text 2 中文"
+  }
+ }
+})"""
+        fulltext1 = """
+scrapbook.fulltext({
+ "20200101000000002": {
+  "index.html": {
+   "content": "dummy text 2 中文"
+  }
+ }
+})"""
+
+        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write(meta0)
+        with open(os.path.join(test_dir, 'meta1.js'), 'w', encoding='UTF-8') as fh:
+            fh.write(meta1)
+        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write(toc0)
+        with open(os.path.join(test_dir, 'toc1.js'), 'w', encoding='UTF-8') as fh:
+            fh.write(toc1)
+        with open(os.path.join(test_dir, 'fulltext.js'), 'w', encoding='UTF-8') as fh:
+            fh.write(fulltext0)
+        with open(os.path.join(test_dir, 'fulltext1.js'), 'w', encoding='UTF-8') as fh:
+            fh.write(fulltext1)
+
+        host = Host(self.test_root)
+        book = Book(host)
+        host.init_backup()
+        book.load_meta_files()
+        book.load_toc_files()
+        book.load_fulltext_files()
+        book.save_meta_files()
+        book.save_toc_files()
+        book.save_fulltext_files()
+        
+        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), meta0)
+        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'meta1.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), meta1)
+        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), toc0)
+        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'toc1.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), toc1)
+        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), fulltext0)
+        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), fulltext1)
 
 if __name__ == '__main__':
     unittest.main()

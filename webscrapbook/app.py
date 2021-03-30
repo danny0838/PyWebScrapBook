@@ -1537,7 +1537,11 @@ def action_backup():
     ts = request.values.get('ts') or util.datetime_to_id()
     move = request.values.get('move', default=False, type=bool)
 
-    host.backup(localpaths[0], os.path.join(host.backup_dir, ts), move=move)
+    host.init_backup(ts)
+    try:
+        host.auto_backup(localpaths[0], move=move)
+    finally:
+        host.init_backup(False)
 
 
 @handle_action_token

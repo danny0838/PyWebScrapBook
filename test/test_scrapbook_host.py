@@ -2,8 +2,10 @@ from unittest import mock
 import unittest
 import os
 import shutil
+import re
 import time
 from webscrapbook import WSB_DIR, Config
+from webscrapbook import util
 from webscrapbook.scrapbook import host as wsb_host
 from webscrapbook.scrapbook.host import Host
 
@@ -291,6 +293,84 @@ name = mybook2
         self.assertRegex(backup_dirname, r'^\d{17}$')
         with open(os.path.join(self.test_wsbdir, 'backup', backup_dirname, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
+
+    def test_init_backup(self):
+        host = Host(self.test_root)
+
+        host.init_backup(True)
+        self.assertRegex(
+            host._backup_dir,
+            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
+            )
+
+        ts = util.datetime_to_id()
+        host.init_backup(ts)
+        self.assertEqual(
+            host._backup_dir,
+            os.path.join(self.test_root, WSB_DIR, 'backup', ts),
+            )
+
+        host.init_backup(False)
+        self.assertIsNone(host._backup_dir)
+
+    def test_auto_backup01(self):
+        """A common case."""
+        test_file = os.path.join(self.test_root, 'tree', 'meta.js')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        host = Host(self.test_root)
+        host.init_backup()
+        host.backup(test_file)
+
+        with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
+    def test_auto_backup01(self):
+        """A common case."""
+        test_file = os.path.join(self.test_root, 'tree', 'meta.js')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        host = Host(self.test_root)
+        host.init_backup()
+        host.auto_backup(test_file)
+
+        with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
+    def test_backup02(self):
+        """A common directory case."""
+        test_dir = os.path.join(self.test_root, 'tree')
+        os.makedirs(test_dir)
+        with open(os.path.join(test_dir, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        with open(os.path.join(test_dir, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('def')
+
+        host = Host(self.test_root)
+        host.init_backup()
+        host.auto_backup(test_dir)
+
+        with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+        with open(os.path.join(host._backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'def')
+
+    def test_backup03(self):
+        """Pass if _backup_dir not set."""
+        test_file = os.path.join(self.test_wsbdir, 'icon', 'test.txt')
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+        test_stat = os.stat(test_file)
+
+        host = Host(self.test_root)
+        host.auto_backup(test_file)
+
+        self.assertListEqual(os.listdir(self.test_wsbdir), ['icon'])
 
 class TestFileLock(TestBase):
     def test_init01(self):

@@ -218,16 +218,15 @@ no_tree = true
         self.assertFalse(mock_ssg.call_args[1]['rss'])
         mock_rss.assert_not_called()
 
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_subpath', lambda *_: '')
-    @mock.patch('webscrapbook.scrapbook.host.Book.init_backup')
+    @mock.patch('webscrapbook.scrapbook.host.Host.get_subpath', lambda *_: '')
+    @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
     def test_no_backup01(self, mock_func):
         for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
             pass
 
-        self.assertIsInstance(mock_func.call_args_list[0][0][0], str)
-        self.assertFalse(mock_func.call_args_list[1][0][0])
+        self.assertEqual(mock_func.call_args_list, [mock.call(), mock.call(False)])
 
-    @mock.patch('webscrapbook.scrapbook.host.Book.init_backup')
+    @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
     def test_no_backup02(self, mock_func):
         for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=True):
             pass

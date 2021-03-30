@@ -339,6 +339,8 @@ class Host:
 
         self.books = BooksProxy(self)
 
+        self._backup_dir = None  # directory for auto backup
+
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)
         return f'{self.__class__.__name__}({repr_str})'
@@ -359,6 +361,14 @@ class Host:
         """Get a lock object to control lock.
         """
         return FileLock(self, name, *args, **kwargs)
+
+    def get_subpath(self, file):
+        """Get subpath of a file related to root.
+
+        Also convert "\" to "/", which makes it useful for showing a file in
+            issue safely.
+        """
+        return os.path.relpath(file, self.root).replace('\\', '/')
 
     def backup(self, file, backup_dir=None, base=None, move=False):
         """Create a backup for the file or directory.
@@ -404,3 +414,27 @@ class Host:
                 shutil.copytree(file, dst)
             except NotADirectoryError:
                 shutil.copy2(file, dst)
+
+    def init_backup(self, ts=True):
+        """Setup a backup dir for following auto backups until next set.
+
+        Args:
+            ts: a webscrapbook ID as timestamp. True to generate one from
+                the current time. False to disable auto backup.
+        """
+        if ts is False:
+            self._backup_dir = None
+            return
+
+        if ts is True:
+            ts = util.datetime_to_id()
+
+        self._backup_dir = os.path.join(self.backup_dir, ts)
+
+    def auto_backup(self, file, base=None, move=False):
+        """Perform an auto backup if inited.
+        """
+        if not self._backup_dir:
+            return
+
+        self.backup(file, backup_dir=self._backup_dir, base=base, move=move)

@@ -903,37 +903,34 @@ def generate(root, book_ids=None, item_ids=None, *,
 
     host = Host(root, config)
 
-    # cache all book_ids if none specified
-    if not book_ids:
-        book_ids = list(host.books)
+    if not no_backup:
+        host.init_backup()
+        yield Info('info', f'Prepared backup at "{host.get_subpath(host._backup_dir)}".')
 
-    ts = None
-    avail_book_ids = set(host.books)
-    for book_id in book_ids:
-        # skip invalid book ID
-        if book_id not in avail_book_ids:
-            yield Info('warn', f'Skipped invalid book "{book_id}".')
-            continue
+    try:
+        # cache all book_ids if none specified
+        if not book_ids:
+            book_ids = list(host.books)
 
-        yield Info('debug', f'Loading book "{book_id}".')
-
-        try:
-            book = host.books[book_id]
-
-            if book.no_tree:
-                yield Info('info', f'Skipped book "{book_id}" ("{book.name}") (no_tree).')
+        avail_book_ids = set(host.books)
+        for book_id in book_ids:
+            # skip invalid book ID
+            if book_id not in avail_book_ids:
+                yield Info('warn', f'Skipped invalid book "{book_id}".')
                 continue
 
-            yield Info('info', f'Caching book "{book_id}" ({book.name}).')
-            lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
-            with lh:
-                if not no_backup:
-                    # use same timestamp for all books
-                    ts = ts or util.datetime_to_id()
-                    book.init_backup(ts)
-                    yield Info('info', f'Prepared backup at "{book.get_subpath(book.backup_dir)}".')
+            yield Info('debug', f'Loading book "{book_id}".')
 
-                try:
+            try:
+                book = host.books[book_id]
+
+                if book.no_tree:
+                    yield Info('info', f'Skipped book "{book_id}" ("{book.name}") (no_tree).')
+                    continue
+
+                yield Info('info', f'Caching book "{book_id}" ({book.name}).')
+                lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
+                with lh:
                     if fulltext:
                         generator = FulltextCacheGenerator(
                             book,
@@ -957,17 +954,17 @@ def generate(root, book_ids=None, item_ids=None, *,
                             item_count=rss_item_count,
                             )
                         yield from generator.run()
-                finally:
-                    if not no_backup:
-                        book.init_backup(False)
 
-        except Exception as exc:
-            traceback.print_exc()
-            yield Info('critical', str(exc), exc=exc)
-        else:
-            yield Info('info', 'Done.')
+            except Exception as exc:
+                traceback.print_exc()
+                yield Info('critical', str(exc), exc=exc)
+            else:
+                yield Info('info', 'Done.')
 
-        yield Info('info', '----------------------------------------------------------------------')
+            yield Info('info', '----------------------------------------------------------------------')
+    finally:
+        if not no_backup:
+            host.init_backup(False)
 
     elapsed = time.time() - start
     yield Info('info', f'Time spent: {elapsed} seconds.')

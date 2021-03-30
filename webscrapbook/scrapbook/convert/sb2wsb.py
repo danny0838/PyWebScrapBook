@@ -215,7 +215,7 @@ class Converter:
         book.load_toc_files()
 
         if not self.no_backup:
-            book.init_backup()
+            host.init_backup()
 
         try:
             yield Info('info', 'Loading legacy scrapbook data...')
@@ -237,7 +237,7 @@ class Converter:
             book.save_toc_files()
         finally:
             if not self.no_backup:
-                book.init_backup(False)
+                host.init_backup(False)
 
     def _merge_meta(self, book, book0):
         for id0, meta0 in book0.meta.items():

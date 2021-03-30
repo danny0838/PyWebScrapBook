@@ -98,7 +98,6 @@ class Book:
         self.meta = None
         self.toc = None
         self.fulltext = None
-        self.backup_dir = None
 
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)
@@ -313,29 +312,10 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
                 break
             i += 1
 
-    def init_backup(self, ts=True):
-        """Setup a backup dir for following backups until next set.
-
-        Args:
-            ts: a webscrapbook ID as timestamp. True to generate one from
-            current time. False to disable backup.
-        """
-        if ts is False:
-            self.backup_dir = None
-            return
-
-        if ts is True:
-            ts = util.datetime_to_id()
-
-        self.backup_dir = os.path.join(self.host.backup_dir, ts)
-
     def backup(self, file, **kwargs):
-        """Create a backup for a file or directory if self.backup_dir is set.
+        """A shortcut for auto backup.
         """
-        if not self.backup_dir:
-            return
-
-        self.host.backup(file, self.backup_dir, **kwargs)
+        self.host.auto_backup(file, **kwargs)
 
     def get_lock(self, name, *args, **kwargs):
         return self.host.get_lock(f'book-{self.id}-{name}', *args, **kwargs)
