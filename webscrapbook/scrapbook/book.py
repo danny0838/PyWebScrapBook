@@ -228,6 +228,7 @@ scrapbook.meta({json.dumps(data, ensure_ascii=False, indent=2)})""")
         while True:
             file = self.get_tree_file('meta', i)
             try:
+                self.backup(file)
                 os.remove(file)
             except FileNotFoundError:
                 break
@@ -266,6 +267,7 @@ scrapbook.toc({json.dumps(data, ensure_ascii=False, indent=2)})""")
         while True:
             file = self.get_tree_file('toc', i)
             try:
+                self.backup(file)
                 os.remove(file)
             except FileNotFoundError:
                 break
@@ -305,6 +307,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1)})""")
         while True:
             file = self.get_tree_file('fulltext', i)
             try:
+                self.backup(file)
                 os.remove(file)
             except FileNotFoundError:
                 break
