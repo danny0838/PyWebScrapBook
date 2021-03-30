@@ -1535,9 +1535,10 @@ def action_backup():
         abort(400, "Unable to backup inside a zip file.")
 
     ts = request.values.get('ts') or util.datetime_to_id()
+    note = request.values.get('note')
     move = request.values.get('move', default=False, type=bool)
 
-    host.init_backup(ts)
+    host.init_backup(ts, note=note)
     try:
         host.auto_backup(localpaths[0], move=move)
     finally:

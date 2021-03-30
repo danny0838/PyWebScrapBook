@@ -4981,6 +4981,24 @@ class TestBackup(TestActions):
             )
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
+    def test_file03(self, mock_func):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'ts': '20200102030405',
+                'note': 'foo:bar:中文?',
+                'a': 'backup',
+                'f': 'json',
+                })
+
+        mock_func.assert_called_once_with(
+            os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
+            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
+            base=None,
+            move=False,
+            )
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_directory01(self, mock_func):
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={

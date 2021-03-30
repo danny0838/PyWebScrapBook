@@ -294,7 +294,8 @@ name = mybook2
         with open(os.path.join(self.test_wsbdir, 'backup', backup_dirname, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
 
-    def test_init_backup(self):
+    def test_init_backup01(self):
+        """Test ts param."""
         host = Host(self.test_root)
 
         host.init_backup(True)
@@ -312,6 +313,23 @@ name = mybook2
 
         host.init_backup(False)
         self.assertIsNone(host._backup_dir)
+
+    def test_init_backup02(self):
+        """Test note param."""
+        host = Host(self.test_root)
+
+        host.init_backup(True, 'foo~bar')
+        self.assertRegex(
+            host._backup_dir,
+            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo-bar',
+            )
+
+        ts = util.datetime_to_id()
+        host.init_backup(ts, note='foo:bar:中文?')
+        self.assertEqual(
+            host._backup_dir,
+            os.path.join(self.test_root, WSB_DIR, 'backup', ts + '-foo_bar_中文_'),
+            )
 
     def test_auto_backup01(self):
         """A common case."""

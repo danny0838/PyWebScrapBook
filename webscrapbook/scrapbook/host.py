@@ -415,12 +415,13 @@ class Host:
             except NotADirectoryError:
                 shutil.copy2(file, dst)
 
-    def init_backup(self, ts=True):
+    def init_backup(self, ts=True, note=None):
         """Setup a backup dir for following auto backups until next set.
 
         Args:
             ts: a webscrapbook ID as timestamp. True to generate one from
                 the current time. False to disable auto backup.
+            note: a note text for the backup, sanitized to a valid filename
         """
         if ts is False:
             self._backup_dir = None
@@ -429,7 +430,9 @@ class Host:
         if ts is True:
             ts = util.datetime_to_id()
 
-        self._backup_dir = os.path.join(self.backup_dir, ts)
+        filename = ts + (f'-{util.validate_filename(note)}' if note else '')
+
+        self._backup_dir = os.path.join(self.backup_dir, filename)
 
     def auto_backup(self, file, base=None, move=False):
         """Perform an auto backup if inited.
