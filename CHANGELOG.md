@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.36.0] - 2021-04-01
+* Fixed an issue that auto backup may not include a deleted file.
+* Added support of note for a backup.
+* Added support for `unbackup` action.
+
 ## [0.35.2] - 2021-03-30
 * Fixed an issue that backup does not work for `sb2wsb` converter if input path is not absolute.
 
