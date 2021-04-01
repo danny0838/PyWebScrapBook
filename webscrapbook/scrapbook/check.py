@@ -316,7 +316,7 @@ class BookChecker:
                     if mtime_check > modify:
                         dt = datetime.fromtimestamp(ts)
                         mtime = util.datetime_to_id(dt)
-                        yield Info('warn', f'"{id}": "modify" property ({modify}) is older than last modified time ({mtime}) of index file.')
+                        yield Info('warn', f'"{id}": "modify" property ({modify}) is older than last modified time of index file ({mtime}).')
                         self.cnt_warns += 1
                         items_older_mtime[id] = True
 
