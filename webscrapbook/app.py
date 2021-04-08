@@ -841,7 +841,10 @@ def action_source():
 
 
 def action_download():
-    """Download the  file."""
+    """Download a file or directory.
+
+    @TODO: support streaming ZIP output to prevent memory exhaustion for a large directory
+    """
     if request.format:
         abort(400, "Action not supported.")
 
@@ -849,11 +852,51 @@ def action_download():
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
-            response = zip_static_file(zip, localpaths[-1], mimetype=request.localmimetype)
-    else:
-        response = static_file(localpaths[0])
+            try:
+                zip.getinfo(localpaths[-1])
+            except KeyError:
+                base = localpaths[-1] + '/'
+                infos = [i for i in zip.infolist() if i.filename.startswith(base)]
 
-    filename = quote_path(os.path.basename(request.localrealpath))
+                # not exist
+                if not len(infos):
+                    abort(404)
+
+                # directory (explicit or implicit)
+                filename = localpaths[-1] + '.zip'
+                mimetype, _ = mimetypes.guess_type(filename)
+                fh = io.BytesIO()
+                with zipfile.ZipFile(fh, 'w') as zh:
+                    cut = len(base)
+                    for info in infos:
+                        info.filename = info.filename[cut:]
+
+                        # exclude the directory itself
+                        if not info.filename:
+                            continue
+
+                        zh.writestr(info, zip.read(info))
+
+                fh.seek(0)
+                response = flask.send_file(fh, mimetype=mimetype)
+                response.headers.set('Cache-Control', 'no-store')
+            else:
+                filename = os.path.basename(request.localrealpath)
+                response = zip_static_file(zip, localpaths[-1], mimetype=request.localmimetype)
+    else:
+        if os.path.isdir(localpaths[0]):
+            filename = os.path.basename(request.localrealpath) + '.zip'
+            mimetype, _ = mimetypes.guess_type(filename)
+            fh = io.BytesIO()
+            util.zip_compress(fh, localpaths[0], '')
+            fh.seek(0)
+            response = flask.send_file(fh, mimetype=mimetype)
+            response.headers.set('Cache-Control', 'no-store')
+        else:
+            filename = os.path.basename(request.localrealpath)
+            response = static_file(localpaths[0])
+
+    filename = quote_path(filename)
     response.headers.set('Content-Disposition',
             f'''attachment; filename*=UTF-8''{filename}; filename="{filename}"''')
     return response

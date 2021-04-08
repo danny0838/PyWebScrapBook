@@ -1632,7 +1632,7 @@ class TestSource(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-class TestDownload(unittest.TestCase):
+class TestDownload(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """No format."""
@@ -1684,22 +1684,48 @@ class TestDownload(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
+    def test_directory(self):
+        root = os.path.join(server_root, '中文')
+        try:
+            os.makedirs(os.path.join(root, 'subdir'), exist_ok=True)
+            with open(os.path.join(root, 'subdir', 'bar.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('文字')
+            with open(os.path.join(root, 'foo.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABC')
+
+            with app.test_client() as c:
+                r = c.get('/中文', query_string={'a': 'download'})
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(fh) as zh:
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'subdir')},
+                    {'zip': zh, 'filename': 'subdir/'},
+                    )
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'subdir', 'bar.txt')},
+                    {'zip': zh, 'filename': 'subdir/bar.txt'},
+                    )
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'foo.txt')},
+                    {'zip': zh, 'filename': 'foo.txt'},
+                    )
+        finally:
+            try:
+               shutil.rmtree(root)
+            except FileNotFoundError:
+                pass
+
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
         with app.test_client() as c:
             r = c.get('/nonexist', query_string={'a': 'download'}, buffered=True)
-            mock_abort.assert_called_once_with(404)
-
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_directory(self, mock_abort):
-        with app.test_client() as c:
-            r = c.get('/subdir', query_string={'a': 'download'})
-            mock_abort.assert_called_once_with(404)
-
-        mock_abort.reset_mock()
-
-        with app.test_client() as c:
-            r = c.get('/subdir/', query_string={'a': 'download'})
             mock_abort.assert_called_once_with(404)
 
     def test_file_zip_subfile(self):
@@ -1728,36 +1754,62 @@ class TestDownload(unittest.TestCase):
             except FileNotFoundError:
                 pass
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_file_zip_subdir(self, mock_abort):
+    def test_file_zip_subdir(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('explicit_dir/', '')
-                zh.writestr('explicit_dir/index.html', 'Hello World! 你好')
-                zh.writestr('implicit_dir/index.html', 'Hello World! 你好嗎')
+                zh.writestr('explicit_dir/subdir/', '')
+                zh.writestr('explicit_dir/subdir/foo.txt', 'ABC')
+                zh.writestr('explicit_dir/bar.txt', '中文')
+                zh.writestr('implicit_dir/subdir/foo.txt', 'ABC')
+                zh.writestr('implicit_dir/bar.txt', '中文')
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'download'}, buffered=True)
-                mock_abort.assert_called_once_with(404)
 
-            mock_abort.reset_mock()
-
-            with app.test_client() as c:
-                r = c.get('/archive.zip!/explicit_dir/', query_string={'a': 'download'}, buffered=True)
-                mock_abort.assert_called_once_with(404)
-
-            mock_abort.reset_mock()
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(zip_filename) as zh:
+                with zipfile.ZipFile(fh) as zh2:
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'explicit_dir/subdir/'},
+                        {'zip': zh2, 'filename': 'subdir/'},
+                        )
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'explicit_dir/subdir/foo.txt'},
+                        {'zip': zh2, 'filename': 'subdir/foo.txt'},
+                        )
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'explicit_dir/bar.txt'},
+                        {'zip': zh2, 'filename': 'bar.txt'},
+                        )
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'download'}, buffered=True)
-                mock_abort.assert_called_once_with(404)
 
-            mock_abort.reset_mock()
-
-            with app.test_client() as c:
-                r = c.get('/archive.zip!/implicit_dir/', query_string={'a': 'download'}, buffered=True)
-                mock_abort.assert_called_once_with(404)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''implicit_dir.zip; filename="implicit_dir.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(zip_filename) as zh:
+                with zipfile.ZipFile(fh) as zh2:
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'implicit_dir/subdir/foo.txt'},
+                        {'zip': zh2, 'filename': 'subdir/foo.txt'},
+                        )
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'implicit_dir/bar.txt'},
+                        {'zip': zh2, 'filename': 'bar.txt'},
+                        )
         finally:
             try:
                 os.remove(zip_filename)

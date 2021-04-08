@@ -490,7 +490,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="edit"]').textContent = 'Edit';
       } else if (elem.classList.contains('dir')) {
         cmdElem.querySelector('[value="source"]').hidden = true;
-        cmdElem.querySelector('[value="download"]').hidden = true;
+        cmdElem.querySelector('[value="download"]').hidden = false;
         cmdElem.querySelector('[value="exec"]').hidden = false;
         cmdElem.querySelector('[value="browse"]').hidden = false;
         cmdElem.querySelector('[value="mkdir"]').hidden = true;
