@@ -1041,13 +1041,15 @@ def zip_compress(zip, filename, subpath):
         if os.path.isdir(filename):
             errors = []
 
+            subpath = subpath + '/' if subpath else ''
             src = filename
-            dst = subpath + '/'
-            try:
-                ts = time.localtime(os.stat(src).st_mtime)[:-3]
-                zh.writestr(zipfile.ZipInfo(dst, ts), '')
-            except OSError as why:
-                errors.append((src, dst, str(why)))
+            dst = subpath
+            if dst:
+                try:
+                    ts = time.localtime(os.stat(src).st_mtime)[:-3]
+                    zh.writestr(zipfile.ZipInfo(dst, ts), '')
+                except OSError as why:
+                    errors.append((src, dst, str(why)))
 
             base_cut = len(os.path.join(filename, ''))
             for root, dirs, files in os.walk(filename, followlinks=True):
@@ -1056,7 +1058,7 @@ def zip_compress(zip, filename, subpath):
                     dst = src[base_cut:]
                     if os.sep != '/':
                         dst = dst.replace(os.sep, '/')
-                    dst = subpath + '/' + dst + '/'
+                    dst = subpath + dst + '/'
                     try:
                         ts = time.localtime(os.stat(src).st_mtime)[:-3]
                         zh.writestr(zipfile.ZipInfo(dst, ts), '')
@@ -1067,7 +1069,7 @@ def zip_compress(zip, filename, subpath):
                     dst = src[base_cut:]
                     if os.sep != '/':
                         dst = dst.replace(os.sep, '/')
-                    dst = subpath + '/' + dst
+                    dst = subpath + dst
                     compressible = is_compressible(mimetypes.guess_type(dst)[0])
                     compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
                     compresslevel = 9 if compressible else None
