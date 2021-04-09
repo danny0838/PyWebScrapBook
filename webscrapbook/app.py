@@ -1844,6 +1844,7 @@ def make_app(root=".", config=None):
             'format_filesize': util.format_filesize,
             'quote_path': quote_path,
             'static_url': static_url,
+            'i18n': _host.get_i18n(),
             })
 
     return app
