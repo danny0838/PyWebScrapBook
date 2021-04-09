@@ -33,9 +33,6 @@ function init() {
 
   // file selector
   document.getElementById('upload-file-selector').addEventListener('change', onUploadFileChange, false);
-
-  // command listener
-  window.addEventListener("command", onCommandRun, false);
 }
 
 function orderBy(column, order) {
@@ -520,7 +517,7 @@ function onCommandFocus(event) {
   }
 }
 
-async function onCommandChange(event) {
+function onCommandChange(event) {
   event.preventDefault();
   const command = event.target.value;
   event.target.value = '';
@@ -534,18 +531,14 @@ async function onCommandChange(event) {
     }
 
     default: {
-      const evt = new CustomEvent("command", {
-        detail: {
-          cmd: command,
-        },
-      });
-      window.dispatchEvent(evt);
+      return onCommandRun({cmd: command});
+      break;
     }
   }
 }
 
-async function onCommandRun(event) {
-  const command = event.detail.cmd;
+async function onCommandRun(detail) {
+  const command = detail.cmd;
   const selectedEntries = document.querySelectorAll('#data-table .highlight');
 
   switch (command) {
@@ -664,7 +657,7 @@ async function onCommandRun(event) {
     case 'upload': {
       const dir = utils.getTargetUrl(location.href);
 
-      for (const file of event.detail.files) {
+      for (const file of detail.files) {
         const target = dir + file.name;
         try {
           const formData = new FormData();
@@ -907,11 +900,5 @@ async function onCommandRun(event) {
 
 function onUploadFileChange(event) {
   event.preventDefault();
-  const evt = new CustomEvent("command", {
-    detail: {
-      cmd: 'upload',
-      files: event.target.files,
-    },
-  });
-  window.dispatchEvent(evt);
+  return onCommandRun({cmd: 'upload', files: event.target.files});
 }
