@@ -379,15 +379,14 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="browse"]').hidden = true;
       cmdElem.querySelector('[value="mkdir"]').hidden = false;
       cmdElem.querySelector('[value="mkzip"]').hidden = false;
-      cmdElem.querySelector('[value="edit"]').hidden = false;
+      cmdElem.querySelector('[value="mkfile"]').hidden = false;
+      cmdElem.querySelector('[value="edit"]').hidden = true;
       cmdElem.querySelector('[value="editx"]').hidden = true;
       cmdElem.querySelector('[value="upload"]').hidden = false;
       cmdElem.querySelector('[value="move"]').hidden = true;
       cmdElem.querySelector('[value="copy"]').hidden = true;
       cmdElem.querySelector('[value="link"]').hidden = true;
       cmdElem.querySelector('[value="delete"]').hidden = true;
-
-      cmdElem.querySelector('[value="edit"]').textContent = 'New File';
       break;
     }
 
@@ -401,6 +400,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="browse"]').hidden = false;
         cmdElem.querySelector('[value="mkdir"]').hidden = true;
         cmdElem.querySelector('[value="mkzip"]').hidden = true;
+        cmdElem.querySelector('[value="mkfile"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = true;
         cmdElem.querySelector('[value="editx"]').hidden = true;
         cmdElem.querySelector('[value="upload"]').hidden = true;
@@ -415,6 +415,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="browse"]').hidden = false;
         cmdElem.querySelector('[value="mkdir"]').hidden = true;
         cmdElem.querySelector('[value="mkzip"]').hidden = true;
+        cmdElem.querySelector('[value="mkfile"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = false;
         cmdElem.querySelector('[value="editx"]').hidden = !isHtml;
         cmdElem.querySelector('[value="upload"]').hidden = true;
@@ -422,8 +423,6 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="copy"]').hidden = false;
         cmdElem.querySelector('[value="link"]').hidden = false;
         cmdElem.querySelector('[value="delete"]').hidden = false;
-
-        cmdElem.querySelector('[value="edit"]').textContent = 'Edit';
       } else if (elem.classList.contains('dir')) {
         cmdElem.querySelector('[value="source"]').hidden = true;
         cmdElem.querySelector('[value="download"]').hidden = false;
@@ -431,6 +430,7 @@ function onCommandFocus(event) {
         cmdElem.querySelector('[value="browse"]').hidden = false;
         cmdElem.querySelector('[value="mkdir"]').hidden = true;
         cmdElem.querySelector('[value="mkzip"]').hidden = true;
+        cmdElem.querySelector('[value="mkfile"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = true;
         cmdElem.querySelector('[value="editx"]').hidden = true;
         cmdElem.querySelector('[value="upload"]').hidden = true;
@@ -449,6 +449,7 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="browse"]').hidden = true;
       cmdElem.querySelector('[value="mkdir"]').hidden = true;
       cmdElem.querySelector('[value="mkzip"]').hidden = true;
+      cmdElem.querySelector('[value="mkfile"]').hidden = true;
       cmdElem.querySelector('[value="edit"]').hidden = true;
       cmdElem.querySelector('[value="editx"]').hidden = true;
       cmdElem.querySelector('[value="upload"]').hidden = true;
@@ -576,19 +577,20 @@ async function onCommandRun(detail) {
       break;
     }
 
-    case 'edit': {
-      if (selectedEntries.length) {
-        const target = selectedEntries[0].querySelector('a[href]').href;
-        location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
-      } else {
-        const newFileName = prompt('Input a name:', 'new-file.txt');
-        if (!newFileName) {
-          break;
-        }
-
-        const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
-        location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
+    case 'mkfile': {
+      const newFileName = prompt('Input a name:', 'new-file.txt');
+      if (!newFileName) {
+        break;
       }
+
+      const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
+      location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
+      break;
+    }
+
+    case 'edit': {
+      const target = selectedEntries[0].querySelector('a[href]').href;
+      location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
       break;
     }
 
