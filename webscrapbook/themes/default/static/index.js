@@ -6,7 +6,9 @@
 var dataTable;
 var dataViewer;
 
-document.addEventListener("DOMContentLoaded", function (event) {
+document.addEventListener("DOMContentLoaded", init, false);
+
+function init() {
   document.getElementById("panel").hidden = false;
 
   /* Init sort */
@@ -15,13 +17,11 @@ document.addEventListener("DOMContentLoaded", function (event) {
   for (var i = 0, I = head_row.cells.length; i < I; i++) {
     var elem = head_row.cells[i];
     elem.setAttribute("data-orderby", i);
-    elem.addEventListener("click", function (event) {
-      orderBy(parseInt(event.currentTarget.getAttribute('data-orderby'), 10));
-    }, false);
+    elem.addEventListener("click", onDataTableHeaderClick, false);
   }
 
   /* Data table */
-  document.getElementById("data-table").tBodies[0].addEventListener("click", onDataTableClick, false);
+  document.getElementById("data-table").tBodies[0].addEventListener("click", onDataTableBodyClick, false);
 
   /* Media viewers */
   browseHtmlFolder();
@@ -32,20 +32,11 @@ document.addEventListener("DOMContentLoaded", function (event) {
   document.getElementById("command").addEventListener("change", onCommandChange, false);
 
   // file selector
-  document.getElementById('upload-file-selector').addEventListener('change', (event) => {
-    event.preventDefault();
-    const evt = new CustomEvent("command", {
-      detail: {
-        cmd: 'upload',
-        files: event.target.files,
-      },
-    });
-    window.dispatchEvent(evt);
-  });
+  document.getElementById('upload-file-selector').addEventListener('change', onUploadFileChange, false);
 
   // command listener
   window.addEventListener("command", onCommandRun, false);
-}, false);
+}
 
 function orderBy(column, order) {
   if (typeof order === "undefined") {
@@ -85,7 +76,11 @@ function orderBy(column, order) {
   }
 }
 
-function onDataTableClick(event) {
+function onDataTableHeaderClick(event) {
+  orderBy(parseInt(event.currentTarget.getAttribute('data-orderby'), 10));
+}
+
+function onDataTableBodyClick(event) {
   var elem = event.target;
   if (elem.tagName.toLowerCase() !== 'tr') {
     elem = elem.closest('tr');
@@ -908,4 +903,15 @@ async function onCommandRun(event) {
       break;
     }
   }
+}
+
+function onUploadFileChange(event) {
+  event.preventDefault();
+  const evt = new CustomEvent("command", {
+    detail: {
+      cmd: 'upload',
+      files: event.target.files,
+    },
+  });
+  window.dispatchEvent(evt);
 }
