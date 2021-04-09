@@ -444,7 +444,7 @@ function onCommandFocus(event) {
 
     default: { // multiple
       cmdElem.querySelector('[value="source"]').hidden = true;
-      cmdElem.querySelector('[value="download"]').hidden = true;
+      cmdElem.querySelector('[value="download"]').hidden = false;
       cmdElem.querySelector('[value="exec"]').hidden = true;
       cmdElem.querySelector('[value="browse"]').hidden = true;
       cmdElem.querySelector('[value="mkdir"]').hidden = true;
@@ -494,8 +494,18 @@ async function onCommandRun(detail) {
     }
 
     case 'download': {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      location.href = target + '?a=download';
+      if (selectedEntries.length === 1) {
+        const target = selectedEntries[0].querySelector('a[href]').href;
+        location.href = target + '?a=download';
+      } else {
+        const u = new URL(utils.getTargetUrl(location.href));
+        u.searchParams.append('a', 'download');
+        for (const elem of selectedEntries) {
+          const entry = elem.querySelector('a[title]').getAttribute('title');
+          u.searchParams.append('i', entry);
+        }
+        location.href = u.href;
+      }
       break;
     }
 

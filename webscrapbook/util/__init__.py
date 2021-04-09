@@ -1061,17 +1061,20 @@ def zip_hasdir(zip, subpath):
     return False
 
 
-def zip_compress(zip, filename, subpath):
+def zip_compress(zip, filename, subpath, filter=[]):
     """Compress src to be the subpath in the zip.
 
     Args:
         zip: path, file-like object, or zipfile.ZipFile
         filename: path of the source file or directory
         subpath: internal path to a file or folder (without trailing slash)
+        filter: an iterable of permitted subentries if filename is a directory
+            (with normcase'd absolute path)
 
     Raises:
         shutil.Error: if any child file cannot be added to the zip
     """
+    filename = os.path.abspath(filename)
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'w') as zh:
         if os.path.isdir(filename):
             errors = []
@@ -1086,10 +1089,21 @@ def zip_compress(zip, filename, subpath):
                 except OSError as why:
                     errors.append((src, dst, str(why)))
 
+            filter = {os.path.normcase(os.path.join(filename, f)) for f in filter}
+            filter_d = {os.path.join(f, '') for f in filter}
+
             base_cut = len(os.path.join(filename, ''))
             for root, dirs, files in os.walk(filename, followlinks=True):
                 for dir in dirs:
                     src = os.path.join(root, dir)
+
+                    # apply the filter
+                    if filter:
+                        src_nc = os.path.normcase(src)
+                        if src_nc not in filter:
+                            if not any(src_nc.startswith(f) for f in filter_d):
+                                continue
+
                     dst = src[base_cut:]
                     if os.sep != '/':
                         dst = dst.replace(os.sep, '/')
@@ -1099,8 +1113,17 @@ def zip_compress(zip, filename, subpath):
                         zh.writestr(zipfile.ZipInfo(dst, ts), '')
                     except OSError as why:
                         errors.append((src, dst, str(why)))
+
                 for file in files:
                     src = os.path.join(root, file)
+
+                    # apply the filter
+                    if filter:
+                        src_nc = os.path.normcase(src)
+                        if src_nc not in filter:
+                            if not any(src_nc.startswith(f) for f in filter_d):
+                                continue
+
                     dst = src[base_cut:]
                     if os.sep != '/':
                         dst = dst.replace(os.sep, '/')

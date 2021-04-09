@@ -845,21 +845,25 @@ def action_download():
         abort(400, "Action not supported.")
 
     localpaths = request.localpaths
+    filter = request.values.getlist('i')
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
             try:
                 zip.getinfo(localpaths[-1])
             except KeyError:
-                base = localpaths[-1] + '/'
+                base = localpaths[-1] + '/' if localpaths[-1] else ''
                 infos = [i for i in zip.infolist() if i.filename.startswith(base)]
 
                 # not exist
-                if not len(infos):
+                if base and not len(infos):
                     abort(404)
 
+                filter = set(filter)
+                filter_d = {f + '/' for f in filter}
+
                 # directory (explicit or implicit)
-                filename = localpaths[-1] + '.zip'
+                filename = (localpaths[-1] or os.path.basename(localpaths[-2])) + '.zip'
                 mimetype, _ = mimetypes.guess_type(filename)
                 fh = io.BytesIO()
                 with zipfile.ZipFile(fh, 'w') as zh:
@@ -870,6 +874,12 @@ def action_download():
                         # exclude the directory itself
                         if not info.filename:
                             continue
+
+                        # apply the filter
+                        if filter:
+                            if info.filename not in filter:
+                                if not any(info.filename.startswith(f) for f in filter_d):
+                                    continue
 
                         zh.writestr(info, zip.read(info))
 
@@ -884,7 +894,7 @@ def action_download():
             filename = os.path.basename(request.localrealpath) + '.zip'
             mimetype, _ = mimetypes.guess_type(filename)
             fh = io.BytesIO()
-            util.zip_compress(fh, localpaths[0], '')
+            util.zip_compress(fh, localpaths[0], '', filter=filter)
             fh.seek(0)
             response = flask.send_file(fh, mimetype=mimetype)
             response.headers.set('Cache-Control', 'no-store')

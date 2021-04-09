@@ -1042,11 +1042,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-    def test_zip_compress(self):
+    def test_zip_compress01(self):
+        """directory"""
         temp_dir = os.path.join(root_dir, 'test_util', 'temp')
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
 
-        # directory
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
@@ -1073,7 +1073,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # directory with subpath=''
+    def test_zip_compress02(self):
+        """directory with subpath=''"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
@@ -1100,7 +1104,43 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # file
+    def test_zip_compress03(self):
+        """directory with filter"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABC中文')
+            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+            os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
+            with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABCDEF')
+            with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('123456')
+
+            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder', filter={'subfolder'})
+
+            with zipfile.ZipFile(zip_filename) as zh:
+                self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
+                with self.assertRaises(KeyError):
+                    zh.getinfo('myfolder/subfile.txt')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+    def test_zip_compress04(self):
+        """file"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:

@@ -1684,7 +1684,7 @@ class TestDownload(TestActions):
             except FileNotFoundError:
                 pass
 
-    def test_directory(self):
+    def test_directory01(self):
         root = os.path.join(server_root, '中文')
         try:
             os.makedirs(os.path.join(root, 'subdir'), exist_ok=True)
@@ -1708,6 +1708,86 @@ class TestDownload(TestActions):
                     {'file': os.path.join(root, 'subdir')},
                     {'zip': zh, 'filename': 'subdir/'},
                     )
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'subdir', 'bar.txt')},
+                    {'zip': zh, 'filename': 'subdir/bar.txt'},
+                    )
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'foo.txt')},
+                    {'zip': zh, 'filename': 'foo.txt'},
+                    )
+        finally:
+            try:
+               shutil.rmtree(root)
+            except FileNotFoundError:
+                pass
+
+    def test_directory02(self):
+        """Test param i"""
+        root = os.path.join(server_root, '中文')
+        try:
+            os.makedirs(os.path.join(root, 'subdir'), exist_ok=True)
+            with open(os.path.join(root, 'subdir', 'bar.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('文字')
+            with open(os.path.join(root, 'foo.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABC')
+
+            # i=['subdir/bar.txt']
+            with app.test_client() as c:
+                r = c.get('/中文', query_string={'a': 'download', 'i': 'subdir/bar.txt'})
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(fh) as zh:
+                with self.assertRaises(KeyError):
+                    zh.getinfo('subdir/')
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'subdir', 'bar.txt')},
+                    {'zip': zh, 'filename': 'subdir/bar.txt'},
+                    )
+                with self.assertRaises(KeyError):
+                    zh.getinfo('foo.txt')
+
+            # i=['foo.txt']
+            with app.test_client() as c:
+                r = c.get('/中文', query_string={'a': 'download', 'i': 'foo.txt'})
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(fh) as zh:
+                with self.assertRaises(KeyError):
+                    zh.getinfo('subdir/')
+                with self.assertRaises(KeyError):
+                    zh.getinfo('subdir/bar.txt')
+                self.assert_file_equal(
+                    {'file': os.path.join(root, 'foo.txt')},
+                    {'zip': zh, 'filename': 'foo.txt'},
+                    )
+
+            # i=['subdir/bar.txt', 'foo.txt']
+            with app.test_client() as c:
+                r = c.get('/中文', query_string=[('a', 'download'), ('i', 'subdir/bar.txt'), ('i', 'foo.txt')])
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(fh) as zh:
+                with self.assertRaises(KeyError):
+                    zh.getinfo('subdir/')
                 self.assert_file_equal(
                     {'file': os.path.join(root, 'subdir', 'bar.txt')},
                     {'zip': zh, 'filename': 'subdir/bar.txt'},
@@ -1754,7 +1834,7 @@ class TestDownload(TestActions):
             except FileNotFoundError:
                 pass
 
-    def test_file_zip_subdir(self):
+    def test_file_zip_subdir01(self):
         zip_filename = os.path.join(server_root, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1804,6 +1884,91 @@ class TestDownload(TestActions):
                 with zipfile.ZipFile(fh) as zh2:
                     self.assert_file_equal(
                         {'zip': zh, 'filename': 'implicit_dir/subdir/foo.txt'},
+                        {'zip': zh2, 'filename': 'subdir/foo.txt'},
+                        )
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'implicit_dir/bar.txt'},
+                        {'zip': zh2, 'filename': 'bar.txt'},
+                        )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
+    def test_file_zip_subdir02(self):
+        """Test param i"""
+        zip_filename = os.path.join(server_root, 'archive.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('explicit_dir/', '')
+                zh.writestr('explicit_dir/subdir/', '')
+                zh.writestr('explicit_dir/subdir/foo.txt', 'ABC')
+                zh.writestr('explicit_dir/bar.txt', '中文')
+                zh.writestr('implicit_dir/subdir/foo.txt', 'ABC')
+                zh.writestr('implicit_dir/bar.txt', '中文')
+
+            # i=['subdir/foo.txt']
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'download', 'i': 'subdir/foo.txt'}, buffered=True)
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(zip_filename) as zh:
+                with zipfile.ZipFile(fh) as zh2:
+                    with self.assertRaises(KeyError):
+                        zh2.getinfo('subdir/')
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'explicit_dir/subdir/foo.txt'},
+                        {'zip': zh2, 'filename': 'subdir/foo.txt'},
+                        )
+                    with self.assertRaises(KeyError):
+                        zh2.getinfo('bar.txt')
+
+            # i=['bar.txt']
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/explicit_dir', query_string={'a': 'download', 'i': 'bar.txt'}, buffered=True)
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(zip_filename) as zh:
+                with zipfile.ZipFile(fh) as zh2:
+                    with self.assertRaises(KeyError):
+                        zh2.getinfo('subdir/')
+                    with self.assertRaises(KeyError):
+                        zh2.getinfo('subdir/foo.txt')
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'implicit_dir/bar.txt'},
+                        {'zip': zh2, 'filename': 'bar.txt'},
+                        )
+
+            # i=['subdir/foo.txt', 'bar.txt']
+            with app.test_client() as c:
+                r = c.get('/archive.zip!/explicit_dir', query_string=[('a', 'download'), ('i', 'subdir/foo.txt'), ('i', 'bar.txt')], buffered=True)
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
+            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
+            fh = io.BytesIO(r.data)
+            with zipfile.ZipFile(zip_filename) as zh:
+                with zipfile.ZipFile(fh) as zh2:
+                    with self.assertRaises(KeyError):
+                        zh2.getinfo('subdir/')
+                    self.assert_file_equal(
+                        {'zip': zh, 'filename': 'explicit_dir/subdir/foo.txt'},
                         {'zip': zh2, 'filename': 'subdir/foo.txt'},
                         )
                     self.assert_file_equal(
