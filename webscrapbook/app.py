@@ -1419,7 +1419,8 @@ def action_move(sourcepaths, targetpaths):
                     try:
                         zip.getinfo(sourcepaths[-1])
                     except KeyError:
-                        entries = [e for e in zip.namelist() if e.startswith(sourcepaths[-1] + '/')]
+                        base = sourcepaths[-1] + '/'
+                        entries = [e for e in zip.namelist() if e.startswith(base)]
                     else:
                         entries = [sourcepaths[-1]]
 
