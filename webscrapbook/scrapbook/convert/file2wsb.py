@@ -12,13 +12,17 @@ from ..host import Host
 from ..check import Indexer
 
 
+DEFAULT_DATA_FOLDER_SUFFIXES = ['.files', '_files']
 FIND_INDEX_EXT = {'.html', '.htz', '.maff', '.htm'}
 
 
 class Converter:
-    def __init__(self, input, output):
+    def __init__(self, input, output, *, data_folder_suffixes=None):
         self.input = os.path.abspath(input)
         self.output = os.path.abspath(output)
+        self.data_folder_suffixes = (
+            [k for k in dict.fromkeys(os.path.normcase(s.strip()) for s in data_folder_suffixes) if k]
+            if data_folder_suffixes is not None else DEFAULT_DATA_FOLDER_SUFFIXES)
         self.wsb_dir = os.path.join(self.input, WSB_DIR)
         self.host = None
         self.book = None
@@ -99,13 +103,10 @@ class Converter:
                             entries_to_handle.add(entry)
 
                             if util.is_html(entry.path):
-                                p = self._get_index_path_key(os.path.join(data_dir, f'{basename}.files'))
-                                yield Info('debug', f'Excluding "{p}" from index finding')
-                                entries_to_exclude.add(p)
-
-                                p = self._get_index_path_key(os.path.join(data_dir, f'{basename}_files'))
-                                yield Info('debug', f'Excluding "{p}" from index finding')
-                                entries_to_exclude.add(p)
+                                for suffix in self.data_folder_suffixes:
+                                    p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
+                                    yield Info('debug', f'Excluding "{p}" from index finding')
+                                    entries_to_exclude.add(p)
 
         paths.append(id)
 
@@ -196,13 +197,10 @@ class Converter:
         if os.path.isfile(file) and util.is_html(file):
             base = os.path.splitext(file)[0]
 
-            supporting_folder = f'{base}.files'
-            if os.path.isdir(supporting_folder):
-                return supporting_folder
-
-            supporting_folder = f'{base}_files'
-            if os.path.isdir(supporting_folder):
-                return supporting_folder
+            for suffix in self.data_folder_suffixes:
+                supporting_folder = f'{base}{suffix}'
+                if os.path.isdir(supporting_folder):
+                    return supporting_folder
 
         return None
 
@@ -215,15 +213,16 @@ class Converter:
         return id
 
 
-def run(input, output):
+def run(input, output, *, data_folder_suffixes=None):
     start = time.time()
     yield Info('info', 'conversion mode: hierarchial files --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
+    yield Info('info', f'data_folder_suffixes: {DEFAULT_DATA_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output)
+        conv = Converter(input, output, data_folder_suffixes=data_folder_suffixes)
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

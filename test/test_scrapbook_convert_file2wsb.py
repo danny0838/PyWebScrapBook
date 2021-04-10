@@ -386,6 +386,130 @@ page content
             os.path.join(self.test_output, id_item, 'mypage_files', 'picture.bmp'),
             })
 
+    def test_supporting_folder03(self):
+        """Test for custom supporting folder (data_folder_suffixes set)
+        """
+        index_file = os.path.join(self.test_input, 'mypage.html')
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+<img src="mypage_archive/picture.bmp">
+</body>
+</html>
+""")
+        img_file = os.path.join(self.test_input, 'mypage_archive', 'picture.bmp')
+        os.makedirs(os.path.dirname(img_file), exist_ok=True)
+        with open(img_file, 'wb') as fh:
+            fh.write(b'dummy')
+
+        for info in file2wsb.run(self.test_input, self.test_output, data_folder_suffixes=['_archive']):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        ids = list(book.meta.keys())
+        id_item = ids[0]
+        self.assertDictEqual(book.meta, {
+            id_item: {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': f'{id_item}/index.html',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'http://example.com',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, id_item),
+            os.path.join(self.test_output, id_item, 'index.html'),
+            os.path.join(self.test_output, id_item, 'mypage.html'),
+            os.path.join(self.test_output, id_item, 'mypage_archive'),
+            os.path.join(self.test_output, id_item, 'mypage_archive', 'picture.bmp'),
+            })
+
+    def test_supporting_folder04(self):
+        """Test for custom supporting folder (data_folder_suffixes not set)
+        """
+        index_file = os.path.join(self.test_input, 'mypage.html')
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+<img src="mypage_archive/picture.bmp">
+</body>
+</html>
+""")
+        img_file = os.path.join(self.test_input, 'mypage_archive', 'picture.bmp')
+        os.makedirs(os.path.dirname(img_file), exist_ok=True)
+        with open(img_file, 'wb') as fh:
+            fh.write(b'dummy')
+
+        for info in file2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        id_item, id_folder = book.meta.keys()
+        self.assertDictEqual(book.meta, {
+            id_item: {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': f'{id_item}.html',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'http://example.com',
+                'icon': '',
+                'comment': '',
+                },
+            id_folder: {
+                'title': 'mypage_archive',
+                'type': 'folder',
+                'create': id_folder,
+                'modify': id_folder,
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_item,
+                id_folder,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.html'),
+            })
+
     def test_htz(self):
         """Test hierarchical folders for *.htz
         """

@@ -734,6 +734,9 @@ Supports metadata recognition of web pages saved via:
         help="""the input directory""")
     parser_convert_file2wsb.add_argument('output', action='store',
         help="""the output directory""")
+    parser_convert_file2wsb.add_argument('--data-folder-suffix', dest='data_folder_suffixes',
+        metavar='SUFFIX', default=None, action='store', nargs='*',
+        help="""suffixes of the associated support folder (default: .files _files)""")
     parser_convert_file2wsb.add_argument('--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
     parser_convert_file2wsb.add_argument('--debug', default=False, action='store_true',
