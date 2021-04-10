@@ -8,6 +8,7 @@ import subprocess
 import collections
 from collections import namedtuple
 import shutil
+import io
 import zipfile
 import tempfile
 import math
@@ -898,6 +899,40 @@ class ZipDirNotFoundError(Exception):
     pass
 
 
+def zip_compression_params(mimetype=None, compress_type=None, compresslevel=None, autodetector=is_compressible):
+    """A helper for determining compress type and level.
+
+    - Also handles a compatibility issue of compresslevel in Python < 3.7.
+    """
+    if compress_type is None and compresslevel is None and autodetector is not None:
+        compressible = autodetector(mimetype)
+        compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
+        compresslevel = 9 if compressible else None
+
+    rv = {
+        'compress_type': compress_type,
+        'compresslevel': compresslevel,
+        }
+
+    try:
+        support_compresslevel = getattr(zip_compression_params, '_support_compresslevel')
+    except AttributeError:
+        with zipfile.ZipFile(io.BytesIO(), 'w') as zh:
+            try:
+                zh.writestr('test.txt', '', compress_type=compress_type, compresslevel=compresslevel)
+            except TypeError:
+                # compresslevel is supported since Python 3.7
+                support_compresslevel = False
+            else:
+                support_compresslevel = True
+        setattr(zip_compression_params, '_support_compresslevel', support_compresslevel)
+
+    if not support_compresslevel:
+        del rv['compresslevel']
+
+    return rv
+
+
 def zip_tuple_timestamp(zipinfodate):
     """Get timestamp from a ZipInfo.date_time.
     """
@@ -1070,29 +1105,15 @@ def zip_compress(zip, filename, subpath):
                     if os.sep != '/':
                         dst = dst.replace(os.sep, '/')
                     dst = subpath + dst
-                    compressible = is_compressible(mimetypes.guess_type(dst)[0])
-                    compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
-                    compresslevel = 9 if compressible else None
                     try:
-                        try:
-                            zh.write(src, dst, compress_type, compresslevel)
-                        except TypeError:
-                            # compresslevel is supported since Python 3.7
-                            zh.write(src, dst, compress_type)
+                        zh.write(src, dst, **zip_compression_params(mimetype=mimetypes.guess_type(dst)[0]))
                     except OSError as why:
                         errors.append((src, dst, str(why)))
 
             if errors:
                 raise shutil.Error(errors)
         else:
-            compressible = is_compressible(mimetypes.guess_type(subpath)[0])
-            compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
-            compresslevel = 9 if compressible else None
-            try:
-                zh.write(filename, subpath, compress_type, compresslevel)
-            except TypeError:
-                # compresslevel is supported since Python 3.7
-                zh.write(filename, subpath, compress_type)
+            zh.write(filename, subpath, **zip_compression_params(mimetype=mimetypes.guess_type(subpath)[0]))
 
 
 def zip_extract(zip, dst, subpath='', tzoffset=None):

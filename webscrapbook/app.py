@@ -262,14 +262,10 @@ def open_archive_path(paths, mode='r', filters=None):
                         else:
                             continue
 
-                        try:
-                            zip.writestr(info, zip0.read(info),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                        except TypeError:
-                            # compresslevel is supported since Python 3.7
-                            zip.writestr(info, zip0.read(info),
-                                    compress_type=info.compress_type)
+                        zip.writestr(info, zip0.read(info), **util.zip_compression_params(
+                                compress_type=info.compress_type,
+                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                ))
 
                 if filters and not filtered:
                     raise KeyError('paths to filter do not exist')
@@ -1342,11 +1338,8 @@ def action_save():
                             fh.write(chunk)
                 else:
                     bytes_ = request.values.get('text', '').encode('ISO-8859-1')
-                    try:
-                        zip.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-                    except TypeError:
-                        # compresslevel is supported since Python 3.7
-                        zip.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED)
+                    zip.writestr(info, bytes_,
+                            **util.zip_compression_params(compress_type=zipfile.ZIP_DEFLATED, compresslevel=9))
         except Exception:
             traceback.print_exc()
             abort(500, "Unable to write to this ZIP file.")
@@ -1472,12 +1465,10 @@ def action_move(sourcepaths, targetpaths):
                         for entry in entries:
                             info = zip.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
-                            try:
-                                zip2.writestr(info, zip.read(entry),
-                                        compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                            except TypeError:
-                                # compresslevel is supported since Python 3.7
-                                zip2.writestr(info, zip.read(entry))
+                            zip2.writestr(info, zip.read(entry), **util.zip_compression_params(
+                                    compress_type=info.compress_type,
+                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                    ))
 
                 with open_archive_path(sourcepaths, 'w', entries) as zip:
                     pass
@@ -1555,12 +1546,10 @@ def action_copy(sourcepaths, targetpaths):
                         for entry in entries:
                             info = zip.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
-                            try:
-                                zip2.writestr(info, zip.read(entry),
-                                        compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9)
-                            except TypeError:
-                                # compresslevel is supported since Python 3.7
-                                zip2.writestr(info, zip.read(entry))
+                            zip2.writestr(info, zip.read(entry), **util.zip_compression_params(
+                                    compress_type=info.compress_type,
+                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                    ))
 
     except HTTPException:
         raise
