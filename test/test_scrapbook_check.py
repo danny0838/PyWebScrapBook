@@ -1515,6 +1515,78 @@ page content
             })
 
     def test_item_title03(self):
+        """Infer from source URL if title is empty."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com/mypage.html">
+<head>
+<meta charset="UTF-8">
+<title></title>
+</head>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'mypage.html',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com/mypage.html',
+                'comment': '',
+                },
+            })
+
+    def test_item_title04(self):
+        """Infer from source URL if title is white space."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com/mypage.html">
+<head>
+<meta charset="UTF-8">
+<title> </title>
+</head>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'mypage.html',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com/mypage.html',
+                'comment': '',
+                },
+            })
+
+    def test_item_title05(self):
         """Infer from ID if not separator."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
@@ -1549,7 +1621,7 @@ page content
                 },
             })
 
-    def test_item_title04(self):
+    def test_item_title06(self):
         """Keep empty for separator."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
