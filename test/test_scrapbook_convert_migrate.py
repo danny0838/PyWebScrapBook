@@ -8,7 +8,7 @@ import glob
 from webscrapbook import WSB_DIR
 from webscrapbook import util
 from webscrapbook.scrapbook.host import Host
-from webscrapbook.scrapbook.convert import migrate0
+from webscrapbook.scrapbook.convert import migrate
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_convert')
@@ -85,7 +85,7 @@ scrapbook.meta({
 postit page content < & > &lt; &amp; &gt;
 </pre></body></html>""")
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -118,7 +118,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -144,7 +144,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -170,7 +170,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -198,7 +198,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -226,7 +226,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -254,7 +254,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -284,7 +284,7 @@ Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -314,7 +314,7 @@ Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -342,7 +342,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -370,7 +370,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -398,7 +398,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -429,7 +429,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -480,7 +480,7 @@ Donec nec lacus<span data-scrapbook-elem="annotation">(my legacy <em>inline</em>
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -608,7 +608,7 @@ Page3 content
         with open(os.path.join(self.test_input, '20200101000000000', 'treenotex.png'), 'wb'):
             pass
 
-        for info in migrate0.run(self.test_input, self.test_output, convert_data_files=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {

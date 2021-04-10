@@ -618,43 +618,43 @@ auto-generate parent folders if not found. (ignores --target and
     parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE',
         help="""the conversion mode. Get usage help with e.g. %(prog)s sb2wsb -h""")
 
-    # -- migrate0
-    parser_convert_migrate0 = parser_convert_sub.add_parser('migrate0',
+    # -- migrate
+    parser_convert_migrate = parser_convert_sub.add_parser('migrate',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Migrate data to be compatible with latest WebScrapBook 0.* version.
+        description="""Migrate data to be compatible with latest WebScrapBook version.
 
-This tool fixes incomplete conversion from legacy ScrapBook to WebScrapBook 0.*
-or migrate from older WebScrapBook 0.* to latest.
+This tool fixes incomplete conversion from legacy ScrapBook to WebScrapBook or
+migrate from older WebScrapBook to the latest.
 
 - Convert legacy annotations and resources at chrome://scrapbook/skin/* for all
-  web pages in an item.
+  web pages associated with an item.
 - Convert the index file of "postit" items for canonical wrapper and styling.
 """,
-        help="""migrate to latest WebScrapBook 0.*""")
-    parser_convert_migrate0.add_argument('input', action='store',
+        help="""migrate to latest WebScrapBook""")
+    parser_convert_migrate.add_argument('input', action='store',
         help="""the input directory""")
-    parser_convert_migrate0.add_argument('output', action='store', nargs='?',
+    parser_convert_migrate.add_argument('output', action='store', nargs='?',
         help="""the output directory (default: in-place)""")
-    parser_convert_migrate0.add_argument('--book', dest='book_ids', metavar='ID',
+    parser_convert_migrate.add_argument('--book', dest='book_ids', metavar='ID',
         nargs='+', action='store',
         help="""the book ID(s) to convert. (default: all books)""")
-    parser_convert_migrate0.add_argument('--convert-data-files', default=True,
+    parser_convert_migrate.add_argument('--convert-data-files', default=True,
         action='store_true',
         help="""convert data files for items (default)""")
-    parser_convert_migrate0.add_argument('--no-convert-data-files', dest='convert_data_files', 
+    parser_convert_migrate.add_argument('--no-convert-data-files', dest='convert_data_files', 
         action='store_false',
         help="""inverse of --convert-data-files""")
-    parser_convert_migrate0.add_argument('--use-native-tags', default=False,
+    parser_convert_migrate.add_argument('--use-native-tags', default=False,
         action='store_true',
         help="""use native HTML tags for converted annotations for better
 compatibility with very old browsers (e.g. IE < 9), with the cost of increased possibility
 to conflict with the web page stylesheets (default)""")
-    parser_convert_migrate0.add_argument('--no-use-native-tags', dest='use_native_tags', 
+    parser_convert_migrate.add_argument('--no-use-native-tags', dest='use_native_tags', 
         action='store_false',
         help="""inverse of --use-native-tags (default)""")
-    parser_convert_migrate0.add_argument('--force', default=False, action='store_true',
+    parser_convert_migrate.add_argument('--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_migrate0.add_argument('--debug', default=False, action='store_true',
+    parser_convert_migrate.add_argument('--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # -- sb2wsb

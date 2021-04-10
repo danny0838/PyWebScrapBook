@@ -661,7 +661,7 @@ class TestRun(unittest.TestCase):
 
         self.assertFalse(os.path.exists(os.path.join(self.test_output, WSB_DIR, 'backup')))
 
-    @mock.patch('webscrapbook.scrapbook.convert.migrate0.ConvertLegacyDataFiles')
+    @mock.patch('webscrapbook.scrapbook.convert.migrate.ConvertLegacyDataFiles')
     def test_data01(self, mock_convert):
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -681,7 +681,7 @@ class TestRun(unittest.TestCase):
         self.assertEqual(mock_convert.mock_calls[0][1][0].top_dir, self.test_output)
         mock_convert.return_value.run.assert_called_once_with()
 
-    @mock.patch('webscrapbook.scrapbook.convert.migrate0.ConvertLegacyDataFiles')
+    @mock.patch('webscrapbook.scrapbook.convert.migrate.ConvertLegacyDataFiles')
     def test_data02(self, mock_convert):
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
             fh.write("""\
