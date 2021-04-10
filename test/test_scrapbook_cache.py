@@ -3133,17 +3133,14 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
         self.assertFalse(mock_func.call_args_list[0][1]['rss'])
 
-    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
-    def test_param_locale(self, mock_func):
+    def test_param_locale(self):
         """locale should be passed."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True, locale='ar')
         for info in generator.run():
             pass
 
-        for i, call in enumerate(mock_func.call_args_list):
-            with self.subTest(i=i, file=call[0][0]):
-                self.assertEqual(call[1]['i18n']('@@bidi_dir'), 'rtl')
+        self.assertEqual(generator.template_env.globals['i18n'].lang, 'ar')
 
     def test_static_index_anchor01(self):
         """Page with index */index.html"""
