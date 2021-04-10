@@ -98,7 +98,12 @@ class TestFuncGenerate(TestCache):
         for info in wsb_cache.generate(self.test_root, book_ids=['', 'id1', 'id2', 'id3', 'id4']):
             pass
 
-        self.assertEqual([i[0][1] for i in mock_book.call_args_list], ['', 'id1', 'id2', 'id4'])
+        self.assertListEqual(mock_book.call_args_list, [
+            mock.call(mock.ANY, ''),
+            mock.call(mock.ANY, 'id1'),
+            mock.call(mock.ANY, 'id2'),
+            mock.call(mock.ANY, 'id4'),
+            ])
 
     @mock.patch('webscrapbook.scrapbook.host.Book')
     def test_param_book_ids02(self, mock_book):
@@ -118,7 +123,13 @@ class TestFuncGenerate(TestCache):
         for info in wsb_cache.generate(self.test_root):
             pass
 
-        self.assertEqual([i[0][1] for i in mock_book.call_args_list], ['', 'id1', 'id2', 'id4', 'id5'])
+        self.assertListEqual(mock_book.call_args_list, [
+            mock.call(mock.ANY, ''),
+            mock.call(mock.ANY, 'id1'),
+            mock.call(mock.ANY, 'id2'),
+            mock.call(mock.ANY, 'id4'),
+            mock.call(mock.ANY, 'id5'),
+            ])
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_no_tree(self, mock_lock):

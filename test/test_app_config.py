@@ -99,15 +99,11 @@ theme = default
 """)
 
         app = make_app(server_root)
-        self.assertEqual(
-            os.path.normcase(mock_loader.call_args[0][0][0]),
-            os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')))
-        self.assertEqual(
-            os.path.normcase(mock_loader.call_args[0][0][1]),
-            os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb',  'themes', 'default', 'templates'))))
-        self.assertEqual(
-            os.path.normcase(mock_loader.call_args[0][0][2]),
-            os.path.normcase(os.path.abspath(os.path.join(__file__, '..', '..', 'webscrapbook',  'themes', 'default', 'templates'))))
+        self.assertListEqual([os.path.normcase(i) for i in mock_loader.call_args[0][0]], [
+            os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')),
+            os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb',  'themes', 'default', 'templates'))),
+            os.path.normcase(os.path.abspath(os.path.join(__file__, '..', '..', 'webscrapbook',  'themes', 'default', 'templates'))),
+            ])
 
     def test_root(self):
         with open(server_config, 'w', encoding='UTF-8') as f:
@@ -519,7 +515,7 @@ class TestAuth(unittest.TestCase):
             with self.assertRaises(KeyError):
                 response.headers['WWW-Authenticate']
 
-    @mock.patch('webscrapbook.app.get_permission', return_value='')
+    @mock.patch('webscrapbook.app.get_permission', side_effect=SystemExit)
     def test_get_permission(self, mock_perm):
         """Check if HTTP authorization info is passed to get_permission()."""
         with open(server_config, 'w', encoding='UTF-8') as f:
@@ -546,13 +542,25 @@ permission = view
                             headers = self.simple_auth_headers(user, pw)
                             expected = {'username': user, 'password': pw}
 
-                        mock_perm.reset_mock()
-                        c.open('/', method=method, headers=headers)
-                        self.assertEqual(mock_perm.call_args[0][0], expected)
+                        try:
+                            c.open('/', method=method, headers=headers)
+                        except SystemExit:
+                            pass
 
-    @mock.patch('webscrapbook.app.verify_authorization', return_value=False)
+                        mock_perm.assert_called_with(expected, mock.ANY)
+
+    @mock.patch('webscrapbook.app.verify_authorization', side_effect=SystemExit)
     def test_verify_authorization(self, mock_auth):
         """Check if action is passed to verify_authorization()."""
+        with open(server_config, 'w', encoding='UTF-8') as f:
+            f.write("""\
+[auth "anony"]
+user =
+pw = salt
+pw_salt = salt
+pw_type = plain
+permission = view
+""")
         all_actions = (fn[7:] for fn in dir(wsbapp) if fn.startswith('action_'))
         app = make_app(server_root)
         app.testing = True
@@ -567,9 +575,12 @@ permission = view
                             query = {'a': action}
                             expected = action
 
-                        mock_auth.reset_mock()
-                        c.open('/', method=method, query_string=query)
-                        self.assertEqual(mock_auth.call_args[0][1], expected)
+                        try:
+                            c.open('/', method=method, query_string=query)
+                        except SystemExit:
+                            pass
+
+                        mock_auth.assert_called_with(mock.ANY, expected)
 
     def test_request(self):
         """Random request challanges."""

@@ -5344,22 +5344,22 @@ class TestCache(TestActions):
             except SystemExit:
                 pass
 
-        kwargs = mock_func.call_args[1]
-        del kwargs['config']
-        self.assertEqual(kwargs, {
-            'book_ids': ['', 'id1'],
-            'item_ids': ['20200101'],
-            'no_lock': True,
-            'no_backup': True,
-            'fulltext': True,
-            'inclusive_frames': True,
-            'recreate': True,
-            'static_site': True,
-            'static_index': True,
-            'rss_root': 'http://example.com',
-            'rss_item_count': 25,
-            'locale': 'zh',
-            })
+        mock_func.assert_called_once_with(
+            mock.ANY,
+            book_ids=['', 'id1'],
+            item_ids=['20200101'],
+            config=mock.ANY,
+            no_lock=True,
+            no_backup=True,
+            fulltext=True,
+            inclusive_frames=True,
+            recreate=True,
+            static_site=True,
+            static_index=True,
+            rss_root='http://example.com',
+            rss_item_count=25,
+            locale='zh',
+            )
 
     @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
     def test_params02(self, mock_func):
@@ -5384,22 +5384,22 @@ class TestCache(TestActions):
             except SystemExit:
                 pass
 
-        kwargs = mock_func.call_args[1]
-        del kwargs['config']
-        self.assertEqual(kwargs, {
-            'book_ids': ['', 'id1'],
-            'item_ids': ['20200101'],
-            'no_lock': True,
-            'no_backup': True,
-            'fulltext': True,
-            'inclusive_frames': True,
-            'recreate': True,
-            'static_site': True,
-            'static_index': True,
-            'rss_root': 'http://example.com',
-            'rss_item_count': 25,
-            'locale': 'zh',
-            })
+        mock_func.assert_called_once_with(
+            mock.ANY,
+            book_ids=['', 'id1'],
+            item_ids=['20200101'],
+            config=mock.ANY,
+            no_lock=True,
+            no_backup=True,
+            fulltext=True,
+            inclusive_frames=True,
+            recreate=True,
+            static_site=True,
+            static_index=True,
+            rss_root='http://example.com',
+            rss_item_count=25,
+            locale='zh',
+            )
 
 class TestCheck(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -5443,24 +5443,24 @@ class TestCheck(TestActions):
             except SystemExit:
                 pass
 
-        kwargs = mock_func.call_args[1]
-        del kwargs['config']
-        self.assertEqual(kwargs, {
-            'book_ids': ['', 'id1'],
-            'no_lock': True,
-            'no_backup': True,
-            'resolve_invalid_id': True,
-            'resolve_missing_index': True,
-            'resolve_missing_index_file': True,
-            'resolve_missing_date': True,
-            'resolve_older_mtime': True,
-            'resolve_toc_unreachable': True,
-            'resolve_toc_invalid': True,
-            'resolve_toc_empty_subtree': True,
-            'resolve_unindexed_files': True,
-            'resolve_absolute_icon': True,
-            'resolve_unused_icon': True,
-            })
+        mock_func.assert_called_once_with(
+            mock.ANY,
+            book_ids=['', 'id1'],
+            config=mock.ANY,
+            no_lock=True,
+            no_backup=True,
+            resolve_invalid_id=True,
+            resolve_missing_index=True,
+            resolve_missing_index_file=True,
+            resolve_missing_date=True,
+            resolve_older_mtime=True,
+            resolve_toc_unreachable=True,
+            resolve_toc_invalid=True,
+            resolve_toc_empty_subtree=True,
+            resolve_unindexed_files=True,
+            resolve_absolute_icon=True,
+            resolve_unused_icon=True,
+            )
 
     @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
     def test_params02(self, mock_func):
@@ -5487,24 +5487,24 @@ class TestCheck(TestActions):
             except SystemExit:
                 pass
 
-        kwargs = mock_func.call_args[1]
-        del kwargs['config']
-        self.assertEqual(kwargs, {
-            'book_ids': ['', 'id1'],
-            'no_lock': True,
-            'no_backup': True,
-            'resolve_invalid_id': True,
-            'resolve_missing_index': True,
-            'resolve_missing_index_file': True,
-            'resolve_missing_date': True,
-            'resolve_older_mtime': True,
-            'resolve_toc_unreachable': True,
-            'resolve_toc_invalid': True,
-            'resolve_toc_empty_subtree': True,
-            'resolve_unindexed_files': True,
-            'resolve_absolute_icon': True,
-            'resolve_unused_icon': True,
-            })
+        mock_func.assert_called_once_with(
+            mock.ANY,
+            book_ids=['', 'id1'],
+            config=mock.ANY,
+            no_lock=True,
+            no_backup=True,
+            resolve_invalid_id=True,
+            resolve_missing_index=True,
+            resolve_missing_index_file=True,
+            resolve_missing_date=True,
+            resolve_older_mtime=True,
+            resolve_toc_unreachable=True,
+            resolve_toc_invalid=True,
+            resolve_toc_empty_subtree=True,
+            resolve_unindexed_files=True,
+            resolve_absolute_icon=True,
+            resolve_unused_icon=True,
+            )
 
 class TestUnknown(unittest.TestCase):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
