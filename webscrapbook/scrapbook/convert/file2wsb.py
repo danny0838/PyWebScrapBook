@@ -17,12 +17,22 @@ FIND_INDEX_EXT = {'.html', '.htz', '.maff', '.htm'}
 
 
 class Converter:
-    def __init__(self, input, output, *, data_folder_suffixes=None):
+    def __init__(self, input, output, *,
+            data_folder_suffixes=None,
+            handle_ie_meta=True,
+            handle_singlefile_meta=True,
+            handle_savepagewe_meta=True,
+            handle_maoxian_meta=True,
+            ):
         self.input = os.path.abspath(input)
         self.output = os.path.abspath(output)
         self.data_folder_suffixes = (
             [k for k in dict.fromkeys(os.path.normcase(s.strip()) for s in data_folder_suffixes) if k]
             if data_folder_suffixes is not None else DEFAULT_DATA_FOLDER_SUFFIXES)
+        self.handle_ie_meta = handle_ie_meta
+        self.handle_singlefile_meta = handle_singlefile_meta
+        self.handle_savepagewe_meta = handle_savepagewe_meta
+        self.handle_maoxian_meta = handle_maoxian_meta
         self.wsb_dir = os.path.join(self.input, WSB_DIR)
         self.host = None
         self.book = None
@@ -161,7 +171,12 @@ class Converter:
                 yield Info('error', f'Failed to copy data folder "{entry}": {exc}')
 
             # generate meta
-            indexer = Indexer(self.book)
+            indexer = Indexer(self.book,
+                handle_ie_meta=self.handle_ie_meta,
+                handle_singlefile_meta=self.handle_singlefile_meta,
+                handle_savepagewe_meta=self.handle_savepagewe_meta,
+                handle_maoxian_meta=self.handle_maoxian_meta,
+                )
             indexed = yield from indexer.run([index_file])
 
             with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -182,7 +197,12 @@ class Converter:
             index_file = os.path.join(dst, 'index.html') if os.path.isdir(entry) else dst
 
             # generate meta
-            indexer = Indexer(self.book)
+            indexer = Indexer(self.book,
+                handle_ie_meta=self.handle_ie_meta,
+                handle_singlefile_meta=self.handle_singlefile_meta,
+                handle_savepagewe_meta=self.handle_savepagewe_meta,
+                handle_maoxian_meta=self.handle_maoxian_meta,
+                )
             indexed = yield from indexer.run([index_file])
 
         for id in indexed:
@@ -213,16 +233,32 @@ class Converter:
         return id
 
 
-def run(input, output, *, data_folder_suffixes=None):
+def run(input, output, *,
+        data_folder_suffixes=None,
+        ignore_ie_meta=False,
+        ignore_singlefile_meta=False,
+        ignore_savepagewe_meta=False,
+        ignore_maoxian_meta=False,
+        ):
     start = time.time()
     yield Info('info', 'conversion mode: hierarchial files --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
     yield Info('info', f'data_folder_suffixes: {DEFAULT_DATA_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')
+    yield Info('info', f'ignore IE meta: {ignore_ie_meta}')
+    yield Info('info', f'ignore SingleFile meta: {ignore_singlefile_meta}')
+    yield Info('info', f'ignore Save Page WE meta: {ignore_savepagewe_meta}')
+    yield Info('info', f'ignore MaoXian web clipper meta: {ignore_maoxian_meta}')
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output, data_folder_suffixes=data_folder_suffixes)
+        conv = Converter(input, output,
+            data_folder_suffixes=data_folder_suffixes,
+            handle_ie_meta=not ignore_ie_meta,
+            handle_singlefile_meta=not ignore_singlefile_meta,
+            handle_savepagewe_meta=not ignore_savepagewe_meta,
+            handle_maoxian_meta=not ignore_maoxian_meta,
+            )
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

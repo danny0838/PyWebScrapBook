@@ -636,5 +636,44 @@ page content
             os.path.join(self.test_output, f'{id_item}.maff'),
             })
 
+    @mock.patch('webscrapbook.scrapbook.convert.file2wsb.Indexer', side_effect=SystemExit)
+    def test_ignore_meta(self, mock_obj):
+        """Test ignore_*_meta params"""
+        index_file = os.path.join(self.test_input, 'mypage.html')
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        try:
+            for info in file2wsb.run(self.test_input, self.test_output,
+                    ignore_ie_meta=False,
+                    ignore_singlefile_meta=False,
+                    ignore_savepagewe_meta=False,
+                    ignore_maoxian_meta=False,
+                    ):
+                pass
+        except SystemExit:
+            pass
+
+        mock_obj.assert_called_with(mock.ANY,
+            handle_ie_meta=True,
+            handle_singlefile_meta=True,
+            handle_savepagewe_meta=True,
+            handle_maoxian_meta=True,
+            )
+
 if __name__ == '__main__':
     unittest.main()
