@@ -94,6 +94,7 @@ class StaticSiteGenerator():
         self.template_env.globals.update({
             'format_string': util.format_string,
             'i18n': self.host.get_i18n(locale),
+            'bookname': book.name,
             })
 
         book.load_meta_files()
@@ -108,7 +109,6 @@ class StaticSiteGenerator():
 
         # generate static site pages
         index_kwargs = dict(
-            title=self.book.name,
             rss=self.rss,
             data_dir = util.get_relative_url(self.book.data_dir, self.book.tree_dir),
             default_icons = self.ITEM_TYPE_ICON,
@@ -125,12 +125,9 @@ class StaticSiteGenerator():
             static_index=None, **index_kwargs,
             )
 
-        yield from self._generate_page('frame.html', 'static_frame.html',
-            title=self.book.name,
-            )
+        yield from self._generate_page('frame.html', 'static_frame.html')
 
         yield from self._generate_page('search.html', 'static_search.html',
-            title=self.book.name,
             path=util.get_relative_url(self.book.top_dir, self.book.tree_dir),
             data_dir=util.get_relative_url(self.book.data_dir, self.book.top_dir),
             tree_dir=util.get_relative_url(self.book.tree_dir, self.book.top_dir),

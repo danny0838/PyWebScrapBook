@@ -18,7 +18,7 @@
 <head>
 <base target="view">
 <meta charset="UTF-8">
-<title>{{ title }}</title>
+<title>{{ bookname }}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {% if rss -%}
 <link rel="alternate" type ="application/rss+xml" title="Atom Feed" href="feed.atom">
@@ -450,7 +450,7 @@ var scrapbook = {
 </head>
 <body>
 <div id="header">
-<a id="toggle-all" title="{{ i18n('cache_index_toggle_all') }}" href="#"><img src="icon/toggle.png">{{ title }}</a>
+<a id="toggle-all" title="{{ i18n('cache_index_toggle_all') }}" href="#"><img src="icon/toggle.png">{{ bookname }}</a>
 <a id="search" href="search.html" target="_self" title="{{ i18n('cache_index_search_link_title') }}"><img src="icon/search.png" alt=""></a>
 </div>
 {% block static_index %}{% endblock -%}
