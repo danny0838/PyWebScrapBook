@@ -1106,7 +1106,7 @@ def action_config():
 
     # filter values for better security
     data = {k:v for k, v in data.items() if k in ('app', 'book')}
-    data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme')}
+    data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme', 'locale')}
 
     # add and rewrite values for client to better know the server
     data['app']['base'] = request.script_root
@@ -1887,7 +1887,7 @@ def make_app(root=".", config=None):
             'format_filesize': util.format_filesize,
             'quote_path': quote_path,
             'static_url': static_url,
-            'i18n': _host.get_i18n(),
+            'i18n': _host.get_i18n(_host.config['app']['locale']),
             })
 
     return app

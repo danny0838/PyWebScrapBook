@@ -33,6 +33,7 @@ class TestClassConfig(unittest.TestCase):
         self.assertDictEqual(conf['app'], OrderedDict([
             ('name', 'mywsb'),
             ('theme', 'mytheme'),
+            ('locale', ''),
             ('root', 'myroot'),
             ('base', 'mybase'),
             ('index', ''),
@@ -101,6 +102,7 @@ class TestClassConfig(unittest.TestCase):
         self.assertDictEqual(conf['app'], OrderedDict([
             ('name', 'mywsb2'),
             ('theme', 'default'),
+            ('locale', ''),
             ('root', '.'),
             ('base', ''),
             ('index', ''),
@@ -197,6 +199,7 @@ class TestClassConfig(unittest.TestCase):
             self.assertEqual(output, """[app]
 name = mywsb
 theme = mytheme
+locale = 
 root = myroot
 base = mybase
 index = 
@@ -266,6 +269,7 @@ permission = all
                 ('app', OrderedDict([
                     ('name', 'mywsb'),
                     ('theme', 'mytheme'),
+                    ('locale', ''),
                     ('root', 'myroot'),
                     ('base', 'mybase'),
                     ('index', ''),

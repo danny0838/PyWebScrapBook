@@ -84,6 +84,14 @@ default one when not found.
 (default: `default`)
 
 
+#### `locale`
+
+The locale name of web interface of the served website. Use system locale if
+left empty.
+
+(default: )
+
+
 #### `root`
 
 The chrooted directory to host. Files outside this directory are not directly

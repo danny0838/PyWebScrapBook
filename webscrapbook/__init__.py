@@ -56,6 +56,7 @@ class Config():
         'app': {
             'name': 'WebScrapBook',
             'theme': 'default',
+            'locale': '',
             'root': '.',
             'base': '',
             'index': '',

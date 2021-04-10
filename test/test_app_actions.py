@@ -2050,6 +2050,7 @@ class TestConfig(unittest.TestCase):
                 'app': {
                     'name': 'WebScrapBook',
                     'theme': 'default',
+                    'locale': '',
                     'base': '',
                     'is_local': True,
                     },
