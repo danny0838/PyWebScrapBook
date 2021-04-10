@@ -3,6 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.38.0] - 2021-04-11
+* Fixed an issue of crash for `check` if a page has an empty title.
+* Renamed converter `migrate0` to `migrate`.
+* Added `app.locale` config to determine the locale of the APP theme.
+* Added support of downloading a folder or files and folders under a folder for the web interface.
+* Added `--data-folder-suffixes` and `--ignore-*-meta` options for `file2wsb` converter.
+
 ## [0.36.0] - 2021-04-01
 * Fixed an issue that auto backup may not include a deleted file.
 * Added support of note for a backup.
