@@ -2015,6 +2015,34 @@ page content
                 },
             })
 
+    def test_other_file(self):
+        """Test for a normal file."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.txt')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC 中文')
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.Indexer(book)
+        for info in generator.run([test_index]):
+            pass
+
+        item_id, = book.meta.keys()
+        self.assertDictEqual(book.meta, {
+            item_id: {
+                'index': '20200101000000000/index.txt',
+                'title': '',
+                'type': 'file',
+                'create': mock.ANY,
+                'modify': '20200102030405067',
+                'icon': '',
+                'source': '',
+                'comment': '',
+                },
+            })
+
 class FavIconCacher(TestCheck):
     def test_cache01(self):
         """Cache absolute URL.
