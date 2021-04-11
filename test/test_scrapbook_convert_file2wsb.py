@@ -94,10 +94,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_folder1 = ids[0]
-        id_folder2 = ids[1]
-        id_item = ids[2]
+        id_folder1, id_folder2, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_folder1: {
                 'title': 'folder1#中文',
@@ -168,10 +165,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_folder1 = ids[0]
-        id_folder2 = ids[1]
-        id_item = ids[2]
+        id_folder1, id_folder2, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_folder1: {
                 'title': 'folder1#中文',
@@ -240,8 +234,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_item = ids[0]
+        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_item: {
                 'title': 'MyTitle 中文',
@@ -297,8 +290,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_item = ids[0]
+        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_item: {
                 'title': 'MyTitle 中文',
@@ -358,8 +350,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_item = ids[0]
+        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_item: {
                 'title': 'MyTitle 中文',
@@ -419,8 +410,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_item = ids[0]
+        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_item: {
                 'title': 'MyTitle 中文',
@@ -539,9 +529,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_folder1 = ids[0]
-        id_item = ids[1]
+        id_folder1, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_folder1: {
                 'title': 'folder1#中文',
@@ -602,9 +590,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        ids = list(book.meta.keys())
-        id_folder1 = ids[0]
-        id_item = ids[1]
+        id_folder1, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_folder1: {
                 'title': 'folder1#中文',
