@@ -148,8 +148,6 @@ class Converter:
             dst_dir = os.path.join(self.book.data_dir, id)
             os.makedirs(dst_dir, exist_ok=True)
 
-            index_file = os.path.join(dst_dir, 'index.html')
-
             src = entry
             dst = os.path.join(dst_dir, basename)
             yield Info('info', f'Copying data file: "{src}" => "{dst}"')
@@ -157,6 +155,9 @@ class Converter:
                 shutil.copy2(src, dst)
             except OSError as exc:
                 yield Info('error', f'Failed to copy data file "{entry}": {exc}')
+
+            # copy entry to index.html for the indexer to retrieve original metadata 
+            index_file = os.path.join(dst_dir, 'index.html')
             try:
                 shutil.copy2(src, index_file)
             except OSError as exc:
@@ -179,8 +180,9 @@ class Converter:
                 )
             indexed = yield from indexer.run([index_file])
 
-            with open(index_file, 'w', encoding='UTF-8') as fh:
-                fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={quote(basename)}">')
+            if os.path.normcase(basename) != os.path.normcase('index.html'):
+                with open(index_file, 'w', encoding='UTF-8') as fh:
+                    fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={quote(basename)}">')
 
         else:
             src = entry
