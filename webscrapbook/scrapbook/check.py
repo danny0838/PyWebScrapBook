@@ -56,10 +56,6 @@ def generate_item_title(book, id):
             if title:
                 return title
 
-    # infer from ID if not separator
-    if book.meta[id].get('type') != 'separator':
-        return id
-
     return None
 
 

@@ -1551,7 +1551,7 @@ page content
             })
 
     def test_item_title04(self):
-        """Infer from source URL if title is white space."""
+        """Infer from source URL if title is blank."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -1587,7 +1587,7 @@ page content
             })
 
     def test_item_title05(self):
-        """Infer from ID if not separator."""
+        """Keep empty if nothing to infer."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -1595,8 +1595,7 @@ page content
 <!DOCTYPE html>
 <html
     data-scrapbook-create="20200101000000000"
-    data-scrapbook-modify="20200101000000000"
-    data-scrapbook-source="http://example.com">
+    data-scrapbook-modify="20200101000000000">
 <head>
 <meta charset="UTF-8">
 </head>
@@ -1611,12 +1610,12 @@ page content
         self.assertDictEqual(book.meta, {
             '20200101000000000': {
                 'index': '20200101000000000/index.html',
-                'title': '20200101000000000',
+                'title': '',
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '',
-                'source': 'http://example.com',
+                'source': '',
                 'comment': '',
                 },
             })
