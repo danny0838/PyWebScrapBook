@@ -5,6 +5,7 @@ import shutil
 import glob
 import zipfile
 import time
+from datetime import datetime, timezone
 
 from lxml import etree
 
@@ -532,7 +533,7 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, id_folder = book.meta.keys()
+        id_item, id_folder, id_item2 = book.meta.keys()
         self.assertDictEqual(book.meta, {
             id_item: {
                 'title': 'MyTitle 中文',
@@ -550,16 +551,30 @@ page content
                 'create': id_folder,
                 'modify': id_folder,
                 },
+            id_item2: {
+                'title': 'picture.bmp',
+                'type': 'file',
+                'index': f'{id_item2}.bmp',
+                'create': id_item2,
+                'modify': mock.ANY,
+                'source': '',
+                'icon': '',
+                'comment': '',
+                },
             })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
                 id_folder,
                 ],
+            id_folder: [
+                id_item2,
+                ],
             })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.html'),
+            os.path.join(self.test_output, f'{id_item2}.bmp'),
             })
 
     def test_htz(self):
@@ -682,6 +697,55 @@ page content
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.maff'),
+            })
+
+    def test_other(self):
+        """Test hierarchical folders for normal file
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.txt')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC 中文')
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(index_file, (ts, ts))
+
+        for info in file2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        id_folder1, id_item = book.meta.keys()
+        self.assertDictEqual(book.meta, {
+            id_folder1: {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': id_folder1,
+                'modify': id_folder1,
+                },
+            id_item: {
+                'title': 'mypage.txt',
+                'type': 'file',
+                'index': f'{id_item}.txt',
+                'create': id_item,
+                'modify': '20200102030405067',
+                'source': '',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_folder1,
+                ],
+            id_folder1: [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.txt'),
             })
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.Indexer', side_effect=SystemExit)

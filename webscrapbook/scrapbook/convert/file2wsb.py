@@ -108,15 +108,14 @@ class Converter:
 
                 elif entry.is_file():
                     if self._get_index_path_key(entry) not in entries_to_exclude:
-                        basename, ext = os.path.splitext(entry.name)
-                        if ext.lower() in FIND_INDEX_EXT:
-                            entries_to_handle.add(entry)
+                        entries_to_handle.add(entry)
 
-                            if util.is_html(entry.path):
-                                for suffix in self.data_folder_suffixes:
-                                    p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
-                                    yield Info('debug', f'Excluding "{p}" from index finding')
-                                    entries_to_exclude.add(p)
+                        if util.is_html(entry.path):
+                            basename, _ = os.path.splitext(entry.name)
+                            for suffix in self.data_folder_suffixes:
+                                p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
+                                yield Info('debug', f'Excluding "{p}" from index finding')
+                                entries_to_exclude.add(p)
 
         paths.append(id)
 
@@ -134,6 +133,7 @@ class Converter:
     def _index_entry(self, entry, paths):
         yield Info('debug', f'Generating item for "{entry}"...')
 
+        basename = os.path.basename(entry)
         _, ext = os.path.splitext(entry)
         ext = ext.lower()
         if ext == '.htd': ext = ''
@@ -144,7 +144,6 @@ class Converter:
         # copy data files
         supporting_folder = self._get_supporting_folder(entry)
         if supporting_folder:
-            basename = os.path.basename(entry)
             dst_dir = os.path.join(self.book.data_dir, id)
             os.makedirs(dst_dir, exist_ok=True)
 
@@ -208,6 +207,12 @@ class Converter:
             indexed = yield from indexer.run([index_file])
 
         for id in indexed:
+            # special handle of metadata
+            meta = self.book.meta[id]
+            if not meta.get('title'):
+                meta['title'] = basename
+
+            # add to parent
             parent_id = paths[-1]
             self.book.toc.setdefault(parent_id, []).append(id)
             yield Info('info', f'Appended item "{id}" under "{parent_id}"')
