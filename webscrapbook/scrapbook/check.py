@@ -833,8 +833,11 @@ class Indexer:
             title_elem = next(iter_title_elems(tree), None)
             title = None
             if title_elem is not None:
-                title = ((title_elem.text or '') +
-                    ''.join(etree.tostring(e, encoding='unicode') for e in title_elem))
+                try:
+                    title = ((title_elem.text or '') +
+                        ''.join(etree.tostring(e, encoding='unicode') for e in title_elem))
+                except UnicodeDecodeError as exc:
+                    yield Info('error', f'Failed to extract title for "{id}": {exc}')
             if not title or not title.strip():
                 title = generate_item_title(self.book, id)
             meta['title'] = title or ''
