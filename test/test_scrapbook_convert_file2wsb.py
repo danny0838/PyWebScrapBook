@@ -183,7 +183,7 @@ page content
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.html',
+                'index': f'{id_item}/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -204,7 +204,9 @@ page content
             })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.html'),
+            os.path.join(self.test_output, id_item),
+            os.path.join(self.test_output, id_item, 'index.html'),
+            os.path.join(self.test_output, id_item, 'mypage.html'),
             })
 
     def test_path03(self):
@@ -240,7 +242,7 @@ page content
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.html',
+                'index': f'{id_item}/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -255,7 +257,8 @@ page content
             })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.html'),
+            os.path.join(self.test_output, id_item),
+            os.path.join(self.test_output, id_item, 'index.html'),
             })
 
     def test_supporting_folder01(self):
@@ -538,7 +541,7 @@ page content
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.html',
+                'index': f'{id_item}/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -554,7 +557,7 @@ page content
             id_item2: {
                 'title': 'picture.bmp',
                 'type': 'file',
-                'index': f'{id_item2}.bmp',
+                'index': f'{id_item2}/index.html',
                 'create': id_item2,
                 'modify': mock.ANY,
                 'source': '',
@@ -573,8 +576,12 @@ page content
             })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.html'),
-            os.path.join(self.test_output, f'{id_item2}.bmp'),
+            os.path.join(self.test_output, id_item),
+            os.path.join(self.test_output, id_item, 'index.html'),
+            os.path.join(self.test_output, id_item, 'mypage.html'),
+            os.path.join(self.test_output, id_item2),
+            os.path.join(self.test_output, id_item2, 'index.html'),
+            os.path.join(self.test_output, id_item2, 'picture.bmp'),
             })
 
     def test_htz(self):
@@ -727,7 +734,7 @@ page content
             id_item: {
                 'title': 'mypage.txt',
                 'type': 'file',
-                'index': f'{id_item}.txt',
+                'index': f'{id_item}/index.html',
                 'create': id_item,
                 'modify': '20200102030405067',
                 'source': '',
@@ -745,7 +752,9 @@ page content
             })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.txt'),
+            os.path.join(self.test_output, id_item),
+            os.path.join(self.test_output, id_item, 'index.html'),
+            os.path.join(self.test_output, id_item, 'mypage.txt'),
             })
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.Indexer', side_effect=SystemExit)

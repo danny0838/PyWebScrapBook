@@ -143,7 +143,7 @@ class Converter:
 
         # copy data files
         supporting_folder = self._get_supporting_folder(entry)
-        if supporting_folder:
+        if supporting_folder or (os.path.isfile(entry) and not util.is_archive(entry)):
             dst_dir = os.path.join(self.book.data_dir, id)
             os.makedirs(dst_dir, exist_ok=True)
 
@@ -155,33 +155,50 @@ class Converter:
             except OSError as exc:
                 yield Info('error', f'Failed to copy data file "{entry}": {exc}')
 
-            # copy entry to index.html for the indexer to retrieve original metadata 
             index_file = os.path.join(dst_dir, 'index.html')
-            try:
-                shutil.copy2(src, index_file)
-            except OSError as exc:
-                yield Info('error', f'Failed to copy data file "{entry}": {exc}')
+            if ext in FIND_INDEX_EXT:
+                # copy entry to index.html for the indexer to retrieve original metadata
+                try:
+                    shutil.copy2(src, index_file)
+                except OSError as exc:
+                    yield Info('error', f'Failed to copy data file "{entry}": {exc}')
 
-            src = supporting_folder
-            dst = os.path.join(dst_dir, os.path.basename(supporting_folder))
-            yield Info('info', f'Copying data folder: "{src}" => "{dst}"')
-            try:
-                shutil.copytree(src, dst)
-            except OSError as exc:
-                yield Info('error', f'Failed to copy data folder "{entry}": {exc}')
+                if supporting_folder:
+                    src = supporting_folder
+                    dst = os.path.join(dst_dir, os.path.basename(supporting_folder))
+                    yield Info('info', f'Copying data folder: "{src}" => "{dst}"')
+                    try:
+                        shutil.copytree(src, dst)
+                    except OSError as exc:
+                        yield Info('error', f'Failed to copy data folder "{entry}": {exc}')
 
-            # generate meta
-            indexer = Indexer(self.book,
-                handle_ie_meta=self.handle_ie_meta,
-                handle_singlefile_meta=self.handle_singlefile_meta,
-                handle_savepagewe_meta=self.handle_savepagewe_meta,
-                handle_maoxian_meta=self.handle_maoxian_meta,
-                )
-            indexed = yield from indexer.run([index_file])
+                # generate meta
+                indexer = Indexer(self.book,
+                    handle_ie_meta=self.handle_ie_meta,
+                    handle_singlefile_meta=self.handle_singlefile_meta,
+                    handle_savepagewe_meta=self.handle_savepagewe_meta,
+                    handle_maoxian_meta=self.handle_maoxian_meta,
+                    )
+                indexed = yield from indexer.run([index_file])
 
-            if os.path.normcase(basename) != os.path.normcase('index.html'):
+                if os.path.normcase(basename) != os.path.normcase('index.html'):
+                    with open(index_file, 'w', encoding='UTF-8') as fh:
+                        fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={quote(basename)}">')
+            else:
+                # generate new index.html (with same file time) for the indexer
                 with open(index_file, 'w', encoding='UTF-8') as fh:
                     fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={quote(basename)}">')
+                st = os.stat(entry)
+                os.utime(index_file, (st.st_atime, st.st_mtime))
+
+                # generate meta
+                indexer = Indexer(self.book,
+                    handle_ie_meta=self.handle_ie_meta,
+                    handle_singlefile_meta=self.handle_singlefile_meta,
+                    handle_savepagewe_meta=self.handle_savepagewe_meta,
+                    handle_maoxian_meta=self.handle_maoxian_meta,
+                    )
+                indexed = yield from indexer.run([index_file])
 
         else:
             src = entry
@@ -211,6 +228,9 @@ class Converter:
             meta = self.book.meta[id]
             if not meta.get('title'):
                 meta['title'] = basename
+
+            if os.path.isfile(entry) and ext not in FIND_INDEX_EXT:
+                meta['type'] = 'file'
 
             # add to parent
             parent_id = paths[-1]
