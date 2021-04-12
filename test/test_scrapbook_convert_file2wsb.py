@@ -210,6 +210,76 @@ page content
             })
 
     def test_path03(self):
+        """Test hierarchical folders for *.html (no preserve filename)
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'folder2', 'mypage.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        for info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        id_folder1, id_folder2, id_item = book.meta.keys()
+        self.assertDictEqual(book.meta, {
+            id_folder1: {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': id_folder1,
+                'modify': id_folder1,
+                },
+            id_folder2: {
+                'title': 'folder2',
+                'type': 'folder',
+                'create': id_folder2,
+                'modify': id_folder2,
+                },
+            id_item: {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': f'{id_item}.html',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'http://example.com',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_folder1,
+                ],
+            id_folder1: [
+                id_folder2,
+                ],
+            id_folder2: [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.html'),
+            })
+
+    def test_path04(self):
         """<input dir>/index.html should be indexed as single html page
         """
         index_file = os.path.join(self.test_input, 'index.html')
@@ -259,6 +329,57 @@ page content
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
+            })
+
+    def test_path05(self):
+        """<input dir>/index.html should be indexed as single html page (no preserve filename)
+        """
+        index_file = os.path.join(self.test_input, 'index.html')
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        for info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        id_item, = book.meta.keys()
+        self.assertDictEqual(book.meta, {
+            id_item: {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': f'{id_item}.html',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'http://example.com',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.html'),
             })
 
     def test_supporting_folder01(self):
@@ -706,7 +827,7 @@ page content
             os.path.join(self.test_output, f'{id_item}.maff'),
             })
 
-    def test_other(self):
+    def test_other01(self):
         """Test hierarchical folders for normal file
         """
         index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.txt')
@@ -755,6 +876,55 @@ page content
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
             os.path.join(self.test_output, id_item, 'mypage.txt'),
+            })
+
+    def test_other02(self):
+        """Test hierarchical folders for normal file (no preserve filename)
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.txt')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC 中文')
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(index_file, (ts, ts))
+
+        for info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        id_folder1, id_item = book.meta.keys()
+        self.assertDictEqual(book.meta, {
+            id_folder1: {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': id_folder1,
+                'modify': id_folder1,
+                },
+            id_item: {
+                'title': 'mypage.txt',
+                'type': 'file',
+                'index': f'{id_item}.txt',
+                'create': id_item,
+                'modify': '20200102030405067',
+                'source': '',
+                'icon': '',
+                'comment': '',
+                },
+            })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                id_folder1,
+                ],
+            id_folder1: [
+                id_item,
+                ],
+            })
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, f'{id_item}.txt'),
             })
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.Indexer', side_effect=SystemExit)

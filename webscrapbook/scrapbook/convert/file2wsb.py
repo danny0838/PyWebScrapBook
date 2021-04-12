@@ -19,6 +19,7 @@ FIND_INDEX_EXT = {'.html', '.htz', '.maff', '.htm'}
 class Converter:
     def __init__(self, input, output, *,
             data_folder_suffixes=None,
+            preserve_filename=True,
             handle_ie_meta=True,
             handle_singlefile_meta=True,
             handle_savepagewe_meta=True,
@@ -29,6 +30,7 @@ class Converter:
         self.data_folder_suffixes = (
             [k for k in dict.fromkeys(os.path.normcase(s.strip()) for s in data_folder_suffixes) if k]
             if data_folder_suffixes is not None else DEFAULT_DATA_FOLDER_SUFFIXES)
+        self.preserve_filename = preserve_filename
         self.handle_ie_meta = handle_ie_meta
         self.handle_singlefile_meta = handle_singlefile_meta
         self.handle_savepagewe_meta = handle_savepagewe_meta
@@ -143,7 +145,8 @@ class Converter:
 
         # copy data files
         supporting_folder = self._get_supporting_folder(entry)
-        if supporting_folder or (os.path.isfile(entry) and not util.is_archive(entry)):
+        if (supporting_folder or
+                (self.preserve_filename and os.path.isfile(entry) and not util.is_archive(entry))):
             dst_dir = os.path.join(self.book.data_dir, id)
             os.makedirs(dst_dir, exist_ok=True)
 
@@ -262,6 +265,7 @@ class Converter:
 
 def run(input, output, *,
         data_folder_suffixes=None,
+        no_preserve_filename=False,
         ignore_ie_meta=False,
         ignore_singlefile_meta=False,
         ignore_savepagewe_meta=False,
@@ -272,6 +276,7 @@ def run(input, output, *,
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
     yield Info('info', f'data_folder_suffixes: {DEFAULT_DATA_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')
+    yield Info('info', f'no preserve filename: {no_preserve_filename}')
     yield Info('info', f'ignore IE meta: {ignore_ie_meta}')
     yield Info('info', f'ignore SingleFile meta: {ignore_singlefile_meta}')
     yield Info('info', f'ignore Save Page WE meta: {ignore_savepagewe_meta}')
@@ -281,6 +286,7 @@ def run(input, output, *,
     try:
         conv = Converter(input, output,
             data_folder_suffixes=data_folder_suffixes,
+            preserve_filename=not no_preserve_filename,
             handle_ie_meta=not ignore_ie_meta,
             handle_singlefile_meta=not ignore_singlefile_meta,
             handle_savepagewe_meta=not ignore_savepagewe_meta,
