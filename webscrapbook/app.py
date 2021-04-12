@@ -562,13 +562,15 @@ class Request(flask.Request):
     @cached_property
     def localpath(self):
         """Corresponding filesystem path of the requested path."""
-        return os.path.normpath(os.path.join(host.chroot, self.path.strip('/')))
+        # Don't use os.path.join as if may result in an arbitrary path if
+        # self.path is an absolute path on Windows.
+        return os.path.normpath(host.chroot + os.sep + self.path.strip('/'))
 
     @cached_property
     def localpaths(self):
         """Like localpath, but with ZIP subpaths resolved."""
         paths = self.paths.copy()
-        paths[0] = os.path.normpath(os.path.join(host.chroot, paths[0].lstrip('/')))
+        paths[0] = os.path.normpath(host.chroot + os.sep + paths[0].lstrip('/'))
         return paths
 
     @cached_property
