@@ -75,7 +75,7 @@ class Config():
             'ssl_key': '',
             'ssl_cert': '',
             'ssl_pw': '',
-            'browse': 'true',
+            'browse': 'false',
             },
         'browser': {
             'command': '',

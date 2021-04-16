@@ -393,7 +393,7 @@ the root directory.
 
 Set true to launch the browser when the server starts, and false otherwise.
 
-(default: `true`)
+(default: `false`)
 
 
 ### `[browser]` section

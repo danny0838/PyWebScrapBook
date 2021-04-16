@@ -218,6 +218,7 @@ command =
             f.write(r"""[server]
 host = 127.0.0.1
 port = 80
+browse = true
 
 [browser]
 command = "C:\Program Files\Mozilla Firefox\firefox.exe" %s &
