@@ -28,6 +28,8 @@ After installation, `wsb`, `webscrapbook`, and `wsbview` will be available from 
 
 ### Usage overview
 
+Run `wsb --help` for help about available commands, which looks like:
+
     usage: wsb [-h] [--version] [--root ROOT] COMMAND ...
 
     positional arguments:
@@ -52,6 +54,8 @@ After installation, `wsb`, `webscrapbook`, and `wsbview` will be available from 
       -h, --help   show this help message and exit
       --version    show version information and exit
       --root ROOT  root directory to manipulate (default: current working directory)
+
+Run `wsb <command> --help` for help about `<command>`. For example, `wsb config --help` for help about `wsb config`.
 
 ### Host a scrapbook
 
@@ -79,16 +83,10 @@ The `wsbview` executable supports opening an archive page (HTZ or MAFF) to view 
 
 Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the path of `wsbview` executable, and set default application of MAFF/HTZ file to that executable to open them directly in the browser with double-click.
 
+### Configuration
+
+Run `wsb config -be` to edit configs for CWD. For documentation about configs, run `wsb help config`, or [read online](https://github.com/danny0838/PyWebScrapBook/blob/master/webscrapbook/resources/config.md).
+
 ### Further documentation
 
-Run below command for help about available commands:
-
-    wsb --help
-
-For documentation about configs, run:
-
-    wsb help config
-
-or read [online](https://github.com/danny0838/PyWebScrapBook/blob/master/webscrapbook/resources/config.md).
-
-For more useful ways to configure PyWebScrapBook alongside WebScrapBook, visit the documentation wiki for [WebScrapBook](https://github.com/danny0838/webscrapbook/wiki/Backend).
+For more tips about how to configure PyWebScrapBook alongside WebScrapBook, visit [the documentation wiki for WebScrapBook](https://github.com/danny0838/webscrapbook/wiki/Backend).
