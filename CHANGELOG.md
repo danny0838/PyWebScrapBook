@@ -3,6 +3,9 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.40.0] - 2021-04-17
+* `server.browse` now defaults to `false`.
+
 ## [0.39.0] - 2021-04-12
 * Fixed a security issue that may allow the user to access any directory on Windows.
 * Fixed an issue that `file2wsb` converter does not handle a page named `index.html` with a support folder.
