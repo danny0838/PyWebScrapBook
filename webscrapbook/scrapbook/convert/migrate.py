@@ -621,6 +621,12 @@ function () {
                             markup.attrs[j] = ('data-scrapbook-id',  self._convert_legacy_scrapbook_elem_id(value))
                             markup_changed = True
 
+                        # convert data-sb-orig-<attr>
+                        elif attr.startswith('data-sb-orig-'):
+                            attr = f'data-scrapbook-orig-attr-{attr[13:]}'
+                            markup.attrs[j] = (attr, value)
+                            markup_changed = True
+
                     if type and not has_data_sb_obj:
                         markup.attrs.append(('data-scrapbook-elem', type))
                         markup_changed = True

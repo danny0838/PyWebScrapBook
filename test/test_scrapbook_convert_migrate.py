@@ -623,5 +623,59 @@ Page3 content
             output = fh.read()
             self.assertEqual(output, expected)
 
+    def test_data_other(self):
+        """Convert other legacy ScrapBook attributes.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """\
+<!DOCTYPE html>
+<html>
+<head>
+<title>My page</title>
+<link rel="stylesheet" href="urn:scrapbook-download-error:https://example.com/style.css">
+</head>
+<body>
+<blockquote><img src="urn:scrapbook-download-skip:https://example.com/picture.jpg"></blockquote>
+<blockquote><a data-sb-orig-href="javascript:alert('hello');">script</a></blockquote>
+<blockquote><a href="mypage.html" data-sb-indepth="true">in-depth</a></blockquote>
+</body>
+</html>
+"""
+
+        expected = """\
+<!DOCTYPE html>
+<html>
+<head>
+<title>My page</title>
+<link rel="stylesheet" href="urn:scrapbook-download-error:https://example.com/style.css">
+</head>
+<body>
+<blockquote><img src="urn:scrapbook-download-skip:https://example.com/picture.jpg"></blockquote>
+<blockquote><a data-scrapbook-orig-attr-href="javascript:alert('hello');">script</a></blockquote>
+<blockquote><a href="mypage.html" data-sb-indepth="true">in-depth</a></blockquote>
+</body>
+</html>
+"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output, expected)
+
 if __name__ == '__main__':
     unittest.main()
