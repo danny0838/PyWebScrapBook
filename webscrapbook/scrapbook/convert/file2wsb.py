@@ -9,11 +9,10 @@ from ... import WSB_DIR
 from ... import util
 from ...util import Info
 from ..host import Host
-from ..check import Indexer
+from ..indexer import FIND_INDEX_EXT, Indexer
 
 
 DEFAULT_DATA_FOLDER_SUFFIXES = ['.files', '_files']
-FIND_INDEX_EXT = {'.html', '.htz', '.maff', '.htm'}
 
 
 class Converter:
