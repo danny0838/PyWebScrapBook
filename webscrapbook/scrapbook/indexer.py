@@ -410,6 +410,25 @@ class FavIconCacher:
         return cached
 
     def _cache_favicon(self, id):
+        yield Info('debug', f'Caching favicon for "{id}"...')
+
+        url = self.book.meta[id].get('icon')
+        if not url:
+            yield Info('debug', f'Skipped for "{id}": no favicon to cache.')
+            return None
+
+        urlparts = urlsplit(url)
+
+        index = self.book.meta[id].get('index', '')
+
+        if urlparts.scheme:
+            return (yield from self._cache_favicon_absolute_url(id, index, url))
+
+        return None
+
+    def _cache_favicon_absolute_url(self, id, index, url):
+        """cache absolute URL (also works for data URL)
+        """
         def verify_mime(mime):
             if not mime:
                 yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unknown MIME type')
@@ -446,40 +465,25 @@ class FavIconCacher:
                 shutil.copyfileobj(fsrc, fw)
             return fdst
 
-        yield Info('debug', f'Caching favicon for "{id}"...')
-
-        url = self.book.meta[id].get('icon')
-        if not url:
-            yield Info('debug', f'Skipped for "{id}": no favicon to cache.')
+        try:
+            r = urlopen(url)
+        except URLError as exc:
+            yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unable to fetch favicon URL.', exc=exc)
+            return None
+        except (ValueError, binascii.Error) as exc:
+            yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unsupported or malformatted URL: {exc}', exc=exc)
             return None
 
-        urlparts = urlsplit(url)
-
-        index = self.book.meta[id].get('index', '')
-
-        # cache absolute URL (also works for data URL)
-        if urlparts.scheme:
-            try:
-                r = urlopen(url)
-            except URLError as exc:
-                yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unable to fetch favicon URL.', exc=exc)
-                return None
-            except (ValueError, binascii.Error) as exc:
-                yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unsupported or malformatted URL: {exc}', exc=exc)
+        with r as r:
+            mime, _ = util.parse_content_type(r.info()['content-type'])
+            if not (yield from verify_mime(mime)):
                 return None
 
-            with r as r:
-                mime, _ = util.parse_content_type(r.info()['content-type'])
-                if not (yield from verify_mime(mime)):
-                    return None
+            cache_file = yield from cache_fh(r)
 
-                cache_file = yield from cache_fh(r)
-
-            self.book.meta[id]['icon'] = util.get_relative_url(
-                cache_file,
-                os.path.join(self.book.data_dir, os.path.dirname(index)),
-                path_is_dir=False,
-                )
-            return cache_file
-
-        return None
+        self.book.meta[id]['icon'] = util.get_relative_url(
+            cache_file,
+            os.path.join(self.book.data_dir, os.path.dirname(index)),
+            path_is_dir=False,
+            )
+        return cache_file

@@ -988,7 +988,7 @@ page content
             })
 
 class TestFavIconCacher(Test):
-    def test_cache01(self):
+    def test_cache_absolute_url(self):
         """Cache absolute URL.
 
         Test using data URL. Should also work for a remote URL.
