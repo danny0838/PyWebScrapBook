@@ -251,13 +251,11 @@ class Indexer:
             if is_webpage:
                 favicon_elem = next(iter_favicon_elems(tree), None)
                 icon = favicon_elem.attrib.get('href', '') if favicon_elem is not None else ''
-                if icon and util.is_archive(index):
-                    icon = yield from self._get_archive_favicon(id, index, icon)
                 meta['icon'] = icon
             else:
                 meta['icon'] = ''
 
-        generator = FavIconCacher(self.book)
+        generator = FavIconCacher(self.book, handle_archive=True)
         yield from generator.run([id])
 
         # source
@@ -344,54 +342,12 @@ class Indexer:
 
         meta['source'] = source
 
-    def _get_archive_favicon(self, id, index, url):
-        """Convert in-zip relative favicon path to data URL.
-        """
-        # skip invalid in-zip-path
-        if url.startswith('../'):
-            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid ZIP path')
-            return ''
-
-        urlparts = urlsplit(url)
-
-        # skip absolute URL
-        if urlparts.scheme:
-            yield Info('debug', f'Skipped reading archive favicon "{util.crop(url, 256)}" for "{id}": absolute URL')
-            return url
-
-        subpath = unquote(urlparts.path)
-        mime, _ = mimetypes.guess_type(subpath)
-        file = os.path.join(self.book.data_dir, index)
-
-        if util.is_htz(index):
-            try:
-                with zipfile.ZipFile(file) as zh:
-                    bytes_ = zh.read(subpath)
-            except (OSError, zipfile.BadZipFile, KeyError) as exc:
-                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
-
-        elif util.is_maff(index):
-            try:
-                page = next(iter(util.get_maff_pages(file)), None)
-                if not page:
-                    return ''
-
-                refpath = page.indexfilename
-                if not refpath:
-                    return ''
-
-                subpath = os.path.join(os.path.dirname(refpath), subpath).replace('\\', '/')
-                with zipfile.ZipFile(file) as zh:
-                    bytes_ = zh.read(subpath)
-            except (OSError, zipfile.BadZipFile, KeyError):
-                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
-
-        return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
-
 
 class FavIconCacher:
-    def __init__(self, book):
+    def __init__(self, book, handle_archive=False):
         self.book = book
+        self.handle_archive = handle_archive
+
         self.favicons = {}
 
     def run(self, item_ids=None):
@@ -423,6 +379,13 @@ class FavIconCacher:
 
         if urlparts.scheme:
             return (yield from self._cache_favicon_absolute_url(id, index, url))
+
+        if util.is_archive(index):
+            if self.handle_archive:
+                url = yield from self._get_archive_favicon(id, index, url, unquote(urlparts.path))
+                if url:
+                    return (yield from self._cache_favicon_absolute_url(id, index, url))
+            return None
 
         return None
 
@@ -487,3 +450,43 @@ class FavIconCacher:
             path_is_dir=False,
             )
         return cache_file
+
+    def _get_archive_favicon(self, id, index, url, subpath):
+        """Convert in-zip relative favicon path to data URL.
+        """
+        # skip invalid in-zip-path
+        if subpath.startswith('../'):
+            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid ZIP path')
+            return None
+
+        file = os.path.join(self.book.data_dir, index)
+
+        if util.is_htz(index):
+            try:
+                with zipfile.ZipFile(file) as zh:
+                    bytes_ = zh.read(subpath)
+            except (OSError, zipfile.BadZipFile, KeyError) as exc:
+                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
+                return None
+
+        elif util.is_maff(index):
+            page = next(iter(util.get_maff_pages(file)), None)
+            if not page:
+                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid MAFF')
+                return None
+
+            refpath = page.indexfilename
+            if not refpath:
+                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid MAFF')
+                return None
+
+            try:
+                subpath = os.path.dirname(refpath) + '/' + subpath
+                with zipfile.ZipFile(file) as zh:
+                    bytes_ = zh.read(subpath)
+            except (OSError, zipfile.BadZipFile, KeyError) as exc:
+                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
+                return None
+
+        mime, _ = mimetypes.guess_type(subpath)
+        return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'

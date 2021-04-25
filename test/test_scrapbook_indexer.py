@@ -1080,5 +1080,97 @@ scrapbook.meta({
                 },
             })
 
+    def test_cache_archive01(self):
+        """Cache in-ZIP path
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000001": {
+    "type": "",
+    "index": "20200101000000001.htz",
+    "icon": "favicon.bmp"
+  },
+  "20200101000000002": {
+    "type": "",
+    "index": "20200101000000002.maff",
+    "icon": "favicon.bmp"
+  }
+})""")
+
+        with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000001.htz'), 'w') as zh:
+            zh.writestr('index.html', 'dummy')
+            zh.writestr('favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000002.maff'), 'w') as zh:
+            zh.writestr('20200101000000000/index.html', 'dummy')
+            zh.writestr('20200101000000000/favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book, handle_archive=True)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001.htz',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002.maff',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                },
+            })
+
+    def test_cache_archive02(self):
+        """Cache in-ZIP path off
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000001": {
+    "type": "",
+    "index": "20200101000000001.htz",
+    "icon": "favicon.bmp"
+  },
+  "20200101000000002": {
+    "type": "",
+    "index": "20200101000000002.maff",
+    "icon": "favicon.bmp"
+  }
+})""")
+
+        with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000001.htz'), 'w') as zh:
+            zh.writestr('index.html', 'dummy')
+            zh.writestr('favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000002.maff'), 'w') as zh:
+            zh.writestr('20200101000000000/index.html', 'dummy')
+            zh.writestr('20200101000000000/favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book, handle_archive=False)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001.htz',
+                'icon': 'favicon.bmp',
+                },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002.maff',
+                'icon': 'favicon.bmp',
+                },
+            })
+
 if __name__ == '__main__':
     unittest.main()
