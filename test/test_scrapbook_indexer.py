@@ -1172,5 +1172,71 @@ scrapbook.meta({
                 },
             })
 
+    def test_cache_file01(self):
+        """Cache relative path
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html",
+    "icon": "favicon.bmp"
+  }
+})""")
+
+        index_dir = os.path.join(self.test_root, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
+        with open(os.path.join(index_dir, 'favicon.bmp'), 'wb') as fh:
+            fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book, handle_file=True)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                },
+            })
+
+    def test_cache_file02(self):
+        """Cache relative path off
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html",
+    "icon": "favicon.bmp"
+  }
+})""")
+
+        index_dir = os.path.join(self.test_root, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
+        with open(os.path.join(index_dir, 'favicon.bmp'), 'wb') as fh:
+            fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book, handle_file=False)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': 'favicon.bmp',
+                },
+            })
+
 if __name__ == '__main__':
     unittest.main()

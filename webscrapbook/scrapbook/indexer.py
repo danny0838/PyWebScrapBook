@@ -344,11 +344,13 @@ class Indexer:
 
 
 class FavIconCacher:
-    def __init__(self, book, handle_archive=False):
+    def __init__(self, book, handle_archive=False, handle_file=False):
         self.book = book
         self.handle_archive = handle_archive
+        self.handle_file = handle_file
 
         self.favicons = {}
+        self.favicon_dir = os.path.normcase(os.path.join(self.book.tree_dir, 'favicon', ''))
 
     def run(self, item_ids=None):
         self.book.load_meta_files()
@@ -386,6 +388,11 @@ class FavIconCacher:
                 if url:
                     return (yield from self._cache_favicon_absolute_url(id, index, url))
             return None
+
+        if self.handle_file:
+            url = yield from self._get_file_favicon(id, index, url, unquote(urlparts.path))
+            if url:
+                return (yield from self._cache_favicon_absolute_url(id, index, url))
 
         return None
 
@@ -487,6 +494,25 @@ class FavIconCacher:
             except (OSError, zipfile.BadZipFile, KeyError) as exc:
                 yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
                 return None
+
+        mime, _ = mimetypes.guess_type(subpath)
+        return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
+
+    def _get_file_favicon(self, id, index, url, subpath):
+        """Convert relative favicon path to data URL.
+        """
+        file = os.path.normpath(os.path.join(self.book.data_dir, index, '..', subpath))
+
+        # skip if already in favicon dir
+        if os.path.normcase(file).startswith(self.favicon_dir):
+            yield Info('debug', f'Skipped favicon "{util.crop(url, 256)}" for "{id}": already in favicon folder')
+            return None
+
+        try:
+            with open(file, 'rb') as fh:
+                bytes_ = fh.read()
+        except OSError as exc:
+            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
 
         mime, _ = mimetypes.guess_type(subpath)
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
