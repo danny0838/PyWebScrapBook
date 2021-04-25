@@ -384,28 +384,28 @@ class FavIconCacher:
 
         if util.is_archive(index):
             if self.handle_archive:
-                url = yield from self._get_archive_favicon(id, index, url, unquote(urlparts.path))
-                if url:
-                    return (yield from self._cache_favicon_absolute_url(id, index, url))
+                dataurl = yield from self._get_archive_favicon(id, index, url, unquote(urlparts.path))
+                if dataurl:
+                    return (yield from self._cache_favicon_absolute_url(id, index, dataurl, url))
             return None
 
         if self.handle_file:
-            url = yield from self._get_file_favicon(id, index, url, unquote(urlparts.path))
-            if url:
-                return (yield from self._cache_favicon_absolute_url(id, index, url))
+            dataurl = yield from self._get_file_favicon(id, index, url, unquote(urlparts.path))
+            if dataurl:
+                return (yield from self._cache_favicon_absolute_url(id, index, dataurl, url))
 
         return None
 
-    def _cache_favicon_absolute_url(self, id, index, url):
+    def _cache_favicon_absolute_url(self, id, index, url, source_url=None):
         """cache absolute URL (also works for data URL)
         """
         def verify_mime(mime):
             if not mime:
-                yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unknown MIME type')
+                yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unknown MIME type')
                 return False
 
             if not (mime.startswith('image/') or mime == 'application/octet-stream'):
-                yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": invalid image MIME type "{mime}"')
+                yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": invalid image MIME type "{mime}"')
                 return False
 
             return True
@@ -424,10 +424,10 @@ class FavIconCacher:
             fdst = os.path.join(self.book.tree_dir, 'favicon', hash_ + ext)
 
             if os.path.isfile(fdst):
-                yield Info('info', f'Use saved favicon for "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
+                yield Info('info', f'Use saved favicon for "{util.crop(source_url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
                 return fdst
 
-            yield Info('info', f'Saving favicon "{util.crop(url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
+            yield Info('info', f'Saving favicon "{util.crop(source_url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
             self.book.backup(fdst)
@@ -435,13 +435,16 @@ class FavIconCacher:
                 shutil.copyfileobj(fsrc, fw)
             return fdst
 
+        if source_url is None:
+            source_url = url
+
         try:
             r = urlopen(url)
         except URLError as exc:
-            yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unable to fetch favicon URL.', exc=exc)
+            yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unable to fetch favicon URL.', exc=exc)
             return None
         except (ValueError, binascii.Error) as exc:
-            yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unsupported or malformatted URL: {exc}', exc=exc)
+            yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unsupported or malformatted URL: {exc}', exc=exc)
             return None
 
         with r as r:
