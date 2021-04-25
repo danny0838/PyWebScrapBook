@@ -271,7 +271,7 @@ def run(input, output, *,
         ignore_maoxian_meta=False,
         ):
     start = time.time()
-    yield Info('info', 'conversion mode: hierarchial files --> WebScrapBook')
+    yield Info('info', 'conversion mode: hierarchical files --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
     yield Info('info', f'data_folder_suffixes: {DEFAULT_DATA_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')

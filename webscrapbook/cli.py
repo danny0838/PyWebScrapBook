@@ -637,7 +637,7 @@ migrate from older WebScrapBook to the latest.
         help="""the output directory (default: in-place)""")
     parser_convert_migrate.add_argument('--book', dest='book_ids', metavar='ID',
         nargs='+', action='store',
-        help="""the book ID(s) to convert. (default: all books)""")
+        help="""ID of the book(s) to convert (default: all books)""")
     parser_convert_migrate.add_argument('--convert-data-files', default=True,
         action='store_true',
         help="""convert data files for items (default)""")
@@ -648,7 +648,7 @@ migrate from older WebScrapBook to the latest.
         action='store_true',
         help="""use native HTML tags for converted annotations for better
 compatibility with very old browsers (e.g. IE < 9), with the cost of increased possibility
-to conflict with the web page stylesheets (default)""")
+to conflict with the web page stylesheets""")
     parser_convert_migrate.add_argument('--no-use-native-tags', dest='use_native_tags', 
         action='store_false',
         help="""inverse of --use-native-tags (default)""")
@@ -662,7 +662,7 @@ to conflict with the web page stylesheets (default)""")
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Convert from legacy ScrapBook to WebScrapBook.
 
-Fulltext cache is not converted and requires a manually rebuild.
+Fulltext cache is not converted and requires a manual rebuild.
 
 Known supported legacy scrapbook implementations:
 - ScrapBook X (legacy Firefox Add-on)
@@ -676,7 +676,7 @@ Known supported legacy scrapbook implementations:
         help="""the output directory""")
     parser_convert_sb2wsb.add_argument('--no-data-files', default=False, action='store_true',
         help="""do not convert data files (set this if there's something wrong
-for the conversion, and run migrate* converter for advanced options)""")
+for the conversion, and run "wsb convert migrate" afterwards for advanced options)""")
     parser_convert_sb2wsb.add_argument('--no-backup', default=False, action='store_true',
         help="""do not backup unneeded legacy scrapbook files""")
     parser_convert_sb2wsb.add_argument('--force', default=False, action='store_true',
@@ -689,7 +689,7 @@ for the conversion, and run migrate* converter for advanced options)""")
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Convert from WebScrapBook to legacy ScrapBook.
 
-Fulltext cache is not converted and requires a manually rebuild.
+Fulltext cache is not converted and requires a manual rebuild.
 
 Note that certain information may lose permanently, such as:
 * items appended to multiple parents (preserve only the first occurence)
@@ -709,7 +709,7 @@ such as:
         help="""the output directory""")
     parser_convert_wsb2sb.add_argument('--book', dest='book_id', metavar='ID',
         default='', action='store',
-        help="""the book ID to convert. (default: "")""")
+        help="""ID of the book to convert (default: "")""")
     parser_convert_wsb2sb.add_argument('--no-data-files', default=False, action='store_true',
         help="""do not convert data files (set this if there's something wrong
 for the conversion)""")
@@ -758,7 +758,7 @@ Explorer or a Chromium-based browser""")
         help="""the output directory""")
     parser_convert_wsb2file.add_argument('--book', dest='book_id', metavar='ID',
         default='', action='store',
-        help="""the book ID to convert. (default: "")""")
+        help="""ID of the book to convert (default: "")""")
     parser_convert_wsb2file.add_argument('--no-prefix', dest='prefix', default=True, action='store_false',
         help="""don't prefix output files with position number.""")
     parser_convert_wsb2file.add_argument('--force', default=False, action='store_true',
@@ -770,9 +770,13 @@ Explorer or a Chromium-based browser""")
     parser_help = subparsers.add_parser('help',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_help),
-        help="""show detailed information about certain topics""")
+        help="""show detailed information about certain topics""",
+        epilog="""\
+Available TOPICs:
+  "config"
+""")
     parser_help.set_defaults(func=cmd_help)
-    parser_help.add_argument('topic', default=None, action='store',
+    parser_help.add_argument('topic', metavar='TOPIC', default=None, action='store',
         choices=['config'],
         help="""the topic for details""")
 

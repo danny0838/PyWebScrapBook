@@ -635,7 +635,7 @@ def run(input, output, book_id='', no_data_files=False):
     yield Info('info', 'conversion mode: WebScrapBook --> ScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
-    yield Info('info', f'book ID: "{book_id}"')
+    yield Info('info', f'book: "{book_id}"')
     yield Info('info', f'no-data-files: {no_data_files}')
     yield Info('info', '')
 

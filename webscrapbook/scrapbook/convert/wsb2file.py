@@ -137,10 +137,10 @@ class Converter:
 
 def run(input, output, book_id='', prefix=True):
     start = time.time()
-    yield Info('info', 'conversion mode: WebScrapBook --> hierarchial files')
+    yield Info('info', 'conversion mode: WebScrapBook --> hierarchical files')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
-    yield Info('info', f'book ID: "{book_id}"')
+    yield Info('info', f'book: "{book_id}"')
     yield Info('info', f'prefix: {prefix}')
     yield Info('info', '')
 
