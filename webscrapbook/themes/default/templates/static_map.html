@@ -237,7 +237,8 @@ var scrapbook = {
         }
         default: {
           if (meta.index) {
-            a.href = scrapbook.conf.dataDir + scrapbook.escapeFilename(meta.index);
+            a.href = scrapbook.conf.dataDir + scrapbook.escapeFilename(meta.index)
+                + (meta.source || '').replace(/^.*?(?=#|$)/, '');
           }
           break;
         }
