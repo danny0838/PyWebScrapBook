@@ -398,12 +398,11 @@ class FavIconCacher:
         self.book.load_meta_files()
         cached = {}
 
-        if item_ids is not None:
-            id_pool = dict.fromkeys(id for id in item_ids if id in self.book.meta)
-        else:
-            id_pool = dict.fromkeys(self.book.meta)
+        # handle all items if none specified
+        for id in item_ids or self.book.meta:
+            if id not in self.book.meta:
+                continue
 
-        for id in id_pool:
             cache_file = yield from self._cache_favicon(id)
             if cache_file:
                 cached[id] = cache_file

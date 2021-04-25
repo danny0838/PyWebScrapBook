@@ -29,20 +29,16 @@ class Converter:
         yield Info('info', 'Applying migration...')
         host = Host(self.output)
 
-        book_ids = self.book_ids
-        if not book_ids:
-            book_ids = list(host.books)
-
-        avail_book_ids = set(host.books)
-
-        for book_id in book_ids:
-            # skip invalid book ID
-            if book_id not in avail_book_ids:
+        # handle all books if none specified
+        for book_id in self.book_ids or host.books:
+            try:
+                book = host.books[book_id]
+            except KeyError:
+                # skip invalid book ID
                 yield Info('warn', f'Skipped invalid book "{book_id}".')
                 continue
 
             yield Info('info', f'Handling book "{book_id}"...')
-            book = host.books[book_id]
             book.load_meta_files()
             book.load_toc_files()
 
