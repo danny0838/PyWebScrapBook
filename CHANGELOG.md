@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.41.0] - 2021-04-27
+* Hash part of source URL is now considered when viewing an item in the generated map file.
+* Added support of `limit:` command for search page.
+* Added `items` converter.
+
 ## [0.40.0] - 2021-04-17
 * `server.browse` now defaults to `false`.
 
