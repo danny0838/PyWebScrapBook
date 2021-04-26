@@ -988,7 +988,7 @@ page content
             })
 
 class TestFavIconCacher(Test):
-    def test_cache_absolute_url(self):
+    def test_cache_absolute_url01(self):
         """Cache absolute URL.
 
         Test using data URL. Should also work for a remote URL.
@@ -1017,6 +1017,66 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                },
+            })
+
+    def test_cache_absolute_url02(self):
+        """Test Image with MIME = application/octet-stream
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": "",
+    "create": "20200101000000000",
+    "modify": "20200101000000000",
+    "icon": "data:application/octet-stream;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
+  }
+})""")
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bin',
+                },
+            })
+
+    def test_cache_absolute_url03(self):
+        """Test Image with an invalid MIME should not be cached
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": "",
+    "create": "20200101000000000",
+    "modify": "20200101000000000",
+    "icon": "data:text/plain;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
+  }
+})""")
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': 'data:text/plain;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
                 },
             })
 

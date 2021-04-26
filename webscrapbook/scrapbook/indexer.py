@@ -434,7 +434,7 @@ class FavIconCacher:
                 yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": unknown MIME type')
                 return False
 
-            if not mime.startswith('image/') or mime == 'application/octet-stream':
+            if not (mime.startswith('image/') or mime == 'application/octet-stream'):
                 yield Info('error', f'Unable to cache favicon "{util.crop(url, 256)}" for "{id}": invalid image MIME type "{mime}"')
                 return False
 
