@@ -379,8 +379,17 @@ class FavIconCacher:
 
         index = self.book.meta[id].get('index', '')
 
+        # absolute URL
         if urlparts.scheme:
             return (yield from self._cache_favicon_absolute_url(id, index, url))
+
+        # skip protocol-relative URL
+        if urlparts.netloc:
+            return None
+
+        # skip pure query or hash URL
+        if not urlparts.path:
+            return None
 
         if util.is_archive(index):
             if self.handle_archive:
