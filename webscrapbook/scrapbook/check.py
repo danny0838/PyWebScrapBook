@@ -10,7 +10,7 @@ from datetime import datetime
 
 from .. import WSB_DIR
 from .host import Host
-from . import book as wsb_book
+from .book import TreeFileError, Book
 from .indexer import FIND_INDEX_EXT, Indexer, FavIconCacher
 from .indexer import generate_item_create, generate_item_modify
 from .. import util
@@ -106,7 +106,7 @@ class BookChecker:
     def _load_tree(self):
         try:
             self.book.load_meta_files()
-        except wsb_book.TreeFileError as exc:
+        except TreeFileError as exc:
             raise RuntimeError(f'Malformed meta file '
                 f'"{self.book.get_subpath(exc.filename)}": {exc}') from exc
         except OSError as exc:
@@ -115,7 +115,7 @@ class BookChecker:
 
         try:
             self.book.load_toc_files()
-        except wsb_book.TreeFileError as exc:
+        except TreeFileError as exc:
             raise RuntimeError(f'Malformed TOC file '
                 f'"{self.book.get_subpath(exc.filename)}": {exc}') from exc
         except OSError as exc:
@@ -137,7 +137,7 @@ class BookChecker:
             yield Info('debug', f'Checking item meta for "{id}"')
 
             # id
-            if id in wsb_book.Book.SPECIAL_ITEM_ID:
+            if id in Book.SPECIAL_ITEM_ID:
                 yield Info('error', f'"{id}": invalid ID (special item)')
                 self.cnt_errors += 1
                 items_invalid_id[id] = True
@@ -165,7 +165,7 @@ class BookChecker:
                     yield Info('warn', f'"{id}": a bookmark item should use "*.htm" as index file.')
                     self.cnt_warns += 1
             else:
-                if type not in wsb_book.Book.TYPES_OPTIONAL_INDEX:
+                if type not in Book.TYPES_OPTIONAL_INDEX:
                     yield Info('error', f'"{id}": missing "index" property.')
                     self.cnt_errors += 1
                     items_missing_index[id] = True
@@ -303,7 +303,7 @@ class BookChecker:
             yield Info('debug', f'Checking item TOC for "{id}"')
 
             # missing meta
-            if not self.book.meta.get(id) and id not in wsb_book.Book.SPECIAL_ITEM_ID:
+            if not self.book.meta.get(id) and id not in Book.SPECIAL_ITEM_ID:
                 yield Info('error', f'"{id}": invalid ID (missing metadata entry)')
                 self.cnt_errors += 1
                 items_missing_meta[id] = True
@@ -313,7 +313,7 @@ class BookChecker:
                 self.seen_in_toc.add(ref_id)
 
                 # special item ID is invalid
-                if ref_id in wsb_book.Book.SPECIAL_ITEM_ID:
+                if ref_id in Book.SPECIAL_ITEM_ID:
                     yield Info('error', f'"{id}": invalid reference ID "{ref_id}" (special item)')
                     self.cnt_errors += 1
                     ref_items_invalid.setdefault(id, {})[ref_id] = True
@@ -328,7 +328,7 @@ class BookChecker:
 
         # items not reachable from TOC
         for id in self.book.meta:
-            if id not in self.seen_in_toc and id not in wsb_book.Book.SPECIAL_ITEM_ID:
+            if id not in self.seen_in_toc and id not in Book.SPECIAL_ITEM_ID:
                 yield Info('error', f'"{id}": not recheable from TOC.')
                 self.cnt_errors += 1
                 items_unreachable[id] = True

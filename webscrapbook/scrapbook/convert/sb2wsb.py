@@ -13,7 +13,7 @@ from ... import WSB_DIR, WSB_CONFIG
 from ... import util
 from ...util import Info
 from ..host import Host
-from .. import book as wsb_book
+from ..book import Book
 
 
 RDF = '{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
@@ -261,7 +261,7 @@ class Converter:
                 meta['marked'] = True
 
             # meta['index']
-            if meta['type'] not in wsb_book.Book.TYPES_OPTIONAL_INDEX:
+            if meta['type'] not in Book.TYPES_OPTIONAL_INDEX:
                 meta['index'] = f'{id}/index.html'
             elif meta.get('icon', '').startswith(f'{RES_PROTOCOL_BASE}data/{id}/'):
                 # Add a dummy index.html to relate the icon file with the item

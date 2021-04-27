@@ -7,7 +7,7 @@ import html
 from ... import util
 from ...util import Info
 from ..host import Host
-from .. import book as wsb_book
+from ..book import Book
 
 
 class Converter:
@@ -39,7 +39,7 @@ class Converter:
             yield from self._export_item(ref_id, idx, idx_len, id_chain, path_chain)
 
     def _export_item(self, id, idx, idx_len, id_chain, path_chain):
-        if id not in self.book.meta or id in wsb_book.Book.SPECIAL_ITEM_ID:
+        if id not in self.book.meta or id in Book.SPECIAL_ITEM_ID:
             return
 
         yield Info('debug', f'Exporting item "{id}"')

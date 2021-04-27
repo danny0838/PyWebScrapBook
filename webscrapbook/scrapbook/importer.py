@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 from .host import Host
-from . import book as wsb_book
+from .book import Book
 from .. import util
 from ..util import Info
 from .._compat.contextlib import nullcontext
@@ -204,7 +204,7 @@ class Importer():
                 export_info = json.load(fh)
 
             id = meta.pop('id')
-            if id in wsb_book.Book.SPECIAL_ITEM_ID:
+            if id in Book.SPECIAL_ITEM_ID:
                 raise RuntimeError(f'invalid ID "{id}"')
 
             # duplicated occurrence of a previously imported id
@@ -333,13 +333,13 @@ class Importer():
         else:
             parent_id = self.target_id
 
-        if parent_id in self.book.meta or parent_id in wsb_book.Book.SPECIAL_ITEM_ID:
+        if parent_id in self.book.meta or parent_id in Book.SPECIAL_ITEM_ID:
             yield from self._insert_to_id(id, parent_id)
             return parent_id
 
         for i in reversed(range(len(export_path) - 1)):
             parent_id = export_path[i]['id']
-            if parent_id in self.book.meta or parent_id in wsb_book.Book.SPECIAL_ITEM_ID:
+            if parent_id in self.book.meta or parent_id in Book.SPECIAL_ITEM_ID:
                 break
         else:
             # for a bad path data not starting from 'root'
