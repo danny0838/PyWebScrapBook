@@ -485,21 +485,19 @@ class FavIconCacher:
                 return None
 
         elif util.is_maff(index):
-            page = next(iter(util.get_maff_pages(file)), None)
-            if not page:
-                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid MAFF')
-                return None
-
-            refpath = page.indexfilename
-            if not refpath:
-                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid MAFF')
-                return None
-
             try:
+                page = next(iter(util.get_maff_pages(file)), None)
+                if not page:
+                    raise RuntimeError('page not found in MAFF')
+
+                refpath = page.indexfilename
+                if not refpath:
+                    raise RuntimeError('index file not found in MAFF')
+
                 subpath = os.path.dirname(refpath) + '/' + subpath
                 with zipfile.ZipFile(file) as zh:
                     bytes_ = zh.read(subpath)
-            except (OSError, zipfile.BadZipFile, KeyError) as exc:
+            except (RuntimeError, OSError, zipfile.BadZipFile, KeyError) as exc:
                 yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
                 return None
 
