@@ -1021,6 +1021,36 @@ scrapbook.meta({
             })
 
     def test_cache_absolute_url02(self):
+        """Cache absolute URL off.
+        """
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "index": "20200101000000000/index.html",
+    "type": "",
+    "create": "20200101000000000",
+    "modify": "20200101000000000",
+    "icon": "data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
+  }
+})""")
+
+        book = Host(self.test_root).books['']
+        generator = FavIconCacher(book, cache_url=False)
+        for info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+                },
+            })
+
+    def test_cache_absolute_url03(self):
         """Test Image with MIME = application/octet-stream
         """
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
@@ -1050,7 +1080,7 @@ scrapbook.meta({
                 },
             })
 
-    def test_cache_absolute_url03(self):
+    def test_cache_absolute_url04(self):
         """Test Image with an invalid MIME should not be cached
         """
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:

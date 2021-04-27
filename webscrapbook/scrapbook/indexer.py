@@ -344,8 +344,9 @@ class Indexer:
 
 
 class FavIconCacher:
-    def __init__(self, book, cache_archive=False, cache_file=False):
+    def __init__(self, book, cache_url=True, cache_archive=False, cache_file=False):
         self.book = book
+        self.cache_url = cache_url
         self.cache_archive = cache_archive
         self.cache_file = cache_file
 
@@ -381,7 +382,9 @@ class FavIconCacher:
 
         # absolute URL
         if urlparts.scheme:
-            return (yield from self._cache_favicon_absolute_url(id, index, url))
+            if self.cache_url:
+                return (yield from self._cache_favicon_absolute_url(id, index, url))
+            return None
 
         # skip protocol-relative URL
         if urlparts.netloc:
