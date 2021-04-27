@@ -69,7 +69,7 @@ class Book:
         'hidden',
         'recycle',
         }
-    TYPES_OPTIONAL_INDEX = {
+    ITEM_TYPES_WITH_OPTIONAL_INDEX = {
         'folder',
         'separator',
         'bookmark',

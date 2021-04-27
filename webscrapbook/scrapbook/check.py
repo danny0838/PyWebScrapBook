@@ -165,7 +165,7 @@ class BookChecker:
                     yield Info('warn', f'"{id}": a bookmark item should use "*.htm" as index file.')
                     self.cnt_warns += 1
             else:
-                if type not in Book.TYPES_OPTIONAL_INDEX:
+                if type not in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
                     yield Info('error', f'"{id}": missing "index" property.')
                     self.cnt_errors += 1
                     items_missing_index[id] = True

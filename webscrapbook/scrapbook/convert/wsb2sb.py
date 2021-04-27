@@ -209,7 +209,7 @@ class Converter:
         for id, oid in self.id_to_oid.items():
             yield Info('debug', f'Copying data files for "{id}" => "{oid}"')
             type = book.meta[id].get('type', '')
-            if type in Book.TYPES_OPTIONAL_INDEX:
+            if type in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
                 yield Info('debug', f'Skipped copying data for "{id}": type is "{type}"')
                 continue
 

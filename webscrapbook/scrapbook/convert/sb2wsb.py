@@ -261,7 +261,7 @@ class Converter:
                 meta['marked'] = True
 
             # meta['index']
-            if meta['type'] not in Book.TYPES_OPTIONAL_INDEX:
+            if meta['type'] not in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
                 meta['index'] = f'{id}/index.html'
             elif meta.get('icon', '').startswith(f'{RES_PROTOCOL_BASE}data/{id}/'):
                 # Add a dummy index.html to relate the icon file with the item
