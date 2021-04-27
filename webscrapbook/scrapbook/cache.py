@@ -407,7 +407,6 @@ class FulltextCacheGenerator():
         # 'parsererror',
         'svg', 'math',
         }
-    URL_SAMPLE_LENGTH = 256
 
     def __init__(self, book, *, inclusive_frames=True, recreate=False):
         self.book = book
@@ -723,7 +722,7 @@ class FulltextCacheGenerator():
             try:
                 data = util.parse_datauri(url)
             except util.DataUriMalformedError as exc:
-                yield Info('error', f'Skipped malformed data URL "{url[:self.URL_SAMPLE_LENGTH]}": {exc}', exc=exc)
+                yield Info('error', f'Skipped malformed data URL "{util.crop(url, 256)}": {exc}', exc=exc)
                 return
             fh = io.BytesIO(data.bytes)
             fulltext = yield from self._get_fulltext_cache_for_fh(item, None, fh, data.mime)
