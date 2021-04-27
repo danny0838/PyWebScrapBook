@@ -476,11 +476,6 @@ class FavIconCacher:
     def _get_archive_favicon(self, id, index, url, subpath):
         """Convert in-zip relative favicon path to data URL.
         """
-        # skip invalid in-zip-path
-        if subpath.startswith('../'):
-            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": invalid ZIP path')
-            return None
-
         file = os.path.join(self.book.data_dir, index)
 
         if util.is_htz(index):
