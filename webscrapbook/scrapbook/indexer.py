@@ -231,7 +231,7 @@ class Indexer:
                         title = ((title_elem.text or '') +
                             ''.join(etree.tostring(e, encoding='unicode') for e in title_elem))
                     except UnicodeDecodeError as exc:
-                        yield Info('error', f'Failed to extract title for "{id}": {exc}')
+                        yield Info('error', f'Failed to extract title for "{id}": {exc}', exc=exc)
             if not title or not title.strip():
                 title = generate_item_title(self.book, id)
             meta['title'] = title or ''
@@ -476,16 +476,8 @@ class FavIconCacher:
         """
         file = os.path.join(self.book.data_dir, index)
 
-        if util.is_htz(index):
-            try:
-                with zipfile.ZipFile(file) as zh:
-                    bytes_ = zh.read(subpath)
-            except (OSError, zipfile.BadZipFile, KeyError) as exc:
-                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
-                return None
-
-        elif util.is_maff(index):
-            try:
+        try:
+            if util.is_maff(index):
                 page = next(iter(util.get_maff_pages(file)), None)
                 if not page:
                     raise RuntimeError('page not found in MAFF')
@@ -495,11 +487,15 @@ class FavIconCacher:
                     raise RuntimeError('index file not found in MAFF')
 
                 subpath = os.path.dirname(refpath) + '/' + subpath
+
+            try:
                 with zipfile.ZipFile(file) as zh:
                     bytes_ = zh.read(subpath)
-            except (RuntimeError, OSError, zipfile.BadZipFile, KeyError) as exc:
-                yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
-                return None
+            except OSError as exc:
+                raise RuntimeError(exc.strerror) from exc
+        except Exception as exc:
+            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}', exc=exc)
+            return None
 
         mime, _ = mimetypes.guess_type(subpath)
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
@@ -518,7 +514,7 @@ class FavIconCacher:
             with open(file, 'rb') as fh:
                 bytes_ = fh.read()
         except OSError as exc:
-            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}')
+            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc.strerror}', exc=exc)
 
         mime, _ = mimetypes.guess_type(subpath)
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'

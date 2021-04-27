@@ -110,8 +110,7 @@ class BookChecker:
             raise RuntimeError(f'Malformed meta file '
                 f'"{self.book.get_subpath(exc.filename)}": {exc}') from exc
         except OSError as exc:
-            raise RuntimeError(f'Failed to load meta file '
-                f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}') from exc
+            raise RuntimeError(f'Failed to load meta file "{self.book.get_subpath(exc.filename)}": {exc.strerror}') from exc
 
         try:
             self.book.load_toc_files()
@@ -119,8 +118,7 @@ class BookChecker:
             raise RuntimeError(f'Malformed TOC file '
                 f'"{self.book.get_subpath(exc.filename)}": {exc}') from exc
         except OSError as exc:
-            raise RuntimeError(f'Failed to load TOC file '
-                f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}') from exc
+            raise RuntimeError(f'Failed to load TOC file "{self.book.get_subpath(exc.filename)}": {exc.strerror}') from exc
 
     def _check_meta(self):
         items_invalid_id = {}
@@ -383,8 +381,7 @@ class BookChecker:
         except FileNotFoundError:
             return
         except OSError as exc:
-            yield Info('error', f'Failed to scan folder '
-                f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to scan folder "{self.book.get_subpath(exc.filename)}": {exc.strerror}', exc=exc)
             self.cnt_errors += 1
             return
 
@@ -404,8 +401,7 @@ class BookChecker:
                         self.cnt_bytes += entry.stat().st_size
                     except OSError as exc:
                         # e.g. a broken symlink can cause this
-                        yield Info('error', f'Failed to access file '
-                            f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                        yield Info('error', f'Failed to access file "{self.book.get_subpath(exc.filename)}": {exc.strerror}', exc=exc)
                         self.cnt_errors += 1
                     else:
                         self.cnt_files += 1
@@ -440,8 +436,7 @@ class BookChecker:
         except FileNotFoundError:
             return
         except OSError as exc:
-            yield Info('error', f'Failed to scan folder '
-                f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to scan folder "{self.book.get_subpath(exc.filename)}": {exc.strerror}', exc=exc)
             self.cnt_errors += 1
             return
 

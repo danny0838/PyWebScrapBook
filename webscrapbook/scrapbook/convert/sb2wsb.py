@@ -73,7 +73,7 @@ class LegacyBook:
             with open(rdf_file, 'rb') as fh:
                 yield from self._parse_rdf(fh)
         except OSError as exc:
-            raise RuntimeError(f'Unable to load "scrapbook.rdf": [Errno {exc.args[0]}] {exc.args[1]}') from exc
+            raise RuntimeError(f'Unable to load "scrapbook.rdf": {exc.strerror}') from exc
         except etree.XMLSyntaxError as exc:
             raise RuntimeError(f'Malformed "scrapbook.rdf": {exc.args[0]}') from exc
 
@@ -128,7 +128,7 @@ class LegacyBook:
             yield Info('debug', 'Skipped inspecting data directory (not found)')
             return
         except OSError as exc:
-            raise RuntimeError(f'Failed to scan data directory: [Errno {exc.args[0]}] {exc.args[1]}') from exc
+            raise RuntimeError(f'Failed to scan data directory: {exc.strerror}') from exc
 
         with dirs as dirs:
             for dir in dirs:
@@ -166,7 +166,7 @@ class LegacyBook:
                     except (FileNotFoundError, IsADirectoryError, NotADirectoryError, AssertionError):
                         continue
                     except OSError as exc:
-                        yield Info('error', f'Failed to read "index.dat" for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                        yield Info('error', f'Failed to read "index.dat" for "{id}": {exc.strerror}', exc=exc)
                         continue
 
                     yield Info('info', f'Reading metadata from newer "index.dat" for "{id}"')
@@ -181,7 +181,7 @@ class LegacyBook:
                                 meta[key] = value
                             self.meta.setdefault(id, {}).update(meta)
                     except OSError as exc:
-                        yield Info('error', f'Failed to read "index.dat" for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                        yield Info('error', f'Failed to read "index.dat" for "{id}": {exc.strerror}', exc=exc)
                         continue
 
 

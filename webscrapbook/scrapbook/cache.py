@@ -154,7 +154,7 @@ class StaticSiteGenerator():
             self.book.backup(fdst)
             shutil.copyfile(fsrc, fdst)
         except OSError as exc:
-            yield Info('error', f'Failed to create resource file "{dst}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to create resource file "{dst}": {exc.strerror}', exc=exc)
 
     def _generate_page(self, dst, tpl, **kwargs):
         yield Info('debug', f'Checking page "{dst}"')
@@ -182,7 +182,7 @@ class StaticSiteGenerator():
             with open(fdst, 'wb') as fh:
                 shutil.copyfileobj(fsrc, fh)
         except OSError as exc:
-            yield Info('error', f'Failed to create page file "{dst}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to create page file "{dst}": {exc.strerror}', exc=exc)
 
     def _generate_static_index(self):
         def get_class_text(classes, prefix=' '):
@@ -391,7 +391,7 @@ class RssFeedGenerator():
             with open(fdst, 'wb') as fh:
                 shutil.copyfileobj(fsrc, fh)
         except OSError as exc:
-            yield Info('error', f'Failed to create RSS feed file "feed.atom": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to create RSS feed file "feed.atom": {exc.strerror}', exc=exc)
 
 
 FulltextCacheItem = namedtuple('FulltextCacheItem', ['id', 'meta', 'index', 'indexfile', 'files_to_update'])
@@ -603,7 +603,7 @@ class FulltextCacheGenerator():
                 yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc}', exc=exc)
                 return None
             except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as exc:
-                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc.strerror}', exc=exc)
                 return None
 
             try:
@@ -622,7 +622,7 @@ class FulltextCacheGenerator():
         except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
             return None
         except OSError as exc:
-            yield Info('error', f'Failed to access file for "{path}" of "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to access file for "{path}" of "{item.id}": {exc.strerror}', exc=exc)
             return None
 
     def _open_file(self, item, path):
@@ -633,7 +633,7 @@ class FulltextCacheGenerator():
                 yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc}', exc=exc)
                 return None
             except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as exc:
-                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc.strerror}', exc=exc)
                 return None
 
             try:
@@ -651,7 +651,7 @@ class FulltextCacheGenerator():
         except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
             return None
         except OSError as exc:
-            yield Info('error', f'Failed to open file for "{path}" of "{item.id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to open file for "{path}" of "{item.id}": {exc.strerror}', exc=exc)
             return None
 
     def _get_fulltext_cache(self, item, path):

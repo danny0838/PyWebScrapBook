@@ -70,7 +70,7 @@ class Importer():
                     id, eid, parent_id = yield from self._import_file(src)
                 except RuntimeError as exc:
                     # intended raise to skip the import
-                    yield Info('error', f'Failed to import file "{os.path.basename(src)}": {exc}')
+                    yield Info('error', f'Failed to import file "{os.path.basename(src)}": {exc}', exc=exc)
                 except Exception as exc:
                     # unexpected error
                     traceback.print_exc()

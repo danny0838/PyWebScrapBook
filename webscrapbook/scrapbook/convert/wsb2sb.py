@@ -268,7 +268,7 @@ class Converter:
                 try:
                     content = book.load_note_file(file)
                 except OSError as exc:
-                    yield Info('error', f'Failed to convert "index.html" for "{id}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+                    yield Info('error', f'Failed to convert "index.html" for "{id}": {exc.strerror}', exc=exc)
                 else:
                     with open(file, 'w', encoding='UTF-8') as fh:
                         fh.write(f"""\

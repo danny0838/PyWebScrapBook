@@ -61,9 +61,11 @@ class Converter:
 
                 if self.format:
                     try:
-                        yield from self._convert_item_format(book, id)
+                        try:
+                            yield from self._convert_item_format(book, id)
+                        except OSError as exc:
+                            raise RuntimeError(exc.strerror) from exc
                     except Exception as exc:
-                        # @TODO: better exception handling
                         yield Info('error', f'Failed to convert "{id}": {exc}', exc=exc)
 
             # update files

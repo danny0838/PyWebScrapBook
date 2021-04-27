@@ -92,8 +92,7 @@ class Converter:
         except FileNotFoundError:
             return
         except OSError as exc:
-            yield Info('error', f'Failed to scan folder '
-                f'"{self.book.get_subpath(exc.filename)}": [Errno {exc.args[0]}] {exc.args[1]}', exc=exc)
+            yield Info('error', f'Failed to scan folder "{self.book.get_subpath(exc.filename)}": {exc.strerror}', exc=exc)
             return
 
         entries_to_handle = set()
@@ -155,7 +154,7 @@ class Converter:
             try:
                 shutil.copy2(src, dst)
             except OSError as exc:
-                yield Info('error', f'Failed to copy data file "{entry}": {exc}')
+                yield Info('error', f'Failed to copy data file "{entry}": {exc.strerror}', exc=exc)
 
             index_file = os.path.join(dst_dir, 'index.html')
             if ext in self.book.ITEM_INDEX_ALLOWED_EXT:
@@ -163,7 +162,7 @@ class Converter:
                 try:
                     shutil.copy2(src, index_file)
                 except OSError as exc:
-                    yield Info('error', f'Failed to copy data file "{entry}": {exc}')
+                    yield Info('error', f'Failed to copy data file "{entry}": {exc.strerror}', exc=exc)
 
                 if supporting_folder:
                     src = supporting_folder
@@ -172,7 +171,7 @@ class Converter:
                     try:
                         shutil.copytree(src, dst)
                     except OSError as exc:
-                        yield Info('error', f'Failed to copy data folder "{entry}": {exc}')
+                        yield Info('error', f'Failed to copy data folder "{entry}": {exc.strerror}', exc=exc)
 
                 # generate meta
                 indexer = Indexer(self.book,
@@ -212,7 +211,7 @@ class Converter:
                 except NotADirectoryError:
                     shutil.copy2(src, dst)
             except OSError as exc:
-                yield Info('error', f'Failed to copy data files for "{entry}": {exc}')
+                yield Info('error', f'Failed to copy data files for "{entry}": {exc.strerror}', exc=exc)
 
             index_file = os.path.join(dst, 'index.html') if os.path.isdir(entry) else dst
 

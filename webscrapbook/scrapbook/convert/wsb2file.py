@@ -60,7 +60,7 @@ class Converter:
             try:
                 os.makedirs(dst, exist_ok=True)
             except OSError as exc:
-                yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}')
+                yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
 
         elif type == 'separator':
             if self.prefix:
@@ -72,7 +72,7 @@ class Converter:
                     with open(dst, 'wb') as fh:
                         pass
                 except OSError as exc:
-                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}')
+                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
 
         elif type == 'bookmark':
             source = meta.get('source')
@@ -85,7 +85,7 @@ class Converter:
                     with open(dst, 'w', encoding='UTF-8') as fh:
                         fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={html.escape(source)}">')
                 except OSError as exc:
-                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}')
+                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
 
         else:
             index = meta.get('index', '')
@@ -111,7 +111,7 @@ class Converter:
                     except NotADirectoryError:
                         shutil.copy2(src, dst)
                 except OSError as exc:
-                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}')
+                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
 
         # do not add descendants for a recursive item
         if id in id_chain:
