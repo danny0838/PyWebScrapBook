@@ -74,6 +74,12 @@ class Book:
         'separator',
         'bookmark',
         }
+    ITEM_INDEX_ALLOWED_EXT = {
+        '.html',
+        '.htz',
+        '.maff',
+        '.htm',
+        }
     ITEM_NOTE_FORMATTER = """\
 <!DOCTYPE html><html><head>\
 <meta charset="UTF-8">\

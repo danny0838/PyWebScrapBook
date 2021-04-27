@@ -19,8 +19,6 @@ from .. import util
 from ..util import Info
 
 
-FIND_INDEX_EXT = {'.html', '.htz', '.maff', '.htm'}
-
 HTML_TITLE_EXCLUDE_PARENTS = {
     'xmp',
     'svg',
@@ -149,7 +147,7 @@ class Indexer:
             return None
 
         _, ext = os.path.splitext(file.lower())
-        is_webpage = ext in FIND_INDEX_EXT
+        is_webpage = ext in self.book.ITEM_INDEX_ALLOWED_EXT
 
         if is_webpage:
             tree = self.book.get_tree_from_index_file(file)

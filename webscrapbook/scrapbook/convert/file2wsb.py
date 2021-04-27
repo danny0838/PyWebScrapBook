@@ -9,7 +9,7 @@ from ... import WSB_DIR
 from ... import util
 from ...util import Info
 from ..host import Host
-from ..indexer import FIND_INDEX_EXT, Indexer
+from ..indexer import Indexer
 
 
 DEFAULT_DATA_FOLDER_SUFFIXES = ['.files', '_files']
@@ -158,7 +158,7 @@ class Converter:
                 yield Info('error', f'Failed to copy data file "{entry}": {exc}')
 
             index_file = os.path.join(dst_dir, 'index.html')
-            if ext in FIND_INDEX_EXT:
+            if ext in self.book.ITEM_INDEX_ALLOWED_EXT:
                 # copy entry to index.html for the indexer to retrieve original metadata
                 try:
                     shutil.copy2(src, index_file)
@@ -231,7 +231,7 @@ class Converter:
             if not meta.get('title'):
                 meta['title'] = basename
 
-            if os.path.isfile(entry) and ext not in FIND_INDEX_EXT:
+            if os.path.isfile(entry) and ext not in self.book.ITEM_INDEX_ALLOWED_EXT:
                 meta['type'] = 'file'
 
             # add to parent

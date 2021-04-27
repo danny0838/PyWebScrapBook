@@ -11,7 +11,7 @@ from datetime import datetime
 from .. import WSB_DIR
 from .host import Host
 from .book import TreeFileError, Book
-from .indexer import FIND_INDEX_EXT, Indexer, FavIconCacher
+from .indexer import Indexer, FavIconCacher
 from .indexer import generate_item_create, generate_item_modify
 from .. import util
 from ..util import Info
@@ -413,7 +413,7 @@ class BookChecker:
                     if find_index and entry.is_file():
                         if self._get_index_path_key(entry) not in self.find_index_exclude:
                             basename, ext = os.path.splitext(entry.name.lower())
-                            if ext in FIND_INDEX_EXT:
+                            if ext in self.book.ITEM_INDEX_ALLOWED_EXT:
                                 yield Info('warn', f'File "{self.book.get_subpath(entry)}" not used as item index')
                                 self.cnt_warns += 1
                                 unindexed_files[entry.path] = True
