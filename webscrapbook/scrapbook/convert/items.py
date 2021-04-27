@@ -193,7 +193,7 @@ class Converter:
                 pass
 
     def _cache_favicon(self, book, id):
-        generator = FavIconCacher(book, handle_archive=True, handle_file=True)
+        generator = FavIconCacher(book, cache_archive=True, cache_file=True)
         yield from generator.run([id])
 
     def _generate_index_rdf(self, book, id):

@@ -255,7 +255,7 @@ class Indexer:
             else:
                 meta['icon'] = ''
 
-        generator = FavIconCacher(self.book, handle_archive=True)
+        generator = FavIconCacher(self.book, cache_archive=True)
         yield from generator.run([id])
 
         # source
@@ -344,10 +344,10 @@ class Indexer:
 
 
 class FavIconCacher:
-    def __init__(self, book, handle_archive=False, handle_file=False):
+    def __init__(self, book, cache_archive=False, cache_file=False):
         self.book = book
-        self.handle_archive = handle_archive
-        self.handle_file = handle_file
+        self.cache_archive = cache_archive
+        self.cache_file = cache_file
 
         self.favicons = {}
         self.favicon_dir = os.path.normcase(os.path.join(self.book.tree_dir, 'favicon', ''))
@@ -392,13 +392,13 @@ class FavIconCacher:
             return None
 
         if util.is_archive(index):
-            if self.handle_archive:
+            if self.cache_archive:
                 dataurl = yield from self._get_archive_favicon(id, index, url, unquote(urlparts.path))
                 if dataurl:
                     return (yield from self._cache_favicon_absolute_url(id, index, dataurl, url))
             return None
 
-        if self.handle_file:
+        if self.cache_file:
             dataurl = yield from self._get_file_favicon(id, index, url, unquote(urlparts.path))
             if dataurl:
                 return (yield from self._cache_favicon_absolute_url(id, index, dataurl, url))

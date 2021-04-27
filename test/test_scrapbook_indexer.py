@@ -1109,7 +1109,7 @@ scrapbook.meta({
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         book = Host(self.test_root).books['']
-        generator = FavIconCacher(book, handle_archive=True)
+        generator = FavIconCacher(book, cache_archive=True)
         for info in generator.run():
             pass
 
@@ -1155,7 +1155,7 @@ scrapbook.meta({
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         book = Host(self.test_root).books['']
-        generator = FavIconCacher(book, handle_archive=False)
+        generator = FavIconCacher(book, cache_archive=False)
         for info in generator.run():
             pass
 
@@ -1193,7 +1193,7 @@ scrapbook.meta({
             fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         book = Host(self.test_root).books['']
-        generator = FavIconCacher(book, handle_file=True)
+        generator = FavIconCacher(book, cache_file=True)
         for info in generator.run():
             pass
 
@@ -1226,7 +1226,7 @@ scrapbook.meta({
             fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         book = Host(self.test_root).books['']
-        generator = FavIconCacher(book, handle_file=False)
+        generator = FavIconCacher(book, cache_file=False)
         for info in generator.run():
             pass
 
