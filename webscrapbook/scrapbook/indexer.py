@@ -182,8 +182,8 @@ class Indexer:
 
             # merge properties from html[data-scrapbook-*] attributes
             for key, value in html_elem.attrib.items():
-                if key.startswith(self.book.META_PROPERTY_PREFIX):
-                    meta[key[len(self.book.META_PROPERTY_PREFIX):]] = value
+                if key.startswith('data-scrapbook-'):
+                    meta[key[15:]] = value
 
         # id
         id = meta.pop('id')

@@ -74,7 +74,6 @@ class Book:
         'separator',
         'bookmark',
         }
-    META_PROPERTY_PREFIX = 'data-scrapbook-'
     ITEM_NOTE_FORMATTER = """\
 <!DOCTYPE html><html><head>\
 <meta charset="UTF-8">\
