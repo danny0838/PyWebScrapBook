@@ -225,6 +225,9 @@ class StaticSiteGenerator():
                             href = meta_source
                         elif meta_index:
                             href = util.get_relative_url(os.path.join(book.data_dir, meta_index), book.tree_dir, path_is_dir=False)
+                            hash = urlsplit(meta_source).fragment
+                            if hash:
+                                href += '#' + hash
                         else:
                             href = ''
                     else:
