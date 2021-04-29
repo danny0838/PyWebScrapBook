@@ -3,6 +3,7 @@ import shutil
 import traceback
 import re
 import time
+import io
 from datetime import datetime
 from urllib.parse import urlsplit
 from urllib.request import url2pathname
@@ -82,16 +83,83 @@ function () {
 }
 """
 
+BASIC_LOADER_JS = """\
+function () {
+  var k1 = "data-scrapbook-shadowroot",
+      k2 = "data-scrapbook-canvas",
+      k3 = "data-scrapbook-input-indeterminate",
+      k4 = "data-scrapbook-input-checked",
+      k5 = "data-scrapbook-option-selected",
+      k6 = "data-scrapbook-input-value",
+      k7 = "data-scrapbook-textarea-value",
+      fn = function (r) {
+        var E = r.querySelectorAll ? r.querySelectorAll("*") : r.getElementsByTagName("*"), i = E.length, e, d, s;
+        while (i--) {
+          e = E[i];
+          if ((d = e.getAttribute(k1)) !== null && !e.shadowRoot && e.attachShadow) {
+            d = JSON.parse(d);
+            s = e.attachShadow({mode: d.mode});
+            s.innerHTML = d.data;
+            e.removeAttribute(k1);
+          }
+          if ((d = e.getAttribute(k2)) !== null) {
+            (function () {
+              var c = e, g = new Image();
+              g.onload = function () { c.getContext('2d').drawImage(g, 0, 0); };
+              g.src = d;
+            })();
+            e.removeAttribute(k2);
+          }
+          if ((d = e.getAttribute(k3)) !== null) {
+            e.indeterminate = true;
+            e.removeAttribute(k3);
+          }
+          if ((d = e.getAttribute(k4)) !== null) {
+            e.checked = d === 'true';
+            e.removeAttribute(k4);
+          }
+          if ((d = e.getAttribute(k5)) !== null) {
+            e.selected = d === 'true';
+            e.removeAttribute(k5);
+          }
+          if ((d = e.getAttribute(k6)) !== null) {
+            e.value = d;
+            e.removeAttribute(k6);
+          }
+          if ((d = e.getAttribute(k7)) !== null) {
+            e.value = d;
+            e.removeAttribute(k7);
+          }
+          if (e.shadowRoot) {
+            fn(e.shadowRoot);
+          }
+        }
+      };
+  fn(document);
+}
+"""
+
+
+def rewrite_html_fh(fh, callback, *args, **kwargs):
+    markups = util.load_html_markups(fh)
+    encoding = util.load_html_markups.last_encoding
+    markups = callback(markups, *args, **kwargs)
+    text = ''.join(str(m) for m in markups if not m.hidden)
+    fh.seek(0)
+    fh.write(text.encode(encoding))
+
 
 class Converter:
     def __init__(self, input, output, book_ids=None, *,
             convert_legacy=False,
+            convert_v0=False,
             use_native_tags=False,
             ):
         self.input = input
         self.output = output
         self.book_ids = book_ids
         self.convert_legacy = convert_legacy
+        self.convert_v0 = convert_v0
         self.use_native_tags = use_native_tags
 
     def run(self):
@@ -118,6 +186,11 @@ class Converter:
             if self.convert_legacy:
                 yield Info('info', 'Migrating data files from legacy ScrapBook...')
                 converter = ConvertDataFilesLegacy(book, use_native_tags=self.use_native_tags)
+                yield from converter.run()
+
+            if self.convert_v0:
+                yield Info('info', 'Migrating to WebScrapBook 0.*...')
+                converter = ConvertDataFilesV0(book, use_native_tags=self.use_native_tags)
                 yield from converter.run()
 
     def _copy_files(self):
@@ -739,8 +812,238 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         return rv
 
 
+class ConvertDataFilesV0:
+    """Convert data files to latest WebScrapBook 0.*
+    """
+    def __init__(self, book, *, use_native_tags):
+        self.book = book
+        self.use_native_tags = use_native_tags
+
+    def run(self):
+        book = self.book
+        for id, meta in book.meta.items():
+            type = meta.get('type', '')
+            if type == 'postit':
+                continue
+
+            index = meta.get('index', '')
+            # @TODO: support HTZ/MAFF
+            if not index.endswith('/index.html'):
+                continue
+
+            yield Info('debug', f'Converting data files for "{id}" (type="{type}")...')
+            index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
+            for root, dirs, files in os.walk(index_dir):
+                for file in files:
+                    if HTML_FILE_FILTER.search(file):
+                        file = os.path.join(root, file)
+                        yield Info('debug', f'Checking: {file}...')
+                        try:
+                            conv = ConvertHtmlFileV0(book)
+                            conv.run(file)
+                        except Exception as exc:
+                            traceback.print_exc()
+                            yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+
+
+class ConvertHtmlFileV0:
+    def __init__(self, book):
+        self.book = book
+
+    def run(self, file):
+        self.file = file
+        self.is_xhtml = util.is_xhtml(file)
+        self.changed = False
+        self.require_basic_loader = False
+        self.require_annotation_loader = False
+
+        markups = util.load_html_markups(file, is_xhtml=self.is_xhtml)
+        encoding = util.load_html_markups.last_encoding
+        markups = self.rewrite_main(markups)
+        if self.changed:
+            with open(file, 'wb') as fh:
+                for markup in markups:
+                    if not markup.hidden:
+                        fh.write(str(markup).encode(encoding))
+
+    def rewrite_main(self, markups):
+        markups = self.rewrite_doc(markups)
+
+        # update loaders if there's a change
+        if self.changed:
+            markups = self._update_loaders(markups)
+
+        return markups
+
+    def rewrite_doc(self, markups):
+        rv = []
+        i = 0
+        while True:
+            try:
+                markup = markups[i]
+            except IndexError:
+                break
+
+            if markup.type == 'starttag':
+                # check and record requirement of loader
+                type = markup.getattr('data-scrapbook-elem')
+
+                if type == 'basic-loader':
+                    self.require_basic_loader = True
+
+                if type in {'annotation-css', 'annotation-loader'}:
+                    self.require_annotation_loader = True
+
+                # handle old WebScrapBook loaders
+                if markup.tag == 'script':
+                    if markup.getattr('data-scrapbook-elem') in {
+                            'canvas-loader',  # WebScrapBook < 0.69
+                            'shadowroot-loader',  # WebScrapBook < 0.69
+                            }:
+                        iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+
+                        i = iend + 1
+                        self.changed = True
+                        self.require_basic_loader = True
+                        continue
+
+            rv.append(markup)
+            i += 1
+
+        return rv
+
+    def _update_loaders(self, markups):
+        # remove current loader
+        rv = []
+        i = 0
+        while True:
+            try:
+                markup = markups[i]
+            except IndexError:
+                break
+
+            if markup.type == 'starttag':
+                if markup.getattr('data-scrapbook-elem') in {'basic-loader', 'annotation-loader', 'annotation-css'}:
+                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    i = iend + 1
+                    continue
+
+            rv.append(markup)
+            i += 1
+
+        # insert new loader
+        if self.require_basic_loader:
+            markups = []
+
+            script = util.compress_code(BASIC_LOADER_JS)
+            script = f'({script})()'
+
+            markups.append(MarkupTag(
+                is_xhtml=self.is_xhtml,
+                type='starttag',
+                tag='script',
+                attrs=[
+                    ('data-scrapbook-elem', 'basic-loader'),
+                    ],
+                ))
+            markups.append(Markup(
+                is_xhtml=self.is_xhtml,
+                type='data',
+                data=script,
+                is_cdata=True,
+                ))
+            markups.append(MarkupTag(
+                is_xhtml=self.is_xhtml,
+                type='endtag',
+                tag='script',
+                ))
+
+            pos = None
+            for i in reversed(range(0, len(rv))):
+                markup = rv[i]
+                if markup.type == 'endtag':
+                    if markup.tag == 'body':
+                        pos = i
+                        break
+
+                    if markup.tag == 'html':
+                        pos = i
+
+            if pos is not None:
+                rv = rv[:pos] + markups + rv[pos:]
+            else:
+                rv += markups
+
+        if self.require_annotation_loader:
+            markups = []
+
+            markups.append(MarkupTag(
+                is_xhtml=self.is_xhtml,
+                type='starttag',
+                tag='style',
+                attrs=[
+                    ('data-scrapbook-elem', 'annotation-css'),
+                    ],
+                ))
+            markups.append(Markup(
+                is_xhtml=self.is_xhtml,
+                type='data',
+                data=util.compress_code(ANNOTATION_CSS),
+                is_cdata=True,
+                ))
+            markups.append(MarkupTag(
+                is_xhtml=self.is_xhtml,
+                type='endtag',
+                tag='style',
+                ))
+
+            script = util.compress_code(ANNOTATION_JS)
+            if self.host:
+                script = util.format_string(script, self.host.get_i18n())
+            script = f'({script})()'
+
+            markups.append(MarkupTag(
+                is_xhtml=self.is_xhtml,
+                type='starttag',
+                tag='script',
+                attrs=[
+                    ('data-scrapbook-elem', 'annotation-loader'),
+                    ],
+                ))
+            markups.append(Markup(
+                is_xhtml=self.is_xhtml,
+                type='data',
+                data=script,
+                is_cdata=True,
+                ))
+            markups.append(MarkupTag(
+                is_xhtml=self.is_xhtml,
+                type='endtag',
+                tag='script',
+                ))
+
+            pos = None
+            for i in reversed(range(0, len(rv))):
+                markup = rv[i]
+                if markup.type == 'endtag':
+                    if markup.tag == 'body':
+                        pos = i
+                        break
+
+                    if markup.tag == 'html':
+                        pos = i
+
+            if pos is not None:
+                rv = rv[:pos] + markups + rv[pos:]
+            else:
+                rv += markups
+
+        return rv
+
+
 def run(input, output, book_ids=None, *,
         convert_legacy=False,
+        convert_v0=False,
         use_native_tags=False,
         ):
     start = time.time()
@@ -750,6 +1053,7 @@ def run(input, output, book_ids=None, *,
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')
     yield Info('info', f'book(s): {book_ids_text}')
     yield Info('info', f'convert legacy: {convert_legacy}')
+    yield Info('info', f'convert v0: {convert_v0}')
     yield Info('info', f'use native tags: {use_native_tags}')
     yield Info('info', '')
 
@@ -759,6 +1063,7 @@ def run(input, output, book_ids=None, *,
     try:
         conv = Converter(input, output, book_ids=book_ids,
             convert_legacy=convert_legacy,
+            convert_v0=convert_v0,
             use_native_tags=use_native_tags,
             )
         yield from conv.run()

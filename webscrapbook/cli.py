@@ -641,6 +641,12 @@ migrate from older WebScrapBook to the latest.
     parser_convert_migrate.add_argument('--no-convert-legacy', dest='convert_legacy', 
         action='store_false',
         help="""inverse of --convert-legacy""")
+    parser_convert_migrate.add_argument('--convert-v0', default=True,
+        action='store_true',
+        help="""convert data to latest WebScrapBook 0.* (default)""")
+    parser_convert_migrate.add_argument('--no-convert-v0', dest='convert_v0', 
+        action='store_false',
+        help="""inverse of --convert-convert-v0""")
     parser_convert_migrate.add_argument('--use-native-tags', default=False,
         action='store_true',
         help="""use native HTML tags for converted annotations for better

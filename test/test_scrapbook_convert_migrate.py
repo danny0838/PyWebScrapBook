@@ -804,5 +804,96 @@ scrapbook.meta({
             output = fh.read()
             self.assertEqual(output, expected)
 
+class TestConvertDataFilesV0(Test):
+    def test_data_loaders_unchanged(self):
+        """Don't update loaders if there's no change detected.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """<html><body>
+<style data-scrapbook-elem="annotation-css"></style>
+<script data-scrapbook-elem="annotation-loader"></script>
+</body></html>"""
+
+        expected = """<html><body>
+<style data-scrapbook-elem="annotation-css"></style>
+<script data-scrapbook-elem="annotation-loader"></script>
+</body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output, expected)
+
+    def test_data_canvas_loader(self):
+        """Migrate [data-scrapbook-elem="canvas-loader"].
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """<html><body>foo</body><script data-scrapbook-elem="canvas-loader"></script></html>"""
+
+        expected_regex = """<html><body>foo<script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertRegex(output, expected_regex)
+
+    def test_data_shadowroot_loader(self):
+        """Migrate [data-scrapbook-elem="shadowroot-loader"].
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """<html><body>foo</body><script data-scrapbook-elem="shadowroot-loader"></script></html>"""
+
+        expected_regex = """<html><body>foo<script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertRegex(output, expected_regex)
+
 if __name__ == '__main__':
     unittest.main()
