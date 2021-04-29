@@ -224,10 +224,7 @@ def cmd_convert(args):
     debug = kwargs.pop('debug')
 
     import importlib
-    try:
-        conv = importlib.import_module(f'.scrapbook.convert.{mode}', __package__)
-    except ImportError:
-        die(f'Unsupported conversion mode: "{mode}".')
+    conv = importlib.import_module(f'.scrapbook.convert.{mode}', __package__)
 
     # validate input and output directory
     input = args['input']
