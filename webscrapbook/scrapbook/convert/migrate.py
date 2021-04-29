@@ -269,64 +269,9 @@ function () {
 
         rv, _ = self.convert()
 
-        # add annotation loader if needed
-        if self.require_annotation_loader:
-            markups = []
-
-            markups.append(MarkupTag(
-                type='starttag',
-                tag='style',
-                attrs=[
-                    ('data-scrapbook-elem', 'annotation-css'),
-                    ],
-                ))
-            markups.append(Markup(
-                type='data',
-                data=util.compress_code(self.ANNOTATION_CSS),
-                is_cdata=True,
-                ))
-            markups.append(MarkupTag(
-                type='endtag',
-                tag='style',
-                ))
-
-            script = util.compress_code(self.ANNOTATION_JS)
-            if self.host:
-                script = util.format_string(script, self.host.get_i18n())
-            script = f'({script})()'
-
-            markups.append(MarkupTag(
-                type='starttag',
-                tag='script',
-                attrs=[
-                    ('data-scrapbook-elem', 'annotation-loader'),
-                    ],
-                ))
-            markups.append(Markup(
-                type='data',
-                data=script,
-                is_cdata=True,
-                ))
-            markups.append(MarkupTag(
-                type='endtag',
-                tag='script',
-                ))
-
-            pos = None
-            for i in reversed(range(0, len(rv))):
-                markup = rv[i]
-                if markup.type == 'endtag':
-                    if markup.tag == 'body':
-                        pos = i
-                        break
-
-                    if markup.tag == 'html':
-                        pos = i
-
-            if pos is not None:
-                rv = rv[:pos] + markups + rv[pos:]
-            else:
-                rv += markups
+        # update annotation loader if there's a change
+        if self.changed:
+            rv = self._update_annotation_loaders(rv)
 
         self.output = rv
 
@@ -718,6 +663,88 @@ function () {
             return util.datetime_to_id(dt)
         except Exception:
             return id
+
+    def _update_annotation_loaders(self, markups):
+        # remove current loader
+        rv = []
+        i = 0
+        while True:
+            try:
+                markup = markups[i]
+            except IndexError:
+                break
+
+            if markup.type == 'starttag':
+                if markup.getattr('data-scrapbook-elem') in {'annotation-loader', 'annotation-css'}:
+                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    i = iend + 1
+                    continue
+
+            rv.append(markup)
+            i += 1
+
+        # insert new loader
+        if not self.require_annotation_loader:
+            return rv
+
+        markups = []
+
+        markups.append(MarkupTag(
+            type='starttag',
+            tag='style',
+            attrs=[
+                ('data-scrapbook-elem', 'annotation-css'),
+                ],
+            ))
+        markups.append(Markup(
+            type='data',
+            data=util.compress_code(self.ANNOTATION_CSS),
+            is_cdata=True,
+            ))
+        markups.append(MarkupTag(
+            type='endtag',
+            tag='style',
+            ))
+
+        script = util.compress_code(self.ANNOTATION_JS)
+        if self.host:
+            script = util.format_string(script, self.host.get_i18n())
+        script = f'({script})()'
+
+        markups.append(MarkupTag(
+            type='starttag',
+            tag='script',
+            attrs=[
+                ('data-scrapbook-elem', 'annotation-loader'),
+                ],
+            ))
+        markups.append(Markup(
+            type='data',
+            data=script,
+            is_cdata=True,
+            ))
+        markups.append(MarkupTag(
+            type='endtag',
+            tag='script',
+            ))
+
+        pos = None
+        for i in reversed(range(0, len(rv))):
+            markup = rv[i]
+            if markup.type == 'endtag':
+                if markup.tag == 'body':
+                    pos = i
+                    break
+
+                if markup.tag == 'html':
+                    pos = i
+
+        if pos is not None:
+            rv = rv[:pos] + markups + rv[pos:]
+        else:
+            rv += markups
+
+        return rv
 
 
 def run(input, output, book_ids=None, *, convert_data_files=False, use_native_tags=False):
