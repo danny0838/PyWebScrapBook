@@ -494,7 +494,7 @@ class FavIconCacher:
             except OSError as exc:
                 raise RuntimeError(exc.strerror) from exc
         except Exception as exc:
-            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}', exc=exc)
+            yield Info('error', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}', exc=exc)
             return None
 
         mime, _ = mimetypes.guess_type(subpath)
@@ -514,7 +514,7 @@ class FavIconCacher:
             with open(file, 'rb') as fh:
                 bytes_ = fh.read()
         except OSError as exc:
-            yield Info('debug', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc.strerror}', exc=exc)
 
         mime, _ = mimetypes.guess_type(subpath)
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
