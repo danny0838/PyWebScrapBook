@@ -715,10 +715,9 @@ function () {
         """
         try:
             dt = datetime.fromtimestamp(int(id) / 1000.0)
-        except TypeError:
-            return id
-        else:
             return util.datetime_to_id(dt)
+        except Exception:
+            return id
 
 
 def run(input, output, book_ids=None, *, convert_data_files=False, use_native_tags=False):

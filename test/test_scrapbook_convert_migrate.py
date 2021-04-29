@@ -437,7 +437,7 @@ scrapbook.meta({
             self.assertEqual(output[:len(expected)], expected)
             self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
 
-    def test_data_annotations_other(self):
+    def test_data_annotations_other01(self):
         """Convert other legacy ScrapBook elements.
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -471,6 +471,60 @@ Donec nec lacus<span data-sb-obj="annotation">(my legacy <em>inline</em>annotati
 <body>
 Donec nec lacus<span data-scrapbook-elem="annotation">(my legacy <em>inline</em>annotation)</span> efficitur.
 <a data-scrapbook-elem="link-url" href="http://example.com">Suspendisse eget interdum quam</a>, eu semper <span data-scrapbook-id="20200101000000000">ipsum</span>.
+</body>
+</html>
+"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_data_files=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output, expected)
+
+    def test_data_annotations_other02(self):
+        """Don't error out if a legacy id is bad.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """\
+<!DOCTYPE html>
+<html>
+<head>
+<title data-sb-obj="title">My page</title>
+</head>
+<body>
+<span data-sb-id="">suscipit</span>
+<span data-sb-id="123">finibus</span>
+<span data-sb-id="999999999999999999999999999999999999999999999999999999999">finibus</span>
+<span data-sb-id="abc">varius</span>
+</body>
+</html>
+"""
+
+        expected = """\
+<!DOCTYPE html>
+<html>
+<head>
+<title data-scrapbook-elem="title">My page</title>
+</head>
+<body>
+<span data-scrapbook-id="">suscipit</span>
+<span data-scrapbook-id="123">finibus</span>
+<span data-scrapbook-id="999999999999999999999999999999999999999999999999999999999">finibus</span>
+<span data-scrapbook-id="abc">varius</span>
 </body>
 </html>
 """
