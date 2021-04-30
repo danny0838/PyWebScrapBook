@@ -13,6 +13,76 @@ from ...util.html import Markup, MarkupTag
 from ..host import Host
 
 
+HTML_FILE_FILTER = re.compile(r'^.+\.x?html$', re.I)
+
+
+# @TODO: better way to sync with WebScrapBook browser extension
+ANNOTATION_CSS = """\
+[data-scrapbook-elem="linemarker"][title] {
+  cursor: help;
+}
+[data-scrapbook-elem="sticky"] {
+  display: block;
+  overflow: auto;
+}
+[data-scrapbook-elem="sticky"].styled {
+  position: absolute;
+  z-index: 500000;
+  opacity: .95;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid #CCCCCC;
+  border-top-width: 1.25em;
+  border-radius: .25em;
+  padding: .25em;
+  min-width: 6em;
+  min-height: 4em;
+  background: #FAFFFA;
+  box-shadow: .15em .15em .3em black;
+  font: .875em/1.2 sans-serif;
+  color: black;
+  overflow-wrap: break-word;
+  cursor: help;
+}
+[data-scrapbook-elem="sticky"].styled.relative {
+  position: relative;
+  margin: 16px auto;
+}
+[data-scrapbook-elem="sticky"].styled.plaintext {
+  white-space: pre-wrap;
+}
+[data-scrapbook-elem="sticky"].dragging {
+  opacity: .75;
+  z-index: 2147483641;
+}
+"""
+
+ANNOTATION_JS = """\
+function () {
+  var w = window, d = document, r = d.documentElement, e;
+  d.addEventListener('click', function (E) {
+    if (r.hasAttribute('data-scrapbook-toolbar-active')) { return; }
+    if (!w.getSelection().isCollapsed) { return; }
+    e = E.target;
+    if (e.matches('[data-scrapbook-elem="linemarker"]')) {
+      if (e.title) {
+        if (!confirm(e.title)) {
+          E.preventDefault();
+          E.stopPropagation();
+        }
+      }
+    } else if (e.matches('[data-scrapbook-elem="sticky"]')) {
+      if (confirm('%EditorDeleteAnnotationConfirm%')) {
+        e.parentNode.removeChild(e);
+        E.preventDefault();
+        E.stopPropagation();
+      }
+    }
+  }, true);
+}
+"""
+
+
 class Converter:
     def __init__(self, input, output, book_ids=None, *, convert_data_files=False, use_native_tags=False):
         self.input = input
@@ -66,8 +136,6 @@ class ConvertLegacyDataFiles:
     - Convert a web page with legacy annotations and chrome:// stylesheets or icons.
     - Convert a postit with legacy or other bad page wrapper.
     """
-    HTML_FILE_FILTER = re.compile(r'^.+\.x?html$', re.I)
-
     def __init__(self, book, *, use_native_tags=False):
         self.book = book
         self.use_native_tags = use_native_tags
@@ -94,7 +162,7 @@ class ConvertLegacyDataFiles:
                 index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
                 for root, dirs, files in os.walk(index_dir):
                     for file in files:
-                        if self.HTML_FILE_FILTER.search(file):
+                        if HTML_FILE_FILTER.search(file):
                             file = os.path.join(root, file)
                             yield Info('debug', f'Checking: {file}...')
                             try:
@@ -173,71 +241,6 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         'chrome://scrapbook/skin/treenotex.png': 'note.png',
         'chrome://scrapbook/skin/treeitem.png': 'item.png',
         }
-
-    # @TODO: better way to sync with WebScrapBook browser extension
-    ANNOTATION_CSS = """\
-[data-scrapbook-elem="linemarker"][title] {
-  cursor: help;
-}
-[data-scrapbook-elem="sticky"] {
-  display: block;
-  overflow: auto;
-}
-[data-scrapbook-elem="sticky"].styled {
-  position: absolute;
-  z-index: 500000;
-  opacity: .95;
-  box-sizing: border-box;
-  margin: 0;
-  border: 1px solid #CCCCCC;
-  border-top-width: 1.25em;
-  border-radius: .25em;
-  padding: .25em;
-  min-width: 6em;
-  min-height: 4em;
-  background: #FAFFFA;
-  box-shadow: .15em .15em .3em black;
-  font: .875em/1.2 sans-serif;
-  color: black;
-  overflow-wrap: break-word;
-  cursor: help;
-}
-[data-scrapbook-elem="sticky"].styled.relative {
-  position: relative;
-  margin: 16px auto;
-}
-[data-scrapbook-elem="sticky"].styled.plaintext {
-  white-space: pre-wrap;
-}
-[data-scrapbook-elem="sticky"].dragging {
-  opacity: .75;
-  z-index: 2147483641;
-}
-"""
-    ANNOTATION_JS = """\
-function () {
-  var w = window, d = document, r = d.documentElement, e;
-  d.addEventListener('click', function (E) {
-    if (r.hasAttribute('data-scrapbook-toolbar-active')) { return; }
-    if (!w.getSelection().isCollapsed) { return; }
-    e = E.target;
-    if (e.matches('[data-scrapbook-elem="linemarker"]')) {
-      if (e.title) {
-        if (!confirm(e.title)) {
-          E.preventDefault();
-          E.stopPropagation();
-        }
-      }
-    } else if (e.matches('[data-scrapbook-elem="sticky"]')) {
-      if (confirm('%EditorDeleteAnnotationConfirm%')) {
-        e.parentNode.removeChild(e);
-        E.preventDefault();
-        E.stopPropagation();
-      }
-    }
-  }, true);
-}
-"""
 
     def __init__(self, markups, encoding='UTF-8',
             is_xhtml=False, use_native_tags=False, host=None, file=None):
@@ -698,7 +701,7 @@ function () {
             ))
         markups.append(Markup(
             type='data',
-            data=util.compress_code(self.ANNOTATION_CSS),
+            data=util.compress_code(ANNOTATION_CSS),
             is_cdata=True,
             ))
         markups.append(MarkupTag(
@@ -706,7 +709,7 @@ function () {
             tag='style',
             ))
 
-        script = util.compress_code(self.ANNOTATION_JS)
+        script = util.compress_code(ANNOTATION_JS)
         if self.host:
             script = util.format_string(script, self.host.get_i18n())
         script = f'({script})()'
