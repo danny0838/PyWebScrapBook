@@ -1,5 +1,6 @@
 """HTML Parser
 """
+import html
 import html.parser
 import re
 
@@ -96,7 +97,10 @@ class Markup:
                 return html.escape(self.data, quote=False)
             return self.data
         elif self.type == 'starttag':
-            attrs = ' '.join((k if v is None else f'{k}="{html.escape(v)}"') for k, v in self.attrs)
+            if self.is_xhtml:
+                attrs = ' '.join((f'{k}="{html.escape(k if v is None else v)}"') for k, v in self.attrs)
+            else:
+                attrs = ' '.join((k if v is None else f'{k}="{html.escape(v)}"') for k, v in self.attrs)
             attrs = ' ' + self._rewrite_attrs(attrs) if attrs else ''
             return f'<{self.tag}{attrs}{" /" if self.is_self_end else ""}>'
         elif self.type == 'endtag':
