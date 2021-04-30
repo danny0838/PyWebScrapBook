@@ -1537,6 +1537,8 @@ foo   中文<br/>
             expected = fh.read()
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
         self.assertEqual(''.join(str(m) for m in markups), expected)
+        for m in markups:
+            self.assertFalse(m.is_xhtml)
 
     def test_load_html_markups_xhtml(self):
         # XHTML
@@ -1547,6 +1549,8 @@ foo   中文<br/>
             expected = fh.read()
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
         self.assertEqual(''.join(str(m) for m in markups), expected)
+        for m in markups:
+            self.assertTrue(m.is_xhtml)
 
     def test_load_html_markups_html_reserialized(self):
         # HTML5

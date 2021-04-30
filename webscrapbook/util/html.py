@@ -30,6 +30,7 @@ class Markup:
 
     def __init__(self, **kwargs):
         # general
+        self.is_xhtml = False
         self.type = None
         self.src = None  # corresponding source text
         self.ignored = False  # should be treated as non-exist in the DOM
@@ -171,18 +172,21 @@ class HTMLParser(html.parser.HTMLParser):
 
     def handle_pi(self, data):
         self._process(Markup(
+            is_xhtml=self._is_xhtml,
             type='pi',
             data=data,
             ))
 
     def handle_decl(self, decl):
         self._process(Markup(
+            is_xhtml=self._is_xhtml,
             type='decl',
             data=decl,
             ))
 
     def handle_comment(self, data):
         markup = Markup(
+            is_xhtml=self._is_xhtml,
             type='comment',
             data=data,
             )
@@ -191,6 +195,7 @@ class HTMLParser(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self._process(MarkupTag(
+            is_xhtml=self._is_xhtml,
             type='starttag',
             tag=tag,
             attrs=attrs,
@@ -199,6 +204,7 @@ class HTMLParser(html.parser.HTMLParser):
 
     def handle_startendtag(self, tag, attrs):
         self._process(MarkupTag(
+            is_xhtml=self._is_xhtml,
             type='starttag',
             tag=tag,
             attrs=attrs,
@@ -208,6 +214,7 @@ class HTMLParser(html.parser.HTMLParser):
 
     def handle_endtag(self, tag):
         markup = MarkupTag(
+            is_xhtml=self._is_xhtml,
             type='endtag',
             tag=tag,
             )
@@ -216,6 +223,7 @@ class HTMLParser(html.parser.HTMLParser):
 
     def handle_data(self, data):
         self._process(Markup(
+            is_xhtml=self._is_xhtml,
             type='data',
             data=data,
             convert_charrefs=self.convert_charrefs,
@@ -224,18 +232,21 @@ class HTMLParser(html.parser.HTMLParser):
 
     def handle_entityref(self, name):
         self._process(Markup(
+            is_xhtml=self._is_xhtml,
             type='entityref',
             name=name,
             ))
 
     def handle_charref(self, name):
         self._process(Markup(
+            is_xhtml=self._is_xhtml,
             type='charref',
             name=name,
             ))
 
     def unknown_decl(self, data):
         markup = Markup(
+            is_xhtml=self._is_xhtml,
             type='decl',
             data=data,
             is_unknown=True,
@@ -292,6 +303,7 @@ class HTMLParser(html.parser.HTMLParser):
             # create a hidden endtag for a void element
             # and don't push stack
             endtag = MarkupTag(
+                is_xhtml=self._is_xhtml,
                 type='endtag',
                 tag=markup.tag,
                 starttag=markup,
@@ -313,6 +325,7 @@ class HTMLParser(html.parser.HTMLParser):
 
             # create a hidden endtag for the implicitly closed tag
             endtag = MarkupTag(
+                is_xhtml=self._is_xhtml,
                 type='endtag',
                 tag=starttag.tag,
                 starttag= starttag,
@@ -323,6 +336,7 @@ class HTMLParser(html.parser.HTMLParser):
         else:
             # create a hidden starttag for the unmatched ending tag
             starttag = MarkupTag(
+                is_xhtml=self._is_xhtml,
                 type='starttag',
                 tag=markup.tag,
                 attrs=[],
