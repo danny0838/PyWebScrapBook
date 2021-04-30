@@ -166,30 +166,14 @@ class ConvertDataFilesLegacy:
                             file = os.path.join(root, file)
                             yield Info('debug', f'Checking: {file}...')
                             try:
-                                self._convert_html_file_legacy(file)
+                                conv = ConvertHtmlFileLegacy(
+                                    use_native_tags=self.use_native_tags,
+                                    host=self.book.host,
+                                    )
+                                conv.run(file)
                             except Exception as exc:
                                 traceback.print_exc()
                                 yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
-
-    def _convert_html_file_legacy(self, file):
-        markups = util.load_html_markups(file)
-        encoding = util.load_html_markups.last_encoding
-        is_xhtml = util.is_xhtml(file)
-        converter = ConvertHtmlFileLegacy(markups,
-            encoding=encoding,
-            is_xhtml=is_xhtml,
-            use_native_tags=self.use_native_tags,
-            host=self.book.host,
-            file=file,
-            )
-        converter.run()
-
-        # save rewritten markups
-        if converter.changed:
-            with open(file, 'w', encoding=encoding, newline='\n') as fh:
-                for markup in converter.output:
-                    if not markup.hidden:
-                        fh.write(str(markup))
 
 
 class ConvertHtmlFileLegacy:
@@ -242,24 +226,28 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         'chrome://scrapbook/skin/treeitem.png': 'item.png',
         }
 
-    def __init__(self, markups, encoding='UTF-8',
-            is_xhtml=False, use_native_tags=False, host=None, file=None):
-        self.markups = markups
-        self.encoding = encoding
-        self.is_xhtml = is_xhtml
+    def __init__(self, use_native_tags=False, host=None):
         self.use_native_tags = use_native_tags
         self.host = host
+
+    def run(self, file):
         self.file = file
-
         self.changed = False
-        self.output = []
-
+        self.require_annotation_loader = False
         self.combine_icons = {}
         self.map_id_markups = {}
-        self.require_annotation_loader = False
 
-    def run(self):
-        for i, markup in enumerate(self.markups):
+        markups = util.load_html_markups(file)
+        encoding = util.load_html_markups.last_encoding
+        markups = self.rewrite_main(markups)
+        if self.changed:
+            with open(file, 'wb') as fh:
+                for markup in markups:
+                    if not markup.hidden:
+                        fh.write(str(markup).encode(encoding))
+
+    def rewrite_main(self, markups):
+        for i, markup in enumerate(markups):
             if markup.type == 'starttag':
                 # record map of data-sb-id to markup
                 id = markup.getattr('data-sb-id')
@@ -270,20 +258,20 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                 if type == 'sticky' or (type == 'linemarker' and markup.getattr('title') is not None):
                     self.require_annotation_loader = True
 
-        rv, _ = self.convert()
+        markups, _ = self.convert(markups)
 
         # update annotation loader if there's a change
         if self.changed:
-            rv = self._update_annotation_loaders(rv)
+            markups = self._update_annotation_loaders(markups)
 
-        self.output = rv
+        return markups
 
-    def convert(self, start=0, endtag=None):
+    def convert(self, markups, start=0, endtag=None):
         rv = []
         i = start
         while True:
             try:
-                markup = self.markups[i]
+                markup = markups[i]
             except IndexError:
                 break
 
@@ -394,7 +382,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         attrs=attrs,
                         ))
 
-                    _rv, _i = self.convert(i + 1, markup.endtag)
+                    _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
                     rv.append(MarkupTag(
                         type='endtag',
@@ -432,7 +420,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         attrs=attrs,
                         ))
 
-                    _rv, _i = self.convert(i + 1, markup.endtag)
+                    _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
                     rv.append(MarkupTag(
                         type='endtag',
@@ -445,7 +433,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     continue
 
                 elif type == 'sticky':
-                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                     tag = 'div' if self.use_native_tags else 'scrapbook-sticky'
                     attrs = {
@@ -464,16 +452,16 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                             attrs['style'] = css_new
 
                     # text content
-                    textarea_i = self.find(lambda x: x.tag == 'textarea', i + 1, markup.endtag)
+                    textarea_i = markup_find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
                     if textarea_i is not None:
                         # unsaved sticky: take textarea content
-                        textarea_iend = self.find(lambda x: x == self.markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
-                        text = ''.join(str(d) for d in self.markups[textarea_i + 1:textarea_iend])
+                        textarea_iend = markup_find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
+                        text = ''.join(str(d) for d in markups[textarea_i + 1:textarea_iend])
                     else:
                         last_child_i = i
-                        for j in self.iterfind(lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                        for j in markup_iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
                             last_child_i = j
-                        text = ''.join(str(d) for d in self.markups[last_child_i + 1:iend] if d.type == 'data')
+                        text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
@@ -499,7 +487,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     continue
 
                 elif type == 'block-comment':
-                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                     tag = 'div' if self.use_native_tags else 'scrapbook-sticky'
                     attrs = {
@@ -517,13 +505,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs['style'] = css
 
                     # text content
-                    textarea_i = self.find(lambda x: x.tag == 'textarea', i + 1, markup.endtag)
+                    textarea_i = markup_find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
                     if textarea_i is not None:
                         # unsaved block-comment: take textarea content
-                        textarea_iend = self.find(lambda x: x == self.markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
-                        text = ''.join(str(d) for d in self.markups[textarea_i + 1:textarea_iend])
+                        textarea_iend = markup_find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
+                        text = ''.join(str(d) for d in markups[textarea_i + 1:textarea_iend])
                     else:
-                        text = ''.join(str(d) for d in self.markups[i + 1:iend] if d.type == 'data')
+                        text = ''.join(str(d) for d in markups[i + 1:iend] if d.type == 'data')
 
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
@@ -597,12 +585,6 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
         return rv, i
 
-    def find(self, filter, start=0, endtag=None):
-        return markup_find(self.markups, filter=filter, start=start, endtag=endtag)
-
-    def iterfind(self, filter, start=0, endtag=None):
-        return markup_iterfind(self.markups, filter=filter, start=start, endtag=endtag)
-
     def _get_legacy_scrapbook_object_type(self, markup):
         type = markup.getattr('data-sb-obj')
         if type is None:
@@ -664,7 +646,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
             if markup.type == 'starttag':
                 if markup.getattr('data-scrapbook-elem') in {'annotation-loader', 'annotation-css'}:
-                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
                     i = iend + 1
                     continue
 
