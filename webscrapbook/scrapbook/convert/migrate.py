@@ -4,6 +4,7 @@ import traceback
 import re
 import time
 import io
+import json
 from datetime import datetime
 from urllib.parse import urlsplit
 from urllib.request import url2pathname
@@ -85,7 +86,7 @@ function () {
 
 BASIC_LOADER_JS = """\
 function () {
-  var k1 = "data-scrapbook-shadowroot",
+  var k1 = "data-scrapbook-shadowdom",
       k2 = "data-scrapbook-canvas",
       k3 = "data-scrapbook-input-indeterminate",
       k4 = "data-scrapbook-input-checked",
@@ -97,9 +98,8 @@ function () {
         while (i--) {
           e = E[i];
           if ((d = e.getAttribute(k1)) !== null && !e.shadowRoot && e.attachShadow) {
-            d = JSON.parse(d);
-            s = e.attachShadow({mode: d.mode});
-            s.innerHTML = d.data;
+            s = e.attachShadow({mode: 'open'});
+            s.innerHTML = d;
             e.removeAttribute(k1);
           }
           if ((d = e.getAttribute(k2)) !== null) {
@@ -138,15 +138,6 @@ function () {
   fn(document);
 }
 """
-
-
-def rewrite_html_fh(fh, callback, *args, **kwargs):
-    markups = util.load_html_markups(fh)
-    encoding = util.load_html_markups.last_encoding
-    markups = callback(markups, *args, **kwargs)
-    text = ''.join(str(m) for m in markups if not m.hidden)
-    fh.seek(0)
-    fh.write(text.encode(encoding))
 
 
 class Converter:
@@ -907,10 +898,29 @@ class ConvertHtmlFileV0:
                         self.require_basic_loader = True
                         continue
 
+                # handle old WebScrapBook attributes
+                else:
+                    for j, attr_value in enumerate(markup.attrs):
+                        attr, value = attr_value
+                        if attr == 'data-scrapbook-shadowroot':  # WebScrapBook < 0.115
+                            value_new = self._convert_shadowroot_attribute(value)
+                            markup.attrs[j] = ('data-scrapbook-shadowdom', value_new)
+                            markup.src = None
+                            self.changed = True
+                            self.require_basic_loader = True
+                            continue
+
             rv.append(markup)
             i += 1
 
         return rv
+
+    def rewrite_html_text(self, text, callback, *args, **kwargs):
+        fh = io.BytesIO(text.encode('UTF-8'))
+        markups = util.load_html_markups(fh)
+        markups = callback(markups, *args, **kwargs)
+        text = ''.join(str(m) for m in markups if not m.hidden)
+        return text
 
     def _update_loaders(self, markups):
         # remove current loader
@@ -1039,6 +1049,12 @@ class ConvertHtmlFileV0:
                 rv += markups
 
         return rv
+
+    def _convert_shadowroot_attribute(self, data):
+        d = json.loads(data)
+        text = d['data']
+        text = self.rewrite_html_text(text, self.rewrite_doc)
+        return text
 
 
 def run(input, output, book_ids=None, *,
