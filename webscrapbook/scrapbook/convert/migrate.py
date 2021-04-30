@@ -9,7 +9,7 @@ from urllib.request import url2pathname
 
 from ... import util
 from ...util import Info
-from ...util.html import Markup, MarkupTag
+from ...util.html import Markup, MarkupTag, markup_find, markup_iterfind
 from ..host import Host
 
 
@@ -598,25 +598,10 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         return rv, i
 
     def find(self, filter, start=0, endtag=None):
-        return next(self.iterfind(filter, start, endtag), None)
+        return markup_find(self.markups, filter=filter, start=start, endtag=endtag)
 
     def iterfind(self, filter, start=0, endtag=None):
-        i = start
-        while True:
-            try:
-                markup = self.markups[i]
-            except IndexError:
-                break
-
-            if filter(markup):
-                yield i
-
-            if markup.type == 'endtag':
-                if endtag is not None:
-                    if markup == endtag:
-                        break
-
-            i += 1
+        return markup_iterfind(self.markups, filter=filter, start=start, endtag=endtag)
 
     def _get_legacy_scrapbook_object_type(self, markup):
         type = markup.getattr('data-sb-obj')

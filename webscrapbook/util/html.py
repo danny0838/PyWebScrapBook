@@ -352,3 +352,26 @@ class HTMLParser(html.parser.HTMLParser):
             if markup.tag in FOREIGN_ELEMENTS:
                 return True
         return False
+
+
+def markup_find(markups, filter, start=0, endtag=None):
+    return next(markup_iterfind(markups, filter, start, endtag), None)
+
+
+def markup_iterfind(markups, filter, start=0, endtag=None):
+    i = start
+    while True:
+        try:
+            markup = markups[i]
+        except IndexError:
+            break
+
+        if filter(markup):
+            yield i
+
+        if markup.type == 'endtag':
+            if endtag is not None:
+                if markup == endtag:
+                    break
+
+        i += 1
