@@ -232,12 +232,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
     def run(self, file):
         self.file = file
+        self.is_xhtml = util.is_xhtml(file)
         self.changed = False
         self.require_annotation_loader = False
         self.combine_icons = {}
         self.map_id_markups = {}
 
-        markups = util.load_html_markups(file)
+        markups = util.load_html_markups(file, is_xhtml=self.is_xhtml)
         encoding = util.load_html_markups.last_encoding
         markups = self.rewrite_main(markups)
         if self.changed:
@@ -289,6 +290,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     # convert legacy combine CSS
                     if href == 'chrome://scrapbook/skin/combine.css':
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='starttag',
                             tag='style',
                             attrs=[
@@ -296,11 +298,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                                 ],
                             ))
                         rv.append(Markup(
+                            is_xhtml=self.is_xhtml,
                             type='data',
                             data=util.compress_code(self.LEGACY_COMBINE_CSS),
                             is_cdata=True,
                             ))
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='endtag',
                             tag='style',
                             ))
@@ -323,6 +327,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
                     if src_changed:
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='starttag',
                             tag=markup.tag,
                             attrs=markup.attrs,
@@ -377,6 +382,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
@@ -385,6 +391,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
                         ))
@@ -415,6 +422,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
@@ -423,6 +431,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
                         ))
@@ -466,17 +475,20 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
                         ))
                     if text:
                         rv.append(Markup(
+                            is_xhtml=self.is_xhtml,
                             type='data',
                             data=text,
                             convert_charrefs=False,
                             ))
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
                         ))
@@ -516,17 +528,20 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
                         ))
                     if text:
                         rv.append(Markup(
+                            is_xhtml=self.is_xhtml,
                             type='data',
                             data=text,
                             convert_charrefs=False,
                             ))
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
                         ))
@@ -565,6 +580,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
                     if markup_changed:
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='starttag',
                             tag=markup.tag,
                             attrs=markup.attrs,
@@ -660,6 +676,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         markups = []
 
         markups.append(MarkupTag(
+            is_xhtml=self.is_xhtml,
             type='starttag',
             tag='style',
             attrs=[
@@ -667,11 +684,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                 ],
             ))
         markups.append(Markup(
+            is_xhtml=self.is_xhtml,
             type='data',
             data=util.compress_code(ANNOTATION_CSS),
             is_cdata=True,
             ))
         markups.append(MarkupTag(
+            is_xhtml=self.is_xhtml,
             type='endtag',
             tag='style',
             ))
@@ -682,6 +701,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         script = f'({script})()'
 
         markups.append(MarkupTag(
+            is_xhtml=self.is_xhtml,
             type='starttag',
             tag='script',
             attrs=[
@@ -689,11 +709,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                 ],
             ))
         markups.append(Markup(
+            is_xhtml=self.is_xhtml,
             type='data',
             data=script,
             is_cdata=True,
             ))
         markups.append(MarkupTag(
+            is_xhtml=self.is_xhtml,
             type='endtag',
             tag='script',
             ))
