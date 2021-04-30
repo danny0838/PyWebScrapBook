@@ -388,8 +388,8 @@ class Converter:
                     pass
 
     def _convert_data_files(self, book, book0):
-        from .migrate import ConvertLegacyDataFiles
-        converter = ConvertLegacyDataFiles(book)
+        from .migrate import ConvertDataFilesLegacy
+        converter = ConvertDataFilesLegacy(book)
         yield from converter.run()
 
 

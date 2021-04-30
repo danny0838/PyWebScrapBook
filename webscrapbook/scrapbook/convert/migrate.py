@@ -84,11 +84,14 @@ function () {
 
 
 class Converter:
-    def __init__(self, input, output, book_ids=None, *, convert_data_files=False, use_native_tags=False):
+    def __init__(self, input, output, book_ids=None, *,
+            convert_legacy=False,
+            use_native_tags=False,
+            ):
         self.input = input
         self.output = output
         self.book_ids = book_ids
-        self.convert_data_files = convert_data_files
+        self.convert_legacy = convert_legacy
         self.use_native_tags = use_native_tags
 
     def run(self):
@@ -112,8 +115,10 @@ class Converter:
             book.load_meta_files()
             book.load_toc_files()
 
-            if self.convert_data_files:
-                yield from self._convert_data_files(book)
+            if self.convert_legacy:
+                yield Info('info', 'Migrating data files from legacy ScrapBook...')
+                converter = ConvertDataFilesLegacy(book, use_native_tags=self.use_native_tags)
+                yield from converter.run()
 
     def _copy_files(self):
         with os.scandir(self.input) as dirs:
@@ -124,13 +129,8 @@ class Converter:
                 except NotADirectoryError:
                     shutil.copy2(src, dst)
 
-    def _convert_data_files(self, book):
-        yield Info('info', 'Converting data files...')
-        converter = ConvertLegacyDataFiles(book, use_native_tags=self.use_native_tags)
-        yield from converter.run()
 
-
-class ConvertLegacyDataFiles:
+class ConvertDataFilesLegacy:
     """Convert data files with legacy data format.
 
     - Convert a web page with legacy annotations and chrome:// stylesheets or icons.
@@ -166,16 +166,16 @@ class ConvertLegacyDataFiles:
                             file = os.path.join(root, file)
                             yield Info('debug', f'Checking: {file}...')
                             try:
-                                self._convert_legacy_html_file(file)
+                                self._convert_html_file_legacy(file)
                             except Exception as exc:
                                 traceback.print_exc()
                                 yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
-    def _convert_legacy_html_file(self, file):
+    def _convert_html_file_legacy(self, file):
         markups = util.load_html_markups(file)
         encoding = util.load_html_markups.last_encoding
         is_xhtml = util.is_xhtml(file)
-        converter = ConvertLegacyHtmlFile(markups,
+        converter = ConvertHtmlFileLegacy(markups,
             encoding=encoding,
             is_xhtml=is_xhtml,
             use_native_tags=self.use_native_tags,
@@ -192,7 +192,7 @@ class ConvertLegacyDataFiles:
                         fh.write(str(markup))
 
 
-class ConvertLegacyHtmlFile:
+class ConvertHtmlFileLegacy:
     PRE_WRAP_REGEX = re.compile(r'\bwhite-space:\s*pre-wrap\b', re.I)
 
     LEGACY_CLASSES_MAP = {
@@ -750,14 +750,17 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         return rv
 
 
-def run(input, output, book_ids=None, *, convert_data_files=False, use_native_tags=False):
+def run(input, output, book_ids=None, *,
+        convert_legacy=False,
+        use_native_tags=False,
+        ):
     start = time.time()
     book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else '(all)'
     yield Info('info', 'migrating:')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')
     yield Info('info', f'book(s): {book_ids_text}')
-    yield Info('info', f'convert data files: {convert_data_files}')
+    yield Info('info', f'convert legacy: {convert_legacy}')
     yield Info('info', f'use native tags: {use_native_tags}')
     yield Info('info', '')
 
@@ -766,7 +769,7 @@ def run(input, output, book_ids=None, *, convert_data_files=False, use_native_ta
 
     try:
         conv = Converter(input, output, book_ids=book_ids,
-            convert_data_files=convert_data_files,
+            convert_legacy=convert_legacy,
             use_native_tags=use_native_tags,
             )
         yield from conv.run()

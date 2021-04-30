@@ -635,12 +635,12 @@ migrate from older WebScrapBook to the latest.
     parser_convert_migrate.add_argument('--book', dest='book_ids', metavar='ID',
         nargs='+', action='store',
         help="""ID of the book(s) to convert (default: all books)""")
-    parser_convert_migrate.add_argument('--convert-data-files', default=True,
+    parser_convert_migrate.add_argument('--convert-legacy', default=True,
         action='store_true',
-        help="""convert data files for items (default)""")
-    parser_convert_migrate.add_argument('--no-convert-data-files', dest='convert_data_files', 
+        help="""convert data files from legacy ScrapBook (default)""")
+    parser_convert_migrate.add_argument('--no-convert-legacy', dest='convert_legacy', 
         action='store_false',
-        help="""inverse of --convert-data-files""")
+        help="""inverse of --convert-legacy""")
     parser_convert_migrate.add_argument('--use-native-tags', default=False,
         action='store_true',
         help="""use native HTML tags for converted annotations for better
