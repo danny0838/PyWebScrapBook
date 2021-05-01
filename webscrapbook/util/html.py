@@ -4,7 +4,8 @@ import html
 import html.parser
 import re
 
-REGEX_CLASS_SEPARATOR = re.compile(r'[ \t\n\r\f]+')
+
+REGEX_ASCII_WHITESPACES = re.compile(r'[ \t\n\r\f]+')
 
 VOID_ELEMENTS = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
 FOREIGN_ELEMENTS = {'svg', 'math'}
@@ -129,7 +130,7 @@ class MarkupTag(Markup):
         except AttributeError:
             pass
         classes_text = self.getattr('class')
-        rv = [] if classes_text is None else REGEX_CLASS_SEPARATOR.split(classes_text)
+        rv = [] if classes_text is None else REGEX_ASCII_WHITESPACES.split(classes_text)
         setattr(self, '_classes', rv)
         return rv
 
