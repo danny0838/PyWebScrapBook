@@ -404,6 +404,7 @@ class ConvertHtmlFile(HtmlRewriter):
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
@@ -412,6 +413,7 @@ class ConvertHtmlFile(HtmlRewriter):
                     _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
                         ))
@@ -454,6 +456,7 @@ class ConvertHtmlFile(HtmlRewriter):
 
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
@@ -469,11 +472,13 @@ class ConvertHtmlFile(HtmlRewriter):
 
                         for line in REGEX_LINEFEED.split(text):
                             rv.append(Markup(
+                                is_xhtml=self.is_xhtml,
                                 type='data',
                                 data=line,
                                 convert_charrefs=False,
                                 ))
                             rv.append(MarkupTag(
+                                is_xhtml=self.is_xhtml,
                                 type='starttag',
                                 tag='br',
                                 attrs=[],
@@ -482,6 +487,7 @@ class ConvertHtmlFile(HtmlRewriter):
                         rv.pop()  # pop an extra <br>
 
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='endtag',
                             tag=tag,
                             ))
@@ -491,6 +497,7 @@ class ConvertHtmlFile(HtmlRewriter):
                         _rv, _i = self.convert(markups, i + 1, markup.endtag)
                         rv.extend(_rv)
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='endtag',
                             tag=tag,
                             ))
@@ -522,16 +529,19 @@ class ConvertHtmlFile(HtmlRewriter):
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
                         ))
                     rv.append(Markup(
+                        is_xhtml=self.is_xhtml,
                         type='data',
                         data=text,
                         convert_charrefs=False,
                         ))
                     rv.append(MarkupTag(
+                        is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
                         ))
@@ -564,6 +574,7 @@ class ConvertHtmlFile(HtmlRewriter):
 
                     if markup_changed:
                         rv.append(MarkupTag(
+                            is_xhtml=self.is_xhtml,
                             type='starttag',
                             tag=markup.tag,
                             attrs=markup.attrs,
