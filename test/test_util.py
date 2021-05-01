@@ -1528,6 +1528,106 @@ foo   中文<br/>
 </body>
 </html>""")
 
+    def test_parse_meta_refresh_content(self):
+        # check time parsing
+        self.assertEqual(
+            util.parse_meta_refresh_content('3'),
+            (3, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3.5'),
+            (0, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('-1'),
+            (-1, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('abc'),
+            (0, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content(''),
+            (0, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content(' 5 '),
+            (5, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content(' 5 ;'),
+            (5, None, None),
+            )
+
+        # check target parsing
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;target.html'),
+            (5, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content(';url=target.html'),
+            (0, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=target.html'),
+            (5, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5; url = target.html '),
+            (5, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=%E4%B8%AD%E6%96%87.html'),
+            (5, '%E4%B8%AD%E6%96%87.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=data:text/plain;charset=utf-8,mycontent'),
+            (5, 'data:text/plain;charset=utf-8,mycontent', None),
+            )
+
+        # check context parsing
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=target.html'),
+            (5, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=target.html', None),
+            (5, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=target.html', []),
+            (5, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=target.html', ['noscript']),
+            (5, 'target.html', ['noscript']),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('5;url=target.html', ['noscript', 'noframes']),
+            (5, 'target.html', ['noscript', 'noframes']),
+            )
+
+        c = ['noscript']
+        self.assertIsNot(
+            util.parse_meta_refresh_content('5;url=target.html', c).context,
+            c,
+            )
+
     def test_iter_meta_refresh(self):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(

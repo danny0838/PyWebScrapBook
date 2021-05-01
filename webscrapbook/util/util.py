@@ -1440,6 +1440,20 @@ META_REFRESH_FORBID_TAGS = {
     'xmp',
     }
 
+def parse_meta_refresh_content(string, contexts=[]):
+    time, _, content = string.partition(';')
+
+    try:
+        time = int(time)
+    except ValueError:
+        time = 0
+
+    match_url = META_REFRESH_REGEX_URL.search(content)
+    target = match_url.group(1) if match_url else None
+    context = contexts.copy() if contexts else None
+    return MetaRefreshInfo(time=time, target=target, context=context)
+
+
 def iter_meta_refresh(file, encoding='ISO-8859-1'):
     """Iterate through meta refreshes from a file.
 
@@ -1467,17 +1481,7 @@ def iter_meta_refresh(file, encoding='ISO-8859-1'):
 
                 if (elem.tag == 'meta' and
                         elem.attrib.get('http-equiv', '').lower() == 'refresh'):
-                    time, _, content = elem.attrib.get('content', '').partition(';')
-
-                    try:
-                        time = int(time)
-                    except ValueError:
-                        time = 0
-
-                    match_url = META_REFRESH_REGEX_URL.search(content)
-                    target = match_url.group(1) if match_url else None
-                    context = contexts.copy() if contexts else None
-                    yield MetaRefreshInfo(time=time, target=target, context=context)
+                    yield parse_meta_refresh_content(elem.attrib.get('content', ''), contexts)
 
             elif event == 'end':
                 if contexts and elem.tag == contexts[-1]:
