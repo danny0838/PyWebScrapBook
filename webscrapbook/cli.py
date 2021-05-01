@@ -276,6 +276,10 @@ def cmd_help(args):
 
     if args['topic'] == 'config':
         file = os.path.join(root, 'config.md')
+    elif args['topic'] == 'mimetypes':
+        file = os.path.join(root, 'mimetypes.md')
+
+    if file:
         with open(file, 'r', encoding='UTF-8') as f:
             text = f.read()
         print(text)
@@ -819,10 +823,11 @@ Explorer or a Chromium-based browser""")
         epilog="""\
 Available TOPICs:
   "config"
+  "mimetypes"
 """)
     parser_help.set_defaults(func=cmd_help)
     parser_help.add_argument('topic', metavar='TOPIC', default=None, action='store',
-        choices=['config'],
+        choices=['config', 'mimetypes'],
         help="""the topic for details""")
 
     # subcommand: view
