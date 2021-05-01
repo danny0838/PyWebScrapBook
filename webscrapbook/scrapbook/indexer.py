@@ -498,6 +498,7 @@ class FavIconCacher:
             return None
 
         mime, _ = mimetypes.guess_type(subpath)
+        mime = mime or 'application/octet-stream'
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
 
     def _get_file_favicon(self, id, index, url, subpath):
@@ -517,4 +518,5 @@ class FavIconCacher:
             yield Info('error', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc.strerror}', exc=exc)
 
         mime, _ = mimetypes.guess_type(subpath)
+        mime = mime or 'application/octet-stream'
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
