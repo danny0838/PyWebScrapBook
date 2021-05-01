@@ -23,6 +23,9 @@ WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affecte
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
 WSB_CONFIG = os.environ.get('WSB_CONFIG') or 'config.ini'
 
+# add custom user MIME types mapping
+mimetypes.knownfiles += [os.path.join(WSB_USER_DIR, 'mime.types')]
+
 # WebScrapBook related
 mimetypes.add_type('application/html+zip', '.htz')
 mimetypes.add_type('application/x-maff', '.maff')
