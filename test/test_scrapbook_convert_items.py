@@ -202,6 +202,23 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000005.txt'),
             })
 
+        self.assertEqual(
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
+            os.stat(os.path.join(self.test_output, '20200101000000001', 'index.html')).st_mtime,
+            )
+
+        with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
+            self.assertEqual(
+                util.zip_timestamp(zh.getinfo('index.html')),
+                os.stat(os.path.join(self.test_output, '20200101000000002', 'index.html')).st_mtime,
+                )
+
+        with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
+            self.assertEqual(
+                util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
+                os.stat(os.path.join(self.test_output, '20200101000000003', 'index.html')).st_mtime,
+                )
+
         book = Host(self.test_output).books['']
         book.load_meta_files()
         self.assertDictEqual(book.meta, {
@@ -300,6 +317,22 @@ scrapbook.meta({
 
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000003.htz')) as zh:
             self.assertEqual(zh.namelist(), ['index.html', 'resource.txt'])
+
+        self.assertEqual(
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
+            os.stat(os.path.join(self.test_output, '20200101000000001.htz')).st_mtime,
+            )
+
+        self.assertEqual(
+            os.stat(os.path.join(self.test_input, '20200101000000002.htz')).st_mtime,
+            os.stat(os.path.join(self.test_output, '20200101000000002.htz')).st_mtime,
+            )
+
+        with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
+            self.assertEqual(
+                util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
+                os.stat(os.path.join(self.test_output, '20200101000000003.htz')).st_mtime,
+                )
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -426,6 +459,22 @@ scrapbook.meta({
                     util.parse_maff_index_rdf(fh),
                     ('', '', format_datetime(dt), 'index.html', 'UTF-8'),
                     )
+
+        self.assertEqual(
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
+            os.stat(os.path.join(self.test_output, '20200101000000001.maff')).st_mtime,
+            )
+
+        with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
+            self.assertEqual(
+                util.zip_timestamp(zh.getinfo('index.html')),
+                os.stat(os.path.join(self.test_output, '20200101000000002.maff')).st_mtime,
+                )
+
+        self.assertEqual(
+            os.stat(os.path.join(self.test_input, '20200101000000003.maff')).st_mtime,
+            os.stat(os.path.join(self.test_output, '20200101000000003.maff')).st_mtime,
+            )
 
         book = Host(self.test_output).books['']
         book.load_meta_files()

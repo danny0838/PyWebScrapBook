@@ -160,6 +160,7 @@ class Converter:
                     return
 
                 util.zip_compress(fdst, indexdir, '')
+                shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
                 meta['index'] = indexbase + '.htz'
 
             elif self.format == 'maff':
@@ -183,6 +184,7 @@ class Converter:
                     zh.writestr(f'{subpath}/index.rdf', rdf_content,
                             **util.zip_compression_params(mimetype='application/rdf+xml'))
 
+                shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
                 meta['index'] = indexbase + '.maff'
 
             try:
