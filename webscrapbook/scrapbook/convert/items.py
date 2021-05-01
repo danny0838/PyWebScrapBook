@@ -66,6 +66,7 @@ class Converter:
                         except OSError as exc:
                             raise RuntimeError(exc.strerror) from exc
                     except Exception as exc:
+                        traceback.print_exc()
                         yield Info('error', f'Failed to convert "{id}": {exc}', exc=exc)
 
             # update files
