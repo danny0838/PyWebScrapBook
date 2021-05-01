@@ -11,7 +11,7 @@ from urllib.request import url2pathname
 
 from ... import util
 from ...util import Info
-from ...util.html import Markup, MarkupTag, markup_find, markup_iterfind
+from ...util.html import Markup, MarkupTag, HtmlRewriter
 from ..host import Host
 
 
@@ -231,16 +231,17 @@ class ConvertDataFilesLegacy:
                             yield Info('debug', f'Checking: {file}...')
                             try:
                                 conv = ConvertHtmlFileLegacy(
+                                    file,
                                     use_native_tags=self.use_native_tags,
                                     host=self.book.host,
                                     )
-                                conv.run(file)
+                                conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
                                 yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
 
-class ConvertHtmlFileLegacy:
+class ConvertHtmlFileLegacy(HtmlRewriter):
     PRE_WRAP_REGEX = re.compile(r'\bwhite-space:\s*pre-wrap\b', re.I)
 
     LEGACY_CLASSES_MAP = {
@@ -290,28 +291,19 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         'chrome://scrapbook/skin/treeitem.png': 'item.png',
         }
 
-    def __init__(self, use_native_tags=False, host=None):
+    def __init__(self, file, *, use_native_tags=False, host=None):
+        super().__init__(file)
         self.use_native_tags = use_native_tags
         self.host = host
 
-    def run(self, file):
-        self.file = file
-        self.is_xhtml = util.is_xhtml(file)
-        self.changed = False
+    def run(self):
         self.require_annotation_loader = False
         self.combine_icons = {}
         self.map_id_markups = {}
 
-        markups = util.load_html_markups(file, is_xhtml=self.is_xhtml)
-        encoding = util.load_html_markups.last_encoding
-        markups = self.rewrite_main(markups)
-        if self.changed:
-            with open(file, 'wb') as fh:
-                for markup in markups:
-                    if not markup.hidden:
-                        fh.write(str(markup).encode(encoding))
+        super().run()
 
-    def rewrite_main(self, markups):
+    def rewrite(self, markups):
         for i, markup in enumerate(markups):
             if markup.type == 'starttag':
                 # record map of data-sb-id to markup
@@ -506,7 +498,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     continue
 
                 elif type == 'sticky':
-                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                     tag = 'div' if self.use_native_tags else 'scrapbook-sticky'
                     attrs = {
@@ -525,14 +517,14 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                             attrs['style'] = css_new
 
                     # text content
-                    textarea_i = markup_find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
+                    textarea_i = self.find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
                     if textarea_i is not None:
                         # unsaved sticky: take textarea content
-                        textarea_iend = markup_find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
+                        textarea_iend = self.find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
                         text = ''.join(str(d) for d in markups[textarea_i + 1:textarea_iend])
                     else:
                         last_child_i = i
-                        for j in markup_iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                        for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
                             last_child_i = j
                         text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
@@ -563,7 +555,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     continue
 
                 elif type == 'block-comment':
-                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                     tag = 'div' if self.use_native_tags else 'scrapbook-sticky'
                     attrs = {
@@ -581,10 +573,10 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs['style'] = css
 
                     # text content
-                    textarea_i = markup_find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
+                    textarea_i = self.find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
                     if textarea_i is not None:
                         # unsaved block-comment: take textarea content
-                        textarea_iend = markup_find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
+                        textarea_iend = self.find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
                         text = ''.join(str(d) for d in markups[textarea_i + 1:textarea_iend])
                     else:
                         text = ''.join(str(d) for d in markups[i + 1:iend] if d.type == 'data')
@@ -726,7 +718,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
             if markup.type == 'starttag':
                 if markup.getattr('data-scrapbook-elem') in {'annotation-loader', 'annotation-css'}:
-                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
                     i = iend + 1
                     continue
 
@@ -830,34 +822,21 @@ class ConvertDataFilesV0:
                         file = os.path.join(root, file)
                         yield Info('debug', f'Checking: {file}...')
                         try:
-                            conv = ConvertHtmlFileV0(book)
-                            conv.run(file)
+                            conv = ConvertHtmlFileV0(file)
+                            conv.run()
                         except Exception as exc:
                             traceback.print_exc()
                             yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
 
-class ConvertHtmlFileV0:
-    def __init__(self, book):
-        self.book = book
-
-    def run(self, file):
-        self.file = file
-        self.is_xhtml = util.is_xhtml(file)
-        self.changed = False
+class ConvertHtmlFileV0(HtmlRewriter):
+    def run(self):
         self.require_basic_loader = False
         self.require_annotation_loader = False
 
-        markups = util.load_html_markups(file, is_xhtml=self.is_xhtml)
-        encoding = util.load_html_markups.last_encoding
-        markups = self.rewrite_main(markups)
-        if self.changed:
-            with open(file, 'wb') as fh:
-                for markup in markups:
-                    if not markup.hidden:
-                        fh.write(str(markup).encode(encoding))
+        super().run()
 
-    def rewrite_main(self, markups):
+    def rewrite(self, markups):
         markups = self.rewrite_doc(markups)
 
         # update loaders if there's a change
@@ -891,7 +870,7 @@ class ConvertHtmlFileV0:
                             'canvas-loader',  # WebScrapBook < 0.69
                             'shadowroot-loader',  # WebScrapBook < 0.69
                             }:
-                        iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                        iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                         i = iend + 1
                         self.changed = True
@@ -915,13 +894,6 @@ class ConvertHtmlFileV0:
 
         return rv
 
-    def rewrite_html_text(self, text, callback, *args, **kwargs):
-        fh = io.BytesIO(text.encode('UTF-8'))
-        markups = util.load_html_markups(fh)
-        markups = callback(markups, *args, **kwargs)
-        text = ''.join(str(m) for m in markups if not m.hidden)
-        return text
-
     def _update_loaders(self, markups):
         # remove current loader
         rv = []
@@ -934,7 +906,7 @@ class ConvertHtmlFileV0:
 
             if markup.type == 'starttag':
                 if markup.getattr('data-scrapbook-elem') in {'basic-loader', 'annotation-loader', 'annotation-css'}:
-                    iend = markup_find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
                     i = iend + 1
                     continue
 
@@ -1051,10 +1023,9 @@ class ConvertHtmlFileV0:
         return rv
 
     def _convert_shadowroot_attribute(self, data):
-        d = json.loads(data)
-        text = d['data']
-        text = self.rewrite_html_text(text, self.rewrite_doc)
-        return text
+        markups = self.loads(json.loads(data)['data'])
+        markups = self.rewrite_doc(markups)
+        return ''.join(str(m) for m in markups if not m.hidden)
 
 
 def run(input, output, book_ids=None, *,

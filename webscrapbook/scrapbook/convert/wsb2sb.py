@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from ... import util
 from ...util import Info
-from ...util.html import Markup, MarkupTag
+from ...util.html import Markup, MarkupTag, HtmlRewriter
 from ..host import Host
 from ..book import Book
 
@@ -284,7 +284,8 @@ class Converter:
                             file = os.path.join(root, file)
                             yield Info('debug', f'Checking: {file}...')
                             try:
-                                self._convert_html_file(file)
+                                conv = ConvertHtmlFile(file)
+                                conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
                                 yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
@@ -362,43 +363,18 @@ class Converter:
                 os.makedirs(os.path.dirname(fdst), exist_ok=True)
                 shutil.copy2(fsrc, fdst)
 
-    def _convert_html_file(self, file):
-        markups = util.load_html_markups(file)
-        encoding = util.load_html_markups.last_encoding
-        is_xhtml = util.is_xhtml(file)
-        converter = ConvertHtmlFile(markups,
-            encoding=encoding,
-            is_xhtml=is_xhtml,
-            )
-        converter.run()
 
-        # save rewritten markups
-        if converter.changed:
-            with open(file, 'w', encoding=encoding, newline='\n') as fh:
-                for markup in converter.output:
-                    if not markup.hidden:
-                        fh.write(str(markup))
+class ConvertHtmlFile(HtmlRewriter):
+    def rewrite(self, markups):
+        markups, _ = self.convert(markups)
+        return markups
 
-
-class ConvertHtmlFile:
-    def __init__(self, markups, encoding='UTF-8', is_xhtml=False):
-        self.markups = markups
-        self.encoding = encoding
-        self.is_xhtml = is_xhtml
-
-        self.changed = False
-        self.output = []
-
-    def run(self):
-        rv, _ = self.convert()
-        self.output = rv
-
-    def convert(self, start=0, endtag=None):
+    def convert(self, markups, start=0, endtag=None):
         rv = []
         i = start
         while True:
             try:
-                markup = self.markups[i]
+                markup = markups[i]
             except IndexError:
                 break
 
@@ -433,7 +409,7 @@ class ConvertHtmlFile:
                         attrs=attrs,
                         ))
 
-                    _rv, _i = self.convert(i + 1, markup.endtag)
+                    _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
                     rv.append(MarkupTag(
                         type='endtag',
@@ -484,12 +460,12 @@ class ConvertHtmlFile:
                         ))
 
                     if is_plaintext:
-                        iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                        iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                         last_child_i = i
-                        for j in self.iterfind(lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                        for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
                             last_child_i = j
-                        text = ''.join(str(d) for d in self.markups[last_child_i + 1:iend] if d.type == 'data')
+                        text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
                         for line in REGEX_LINEFEED.split(text):
                             rv.append(Markup(
@@ -512,7 +488,7 @@ class ConvertHtmlFile:
                         i = iend + 1
 
                     else:
-                        _rv, _i = self.convert(i + 1, markup.endtag)
+                        _rv, _i = self.convert(markups, i + 1, markup.endtag)
                         rv.extend(_rv)
                         rv.append(MarkupTag(
                             type='endtag',
@@ -530,7 +506,7 @@ class ConvertHtmlFile:
                         and 'relative' in markup.classes
                         and 'plaintext' in markup.classes
                         ):
-                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
 
                     tag = 'div'
                     attrs = {
@@ -539,9 +515,9 @@ class ConvertHtmlFile:
                         }
 
                     last_child_i = i
-                    for j in self.iterfind(lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                    for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
                         last_child_i = j
-                    text = ''.join(str(d) for d in self.markups[last_child_i + 1:iend] if d.type == 'data')
+                    text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
@@ -566,7 +542,7 @@ class ConvertHtmlFile:
 
                 # remove WebScrapBook-specific elements
                 elif type in ('annotation-css', 'annotation-loader'):
-                    iend = self.find(lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
                     i = iend + 1
                     self.changed = True
                     continue
@@ -607,27 +583,6 @@ class ConvertHtmlFile:
             i += 1
 
         return rv, i
-
-    def find(self, filter, start=0, endtag=None):
-        return next(self.iterfind(filter, start, endtag), None)
-
-    def iterfind(self, filter, start=0, endtag=None):
-        i = start
-        while True:
-            try:
-                markup = self.markups[i]
-            except IndexError:
-                break
-
-            if filter(markup):
-                yield i
-
-            if markup.type == 'endtag':
-                if endtag is not None:
-                    if markup == endtag:
-                        break
-
-            i += 1
 
 
 def run(input, output, book_id='', no_data_files=False):

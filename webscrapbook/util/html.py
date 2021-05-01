@@ -3,6 +3,11 @@
 import html
 import html.parser
 import re
+import codecs
+from urllib.parse import urlsplit, urljoin
+from urllib.request import pathname2url
+
+from . import util
 
 
 REGEX_ASCII_WHITESPACES = re.compile(r'[ \t\n\r\f]+')
@@ -373,24 +378,128 @@ class HTMLParser(html.parser.HTMLParser):
         return False
 
 
-def markup_find(markups, filter, start=0, endtag=None):
-    return next(markup_iterfind(markups, filter, start, endtag), None)
+class HtmlRewriter:
+    """The base class that handles HTML rewriting for a specific path.
+    """
+    def __init__(self, file=None, *,
+            doc_url=None, base_url=None, url_chain=set(),
+            is_xhtml=None, encoding=None,
+            parser=HTMLParser):
+        """Initialize the class and bind associated information.
 
+        Args:
+            file: path of the associated file.
+            doc_url: overriding URL path of the document.
+            base_url: overriding URL resolving path.
+            is_xhtml: whether this file is xhtml.
+            encoding: the encoding for reading a file. None for autodetection
+                (and self.encoding will be auto reset on reading).
+        """
+        self.parser = parser
+        self.is_xhtml = is_xhtml
+        self.encoding = encoding
+        self.doc_url = doc_url
+        self.base_url = base_url
+        self.url_chain = url_chain.copy()
 
-def markup_iterfind(markups, filter, start=0, endtag=None):
-    i = start
-    while True:
+        if file:
+            self.file = file
+            self.is_xhtml = util.is_xhtml(file)
+
+            if not doc_url:
+                self.doc_url = urljoin('file:///', pathname2url(file))
+
+        if self.doc_url:
+            if not self.base_url:
+                self.base_url = self.doc_url
+
+            self.url_chain.add(self.doc_url)
+
+        self.changed = False
+
+    def run(self, *args, **kwargs):
+        """Common rewriting case when an associated file is provided.
+
+        Can be overwritten by a subclass.
+        """
+        if not self.file:
+            raise RuntimeError('Associated file not set.')
+
+        self.changed = False
+
+        markups = self.load(self.file)
+        markups = self.rewrite(markups, *args, **kwargs)
+
+        if self.changed:
+            with open(self.file, 'wb') as fh:
+                for markup in markups:
+                    if not markup.hidden:
+                        fh.write(str(markup).encode(self.encoding))
+
+    def load(self, file):
+        """Load a file and return parsed markups.
+
+        May reset self.encoding.
+
+        Args:
+            file: str, path-like, or file-like bytes object
+        Raises:
+            OSError: failed to read the file
+        """
         try:
-            markup = markups[i]
-        except IndexError:
-            break
+            fh = open(file, 'rb')
+        except TypeError:
+            fh = file
 
-        if filter(markup):
-            yield i
+        try:
+            if not self.encoding:
+                self.encoding = util.get_html_charset(fh)
+                fh.seek(0)
 
-        if markup.type == 'endtag':
+            p = self.parser(is_xhtml=self.is_xhtml)
+            for s in codecs.iterdecode(fh, self.encoding):
+                if not s:
+                    break
+                p.feed(s)
+            p.close()
+
+            return p._rv
+        finally:
+            if fh != file:
+                fh.close()
+
+    def loads(self, text):
+        """Load a string and return parsed markups.
+        """
+        p = self.parser(is_xhtml=self.is_xhtml)
+        p.feed(text)
+        p.close()
+
+        return p._rv
+
+    def rewrite(self, markups):
+        """Main rewriter.
+
+        Defaults to do nothing. Should be overwritten by a subclass.
+        """
+        return markups
+
+    def find(self, markups, filter, start=0, endtag=None):
+        return next(self.iterfind(markups, filter, start, endtag), None)
+
+    def iterfind(self, markups, filter, start=0, endtag=None):
+        i = start
+        while True:
+            try:
+                markup = markups[i]
+            except IndexError:
+                break
+
+            if filter(markup):
+                yield i
+
             if endtag is not None:
                 if markup == endtag:
                     break
 
-        i += 1
+            i += 1
