@@ -23,17 +23,27 @@ WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affecte
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
 WSB_CONFIG = os.environ.get('WSB_CONFIG') or 'config.ini'
 
-mimetypes.add_type('application/rss+xml', '.rss')
-mimetypes.add_type('application/atom+xml', '.atom')
+# WebScrapBook related
+mimetypes.add_type('application/html+zip', '.htz')
+mimetypes.add_type('application/x-maff', '.maff')
+mimetypes.add_type('application/wsba+zip', '.wsba')
+
+# Some common types
 mimetypes.add_type('text/markdown', '.md')
 mimetypes.add_type('text/markdown', '.mkd')
 mimetypes.add_type('text/markdown', '.mkdn')
 mimetypes.add_type('text/markdown', '.mdwn')
 mimetypes.add_type('text/markdown', '.mdown')
 mimetypes.add_type('text/markdown', '.markdown')
-mimetypes.add_type('application/html+zip', '.htz')
-mimetypes.add_type('application/x-maff', '.maff')
-mimetypes.add_type('application/wsba+zip', '.wsba')
+mimetypes.add_type('application/rss+xml', '.rss')
+mimetypes.add_type('application/atom+xml', '.atom')
+mimetypes.add_type('font/woff', '.woff')
+mimetypes.add_type('font/woff2', '.woff2')
+mimetypes.add_type('audio/ogg', '.oga')
+mimetypes.add_type('video/ogg', '.ogv')
+mimetypes.add_type('application/epub+zip', '.epub')
+mimetypes.add_type('application/x-7z-compressed', '.7z')
+mimetypes.add_type('application/vnd.rar', '.rar')
 
 # .bmp is mapped to image/x-ms-bmp on POSIX
 # ref: https://bugs.python.org/issue42028
