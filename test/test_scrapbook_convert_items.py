@@ -6,6 +6,7 @@ import zipfile
 import time
 import re
 import glob
+from base64 import b64decode
 from email.utils import format_datetime
 
 from webscrapbook import WSB_DIR
@@ -244,6 +245,99 @@ scrapbook.meta({
                 },
             })
 
+    def test_param_format_folder02(self):
+        """Check if icon path is correctly handled for htz => folder.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.htz",
+    "icon": ".wsb/tree/favicon/favicon.ico"
+  }
+})""")
+
+        index_file = os.path.join(self.test_input, '20200101000000000.htz')
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('index.html', """my page content""")
+
+        favicon_dir = os.path.join(self.test_input_tree, 'favicon')
+        os.makedirs(favicon_dir, exist_ok=True)
+        with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
+            pass
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000000'),
+            os.path.join(self.test_output, '20200101000000000', 'index.html'),
+            })
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': '../.wsb/tree/favicon/favicon.ico',
+                },
+            })
+
+    def test_param_format_folder03(self):
+        """Check if icon path is correctly handled for maff => folder.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.maff",
+    "icon": ".wsb/tree/favicon/favicon.ico"
+  }
+})""")
+
+        index_file = os.path.join(self.test_input, '20200101000000000.maff')
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('20200101000000000/index.html', """my page content""")
+            zh.writestr('20200101000000000/index.rdf', """dummy""")
+
+        favicon_dir = os.path.join(self.test_input_tree, 'favicon')
+        os.makedirs(favicon_dir, exist_ok=True)
+        with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
+            pass
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000000'),
+            os.path.join(self.test_output, '20200101000000000', 'index.html'),
+            })
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': '../.wsb/tree/favicon/favicon.ico',
+                },
+            })
+
     def test_param_format_htz01(self):
         """Test format "htz"
 
@@ -356,6 +450,95 @@ scrapbook.meta({
             '20200101000000005': {
                 'type': '',
                 'index': '20200101000000005.txt',
+                },
+            })
+
+    def test_param_format_htz02(self):
+        """Check if icon path is correctly handled for folder => htz.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html",
+    "icon": "favicon.ico"
+  }
+})""")
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""my page content""")
+        with open(os.path.join(index_dir, 'favicon.ico'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        for info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
+            pass
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000000.htz'),
+            })
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.ico',
+                },
+            })
+
+    def test_param_format_htz03(self):
+        """Check if icon path is correctly handled for maff => htz.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.maff",
+    "icon": ".wsb/tree/favicon/favicon.ico"
+  }
+})""")
+
+        index_file = os.path.join(self.test_input, '20200101000000000.maff')
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('20200101000000000/index.html', """my page content""")
+            zh.writestr('20200101000000000/index.rdf', """dummy""")
+
+        favicon_dir = os.path.join(self.test_input_tree, 'favicon')
+        os.makedirs(favicon_dir, exist_ok=True)
+        with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        for info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
+            pass
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000000.htz'),
+            })
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+                'icon': '.wsb/tree/favicon/favicon.ico',
                 },
             })
 
@@ -600,6 +783,94 @@ scrapbook.meta({
             '20200101000000005': {
                 'type': '',
                 'index': '20200101000000005.txt',
+                },
+            })
+
+    def test_param_format_maff03(self):
+        """Check if icon path is correctly handled for folder => maff.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html",
+    "icon": "favicon.ico"
+  }
+})""")
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""my page content""")
+        with open(os.path.join(index_dir, 'favicon.ico'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+            pass
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000000.maff'),
+            })
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.ico',
+                },
+            })
+
+    def test_param_format_maff04(self):
+        """Check if icon path is correctly handled for htz => maff.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.htz",
+    "icon": ".wsb/tree/favicon/favicon.ico"
+  }
+})""")
+
+        index_file = os.path.join(self.test_input, '20200101000000000.htz')
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('index.html', """my page content""")
+
+        favicon_dir = os.path.join(self.test_input_tree, 'favicon')
+        os.makedirs(favicon_dir, exist_ok=True)
+        with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+            pass
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000000.maff'),
+            })
+
+        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
+            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+                'icon': '.wsb/tree/favicon/favicon.ico',
                 },
             })
 

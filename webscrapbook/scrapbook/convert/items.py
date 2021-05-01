@@ -149,6 +149,12 @@ class Converter:
                     return
 
                 shutil.move(indexdir, fdst)
+
+                # adjust icon path to fit the new index file
+                iconfile = book.get_icon_file(meta)
+                if iconfile:
+                    meta['icon'] = util.get_relative_url(iconfile, fdst, path_is_dir=False, start_is_dir=True)
+
                 meta['index'] = indexbase + '/index.html'
 
             elif self.format == 'htz':
@@ -161,6 +167,12 @@ class Converter:
 
                 util.zip_compress(fdst, indexdir, '')
                 shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
+
+                # adjust icon path to fit the new index file
+                iconfile = book.get_icon_file(meta)
+                if iconfile:
+                    meta['icon'] = util.get_relative_url(iconfile, fdst, path_is_dir=False, start_is_dir=False)
+
                 meta['index'] = indexbase + '.htz'
 
             elif self.format == 'maff':
@@ -185,6 +197,12 @@ class Converter:
                             **util.zip_compression_params(mimetype='application/rdf+xml'))
 
                 shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
+
+                # adjust icon path to fit the new index file
+                iconfile = book.get_icon_file(meta)
+                if iconfile:
+                    meta['icon'] = util.get_relative_url(iconfile, fdst, path_is_dir=False, start_is_dir=False)
+
                 meta['index'] = indexbase + '.maff'
 
             try:
