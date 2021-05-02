@@ -1482,7 +1482,7 @@ def parse_meta_refresh_content(string, contexts=[]):
     return MetaRefreshInfo(time=time, target=target, context=context)
 
 
-def iter_meta_refresh(file, encoding='ISO-8859-1'):
+def iter_meta_refresh(file, encoding=None):
     """Iterate through meta refreshes from a file.
 
     Args:
@@ -1500,6 +1500,10 @@ def iter_meta_refresh(file, encoding='ISO-8859-1'):
         return
 
     try:
+        if not encoding:
+            encoding = get_html_charset(fh, default='ISO-8859-1')
+            fh.seek(0)
+
         contexts = []
         for event, elem in etree.iterparse(fh, encoding=encoding, html=True, events=('start', 'end')):
             if event == 'start':

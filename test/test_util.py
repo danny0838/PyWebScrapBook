@@ -1737,13 +1737,6 @@ foo   中文<br/>
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh5.html'))),
             [
-                (0, '\xE4\xB8\xAD\xE6\x96\x87.html', None),
-                (0, '%E4%B8%AD%E6%96%87.html', None),
-                ],
-            )
-        self.assertEqual(
-            list(util.iter_meta_refresh(os.path.join(root, 'refresh5.html'), encoding='UTF-8')),
-            [
                 (0, '中文.html', None),
                 (0, '%E4%B8%AD%E6%96%87.html', None),
                 ],
@@ -1751,12 +1744,19 @@ foo   中文<br/>
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh6.html'))),
             [
-                (0, '\xA4\xA4\xA4\xE5.html', None),
+                (0, '中文.html', None),
                 (0, '%E4%B8%AD%E6%96%87.html', None),
                 ],
             )
         self.assertEqual(
-            list(util.iter_meta_refresh(os.path.join(root, 'refresh6.html'), encoding='Big5')),
+            list(util.iter_meta_refresh(os.path.join(root, 'refresh7.html'))),
+            [
+                (0, b'\xE4\xB8\xAD\xE6\x96\x87.html'.decode('windows-1252'), None),
+                (0, '%E4%B8%AD%E6%96%87.html', None),
+                ],
+            )
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'refresh7.html'), encoding='UTF-8')),
             [
                 (0, '中文.html', None),
                 (0, '%E4%B8%AD%E6%96%87.html', None),
