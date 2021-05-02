@@ -1413,7 +1413,22 @@ def load_html_tree(file, options={}):
 
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target', 'context'])
 
-META_REFRESH_REGEX_URL = re.compile(r'^\s*url\s*=\s*(.*?)\s*$', re.I)
+# ref: https://html.spec.whatwg.org/multipage/semantics.html#attr-meta-http-equiv-refresh
+META_REFRESH_REGEX = re.compile(r"""
+    ^
+    [\t\n\f\r ]*
+    (?P<time>\d+)
+    (?:\.[\d.]*)?
+    (?:
+        (?=[\t\n\f\r ;,])
+        [\t\n\f\r ]*
+        [;,]?
+        [\t\n\f\r ]*
+        (?:url[\t\n\f\r ]*=[\t\n\f\r ]*)?
+        (?P<target>.*)
+    )?
+    $
+    """, re.I + re.X)
 
 # meta refresh in these tags does not always work
 META_REFRESH_CONTEXT_TAGS = {
@@ -1441,16 +1456,29 @@ META_REFRESH_FORBID_TAGS = {
     }
 
 def parse_meta_refresh_content(string, contexts=[]):
-    time, _, content = string.partition(';')
+    m = META_REFRESH_REGEX.search(string)
+    if not m:
+        return MetaRefreshInfo(time=None, target=None, context=None)
 
     try:
-        time = int(time)
+        time = int(m.group('time'))
     except ValueError:
         time = 0
 
-    match_url = META_REFRESH_REGEX_URL.search(content)
-    target = match_url.group(1) if match_url else None
+    target = m.group('target')
+    if target is not None:
+        for quote in ('"', "'"):
+            if target.startswith(quote):
+                try:
+                    pos = target.index(quote, 1)
+                except ValueError:
+                    pos = None
+                target = target[1:pos]
+                break
+        target = target.strip('\t\n\f\r ') or None
+
     context = contexts.copy() if contexts else None
+
     return MetaRefreshInfo(time=time, target=target, context=context)
 
 

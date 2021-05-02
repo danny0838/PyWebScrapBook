@@ -1537,94 +1537,164 @@ foo   中文<br/>
 
         self.assertEqual(
             util.parse_meta_refresh_content('3.5'),
+            (3, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('0'),
             (0, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content(' 3 '),
+            (3, None, None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content(' 3 ;'),
+            (3, None, None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content('-1'),
-            (-1, None, None),
+            (None, None, None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content('abc'),
-            (0, None, None),
+            (None, None, None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content(''),
-            (0, None, None),
+            (None, None, None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content(' 5 '),
-            (5, None, None),
-            )
-
-        self.assertEqual(
-            util.parse_meta_refresh_content(' 5 ;'),
-            (5, None, None),
-            )
-
-        # check target parsing
-        self.assertEqual(
-            util.parse_meta_refresh_content('5;target.html'),
-            (5, None, None),
+            util.parse_meta_refresh_content(';'),
+            (None, None, None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content(';url=target.html'),
-            (0, 'target.html', None),
+            (None, None, None),
+            )
+
+        # check target parsing
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;target.html'),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=target.html'),
-            (5, 'target.html', None),
+            util.parse_meta_refresh_content('3,target.html'),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5; url = target.html '),
-            (5, 'target.html', None),
+            util.parse_meta_refresh_content('3 target.html'),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=%E4%B8%AD%E6%96%87.html'),
-            (5, '%E4%B8%AD%E6%96%87.html', None),
+            util.parse_meta_refresh_content('3;url=target.html'),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=data:text/plain;charset=utf-8,mycontent'),
-            (5, 'data:text/plain;charset=utf-8,mycontent', None),
+            util.parse_meta_refresh_content('3,url=target.html'),
+            (3, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3 url=target.html'),
+            (3, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3 ; url = target.html '),
+            (3, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url\u3000=\u3000target.html'),
+            (3, 'url\u3000=\u3000target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url=target.html .com'),
+            (3, 'target.html .com', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url="target.html" .com'),
+            (3, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content("3;url='target.html' .com"),
+            (3, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url="target.html'),
+            (3, 'target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url target.html'),
+            (3, 'url target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;u=target.html'),
+            (3, 'u=target.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url=中文.html'),
+            (3, '中文.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url=%E4%B8%AD%E6%96%87.html'),
+            (3, '%E4%B8%AD%E6%96%87.html', None),
+            )
+
+        self.assertEqual(
+            util.parse_meta_refresh_content('3;url=data:text/plain;charset=utf-8,mycontent'),
+            (3, 'data:text/plain;charset=utf-8,mycontent', None),
             )
 
         # check context parsing
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=target.html'),
-            (5, 'target.html', None),
+            util.parse_meta_refresh_content('3;url=target.html'),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=target.html', None),
-            (5, 'target.html', None),
+            util.parse_meta_refresh_content('3;url=target.html', None),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=target.html', []),
-            (5, 'target.html', None),
+            util.parse_meta_refresh_content('3;url=target.html', []),
+            (3, 'target.html', None),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=target.html', ['noscript']),
-            (5, 'target.html', ['noscript']),
+            util.parse_meta_refresh_content('3;url=target.html', ['noscript']),
+            (3, 'target.html', ['noscript']),
             )
 
         self.assertEqual(
-            util.parse_meta_refresh_content('5;url=target.html', ['noscript', 'noframes']),
-            (5, 'target.html', ['noscript', 'noframes']),
+            util.parse_meta_refresh_content('3;url=target.html', ['noscript', 'noframes']),
+            (3, 'target.html', ['noscript', 'noframes']),
             )
 
         c = ['noscript']
         self.assertIsNot(
-            util.parse_meta_refresh_content('5;url=target.html', c).context,
+            util.parse_meta_refresh_content('3;url=target.html', c).context,
             c,
             )
 
@@ -1643,8 +1713,8 @@ foo   中文<br/>
             list(util.iter_meta_refresh(os.path.join(root, 'refresh2.html'))),
             [
                 (15, 'target.html', None),
-                (0, 'target.html', None),
-                (0, 'target2.html', None),
+                (None, None, None),
+                (None, None, None),
                 ],
             )
         self.assertEqual(
@@ -1722,7 +1792,7 @@ foo   中文<br/>
             )
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(root, 'refresh2.html')),
-            (0, 'target.html', None)
+            (None, None, None)
             )
         self.assertEqual(
             util.parse_meta_refresh(os.path.join(root, 'refresh3.html')),
