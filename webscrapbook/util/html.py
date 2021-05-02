@@ -140,9 +140,11 @@ class MarkupTag(Markup):
         return rv
 
     def getattr(self, attr, default=None):
+        """This works as HTML5 spec that a boolean attribute returns ''.
+        """
         for k, v in self.attrs:
             if k == attr:
-                return v
+                return v or ''
         return default
 
 
