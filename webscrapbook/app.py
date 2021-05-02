@@ -746,7 +746,7 @@ def action_view():
                 # convert meta refresh to 302 redirect
                 if localpaths[-1].lower().endswith('.htm'):
                     with zip.open(info) as fh:
-                        target = util.parse_meta_refresh(fh).target
+                        target = util.get_meta_refresh(fh).target
 
                     if target is not None:
                         # Keep several chars as javascript encodeURI do,
@@ -782,7 +782,7 @@ def action_view():
 
             # convert meta refresh to 302 redirect
             if request.localrealpath.lower().endswith('.htm'):
-                target = util.parse_meta_refresh(localpath).target
+                target = util.get_meta_refresh(localpath).target
 
                 if target is not None:
                     # Keep several chars as javascript encodeURI do,

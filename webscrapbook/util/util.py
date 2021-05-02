@@ -1529,8 +1529,8 @@ def iter_meta_refresh(file, encoding='ISO-8859-1'):
             fh.close()
 
 
-def parse_meta_refresh(file):
-    """Retrieve meta refresh target from a file.
+def get_meta_refresh(file):
+    """Retrieve a general meta refresh from a file.
 
     Args:
         file: str, path-like, or file-like bytes object

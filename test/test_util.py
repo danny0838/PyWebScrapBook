@@ -1784,26 +1784,26 @@ foo   中文<br/>
             except FileNotFoundError:
                 pass
 
-    def test_parse_meta_refresh(self):
+    def test_get_meta_refresh(self):
         root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root, 'refresh1.html')),
+            util.get_meta_refresh(os.path.join(root, 'refresh1.html')),
             (0, 'target.html', None)
             )
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root, 'refresh2.html')),
+            util.get_meta_refresh(os.path.join(root, 'refresh2.html')),
             (None, None, None)
             )
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root, 'refresh3.html')),
+            util.get_meta_refresh(os.path.join(root, 'refresh3.html')),
             (None, None, None)
             )
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root, 'refresh4.html')),
+            util.get_meta_refresh(os.path.join(root, 'refresh4.html')),
             (None, None, None)
             )
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(root, 'nonexist.html')),
+            util.get_meta_refresh(os.path.join(root, 'nonexist.html')),
             (None, None, None)
             )
 
@@ -1815,7 +1815,7 @@ foo   中文<br/>
             with zipfile.ZipFile(zip_filename, 'r') as zh:
                 with zh.open('refresh.html') as fh:
                     self.assertEqual(
-                        util.parse_meta_refresh(fh),
+                        util.get_meta_refresh(fh),
                         (0, 'target.html', None)
                         )
         finally:

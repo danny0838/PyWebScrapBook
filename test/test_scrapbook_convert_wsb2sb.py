@@ -961,7 +961,7 @@ some content
             os.path.join(self.test_output, 'data', oid, '中文#1.xhtml'),
             })
         self.assertEqual(
-            util.parse_meta_refresh(os.path.join(self.test_output, 'data', oid, 'index.html')).target,
+            util.get_meta_refresh(os.path.join(self.test_output, 'data', oid, 'index.html')).target,
             './%E4%B8%AD%E6%96%87%231.xhtml'
             )
 
