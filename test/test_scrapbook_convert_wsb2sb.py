@@ -961,8 +961,8 @@ some content
             os.path.join(self.test_output, 'data', oid, '中文#1.xhtml'),
             })
         self.assertEqual(
-            util.get_meta_refresh(os.path.join(self.test_output, 'data', oid, 'index.html')).target,
-            './%E4%B8%AD%E6%96%87%231.xhtml'
+            util.get_meta_refreshed_file(os.path.join(self.test_output, 'data', oid, 'index.html')),
+            os.path.join(self.test_output, 'data', oid, '中文#1.xhtml'),
             )
 
     def test_convert_html_file_linemarker01(self):

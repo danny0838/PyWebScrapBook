@@ -305,14 +305,11 @@ class Converter:
             if book.meta[id].get('type', '') == 'file':
                 index = book.meta[id].get('index', '')
                 indexfile = os.path.normpath(os.path.join(book.data_dir, index))
-                _, target, _ = util.get_meta_refresh(indexfile)
-                if target:
-                    parts = urlsplit(target)
-                    if not parts.scheme and not parts.netloc and not parts.path.startswith('/'):
-                        targetfile = os.path.join(os.path.dirname(indexfile), url2pathname(parts.path))
-                        moz_icon_url = f'moz-icon://{quote(os.path.basename(targetfile))}?size=16'
-                        yield Info('debug', f'Generated moz-icon URL for "{id}": "{moz_icon_url}"')
-                        return moz_icon_url
+                targetfile = util.get_meta_refreshed_file(indexfile)
+                if targetfile:
+                    moz_icon_url = f'moz-icon://{quote(os.path.basename(targetfile))}?size=16'
+                    yield Info('debug', f'Generated moz-icon URL for "{id}": "{moz_icon_url}"')
+                    return moz_icon_url
             return ''
 
         file = book.get_icon_file(book.meta[id])

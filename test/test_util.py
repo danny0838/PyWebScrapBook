@@ -1824,6 +1824,42 @@ foo   中文<br/>
             except FileNotFoundError:
                 pass
 
+    def test_get_meta_refreshed_file(self):
+        root = os.path.join(root_dir, 'test_util', 'get_meta_refreshed_file')
+
+        self.assertEqual(
+            util.get_meta_refreshed_file(os.path.join(root, 'case01', 'index.html')),
+            os.path.join(root, 'case01', 'refresh.html'),
+            )
+
+        self.assertEqual(
+            util.get_meta_refreshed_file(os.path.join(root, 'case02', 'index.html')),
+            os.path.join(root, 'test.html'),
+            )
+
+        self.assertEqual(
+            util.get_meta_refreshed_file(os.path.join(root, 'case03', 'index.html')),
+            os.path.join(root, 'case03', 'refresh2.html'),
+            )
+
+        self.assertEqual(
+            util.get_meta_refreshed_file(os.path.join(root, 'case04', 'index.html')),
+            os.path.join(root, 'case04', 'refresh1.html'),
+            )
+
+        self.assertIsNone(
+            util.get_meta_refreshed_file(os.path.join(root, 'case05', 'index.html')),
+            )
+
+        with self.assertRaises(util.MetaRefreshCircularError):
+            util.get_meta_refreshed_file(os.path.join(root, 'case06', 'index.html'))
+
+        with self.assertRaises(util.MetaRefreshCircularError):
+            util.get_meta_refreshed_file(os.path.join(root, 'case07', 'index.html'))
+
+        with self.assertRaises(util.MetaRefreshCircularError):
+            util.get_meta_refreshed_file(os.path.join(root, 'case08', 'index.html'))
+
     def test_parse_maff_index_rdf(self):
         maff_filename = os.path.join(root_dir, 'test_util', 'tempfile.maff')
         try:

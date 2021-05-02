@@ -20,7 +20,8 @@ import binascii
 import codecs
 from base64 import b64decode
 from urllib.parse import quote, unquote_to_bytes
-from urllib.request import pathname2url
+from urllib.parse import urlsplit, urljoin
+from urllib.request import pathname2url, url2pathname
 from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
 from lxml import etree
@@ -1455,6 +1456,15 @@ META_REFRESH_FORBID_TAGS = {
     'xmp',
     }
 
+
+class MetaRefreshError(Exception):
+    pass
+
+
+class MetaRefreshCircularError(MetaRefreshError):
+    pass
+
+
 def parse_meta_refresh_content(string, contexts=[]):
     m = META_REFRESH_REGEX.search(string)
     if not m:
@@ -1543,6 +1553,42 @@ def get_meta_refresh(file):
         if info.time == 0 and info.target is not None and not info.context:
             return info
     return MetaRefreshInfo(time=None, target=None, context=None)
+
+
+def get_meta_refreshed_file(file):
+    """Resolve the meta-refreshed file.
+
+    Returns:
+        path of the meta-refreshed file. None if there's no valid meta refresh,
+            the meta refresh points to an external resource, or the path of the
+            meta refresh points to the input file.
+
+    Raises:
+        MetaRefreshCircularError: if the meta refresh is circular
+    """
+    _file = file
+    url_chain = set()
+
+    while True:
+        doc_url = urljoin('file:///', pathname2url(file))
+        if doc_url in url_chain:
+            raise MetaRefreshCircularError('circular meta refresh')
+
+        url_chain.add(doc_url)
+
+        _, target, _ = get_meta_refresh(file)
+
+        if not target:
+            return file if file != _file else None
+
+        url = urljoin(doc_url, target)
+        urlparts = urlsplit(url)
+
+        # non-file URL
+        if urlparts.scheme != 'file':
+            return file if file != _file else None
+
+        file = url2pathname(urlsplit(url).path)
 
 
 #########################################################################
