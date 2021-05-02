@@ -1199,12 +1199,23 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
 # HTTP manipulation
 #########################################################################
 
+HEADER_OWS = r"[\t ]*"
+HEADER_TOKEN = r"[!#$%&'*+.0-9A-Z^_`a-z|~-]+"
+HEADER_QUOTED_STRING = r'(?:"[^"]*(?:\.[^"]*)*")'
+
+
 ContentType = namedtuple('ContentType', ['type', 'parameters'])
 
-PARSE_CONTENT_TYPE_REGEX_MIME = re.compile(r'^(.*?)(?=;|$)', re.I)
-PARSE_CONTENT_TYPE_REGEX_FIELD = re.compile(r';((?:"(?:\\.|[^"])*(?:"|$)|[^"])*?)(?=;|$)', re.I)
-PARSE_CONTENT_TYPE_REGEX_KEY_VALUE = re.compile(r'\s*(.*?)\s*=\s*("(?:\\.|[^"])*"|[^"]*?)\s*$', re.I)
-PARSE_CONTENT_TYPE_REGEX_DQUOTE_VALUE = re.compile(r'^"(.*?)"$')
+CONTENT_TYPE_REGEX = re.compile(fr"^{HEADER_TOKEN}/{HEADER_TOKEN}")
+CONTENT_TYPE_REGEX_PARAMETER = re.compile(fr"""
+    ^
+    {HEADER_OWS}
+    ;
+    {HEADER_OWS}
+    ({HEADER_TOKEN})
+    =
+    ([^\t ;"]*(?:{HEADER_QUOTED_STRING}[^\t ;"]*)*)
+    """, re.X)
 
 def parse_content_type(string):
     """Parse content type header.
@@ -1218,30 +1229,25 @@ def parse_content_type(string):
     if not string:
         return ContentType(type, parameters)
 
-    match_mime = PARSE_CONTENT_TYPE_REGEX_MIME.search(string)
-    if match_mime:
-        string = string[match_mime.end():]
-        type = match_mime.group(1).strip().lower()
+    m = CONTENT_TYPE_REGEX.search(string)
+    if m:
+        string = string[m.end():]
+        type = m.group(0).lower()
 
         while True:
-            match_field = PARSE_CONTENT_TYPE_REGEX_FIELD.search(string)
-            if not match_field:
+            m = CONTENT_TYPE_REGEX_PARAMETER.search(string)
+            if not m:
                 break
 
-            string = string[match_field.end():]
-            parameter = match_field.group(1)
-            match_key_value = PARSE_CONTENT_TYPE_REGEX_KEY_VALUE.search(parameter)
+            string = string[m.end():]
+            field = m.group(1).lower()
+            value = m.group(2)
 
-            if match_key_value:
-                field = match_key_value.group(1).lower()
-                value = match_key_value.group(2)
+            if value.startswith('"'):
+                # any valid value with leading '"' must be ".*"
+                value = value[1:-1]
 
-                # handle double quoted value
-                match_dquote = PARSE_CONTENT_TYPE_REGEX_DQUOTE_VALUE.search(value)
-                if match_dquote:
-                    value = match_dquote.group(1)
-
-                parameters[field] = value
+            parameters[field] = value
 
     return ContentType(type, parameters)
 
