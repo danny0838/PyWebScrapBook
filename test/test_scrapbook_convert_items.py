@@ -128,7 +128,7 @@ scrapbook.meta({
                 finally:
                     self.tearDown()
 
-    def test_param_format_folder(self):
+    def test_param_format_folder01(self):
         """Test format "folder"
 
         - Folder converted from MAFF should not contain index.rdf
@@ -202,7 +202,32 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000005.txt'),
             })
 
-    def test_param_format_htz(self):
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                },
+            '20200101000000003': {
+                'type': '',
+                'index': '20200101000000003/index.html',
+                },
+            '20200101000000004': {
+                'type': '',
+                'index': '20200101000000004.html',
+                },
+            '20200101000000005': {
+                'type': '',
+                'index': '20200101000000005.txt',
+                },
+            })
+
+    def test_param_format_htz01(self):
         """Test format "htz"
 
         - HTZ converted from MAFF should not contain index.rdf
@@ -276,7 +301,32 @@ scrapbook.meta({
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000003.htz')) as zh:
             self.assertEqual(zh.namelist(), ['index.html', 'resource.txt'])
 
-    def test_param_format_maff(self):
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001.htz',
+                },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002.htz',
+                },
+            '20200101000000003': {
+                'type': '',
+                'index': '20200101000000003.htz',
+                },
+            '20200101000000004': {
+                'type': '',
+                'index': '20200101000000004.html',
+                },
+            '20200101000000005': {
+                'type': '',
+                'index': '20200101000000005.txt',
+                },
+            })
+
+    def test_param_format_maff01(self):
         """Test format "maff"
 
         - MAFF converted from other format should contain a valid index.rdf
@@ -377,7 +427,37 @@ scrapbook.meta({
                     ('', '', format_datetime(dt), 'index.html', 'UTF-8'),
                     )
 
-    def test_param_format_maff01(self):
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001.maff',
+                'create': '20200101000000000',
+                },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002.maff',
+                'create': '20200101000000000',
+                },
+            '20200101000000003': {
+                'type': '',
+                'index': '20200101000000003.maff',
+                'create': '20200101000000000',
+                },
+            '20200101000000004': {
+                'type': '',
+                'index': '20200101000000004.html',
+                'create': '20200101000000000',
+                },
+            '20200101000000005': {
+                'type': '',
+                'index': '20200101000000005.txt',
+                'create': '20200101000000000',
+                },
+            })
+
+    def test_param_format_maff02(self):
         """Fail if index.rdf already exists
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -447,6 +527,31 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000003.maff'),
             os.path.join(self.test_output, '20200101000000004.html'),
             os.path.join(self.test_output, '20200101000000005.txt'),
+            })
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        self.assertDictEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002.htz',
+                },
+            '20200101000000003': {
+                'type': '',
+                'index': '20200101000000003.maff',
+                },
+            '20200101000000004': {
+                'type': '',
+                'index': '20200101000000004.html',
+                },
+            '20200101000000005': {
+                'type': '',
+                'index': '20200101000000005.txt',
+                },
             })
 
 if __name__ == '__main__':
