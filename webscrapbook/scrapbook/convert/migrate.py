@@ -408,7 +408,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     id = markup.getattr('data-sb-id')
                     new_id = None
 
-                    if id is not None:
+                    if id:
                         new_id = self._convert_legacy_scrapbook_elem_id(id)
                         try:
                             if markup == self.map_id_markups[id][0]:
@@ -421,12 +421,12 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         except KeyError:
                             pass
 
-                    if new_id is not None:
+                    if new_id:
                         attrs['data-scrapbook-id'] = new_id
 
                     # style
                     css = markup.getattr('style')
-                    if css is not None:
+                    if css:
                         attrs['style'] = css
 
                     # title
@@ -466,7 +466,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     # CSS
                     # @TODO: implement CSS parser for better error proof
                     css = markup.getattr('style')
-                    if css is not None:
+                    if css:
                         m = self.LEGACY_FREENOTE_STYLE_POSITION_REGEX.search(css)
                         if m and m.group(1).lower() == 'static':
                             attrs['class'].append('relative')
@@ -511,7 +511,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     # CSS
                     # @TODO: implement CSS parser for better error proof
                     css = markup.getattr('style')
-                    if css is not None:
+                    if css:
                         css_new = ' '.join(m.group(0) for m in self.LEGACY_POS_STYLE_REGEX.finditer(css))
                         if css_new:
                             attrs['style'] = css_new
@@ -659,7 +659,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
     def _get_legacy_scrapbook_object_type(self, markup):
         type = markup.getattr('data-sb-obj')
-        if type is None:
+        if not type:
             for cls in markup.classes:
                 if cls in self.LEGACY_CLASSES_MAP:
                     type = self.LEGACY_CLASSES_MAP[cls]
