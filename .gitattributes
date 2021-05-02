@@ -6,6 +6,7 @@
 *.md text
 *.txt text
 *.html text
+*.xhtml text
 *.css text
 *.js text
 *.ini text
