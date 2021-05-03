@@ -3,8 +3,21 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.43.0] - 2021-05-04
+* Added support of custom MIME types mapping using `~/.config/wsb/mime.types`.
+* Added `wsb help mimetypes` for documentation about customizing MIME types mapping.
+* Added support of some common MIME types.
+* Reworked handling of some HTTP headers and HTML attributes to conform with the spec better.
+* Fixed an issue that meta charset be ignored when parsing a meta refresh.
+* `items` converter now preserves file metadata for the generated HTZ or MAFF files.
+* Fixed incorrect icon path after a conversion of the `items` converter.
+* `wsb2sb` converter no more changes the linefeed format for output files.
+* Fixed potential bad handling of XHTML files for the `wsb2sb` converter.
+* Fixed incorrect rewriting of content in special tags like `<template>`, `<xmp>`, etc., for `migrate` and `items` converters.
+
 ## [0.42.0] - 2021-05-01
 * Added support of migrating several older WebScrapBook data for the `migrate` converter. The behavior can be switched with `--convert-*` options.
+* `migrate` converter no more changes the linefeed format for output files.
 * Adjusted log message format of several utilities.
 * Fixed missing support of hash in source URL for the generated static index file.
 * Fixed a potential error when converting a legacy ScrapBook ID with the `migrate` converter.
