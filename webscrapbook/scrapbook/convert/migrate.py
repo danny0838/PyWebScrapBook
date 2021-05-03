@@ -333,6 +333,14 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                 break
 
             if markup.type == 'starttag':
+                # pass-through special context tags
+                if markup.tag in ('template', 'svg', 'math'):
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    for i in range(i, iend + 1):
+                        rv.append(markups[i])
+                    i = iend + 1
+                    continue
+
                 # handle legacy stylesheet
                 if markup.tag == 'link' and markup.getattr('rel') == 'stylesheet':
                     href = markup.getattr('href')
@@ -855,6 +863,14 @@ class ConvertHtmlFileV0(HtmlRewriter):
                 break
 
             if markup.type == 'starttag':
+                # pass-through special context tags
+                if markup.tag in ('template', 'svg', 'math'):
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    for i in range(i, iend + 1):
+                        rv.append(markups[i])
+                    i = iend + 1
+                    continue
+
                 # check and record requirement of loader
                 type = markup.getattr('data-scrapbook-elem')
 

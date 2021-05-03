@@ -804,6 +804,64 @@ scrapbook.meta({
             output = fh.read()
             self.assertEqual(output, expected)
 
+    def test_data_skip_special_tags(self):
+        """Do not rewrite content in <template>, <xml>, <math>, etc.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """\
+<!DOCTYPE html>
+<html>
+<body>
+<template>
+<span data-sb-obj="annotation">foo</span>
+</template>
+<svg>
+<text data-sb-obj="annotation">foo</text>
+</svg>
+<math>
+<mtext data-sb-obj="annotation">foo</mtext>
+</math>
+</body>
+</html>
+"""
+
+        expected = """\
+<!DOCTYPE html>
+<html>
+<body>
+<template>
+<span data-sb-obj="annotation">foo</span>
+</template>
+<svg>
+<text data-sb-obj="annotation">foo</text>
+</svg>
+<math>
+<mtext data-sb-obj="annotation">foo</mtext>
+</math>
+</body>
+</html>
+"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output, expected)
+
 class TestConvertDataFilesV0(Test):
     def test_data_loaders_unchanged(self):
         """Don't update loaders if there's no change detected.
@@ -927,6 +985,64 @@ scrapbook.meta({
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertRegex(output, expected_regex)
+
+    def test_data_skip_special_tags(self):
+        """Do not rewrite content in <template>, <xml>, <math>, etc.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """\
+<!DOCTYPE html>
+<html>
+<body>
+<template>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</template>
+<svg>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</svg>
+<math>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</math>
+</body>
+</html>
+"""
+
+        expected = """\
+<!DOCTYPE html>
+<html>
+<body>
+<template>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</template>
+<svg>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</svg>
+<math>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</math>
+</body>
+</html>
+"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output, expected)
 
 if __name__ == '__main__':
     unittest.main()

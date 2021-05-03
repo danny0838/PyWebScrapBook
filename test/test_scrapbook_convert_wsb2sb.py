@@ -1213,5 +1213,63 @@ Donec nec lacus<span data-sb-obj="annotation">(my legacy <em>inline</em>annotati
         with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected)
 
+    def test_convert_html_file_skip_special_tags(self):
+        """Do not rewrite content in <template>, <xml>, <math>, etc.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = """\
+<!DOCTYPE html>
+<html>
+<body>
+<template>
+<span data-scrapbook-elem="annotation">foo</span>
+</template>
+<svg>
+<text data-scrapbook-elem="annotation">foo</text>
+</svg>
+<math>
+<mtext data-scrapbook-elem="annotation">foo</mtext>
+</math>
+</body>
+</html>
+"""
+
+        expected = """\
+<!DOCTYPE html>
+<html>
+<body>
+<template>
+<span data-scrapbook-elem="annotation">foo</span>
+</template>
+<svg>
+<text data-scrapbook-elem="annotation">foo</text>
+</svg>
+<math>
+<mtext data-scrapbook-elem="annotation">foo</mtext>
+</math>
+</body>
+</html>
+"""
+
+        index_dir = os.path.join(self.test_input, '20200101000000000')
+        os.makedirs(index_dir, exist_ok=True)
+        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in wsb2sb.run(self.test_input, self.test_output):
+            pass
+
+        oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
+        with open(os.path.join(self.test_output, 'data', oid, 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), expected)
+
 if __name__ == '__main__':
     unittest.main()
