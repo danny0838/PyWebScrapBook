@@ -1472,6 +1472,8 @@ class MetaRefreshCircularError(MetaRefreshError):
 
 
 def parse_meta_refresh_content(string, contexts=[]):
+    """Parse a HTTP header like meta refresh content.
+    """
     m = META_REFRESH_REGEX.search(string)
     if not m:
         return MetaRefreshInfo(time=None, target=None, context=None)
@@ -1491,11 +1493,11 @@ def parse_meta_refresh_content(string, contexts=[]):
                     pos = None
                 target = target[1:pos]
                 break
-        target = target.strip('\t\n\f\r ') or None
+        target = target.strip('\t\n\f\r ')
 
     context = contexts.copy() if contexts else None
 
-    return MetaRefreshInfo(time=time, target=target, context=context)
+    return MetaRefreshInfo(time=time, target=target or '', context=context)
 
 
 def iter_meta_refresh(file, encoding=None):

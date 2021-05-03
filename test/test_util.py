@@ -1532,27 +1532,27 @@ foo   中文<br/>
         # check time parsing
         self.assertEqual(
             util.parse_meta_refresh_content('3'),
-            (3, None, None),
+            (3, '', None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content('3.5'),
-            (3, None, None),
+            (3, '', None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content('0'),
-            (0, None, None),
+            (0, '', None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content(' 3 '),
-            (3, None, None),
+            (3, '', None),
             )
 
         self.assertEqual(
             util.parse_meta_refresh_content(' 3 ;'),
-            (3, None, None),
+            (3, '', None),
             )
 
         self.assertEqual(
@@ -1704,7 +1704,7 @@ foo   中文<br/>
             list(util.iter_meta_refresh(os.path.join(root, 'refresh1.html'))),
             [
                 (15, 'target.html', None),
-                (0, None, None),
+                (0, '', None),
                 (0, 'target.html', None),
                 (0, 'target2.html', None),
                 ],
