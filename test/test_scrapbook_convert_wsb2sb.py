@@ -35,7 +35,7 @@ def tearDownModule():
     for mocking in mockings:
         mocking.stop()
 
-class TestRun(unittest.TestCase):
+class Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -70,6 +70,7 @@ class TestRun(unittest.TestCase):
         except FileNotFoundError:
             pass
 
+class TestRun(Test):
     def test_meta_basic(self):
         """A sample of typical WebScrapBook item."""
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -965,6 +966,7 @@ some content
             os.path.join(self.test_output, 'data', oid, '中文#1.xhtml'),
             )
 
+class TestConvertHtmlFile(Test):
     def test_convert_html_file_linemarker01(self):
         """Convert linemarker."""
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
