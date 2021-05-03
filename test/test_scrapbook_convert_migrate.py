@@ -820,6 +820,9 @@ scrapbook.meta({
 <!DOCTYPE html>
 <html>
 <body>
+<xmp>
+<span data-sb-obj="annotation">foo</span>
+</xmp>
 <template>
 <span data-sb-obj="annotation">foo</span>
 </template>
@@ -837,6 +840,9 @@ scrapbook.meta({
 <!DOCTYPE html>
 <html>
 <body>
+<xmp>
+<span data-sb-obj="annotation">foo</span>
+</xmp>
 <template>
 <span data-sb-obj="annotation">foo</span>
 </template>
@@ -1002,6 +1008,9 @@ scrapbook.meta({
 <!DOCTYPE html>
 <html>
 <body>
+<xmp>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</xmp>
 <template>
 <div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
 </template>
@@ -1019,6 +1028,9 @@ scrapbook.meta({
 <!DOCTYPE html>
 <html>
 <body>
+<xmp>
+<div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
+</xmp>
 <template>
 <div data-scrapbook-shadowroot='{"data":"foo", "mode": "open"}'></div>
 </template>

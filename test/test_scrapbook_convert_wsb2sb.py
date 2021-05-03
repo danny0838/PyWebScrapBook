@@ -1229,6 +1229,9 @@ scrapbook.meta({
 <!DOCTYPE html>
 <html>
 <body>
+<xmp>
+<span data-scrapbook-elem="annotation">foo</span>
+</xmp>
 <template>
 <span data-scrapbook-elem="annotation">foo</span>
 </template>

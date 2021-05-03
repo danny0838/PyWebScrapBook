@@ -152,7 +152,7 @@ class HTMLParser(html.parser.HTMLParser):
     """HTML parser extended from native to support some HTML5 behaviors.
     """
     # include escapable raw text elements
-    CDATA_CONTENT_ELEMENTS = ('script', 'style', 'textarea', 'title')
+    CDATA_CONTENT_ELEMENTS = ('script', 'style', 'xmp', 'textarea', 'title')
 
     def __init__(self, convert_charrefs=False, is_xhtml=False):
         super().__init__(convert_charrefs=convert_charrefs)
