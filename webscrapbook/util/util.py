@@ -1550,14 +1550,27 @@ def iter_meta_refresh(file, encoding=None):
 
 
 def get_meta_refresh(file):
-    """Retrieve a general meta refresh from a file.
+    """Retrieve a general redirect-like meta refresh from a file.
+
+    According to spec, the document should take only the first meta refresh.
+    This is also more performant. Though many browsers accept multiple meta
+    refresh, and usually the last one wins.
+
+    As the document may contain multiple contexted meta refreshes and we cannot
+    determine which should apply, we retrieve the first non-contexted one and
+    accept it only when its time is 0.
+
+    https://html.spec.whatwg.org/multipage/semantics.html#attr-meta-http-equiv-refresh
 
     Args:
         file: str, path-like, or file-like bytes object
     """
     for info in iter_meta_refresh(file):
-        if info.time == 0 and info.target is not None and not info.context:
+        if info.context:
+            continue
+        if info.time == 0:
             return info
+        break
     return MetaRefreshInfo(time=None, target=None, context=None)
 
 

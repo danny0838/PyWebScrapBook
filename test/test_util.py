@@ -1785,26 +1785,36 @@ foo   中文<br/>
                 pass
 
     def test_get_meta_refresh(self):
-        root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
+        root = os.path.join(root_dir, 'test_util', 'get_meta_refresh')
+
         self.assertEqual(
             util.get_meta_refresh(os.path.join(root, 'refresh1.html')),
             (0, 'target.html', None)
             )
+
         self.assertEqual(
             util.get_meta_refresh(os.path.join(root, 'refresh2.html')),
             (None, None, None)
             )
+
         self.assertEqual(
             util.get_meta_refresh(os.path.join(root, 'refresh3.html')),
-            (None, None, None)
+            (0, 'target1.html', None)
             )
+
         self.assertEqual(
             util.get_meta_refresh(os.path.join(root, 'refresh4.html')),
             (None, None, None)
             )
+
         self.assertEqual(
-            util.get_meta_refresh(os.path.join(root, 'nonexist.html')),
+            util.get_meta_refresh(os.path.join(root, 'refresh5.html')),
             (None, None, None)
+            )
+
+        self.assertEqual(
+            util.get_meta_refresh(os.path.join(root, 'refresh6.html')),
+            (0, 'target.html', None)
             )
 
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
