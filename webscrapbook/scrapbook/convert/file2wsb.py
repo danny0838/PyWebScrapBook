@@ -184,11 +184,11 @@ class Converter:
 
                 if os.path.normcase(basename) != os.path.normcase('index.html'):
                     with open(index_file, 'w', encoding='UTF-8') as fh:
-                        fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={quote(basename)}">')
+                        fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url={quote(basename)}">')
             else:
                 # generate new index.html (with same file time) for the indexer
                 with open(index_file, 'w', encoding='UTF-8') as fh:
-                    fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={quote(basename)}">')
+                    fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url={quote(basename)}">')
                 st = os.stat(entry)
                 os.utime(index_file, (st.st_atime, st.st_mtime))
 

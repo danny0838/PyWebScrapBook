@@ -778,7 +778,7 @@ async function onCommandRun(detail) {
 
         try {
           const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
-          const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
+          const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
 
           const formData = new FormData();
           formData.append('token', await utils.acquireToken(source));
@@ -808,7 +808,7 @@ async function onCommandRun(detail) {
 
           try {
             const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
-            const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=' + url + '">';
+            const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
 
             const formData = new FormData();
             formData.append('token', await utils.acquireToken(source));

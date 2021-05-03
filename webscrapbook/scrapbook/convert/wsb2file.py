@@ -83,7 +83,7 @@ class Converter:
                 try:
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
                     with open(dst, 'w', encoding='UTF-8') as fh:
-                        fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url={html.escape(source)}">')
+                        fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url={html.escape(source)}">')
                 except OSError as exc:
                     yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
 

@@ -166,7 +166,7 @@ scrapbook.toc({
             self.assertEqual(fh.read(),
                 '<!DOCTYPE html>'
                 '<meta charset="UTF-8">'
-                '<meta http-equiv="refresh" content="0;url=http://example.com/mypath?a=123&amp;b=456">')
+                '<meta http-equiv="refresh" content="0; url=http://example.com/mypath?a=123&amp;b=456">')
         self.assertTrue(os.path.isdir(os.path.join(self.test_output, '6-Folder item')))
         with open(os.path.join(self.test_output, '7-Separator item.-'), 'rb') as fh:
             self.assertEqual(fh.read(), b'')
@@ -272,7 +272,7 @@ scrapbook.toc({
             self.assertEqual(fh.read(),
                 '<!DOCTYPE html>'
                 '<meta charset="UTF-8">'
-                '<meta http-equiv="refresh" content="0;url=http://example.com/mypath?a=123&amp;b=456">')
+                '<meta http-equiv="refresh" content="0; url=http://example.com/mypath?a=123&amp;b=456">')
         self.assertTrue(os.path.isdir(os.path.join(self.test_output, 'Folder item')))
 
     def test_path01(self):
