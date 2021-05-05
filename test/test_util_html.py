@@ -133,28 +133,6 @@ King's "123" < & > 456 (unescaped)<br></br>
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_html06(self):
-        input = """<input type="checkbox" checked>"""
-        parsed = """<input type="checkbox" checked></input>"""
-        reserialized = parsed
-
-        markups = HtmlRewriter().loads(input)
-        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
-        self.assertEqual(''.join(str(m) for m in markups), parsed)
-        for m in markups: m.src = None
-        self.assertEqual(''.join(str(m) for m in markups), reserialized)
-
-    def test_loads_html07(self):
-        input = """<textarea>plain <div> text may be escaped &lt; &amp; &gt;</textarea>"""
-        parsed = """<textarea>plain <div> text may be escaped &lt; &amp; &gt;</textarea>"""
-        reserialized = parsed
-
-        markups = HtmlRewriter().loads(input)
-        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
-        self.assertEqual(''.join(str(m) for m in markups), parsed)
-        for m in markups: m.src = None
-        self.assertEqual(''.join(str(m) for m in markups), reserialized)
-
-    def test_loads_html08(self):
         input = """<SPaN TITLE="mytitle">Tag with mixed case</SpAN>"""
         parsed = input
         reserialized = """<span title="mytitle">Tag with mixed case</span>"""
@@ -165,7 +143,18 @@ King's "123" < & > 456 (unescaped)<br></br>
         for m in markups: m.src = None
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
-    def test_loads_html09(self):
+    def test_loads_html07(self):
+        input = """<input type="checkbox" checked>"""
+        parsed = """<input type="checkbox" checked></input>"""
+        reserialized = parsed
+
+        markups = HtmlRewriter().loads(input)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+        self.assertEqual(''.join(str(m) for m in markups), parsed)
+        for m in markups: m.src = None
+        self.assertEqual(''.join(str(m) for m in markups), reserialized)
+
+    def test_loads_html08(self):
         input = """<input type="number"/>"""
         parsed = """<input type="number"/></input>"""
         reserialized = """<input type="number" /></input>"""
@@ -176,10 +165,21 @@ King's "123" < & > 456 (unescaped)<br></br>
         for m in markups: m.src = None
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
-    def test_loads_html10(self):
+    def test_loads_html09(self):
         input = """<div/>non-void-html-element-start-tag-with-trailing-solidus</div>"""
         parsed = input
         reserialized = """<div />non-void-html-element-start-tag-with-trailing-solidus</div>"""
+
+        markups = HtmlRewriter().loads(input)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+        self.assertEqual(''.join(str(m) for m in markups), parsed)
+        for m in markups: m.src = None
+        self.assertEqual(''.join(str(m) for m in markups), reserialized)
+
+    def test_loads_html10(self):
+        input = """<textarea>plain <div> text may be escaped &lt; &amp; &gt;</textarea>"""
+        parsed = """<textarea>plain <div> text may be escaped &lt; &amp; &gt;</textarea>"""
+        reserialized = parsed
 
         markups = HtmlRewriter().loads(input)
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
@@ -221,9 +221,9 @@ King's "123" < & > 456 (unescaped)<br></br>
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_html14(self):
-        input = """<svg><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /><text x="25" y="40">demo</text></svg>"""
+        input = """<svg><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"/><text x="25" y="40">demo</text></svg>"""
         parsed = input
-        reserialized = parsed
+        reserialized = """<svg><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /><text x="25" y="40">demo</text></svg>"""
 
         markups = HtmlRewriter().loads(input)
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
@@ -243,28 +243,6 @@ King's "123" < & > 456 (unescaped)<br></br>
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_html16(self):
-        input = """<svg><br/></svg>"""
-        parsed = input
-        reserialized = """<svg><br /></svg>"""
-
-        markups = HtmlRewriter().loads(input)
-        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
-        self.assertEqual(''.join(str(m) for m in markups), parsed)
-        for m in markups: m.src = None
-        self.assertEqual(''.join(str(m) for m in markups), reserialized)
-
-    def test_loads_html17(self):
-        input = """<svg><br></svg>"""
-        parsed = """<svg><br></br></svg>"""
-        reserialized = parsed
-
-        markups = HtmlRewriter().loads(input)
-        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
-        self.assertEqual(''.join(str(m) for m in markups), parsed)
-        for m in markups: m.src = None
-        self.assertEqual(''.join(str(m) for m in markups), reserialized)
-
-    def test_loads_html18(self):
         input = """\
 <math>
   <mrow>
@@ -329,9 +307,9 @@ King's "123" < & > 456 (unescaped)<br></br>
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_xhtml03(self):
-        input = """<meta charset="UTF-8" />"""
+        input = """<meta charset="UTF-8"/>"""
         parsed = input
-        reserialized = parsed
+        reserialized = """<meta charset="UTF-8" />"""
 
         markups = HtmlRewriter(is_xhtml=True).loads(input)
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
@@ -391,9 +369,9 @@ King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_xhtml07(self):
-        input = """<input type="checkbox" checked="checked" />"""
+        input = """<input type="checkbox" checked="checked"/>"""
         parsed = input
-        reserialized = parsed
+        reserialized = """<input type="checkbox" checked="checked" />"""
 
         markups = HtmlRewriter(is_xhtml=True).loads(input)
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
@@ -402,6 +380,17 @@ King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_xhtml08(self):
+        input = """<input type="checkbox" checked="checked"></input>"""
+        parsed = input
+        reserialized = """<input type="checkbox" checked="checked"></input>"""
+
+        markups = HtmlRewriter(is_xhtml=True).loads(input)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+        self.assertEqual(''.join(str(m) for m in markups), parsed)
+        for m in markups: m.src = None
+        self.assertEqual(''.join(str(m) for m in markups), reserialized)
+
+    def test_loads_xhtml09(self):
         input = """<textarea>text need escaped &lt; &amp; &gt;</textarea>"""
         parsed = input
         reserialized = parsed
@@ -412,21 +401,10 @@ King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
         for m in markups: m.src = None
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
-    def test_loads_xhtml09(self):
-        input = """<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /><text x="25" y="40">demo</text></svg>"""
-        parsed = input
-        reserialized = parsed
-
-        markups = HtmlRewriter(is_xhtml=True).loads(input)
-        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
-        self.assertEqual(''.join(str(m) for m in markups), parsed)
-        for m in markups: m.src = None
-        self.assertEqual(''.join(str(m) for m in markups), reserialized)
-
     def test_loads_xhtml10(self):
-        input = """<svg xmlns="http://www.w3.org/2000/svg"><br/></svg>"""
+        input = """<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"/><text x="25" y="40">demo</text></svg>"""
         parsed = input
-        reserialized = """<svg xmlns="http://www.w3.org/2000/svg"><br /></svg>"""
+        reserialized = """<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /><text x="25" y="40">demo</text></svg>"""
 
         markups = HtmlRewriter(is_xhtml=True).loads(input)
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
@@ -435,17 +413,6 @@ King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
         self.assertEqual(''.join(str(m) for m in markups), reserialized)
 
     def test_loads_xhtml11(self):
-        input = """<svg xmlns="http://www.w3.org/2000/svg"><br></br></svg>"""
-        parsed = input
-        reserialized = parsed
-
-        markups = HtmlRewriter(is_xhtml=True).loads(input)
-        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
-        self.assertEqual(''.join(str(m) for m in markups), parsed)
-        for m in markups: m.src = None
-        self.assertEqual(''.join(str(m) for m in markups), reserialized)
-
-    def test_loads_xhtml12(self):
         input = """\
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mrow>
