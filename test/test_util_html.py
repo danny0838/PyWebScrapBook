@@ -226,7 +226,7 @@ King's "123" < & > 456 (unescaped)<br>
 
     def test_loads_html14(self):
         input = """<svg><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"/><text x="25" y="40">demo</text></svg>"""
-        parsed = input
+        parsed = """<svg><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"/></circle><text x="25" y="40">demo</text></svg>"""
         reserialized = """<svg><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /><text x="25" y="40">demo</text></svg>"""
 
         markups = HtmlRewriter().loads(input)
@@ -312,7 +312,7 @@ King's "123" < & > 456 (unescaped)<br>
 
     def test_loads_xhtml03(self):
         input = """<meta charset="UTF-8"/>"""
-        parsed = input
+        parsed = """<meta charset="UTF-8"/></meta>"""
         reserialized = """<meta charset="UTF-8" />"""
 
         markups = HtmlRewriter(is_xhtml=True).loads(input)
@@ -360,7 +360,10 @@ console.log('test <my> <' + '/script> & tag');
 foo&nbsp;&nbsp;&nbsp;中文<br/>
 King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br/>
 """
-        parsed = input
+        parsed = """\
+foo&nbsp;&nbsp;&nbsp;中文<br/></br>
+King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br/></br>
+"""
         reserialized = """\
 foo&nbsp;&nbsp;&nbsp;中文<br />
 King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
@@ -374,7 +377,7 @@ King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
 
     def test_loads_xhtml07(self):
         input = """<input type="checkbox" checked="checked"/>"""
-        parsed = input
+        parsed = """<input type="checkbox" checked="checked"/></input>"""
         reserialized = """<input type="checkbox" checked="checked" />"""
 
         markups = HtmlRewriter(is_xhtml=True).loads(input)
@@ -407,7 +410,7 @@ King&apos;s &quot;123&quot; &lt; &amp; &gt; 456 (escaped)<br />
 
     def test_loads_xhtml10(self):
         input = """<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"/><text x="25" y="40">demo</text></svg>"""
-        parsed = input
+        parsed = """<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"/></circle><text x="25" y="40">demo</text></svg>"""
         reserialized = """<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /><text x="25" y="40">demo</text></svg>"""
 
         markups = HtmlRewriter(is_xhtml=True).loads(input)

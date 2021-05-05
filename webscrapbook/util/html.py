@@ -306,14 +306,17 @@ class HTMLParser(html.parser.HTMLParser):
     def _process_token_starttag(self, markup):
         self._rv.append(markup)
 
+        require_endtag = False
+
         if self._is_xhtml or self._in_html_foreign_element():
-            # don't push stack for a <tag /> in XHTML or XML
             if markup.is_self_end:
-                return
+                require_endtag = True
 
         elif markup.tag in VOID_ELEMENTS:
-            # create a hidden endtag for a void element
-            # and don't push stack
+            require_endtag = True
+
+        if require_endtag:
+            # create a hidden endtag and don't push stack
             endtag = MarkupTag(
                 is_xhtml=self._is_xhtml,
                 type='endtag',
