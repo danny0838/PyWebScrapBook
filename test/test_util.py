@@ -728,6 +728,17 @@ ul  >  li  :not([hidden])  {
         self.assertFalse(util.mime_is_xhtml('image/svg+xml'))
         self.assertFalse(util.mime_is_xhtml('application/octet-stream'))
 
+    def test_mime_is_svg(self):
+        self.assertFalse(util.mime_is_svg('text/html'))
+        self.assertFalse(util.mime_is_svg('application/xhtml+xml'))
+        self.assertFalse(util.mime_is_svg('application/html+zip'))
+        self.assertFalse(util.mime_is_svg('application/x-maff'))
+        self.assertFalse(util.mime_is_svg('text/plain'))
+        self.assertFalse(util.mime_is_svg('text/markdown'))
+        self.assertFalse(util.mime_is_svg('text/xml'))
+        self.assertTrue(util.mime_is_svg('image/svg+xml'))
+        self.assertFalse(util.mime_is_svg('application/octet-stream'))
+
     def test_mime_is_archive(self):
         self.assertFalse(util.mime_is_archive('text/html'))
         self.assertFalse(util.mime_is_archive('application/xhtml+xml'))
@@ -805,6 +816,17 @@ ul  >  li  :not([hidden])  {
         self.assertFalse(util.is_xhtml('20200101000000000/test.xml'))
         self.assertFalse(util.is_xhtml('20200101000000000/test.svg'))
         self.assertFalse(util.is_xhtml('20200101000000000/whatever'))
+
+    def test_is_svg(self):
+        self.assertFalse(util.is_svg('index.html'))
+        self.assertFalse(util.is_svg('index.xhtml'))
+        self.assertFalse(util.is_svg('20200101000000000.htz'))
+        self.assertFalse(util.is_svg('20200101000000000.maff'))
+        self.assertFalse(util.is_svg('20200101000000000/index.md'))
+        self.assertFalse(util.is_svg('20200101000000000/test.txt'))
+        self.assertFalse(util.is_svg('20200101000000000/test.xml'))
+        self.assertTrue(util.is_svg('20200101000000000/test.svg'))
+        self.assertFalse(util.is_svg('20200101000000000/whatever'))
 
     def test_is_archive(self):
         self.assertFalse(util.is_archive('index.html'))

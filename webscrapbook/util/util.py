@@ -836,6 +836,10 @@ def mime_is_xhtml(mime):
     return mime == 'application/xhtml+xml'
 
 
+def mime_is_svg(mime):
+    return mime == 'image/svg+xml'
+
+
 def mime_is_archive(mime):
     return mime in {'application/html+zip', 'application/x-maff'}
 
@@ -864,6 +868,11 @@ def is_html(filename):
 def is_xhtml(filename):
     mime, _ = mimetypes.guess_type(filename)
     return mime_is_xhtml(mime)
+
+
+def is_svg(filename):
+    mime, _ = mimetypes.guess_type(filename)
+    return mime_is_svg(mime)
 
 
 def is_archive(filename):
