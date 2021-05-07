@@ -409,7 +409,7 @@ class HtmlRewriter:
 
         if file:
             self.file = file
-            self.is_xhtml = util.is_xhtml(file)
+            self.is_xhtml = util.is_xhtml(file) or util.is_svg(file)
 
             if not doc_url:
                 self.doc_url = urljoin('file:///', pathname2url(file))
