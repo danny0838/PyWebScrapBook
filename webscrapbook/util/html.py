@@ -409,13 +409,14 @@ class HtmlRewriter:
         self.url_chain = url_chain.copy()
 
         if file:
-            self.is_xhtml = util.is_xhtml(file) or util.is_svg(file)
+            if is_xhtml is None:
+                self.is_xhtml = util.is_xhtml(file) or util.is_svg(file)
 
-            if not doc_url:
+            if doc_url is None:
                 self.doc_url = urljoin('file:///', pathname2url(file))
 
         if self.doc_url:
-            if not self.base_url:
+            if base_url is None:
                 self.base_url = self.doc_url
 
             self.url_chain.add(self.doc_url)
