@@ -1076,7 +1076,7 @@ scrapbook.meta({
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bin',
+                'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd',
                 },
             })
 

@@ -33,6 +33,20 @@ REGEX_MAOXIAN_DOC_COMMENT = re.compile(r'^\s*OriginalSrc: (\S+)')
 
 REGEX_JS_DATE = re.compile(r'^([^()]+)')
 
+COMMON_MIME_EXTENSION = {
+    'application/octet-stream': '',
+    'text/html': '.html',
+    'application/xhtml+xml': '.xhtml',
+    'image/svg+xml': '.svg',
+    'image/jpeg': '.jpg',
+    'audio/mpeg': '.mp3',
+    'audio/ogg': '.oga',
+    'video/mpeg': '.mpeg',
+    'video/mp4': '.mp4',
+    'video/ogg': '.ogv',
+    'application/ogg': '.ogx',
+    }
+
 
 def generate_item_title(book, id):
     # infer from source
@@ -109,6 +123,19 @@ def iter_favicon_elems(tree):
     for elem in tree.iter('link'):
         if 'icon' in elem.attrib.get('rel').lower().split():
             yield elem
+
+
+def mime_to_extension(mime):
+    """Fix extension for some common MIME types.
+
+    For example, Python may pick '.xht' instead of '.xhtml' as the primary
+    extension for 'application/xhtml+xml'. This translates some common MIME
+    types to a fixed mapped extension for better interoperability.
+    """
+    try:
+        return COMMON_MIME_EXTENSION[mime]
+    except KeyError:
+        return mimetypes.guess_extension(mime) or ''
 
 
 class Indexer:
@@ -430,7 +457,7 @@ class FavIconCacher:
 
             fsrc.seek(0)
             hash_ = util.checksum(fsrc)
-            ext = mimetypes.guess_extension(mime) or ''
+            ext = mime_to_extension(mime)
             fdst = os.path.join(self.book.tree_dir, 'favicon', hash_ + ext)
 
             if os.path.isfile(fdst):
