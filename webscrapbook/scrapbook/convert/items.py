@@ -241,8 +241,8 @@ class Converter:
 
 def run(input, output, book_ids=None, item_ids=None, types=None, format=None):
     start = time.time()
-    book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else '(all)'
-    item_ids_text = ', '.join(f'"{id}"' for id in item_ids) if item_ids else '(all)'
+    book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else 'all'
+    item_ids_text = ', '.join(f'"{id}"' for id in item_ids) if item_ids else 'all'
     yield Info('info', 'converting items:')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')

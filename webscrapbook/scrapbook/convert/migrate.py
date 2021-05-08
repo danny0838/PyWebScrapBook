@@ -1050,7 +1050,7 @@ def run(input, output, book_ids=None, *,
         use_native_tags=False,
         ):
     start = time.time()
-    book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else '(all)'
+    book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else 'all'
     yield Info('info', 'migrating:')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')
