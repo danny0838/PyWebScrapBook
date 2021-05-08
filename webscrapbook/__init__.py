@@ -44,6 +44,11 @@ mimetypes.add_type('font/woff', '.woff')
 mimetypes.add_type('font/woff2', '.woff2')
 mimetypes.add_type('audio/ogg', '.oga')
 mimetypes.add_type('video/ogg', '.ogv')
+mimetypes.add_type('application/ogg', '.ogx')  # IANA
+mimetypes.add_type('application/ogg', '.ogg')  # MAFF
+mimetypes.add_type('text/vtt', '.vtt')
+mimetypes.add_type('application/java-archive', '.jar')
+mimetypes.add_type('application/java-vm', '.class')
 mimetypes.add_type('application/epub+zip', '.epub')
 mimetypes.add_type('application/x-7z-compressed', '.7z')
 mimetypes.add_type('application/vnd.rar', '.rar')
