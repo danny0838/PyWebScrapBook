@@ -129,32 +129,35 @@ scrapbook.meta({
                 finally:
                     self.tearDown()
 
-    def test_param_format_folder01(self):
-        """Test format "folder"
-
-        - Folder converted from MAFF should not contain index.rdf
+    def _test_param_format_sample(self):
+        """Generate sample files for test_param_format_*
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 scrapbook.meta({
   "20200101000000001": {
     "type": "",
+    "create": "20200101000000000",
     "index": "20200101000000001/index.html"
   },
   "20200101000000002": {
     "type": "",
+    "create": "20200101000000000",
     "index": "20200101000000002.htz"
   },
   "20200101000000003": {
     "type": "",
+    "create": "20200101000000000",
     "index": "20200101000000003.maff"
   },
   "20200101000000004": {
     "type": "",
+    "create": "20200101000000000",
     "index": "20200101000000004.html"
   },
   "20200101000000005": {
     "type": "",
+    "create": "20200101000000000",
     "index": "20200101000000005.txt"
   }
 })""")
@@ -184,6 +187,13 @@ scrapbook.meta({
         index_file = os.path.join(self.test_input, '20200101000000005.txt')
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write("""my page content""")
+
+    def test_param_format_folder01(self):
+        """Test format "folder"
+
+        - Folder converted from MAFF should not contain index.rdf
+        """
+        self._test_param_format_sample()
 
         for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
@@ -225,22 +235,27 @@ scrapbook.meta({
         self.assertDictEqual(book.meta, {
             '20200101000000001': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000001/index.html',
                 },
             '20200101000000002': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000002/index.html',
                 },
             '20200101000000003': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000003/index.html',
                 },
             '20200101000000004': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000004.html',
                 },
             '20200101000000005': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000005.txt',
                 },
             })
@@ -343,56 +358,7 @@ scrapbook.meta({
 
         - HTZ converted from MAFF should not contain index.rdf
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001/index.html"
-  },
-  "20200101000000002": {
-    "type": "",
-    "index": "20200101000000002.htz"
-  },
-  "20200101000000003": {
-    "type": "",
-    "index": "20200101000000003.maff"
-  },
-  "20200101000000004": {
-    "type": "",
-    "index": "20200101000000004.html"
-  },
-  "20200101000000005": {
-    "type": "",
-    "index": "20200101000000005.txt"
-  }
-})""")
-
-        index_dir = os.path.join(self.test_input, '20200101000000001')
-        os.makedirs(index_dir, exist_ok=True)
-        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
-        with open(os.path.join(index_dir, 'resource.txt'), 'w', encoding='UTF-8') as fh:
-            fh.write("""dummy""")
-
-        index_file = os.path.join(self.test_input, '20200101000000002.htz')
-        with zipfile.ZipFile(index_file, 'w') as zh:
-            zh.writestr('index.html', """my page content""")
-            zh.writestr('resource.txt', """dummy""")
-
-        index_file = os.path.join(self.test_input, '20200101000000003.maff')
-        with zipfile.ZipFile(index_file, 'w') as zh:
-            zh.writestr('20200101000000003/index.html', """my page content""")
-            zh.writestr('20200101000000003/index.rdf', """dummy""")
-            zh.writestr('20200101000000003/resource.txt', """dummy""")
-
-        index_file = os.path.join(self.test_input, '20200101000000004.html')
-        with open(index_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
-
-        index_file = os.path.join(self.test_input, '20200101000000005.txt')
-        with open(index_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
+        self._test_param_format_sample()
 
         for info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
@@ -433,22 +399,27 @@ scrapbook.meta({
         self.assertDictEqual(book.meta, {
             '20200101000000001': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000001.htz',
                 },
             '20200101000000002': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000002.htz',
                 },
             '20200101000000003': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000003.htz',
                 },
             '20200101000000004': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000004.html',
                 },
             '20200101000000005': {
                 'type': '',
+                'create': '20200101000000000',
                 'index': '20200101000000005.txt',
                 },
             })
@@ -547,61 +518,7 @@ scrapbook.meta({
 
         - MAFF converted from other format should contain a valid index.rdf
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000001/index.html"
-  },
-  "20200101000000002": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000002.htz"
-  },
-  "20200101000000003": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000003.maff"
-  },
-  "20200101000000004": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000004.html"
-  },
-  "20200101000000005": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000005.txt"
-  }
-})""")
-
-        index_dir = os.path.join(self.test_input, '20200101000000001')
-        os.makedirs(index_dir, exist_ok=True)
-        with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
-        with open(os.path.join(index_dir, 'resource.txt'), 'w', encoding='UTF-8') as fh:
-            fh.write("""dummy""")
-
-        index_file = os.path.join(self.test_input, '20200101000000002.htz')
-        with zipfile.ZipFile(index_file, 'w') as zh:
-            zh.writestr('index.html', """my page content""")
-            zh.writestr('resource.txt', """dummy""")
-
-        index_file = os.path.join(self.test_input, '20200101000000003.maff')
-        with zipfile.ZipFile(index_file, 'w') as zh:
-            zh.writestr('20200101000000003/index.html', """my page content""")
-            zh.writestr('20200101000000003/index.rdf', """dummy""")
-            zh.writestr('20200101000000003/resource.txt', """dummy""")
-
-        index_file = os.path.join(self.test_input, '20200101000000004.html')
-        with open(index_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
-
-        index_file = os.path.join(self.test_input, '20200101000000005.txt')
-        with open(index_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
+        self._test_param_format_sample()
 
         for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
