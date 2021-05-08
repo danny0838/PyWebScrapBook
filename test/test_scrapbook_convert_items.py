@@ -706,14 +706,6 @@ scrapbook.meta({
   "20200101000000003": {
     "type": "",
     "index": "20200101000000003.maff"
-  },
-  "20200101000000004": {
-    "type": "",
-    "index": "20200101000000004.html"
-  },
-  "20200101000000005": {
-    "type": "",
-    "index": "20200101000000005.txt"
   }
 })""")
 
@@ -738,14 +730,6 @@ scrapbook.meta({
             zh.writestr('20200101000000003/index.rdf', """dummy""")
             zh.writestr('20200101000000003/resource.txt', """dummy""")
 
-        index_file = os.path.join(self.test_input, '20200101000000004.html')
-        with open(index_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
-
-        index_file = os.path.join(self.test_input, '20200101000000005.txt')
-        with open(index_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""my page content""")
-
         for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
@@ -757,8 +741,6 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000001', 'resource.txt'),
             os.path.join(self.test_output, '20200101000000002.htz'),
             os.path.join(self.test_output, '20200101000000003.maff'),
-            os.path.join(self.test_output, '20200101000000004.html'),
-            os.path.join(self.test_output, '20200101000000005.txt'),
             })
 
         book = Host(self.test_output).books['']
@@ -775,14 +757,6 @@ scrapbook.meta({
             '20200101000000003': {
                 'type': '',
                 'index': '20200101000000003.maff',
-                },
-            '20200101000000004': {
-                'type': '',
-                'index': '20200101000000004.html',
-                },
-            '20200101000000005': {
-                'type': '',
-                'index': '20200101000000005.txt',
                 },
             })
 
