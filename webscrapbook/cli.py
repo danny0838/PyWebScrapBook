@@ -671,9 +671,16 @@ to conflict with the web page stylesheets""")
         help="""convert items in the scrapbook""",
         epilog="""\
 Available FORMATs:
-  "folder"   a folder with index.html and its resource files
-  "htz"      a ZIP archive with index.html as entry
-  "maff"     a ZIP archive with each page in an individial subfolder
+  "folder"       a folder with index.html and its resource files
+  "htz"          a ZIP archive with index.html as entry
+  "maff"         a ZIP archive with each page in an individial subfolder
+  "single_file"  a single file with resources embedded in
+
+* Conversion between "folder", "htz", and "maff" is mostly lostless (as long as
+  no multi-page or arbitrary metadata is included in the MAFF file), while
+  conversion between single_file and other formats may lose information
+  permanently, such as filename, in-depth captured pages. Also note that some
+  features are not supported for single_file.
 
 Available TYPEs:
   ""         a captured web page
@@ -695,7 +702,7 @@ Available TYPEs:
         nargs='+', action='store',
         help="""ID of the item(s) to convert (default: all items)""")
     parser_convert_items.add_argument('--format', metavar='FORMAT', action='store',
-        choices=['folder', 'htz', 'maff'],
+        choices=['folder', 'htz', 'maff', 'single_file'],
         help="""file format to convert item(s) to (default: no conversion)""")
     parser_convert_items.add_argument('--type', dest='types', metavar='TYPE', action='store', nargs='+',
         default=[''],

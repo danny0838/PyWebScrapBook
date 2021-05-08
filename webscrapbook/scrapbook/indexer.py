@@ -3,13 +3,15 @@
 import os
 import shutil
 import zipfile
+import traceback
 import io
 import mimetypes
 import binascii
 import re
+from functools import partial
 from base64 import b64encode
-from urllib.parse import urlsplit, unquote
-from urllib.request import urlopen
+from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote
+from urllib.request import urlopen, pathname2url, url2pathname
 from urllib.error import URLError
 from datetime import datetime, timezone, timedelta
 
@@ -17,6 +19,8 @@ from lxml import etree
 
 from .. import util
 from ..util import Info
+from ..util.html import REGEX_ASCII_WHITESPACES, HtmlRewriter
+from ..util.css import CssRewriter
 
 
 HTML_TITLE_EXCLUDE_PARENTS = {
@@ -547,3 +551,586 @@ class FavIconCacher:
         mime, _ = mimetypes.guess_type(subpath)
         mime = mime or 'application/octet-stream'
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
+
+
+class SingleHtmlConverter(HtmlRewriter):
+    REGEX_SRCSET = re.compile(r"""(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))""")
+
+    def __init__(self, *args, is_svg=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.is_svg = is_svg
+
+        if self.file:
+            if is_svg is None:
+                self.is_svg = util.is_svg(self.file)
+
+        self.html_converter = SingleHtmlConverter
+        self.css_converter = SingleHtmlCssConverter
+
+    def run(self):
+        """Overwrite parent to return rewritten HTML instead.
+        """
+        self.last_html_encoding = None
+
+        markups = self.load(self.file)
+        markups = self.rewrite(markups)
+        return ''.join(str(m) for m in markups if not m.hidden)
+
+    def rewrite(self, markups):
+        def update_context():
+            nonlocal context
+            context = 'html'
+            for tag in stack:
+                if tag in {'template', 'svg', 'math'}:
+                    context = tag
+                    break
+
+        # special handling for SVG
+        if self.is_svg:
+            return self.rewrite_svg(markups)
+
+        # reset base_url according to the first base[href] element
+        for markup in markups:
+            if markup.type == 'starttag':
+                if markup.tag == 'base':
+                    url = markup.getattr('href')
+                    if url is not None:
+                        self.base_url = urljoin(self.base_url, url)
+                    break
+
+        stack = []
+        context = 'html'
+        i = 0
+        while True:
+            try:
+                markup = markups[i]
+            except IndexError:
+                break
+
+            if markup.type == 'starttag':
+                stack.append(markup.tag)
+                update_context()
+
+                if context == 'html':
+                    self.rewrite_markup(markup)
+                elif context == 'svg':
+                    self.rewrite_markup_svg(markup)
+
+            elif markup.type == 'endtag':
+                stack.pop()
+                update_context()
+
+            elif markup.type == 'data':
+                if context in {'html', 'svg'}:
+                    # rewrite content of style element
+                    try:
+                        last_markup = markups[i - 1]
+                    except KeyError:
+                        pass
+                    else:
+                        if last_markup.type == 'starttag' and last_markup.tag == 'style':
+                            markup.data = self.rewrite_style_text(markup.data)
+                            markup.src = None
+
+            i += 1
+
+        return markups
+
+    def rewrite_svg(self, markups):
+        i = 0
+        while True:
+            try:
+                markup = markups[i]
+            except IndexError:
+                break
+
+            if markup.type == 'starttag':
+                self.rewrite_markup_svg(markup)
+
+            elif markup.type == 'data':
+                # rewrite content of style element
+                try:
+                    last_markup = markups[i - 1]
+                except KeyError:
+                    pass
+                else:
+                    if last_markup.type == 'starttag' and last_markup.tag == 'style':
+                        markup.data = self.rewrite_style_text(markup.data)
+                        markup.src = None
+
+            i += 1
+
+        return markups
+
+    def rewrite_markup(self, markup):
+        self.rewrite_attr(markup, 'style', self.rewrite_style_attr)
+        self.rewrite_attr(markup, 'data-scrapbook-shadowdom', self.rewrite_shadowdom_attr)
+
+        if markup.tag == 'meta':
+            http_equiv = markup.getattr('http-equiv')
+            if http_equiv and http_equiv.lower() == 'refresh':
+                self.rewrite_attr(markup, 'content', self.rewrite_meta_refresh_content)
+            return
+
+        if markup.tag == 'link':
+            rel = markup.getattr('rel')
+            if rel:
+                rels = REGEX_ASCII_WHITESPACES.split(rel)
+                if 'stylesheet' in rels:
+                    self.rewrite_attr(markup, 'href', partial(self.rewrite_url, rewrite_css=True))
+                elif 'icon' in rels:
+                    self.rewrite_attr(markup, 'href', self.rewrite_url)
+            return
+
+        if markup.tag in {'body', 'table', 'tr', 'th', 'td'}:
+            self.rewrite_attr(markup, 'background', self.rewrite_url)
+            return
+
+        if markup.tag == 'frame':
+            self.rewrite_attr(markup, 'src', partial(self.rewrite_url, rewrite_doc=True))
+            return
+
+        if markup.tag == 'iframe':
+            self.rewrite_iframe(markup)
+            return
+
+        if markup.tag in {'a', 'area'}:
+            self.rewrite_attr(markup, 'href', self.rewrite_url)
+            return
+
+        if markup.tag == 'script':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            return
+
+        if markup.tag == 'img':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            self.rewrite_attr(markup, 'srcset', self.rewrite_srcset)
+            return
+
+        if markup.tag == 'audio':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            return
+
+        if markup.tag == 'video':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            self.rewrite_attr(markup, 'poster', self.rewrite_url)
+            return
+
+        if markup.tag == 'source':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            self.rewrite_attr(markup, 'srcset', self.rewrite_srcset)
+            return
+
+        if markup.tag == 'track':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            return
+
+        if markup.tag == 'embed':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            return
+
+        if markup.tag == 'object':
+            self.rewrite_attr(markup, 'data', partial(self.rewrite_url, rewrite_doc=True))
+            return
+
+        if markup.tag == 'applet':
+            self.rewrite_attr(markup, 'code', self.rewrite_url)
+            self.rewrite_attr(markup, 'archive', self.rewrite_url)
+            return
+
+        if markup.tag == 'input' and markup.getattr('type', '').lower() == 'image':
+            self.rewrite_attr(markup, 'src', self.rewrite_url)
+            return
+
+    def rewrite_markup_svg(self, markup):
+        self.rewrite_attr(markup, 'style', self.rewrite_style_attr)
+        self.rewrite_attr(markup, 'href', self.rewrite_url)
+        self.rewrite_attr(markup, 'xlink:href', self.rewrite_url)
+
+    def rewrite_attr(self, markup, target_attr, callback):
+        for i, attr_value in enumerate(markup.attrs):
+            attr, value = attr_value
+            if attr != target_attr:
+                continue
+
+            # there's no point to rewrite a boolean attribute
+            if value is None:
+                continue
+
+            value_new = callback(value)
+            if value_new != value:
+                markup.attrs[i] = (attr, value_new)
+                markup.src = None
+
+    def remove_attr(self, markup, target_attr):
+        attrs = []
+
+        for i, attr_value in enumerate(markup.attrs):
+            attr, value = attr_value
+            if attr == target_attr:
+                markup.src = None
+                continue
+
+            attrs.append((attr, value))
+
+        markup.attrs = attrs
+
+    def rewrite_url(self, url, rewrite_doc=False, rewrite_css=False, meta_refresh=False):
+        if meta_refresh:
+            udst = urljoin(self.doc_url, url)
+        else:
+            udst = urljoin(self.base_url, url)
+
+        urlparts = urlsplit(udst)
+
+        # skip non-file URL
+        if urlparts.scheme != 'file':
+            return url
+
+        fdst = url2pathname(urlparts.path)
+
+        # query/hash only if targeting self
+        if os.path.normcase(fdst) == os.path.normcase(url2pathname(urlsplit(self.doc_url).path)):
+            return urlunsplit(('', '', '', urlparts.query, urlparts.fragment))
+
+        if meta_refresh:
+            return f'urn:scrapbook:convert:skip:url:{url}'
+
+        mime, _ = mimetypes.guess_type(fdst)
+        mime = mime or 'application/octet-stream'
+
+        if rewrite_css:
+            if udst in self.url_chain:
+                return f'urn:scrapbook:convert:circular:url:{url}'
+
+            try:
+                conv = self.css_converter(fdst, url_chain=self.url_chain)
+                content = conv.run()
+                bytes_ = content.encode(conv.encoding)
+                return f'data:{mime},{quote(bytes_)}'
+            except OSError:
+                return f'urn:scrapbook:convert:error:url:{url}'
+
+        if rewrite_doc and util.mime_is_html(mime) or util.mime_is_svg(mime):
+            if udst in self.url_chain:
+                return f'urn:scrapbook:convert:circular:url:{url}'
+
+            # handle possible meta refresh
+            try:
+                fdst_mr = util.get_meta_refreshed_file(fdst)
+            except util.MetaRefreshError:
+                return f'urn:scrapbook:convert:error:url:{url}'
+
+            if fdst_mr:
+                fdst = fdst_mr
+                udst = urljoin('file:///', pathname2url(fdst))
+
+                if udst in self.url_chain:
+                    return f'urn:scrapbook:convert:circular:url:{url}'
+
+                mime, _ = mimetypes.guess_type(fdst)
+                mime = mime or 'application/octet-stream'
+
+            if util.mime_is_html(mime) or util.mime_is_svg(mime):
+                try:
+                    conv = self.html_converter(fdst, url_chain=self.url_chain, parser=self.parser)
+                    content = conv.run()
+                    bytes_ = content.encode(conv.encoding)
+                    self.last_html_encoding = conv.encoding
+                    return f'data:{mime},{quote(bytes_)}'
+                except OSError:
+                    return f'urn:scrapbook:convert:error:url:{url}'
+
+        try:
+            with open(fdst, 'rb') as fh:
+                bytes_ = fh.read()
+        except OSError:
+            return f'urn:scrapbook:converter:error:url:{url}'
+
+        if util.is_compressible(mime):
+            return f'data:{mime},{quote(bytes_)}'
+
+        return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
+
+    def rewrite_srcdoc(self, text):
+        markups = self.loads(text)
+        markups = self.rewrite(markups)
+        return ''.join(str(m) for m in markups if not m.hidden)
+
+    def rewrite_srcset(self, srcset):
+        return self.REGEX_SRCSET.sub(self.rewrite_srcset_sub, srcset)
+
+    def rewrite_srcset_sub(self, m):
+        replacement = self.rewrite_url(m.group(2))
+        return m.group(1) + replacement + m.group(3)
+
+    def rewrite_style_text(self, text):
+        try:
+            conv = self.css_converter(ref_url=self.base_url, url_chain=self.url_chain)
+            return conv.rewrite(text,
+                rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
+                rewrite_font_face_url=conv.rewrite_url,
+                rewrite_background_url=conv.rewrite_url,
+                )
+        except OSError:
+            return f'urn:scrapbook:convert:error:url:{url}'
+
+    def rewrite_style_attr(self, text):
+        try:
+            conv = self.css_converter(ref_url=self.base_url, url_chain=self.url_chain)
+            return conv.rewrite(text,
+                rewrite_background_url=conv.rewrite_url,
+                )
+        except OSError:
+            return f'urn:scrapbook:convert:error:url:{url}'
+
+    def rewrite_meta_refresh_content(self, text):
+        time, url, context = util.parse_meta_refresh_content(text)
+        if time is not None:
+            url = self.rewrite_url(url, meta_refresh=True)
+            return f'{time}; url={url}'
+        return text
+
+    def rewrite_iframe(self, markup):
+        srcdoc = markup.getattr('srcdoc')
+
+        if srcdoc is not None:
+            self.rewrite_attr(markup, 'srcdoc', self.rewrite_srcdoc)
+            self.remove_attr(markup, 'src')
+            return
+
+        for i, attr_value in enumerate(markup.attrs):
+            attr, value = attr_value
+            if attr != 'src':
+                continue
+
+            # there's no point to rewrite a boolean attribute
+            if value is None:
+                continue
+
+            value_new = self.rewrite_url(value, rewrite_doc=True)
+            if value_new != value:
+                as_srcdoc = False
+                if value_new.startswith('data:'):
+                    bytes_, mime, _ = util.parse_datauri(value_new)
+                    if util.mime_is_html(mime) and not util.mime_is_xhtml(mime):
+                        markup.attrs[i] = ('srcdoc', bytes_.decode(self.last_html_encoding or 'UTF-8'))
+                        as_srcdoc = True
+                if not as_srcdoc:
+                    markup.attrs[i] = (attr, value_new)
+                markup.src = None
+
+    def rewrite_shadowdom_attr(self, text):
+        markups = self.loads(text)
+        markups = self.rewrite(markups)
+        return ''.join(str(m) for m in markups if not m.hidden)
+
+
+class SingleHtmlCssConverter(CssRewriter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.css_converter = SingleHtmlCssConverter
+
+    def run(self):
+        return super().run(
+            rewrite_import_url=partial(self.rewrite_url, rewrite_css=True),
+            rewrite_font_face_url=self.rewrite_url,
+            rewrite_background_url=self.rewrite_url,
+            )
+
+    def rewrite_url(self, url, rewrite_css=False):
+        udst = urljoin(self.ref_url, url)
+
+        urlparts = urlsplit(udst)
+
+        # skip non-file URL
+        if urlparts.scheme != 'file':
+            return url
+
+        fdst = url2pathname(urlparts.path)
+
+        # query/hash only if targeting self
+        if os.path.normcase(fdst) == os.path.normcase(url2pathname(urlsplit(self.ref_url).path)):
+            return urlunsplit(('', '', urlparts.path, urlparts.query, urlparts.fragment))
+
+        mime, _ = mimetypes.guess_type(fdst)
+        mime = mime or 'application/octet-stream'
+
+        if rewrite_css:
+            if udst in self.url_chain:
+                return f'urn:scrapbook:convert:circular:url:{url}'
+
+            try:
+                conv = self.css_converter(fdst, url_chain=self.url_chain)
+                content = conv.run()
+                bytes_ = content.encode(conv.encoding)
+                return f'data:{mime},{quote(bytes_)}'
+            except OSError:
+                return f'urn:scrapbook:convert:error:url:{url}'
+
+        try:
+            with open(fdst, 'rb') as fh:
+                bytes_ = fh.read()
+        except OSError:
+            return f'urn:scrapbook:converter:error:url:{url}'
+
+        return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'
+
+
+class UnSingleHtmlConverter(SingleHtmlConverter):
+    def __init__(self, *args, ref_file=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.ref_file = ref_file if ref_file is not None else self.file
+
+        # bind ref_file to the constructor for derived conversions to inherit it
+        self.html_converter = partial(UnSingleHtmlConverter, ref_file=self.ref_file)
+        self.css_converter = partial(UnSingleHtmlCssConverter, ref_file=self.ref_file)
+
+    def rewrite_url(self, url, rewrite_doc=False, rewrite_css=False, meta_refresh=False):
+        if meta_refresh:
+            udst = urljoin(self.doc_url, url)
+        else:
+            udst = urljoin(self.base_url, url)
+
+        urlparts = urlsplit(udst)
+
+        # skip non-data URL
+        if urlparts.scheme != 'data':
+            return url
+
+        try:
+            bytes_, mime, params = util.parse_datauri(url)
+        except util.DataUriMalformedError:
+            traceback.print_exc()
+            return f'urn:scrapbook:convert:error:url:{url}'
+
+        bytes_io = io.BytesIO(bytes_)
+
+        if rewrite_css:
+            try:
+                conv = self.css_converter()
+                text = conv.load(bytes_io)
+                text = conv.rewrite(text,
+                    rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
+                    rewrite_font_face_url=conv.rewrite_url,
+                    rewrite_background_url=conv.rewrite_url,
+                    )
+                bytes_ = text.encode(conv.encoding)
+                bytes_io = io.BytesIO(bytes_)
+            except Exception:
+                traceback.print_exc()
+                return f'urn:scrapbook:convert:error:url:{url}'
+
+        elif rewrite_doc and util.mime_is_html(mime) or util.mime_is_svg(mime):
+            try:
+                encoding = util.fix_codec(params['charset'])
+            except KeyError:
+                encoding = None
+            try:
+                conv = self.html_converter(
+                    is_xhtml=util.mime_is_xhtml(mime),
+                    is_svg=util.mime_is_svg(mime),
+                    encoding=encoding, parser=self.parser)
+                markups = conv.load(bytes_io)
+                markups = conv.rewrite(markups)
+                bytes_io = io.BytesIO()
+                for markup in markups:
+                    if not markup.hidden:
+                        bytes_io.write(str(markup).encode(conv.encoding))
+            except Exception:
+                traceback.print_exc()
+                return f'urn:scrapbook:convert:error:url:{url}'
+
+        bytes_io.seek(0)
+        sha = util.checksum(bytes_io)
+        ext = mime_to_extension(mime)
+        basename = f'{sha}{ext}'
+        fdst = os.path.join(os.path.dirname(self.ref_file), basename)
+        if not os.path.lexists(fdst):
+            bytes_io.seek(0)
+            with open(fdst, 'wb') as fh:
+                shutil.copyfileobj(bytes_io, fh)
+
+        return basename
+
+    def rewrite_iframe(self, markup):
+        srcdoc = markup.getattr('srcdoc')
+
+        if srcdoc is not None:
+            self.remove_attr(markup, 'src')
+
+            for i, attr_value in enumerate(markup.attrs):
+                attr, value = attr_value
+                if attr != 'srcdoc':
+                    continue
+
+                if value is None:
+                    value = ''
+
+                content = self.rewrite_srcdoc(value)
+                bytes_ = content.encode('UTF-8')
+                dataurl = f'data:text/html;charset=utf-8,{quote(bytes_)}'
+                value_new = self.rewrite_url(dataurl)
+                markup.attrs[i] = ('src', value_new)
+                markup.src = None
+
+            return
+
+        self.rewrite_attr(markup, 'src', partial(self.rewrite_url, rewrite_doc=True))
+
+
+class UnSingleHtmlCssConverter(SingleHtmlCssConverter):
+    def __init__(self, *args, ref_file=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.ref_file = ref_file if ref_file is not None else self.file
+
+        # bind ref_file to the constructor for derived conversions to inherit it
+        self.css_converter = partial(UnSingleHtmlCssConverter, ref_file=self.ref_file)
+
+    def rewrite_url(self, url, rewrite_css=False):
+        udst = urljoin(self.ref_url, url)
+
+        urlparts = urlsplit(udst)
+
+        # skip non-data URL
+        if urlparts.scheme != 'data':
+            return url
+
+        try:
+            bytes_, mime, params = util.parse_datauri(url)
+        except util.DataUriMalformedError:
+            traceback.print_exc()
+            return f'urn:scrapbook:convert:error:url:{url}'
+
+        bytes_io = io.BytesIO(bytes_)
+
+        if rewrite_css:
+            try:
+                conv = self.css_converter()
+                text = conv.load(bytes_io)
+                text = conv.rewrite(text,
+                    rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
+                    rewrite_font_face_url=conv.rewrite_url,
+                    rewrite_background_url=conv.rewrite_url,
+                    )
+                bytes_ = text.encode(conv.encoding)
+                bytes_io = io.BytesIO(bytes_)
+            except Exception:
+                traceback.print_exc()
+                return f'urn:scrapbook:convert:error:url:{url}'
+
+        bytes_io.seek(0)
+        sha = util.checksum(bytes_io)
+        ext = mime_to_extension(mime)
+        basename = f'{sha}{ext}'
+        fdst = os.path.join(os.path.dirname(self.ref_file), basename)
+        if not os.path.lexists(fdst):
+            bytes_io.seek(0)
+            with open(fdst, 'wb') as fh:
+                shutil.copyfileobj(bytes_io, fh)
+
+        return basename

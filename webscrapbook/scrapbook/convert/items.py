@@ -7,11 +7,12 @@ import copy
 import html
 from datetime import datetime, timezone
 from email.utils import format_datetime
+from urllib.parse import quote
 
 from ... import util
 from ...util import Info
 from ..host import Host
-from ..indexer import FavIconCacher
+from ..indexer import FavIconCacher, SingleHtmlConverter, UnSingleHtmlConverter
 
 
 class Converter:
@@ -97,10 +98,8 @@ class Converter:
             format = 'htz'
         elif util.is_maff(index):
             format = 'maff'
-        elif util.is_html(index):
-            format = 'single_html'
         else:
-            format = 'file'
+            format = 'single_file'
 
         if format == self.format:
             yield Info('debug', f'Skipped "{id}": same format')
@@ -135,9 +134,29 @@ class Converter:
             except FileNotFoundError:
                 pass
         else:
-            # @TODO: support single_html
-            yield Info('debug', f'Skipped "{id}": unsupported format')
-            return
+            fsrc = os.path.normpath(os.path.join(book.data_dir, index))
+            indexbase, ext = os.path.splitext(index)
+            indexdir = os.path.normpath(os.path.join(book.data_dir, indexbase + '.' + util.datetime_to_id()))
+
+            os.makedirs(indexdir)
+            indexfile = os.path.join(indexdir, 'index.html')
+            if util.is_html(fsrc) and not util.is_xhtml(fsrc):
+                mainfile = indexfile
+                shutil.copy2(fsrc, mainfile)
+            else:
+                basename = os.path.basename(index)
+                mainfile = os.path.join(indexdir, basename)
+                shutil.copy2(fsrc, mainfile)
+                with open(indexfile, 'w', encoding='UTF-8', newline='\n') as fh:
+                    fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url={quote(basename)}">')
+
+            if util.is_html(mainfile) or util.is_svg(mainfile):
+                conv = UnSingleHtmlConverter(mainfile)
+                content = conv.run()
+                with open(mainfile, 'w', encoding=conv.encoding, newline='') as fh:
+                    fh.write(content)
+
+            shutil.copystat(fsrc, indexfile)
 
         try:
             if self.format == 'folder':
@@ -204,6 +223,44 @@ class Converter:
                     meta['icon'] = util.get_relative_url(iconfile, fdst, path_is_dir=False, start_is_dir=False)
 
                 meta['index'] = indexbase + '.maff'
+
+            elif self.format == 'single_file':
+                file = os.path.join(indexdir, 'index.html')
+                file = util.get_meta_refreshed_file(file) or file
+
+                if util.is_xhtml(file):
+                    ext = '.xhtml'
+                elif util.is_html(file):
+                    ext = '.html'
+                elif util.is_svg(file):
+                    ext = '.svg'
+                else:
+                    _, ext = os.path.splitext(file)
+
+                # special handling to prevent named "index.html"
+                if indexbase == 'index' and ext == '.html':
+                    indexbase = 'index_'
+
+                fdst = os.path.normpath(os.path.join(book.data_dir, indexbase + ext))
+                yield Info('info', f'Converting "{id}": "{book.get_subpath(fsrc)}" => "{book.get_subpath(fdst)}" ...')
+
+                if os.path.lexists(fdst):
+                    yield Info('error', f'Failed to convert "{id}": target "{book.get_subpath(fdst)}" already exists.')
+                    return
+
+                if util.is_html(file) or util.is_svg(file):
+                    conv = SingleHtmlConverter(file)
+                    content = conv.run()
+                    with open(fdst, 'w', encoding=conv.encoding, newline='') as fh:
+                        fh.write(content)
+                    shutil.copystat(file, fdst)
+                else:
+                    shutil.copy2(file, fdst)
+
+                if meta.get('icon'):
+                    iconfile = book.get_icon_file(meta)
+                    meta['icon'] = util.get_relative_url(iconfile, fdst, path_is_dir=False, start_is_dir=False)
+                meta['index'] = indexbase + ext
 
             try:
                 shutil.rmtree(fsrc)
