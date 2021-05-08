@@ -437,10 +437,10 @@ class HtmlRewriter:
         markups = self.rewrite(markups, *args, **kwargs)
 
         if self.changed:
-            with open(self.file, 'wb') as fh:
+            with open(self.file, 'w', encoding=self.encoding, newline='') as fh:
                 for markup in markups:
                     if not markup.hidden:
-                        fh.write(str(markup).encode(self.encoding))
+                        fh.write(str(markup))
 
     def load(self, file):
         """Load a file and return parsed markups.
