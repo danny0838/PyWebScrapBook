@@ -3,6 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.44.0] - 2021-05-08
+* Added support of `single_file` format for `items` converter.
+* Added support of more common MIME types.
+* Fixed translation of certain common MIME types to a fixed file extension.
+* Fixed several get_meta_refresh errors in Python 3.6.
+* Fixed several test errors.
+
 ## [0.43.0] - 2021-05-04
 * Added support of custom MIME types mapping using `~/.config/wsb/mime.types`.
 * Added `wsb help mimetypes` for documentation about customizing MIME types mapping.
