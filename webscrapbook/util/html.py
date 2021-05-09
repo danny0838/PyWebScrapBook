@@ -12,7 +12,7 @@ from . import util
 
 REGEX_ASCII_WHITESPACES = re.compile(r'[ \t\n\r\f]+')
 
-VOID_ELEMENTS = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
+VOID_ELEMENTS = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr', 'frame'}
 FOREIGN_ELEMENTS = {'svg', 'math'}
 
 
