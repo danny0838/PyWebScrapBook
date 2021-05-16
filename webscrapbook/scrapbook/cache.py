@@ -401,12 +401,14 @@ class FulltextCacheGenerator():
     """
     FULLTEXT_SPACE_REPLACER = functools.partial(re.compile(r'\s+').sub, ' ')
     FULLTEXT_EXCLUDE_TAGS = {
-        'title', 'style', 'script',
+        'title',
+        'style', 'script', 'template',
         'frame', 'iframe',
         'object', 'applet',
         'audio', 'video',
         'canvas',
         'noframes', 'noscript', 'noembed',
+        'textarea',
         # 'parsererror',
         'svg', 'math',
         }

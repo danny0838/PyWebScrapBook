@@ -1981,6 +1981,8 @@ English
 <body>
 before paragraph <p>paragraph text</p> after paragraph
 
+before template <template>template text<div>element</div> more text</template> after template
+
 before iframe <iframe>iframe text</iframe> after iframe
 
 before object <object>object text</object> after object
@@ -1993,6 +1995,9 @@ before canvas <canvas>canvas text</canvas> after canvas
 before noframes <noframes>noframes text</noframes> after noframes
 before noscript <noscript>noscript text</noscript> after noscript
 before noembed <noembed>noembed text</noembed> after noembed
+
+before textarea <textarea>textarea text</textarea> after textarea
+
 before svg <svg><text>svg text</text></svg> after svg
 before math <math><mtext>math text</mtext></math> after math
 </body>
@@ -2009,6 +2014,7 @@ before math <math><mtext>math text</mtext></math> after math
                 'index.html': {
                     'content': (
                     """before paragraph paragraph text after paragraph """
+                    """before template after template """
                     """before iframe after iframe """
                     """before object after object """
                     """before applet after applet """
@@ -2018,6 +2024,7 @@ before math <math><mtext>math text</mtext></math> after math
                     """before noframes after noframes """
                     """before noscript after noscript """
                     """before noembed after noembed """
+                    """before textarea after textarea """
                     """before svg after svg """
                     """before math after math"""
                     )},
@@ -2034,7 +2041,7 @@ before math <math><mtext>math text</mtext></math> after math
 """)
         with open(xhtml_file, 'w', encoding='UTF-8') as f:
             f.write("""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8"/>
 <title>title text</title>
@@ -2043,6 +2050,8 @@ before math <math><mtext>math text</mtext></math> after math
 </head>
 <body>
 before paragraph <p>paragraph text</p> after paragraph
+
+before template <template>template text<div>element</div> more text</template> after template
 
 before iframe <iframe>iframe text</iframe> after iframe
 
@@ -2056,6 +2065,9 @@ before canvas <canvas>canvas text</canvas> after canvas
 before noframes <noframes>noframes text</noframes> after noframes
 before noscript <noscript>noscript text</noscript> after noscript
 before noembed <noembed>noembed text</noembed> after noembed
+
+before textarea <textarea>textarea text</textarea> after textarea
+
 before svg <svg><text>svg text</text></svg> after svg
 before math <math><mtext>math text</mtext></math> after math
 </body>
@@ -2075,6 +2087,7 @@ before math <math><mtext>math text</mtext></math> after math
                 'index.xhtml': {
                     'content': (
                     """before paragraph paragraph text after paragraph """
+                    """before template after template """
                     """before iframe after iframe """
                     """before object after object """
                     """before applet after applet """
@@ -2084,6 +2097,7 @@ before math <math><mtext>math text</mtext></math> after math
                     """before noframes after noframes """
                     """before noscript after noscript """
                     """before noembed after noembed """
+                    """before textarea after textarea """
                     """before svg after svg """
                     """before math after math"""
                     )},
