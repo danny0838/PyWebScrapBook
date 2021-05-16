@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.44.1] - 2021-05-16
+* Fulltext cache no more include text content in `<textarea>` or `<template>` tags.
+* Fixed potential bad handling of `<frame>` tags for converters.
+
 ## [0.44.0] - 2021-05-08
 * Added support of `single_file` format for `items` converter.
 * Added support of more common MIME types.
