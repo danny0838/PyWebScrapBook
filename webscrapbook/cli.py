@@ -287,6 +287,8 @@ def cmd_help(args):
 
 def cmd_view(args):
     """View archive file(s) in the browser.
+
+    Supported formats: *.htz, *.maff
     """
     config.load(args['root'])
     view_archive_files(args['files'])
@@ -622,7 +624,8 @@ auto-generate parent folders if not found. (ignores --target and
     # -- migrate
     parser_convert_migrate = parser_convert_sub.add_parser('migrate',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Migrate data to be compatible with latest WebScrapBook version.
+        description="""\
+Migrate a scrapbook to be compatible with the latest WebScrapBook version.
 
 This tool fixes incomplete conversion from legacy ScrapBook to WebScrapBook or
 migrate from older WebScrapBook to the latest.
@@ -653,7 +656,7 @@ migrate from older WebScrapBook to the latest.
         help="""inverse of --convert-convert-v0""")
     parser_convert_migrate.add_argument('--use-native-tags', default=False,
         action='store_true',
-        help="""use native HTML tags for converted annotations for better
+        help="""use native HTML tags for converted legacy ScrapBook annotations for better
 compatibility with very old browsers (e.g. IE < 9), with the cost of increased possibility
 to conflict with the web page stylesheets""")
     parser_convert_migrate.add_argument('--no-use-native-tags', dest='use_native_tags', 
@@ -678,9 +681,9 @@ Available FORMATs:
 
 * Conversion between "folder", "htz", and "maff" is mostly lostless (as long as
   no multi-page or arbitrary metadata is included in the MAFF file), while
-  conversion between single_file and other formats may lose information
-  permanently, such as filename, in-depth captured pages. Also note that some
-  features are not supported for single_file.
+  conversion between "single_file" and other formats may lose information
+  permanently, such as filename and in-depth captured pages. Also note that
+  some features are not supported for single_file.
 
 Available TYPEs:
   ""         a captured web page
@@ -716,7 +719,8 @@ Available TYPEs:
     # -- sb2wsb
     parser_convert_sb2wsb = parser_convert_sub.add_parser('sb2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from legacy ScrapBook to WebScrapBook.
+        description="""\
+Convert a scrapbook from legacy ScrapBook to WebScrapBook.
 
 Fulltext cache is not converted and requires a manual rebuild.
 
@@ -732,7 +736,7 @@ Known supported legacy scrapbook implementations:
         help="""the output directory""")
     parser_convert_sb2wsb.add_argument('--no-data-files', default=False, action='store_true',
         help="""do not convert data files (set this if there's something wrong
-for the conversion, and run "wsb convert migrate" afterwards for advanced options)""")
+with the conversion, and run "wsb convert migrate" afterwards for advanced options)""")
     parser_convert_sb2wsb.add_argument('--no-backup', default=False, action='store_true',
         help="""do not backup unneeded legacy scrapbook files""")
     parser_convert_sb2wsb.add_argument('--force', default=False, action='store_true',
@@ -743,7 +747,8 @@ for the conversion, and run "wsb convert migrate" afterwards for advanced option
     # -- wsb2sb
     parser_convert_wsb2sb = parser_convert_sub.add_parser('wsb2sb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from WebScrapBook to legacy ScrapBook.
+        description="""\
+Convert a scrapbook from WebScrapBook to legacy ScrapBook.
 
 Fulltext cache is not converted and requires a manual rebuild.
 
@@ -777,7 +782,7 @@ for the conversion)""")
     # -- file2wsb
     parser_convert_file2wsb = parser_convert_sub.add_parser('file2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from hierarchical files to WebScrapBook.""",
+        description="""Convert hierarchical files to a WebScrapBook scrapbook.""",
         help="""convert from hierarchical files to WebScrapBook""")
     parser_convert_file2wsb.add_argument('input', action='store',
         help="""the input directory""")
@@ -806,7 +811,7 @@ Explorer or a Chromium-based browser""")
     # -- wsb2file
     parser_convert_wsb2file = parser_convert_sub.add_parser('wsb2file',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert from WebScrapBook to hierarchical files""",
+        description="""Convert a WebScrapBook scrapbook to hierarchical files""",
         help="""convert from WebScrapBook to hierarchical files""")
     parser_convert_wsb2file.add_argument('input', action='store',
         help="""the input directory""")
