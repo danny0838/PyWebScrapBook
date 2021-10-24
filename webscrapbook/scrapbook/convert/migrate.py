@@ -818,23 +818,37 @@ class ConvertDataFilesV0:
                 continue
 
             index = meta.get('index', '')
-            # @TODO: support HTZ/MAFF
-            if not index.endswith('/index.html'):
+            if not index:
                 continue
 
             yield Info('debug', f'Converting data files for "{id}" (type="{type}")...')
-            index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
-            for root, dirs, files in os.walk(index_dir):
-                for file in files:
-                    if HTML_FILE_FILTER.search(file):
-                        file = os.path.join(root, file)
-                        yield Info('debug', f'Checking: "{file}"...')
-                        try:
-                            conv = ConvertHtmlFileV0(file)
-                            conv.run()
-                        except Exception as exc:
-                            traceback.print_exc()
-                            yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+
+            # folder
+            if index.endswith('/index.html'):
+                index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
+                for root, dirs, files in os.walk(index_dir):
+                    for file in files:
+                        if HTML_FILE_FILTER.search(file):
+                            file = os.path.join(root, file)
+                            yield Info('debug', f'Checking: "{file}"...')
+                            try:
+                                conv = ConvertHtmlFileV0(file)
+                                conv.run()
+                            except Exception as exc:
+                                traceback.print_exc()
+                                yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+
+            # @TODO: support HTZ/MAFF
+            # single file
+            elif util.is_html(index):
+                file = os.path.normpath(os.path.join(book.data_dir, index))
+                yield Info('debug', f'Checking: "{file}"...')
+                try:
+                    conv = ConvertHtmlFileV0(file)
+                    conv.run()
+                except Exception as exc:
+                    traceback.print_exc()
+                    yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
 
 class ConvertHtmlFileV0(HtmlRewriter):
