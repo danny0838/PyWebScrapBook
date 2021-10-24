@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import traceback
 import re
 import time
@@ -838,7 +839,32 @@ class ConvertDataFilesV0:
                                 traceback.print_exc()
                                 yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
-            # @TODO: support HTZ/MAFF
+            # htz/maff
+            elif util.is_htz(index) or util.is_maff(index):
+                index_file = os.path.normpath(os.path.join(book.data_dir, index))
+                tempdir = tempfile.mkdtemp()
+                tempzipdir = os.path.join(tempdir, 'zip')
+                try:
+                    util.zip_extract(index_file, tempzipdir)
+                    for root, dirs, files in os.walk(tempzipdir):
+                        for file in files:
+                            if HTML_FILE_FILTER.search(file):
+                                file = os.path.join(root, file)
+                                subpath = file[len(tempzipdir) + 1:].replace('\\', '/')
+                                yield Info('debug', f'Checking: "{subpath}" in "{index_file}"...')
+                                try:
+                                    conv = ConvertHtmlFileV0(file)
+                                    conv.run()
+                                except Exception as exc:
+                                    traceback.print_exc()
+                                    yield Info('error', f'Failed to convert "{subpath}" in "{index_file}" for "{id}": {exc}', exc=exc)
+                    util.zip_compress(index_file, tempzipdir, '')
+                finally:
+                    try:
+                        shutil.rmtree(tempdir)
+                    except OSError:
+                        pass
+
             # single file
             elif util.is_html(index):
                 file = os.path.normpath(os.path.join(book.data_dir, index))

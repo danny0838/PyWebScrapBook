@@ -2,6 +2,7 @@ from unittest import mock
 import unittest
 import os
 import shutil
+import zipfile
 import time
 import re
 import glob
@@ -1088,6 +1089,75 @@ scrapbook.meta({
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output, expected)
+
+    def test_htz_data_shadowroot(self):
+        """Migrate [data-scrapbook-shadowroot].
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.htz"
+  }
+})""")
+
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+
+        expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
+&lt;div&gt;Sub-content.&lt;/div&gt;
+
+&lt;p data-scrapbook-shadowdom=&quot;
+&amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
+&quot;&gt;Hidden content.&lt;/p&gt;">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000.htz')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('index.html', input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        index_file = os.path.join(self.test_output, '20200101000000000.htz')
+        with zipfile.ZipFile(index_file, 'r') as zh:
+            output = zh.read('index.html').decode('UTF-8')
+            self.assertRegex(output, expected_regex)
+
+    def test_maff_data_shadowroot(self):
+        """Migrate [data-scrapbook-shadowroot].
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.maff"
+  }
+})""")
+
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+
+        expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
+&lt;div&gt;Sub-content.&lt;/div&gt;
+
+&lt;p data-scrapbook-shadowdom=&quot;
+&amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
+&quot;&gt;Hidden content.&lt;/p&gt;">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000.maff')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('20200101000000000/index.html', input)
+            zh.writestr('20200101000000000/index.rdf', """dummy""")
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        index_file = os.path.join(self.test_output, '20200101000000000.maff')
+        with zipfile.ZipFile(index_file, 'r') as zh:
+            output = zh.read('20200101000000000/index.html').decode('UTF-8')
+            self.assertRegex(output, expected_regex)
 
     def test_single_file_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
