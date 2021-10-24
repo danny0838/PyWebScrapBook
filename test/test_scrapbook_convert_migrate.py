@@ -869,7 +869,7 @@ scrapbook.meta({
             self.assertEqual(output, expected)
 
 class TestConvertDataFilesV0(Test):
-    def test_data_loaders_unchanged(self):
+    def test_folder_data_loaders_unchanged(self):
         """Don't update loaders if there's no change detected.
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -903,7 +903,7 @@ scrapbook.meta({
             output = fh.read()
             self.assertEqual(output, expected)
 
-    def test_data_canvas_loader(self):
+    def test_folder_data_canvas_loader(self):
         """Migrate [data-scrapbook-elem="canvas-loader"].
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -931,7 +931,7 @@ scrapbook.meta({
             output = fh.read()
             self.assertRegex(output, expected_regex)
 
-    def test_data_shadowroot_loader(self):
+    def test_folder_data_shadowroot_loader(self):
         """Migrate [data-scrapbook-elem="shadowroot-loader"].
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -959,7 +959,7 @@ scrapbook.meta({
             output = fh.read()
             self.assertRegex(output, expected_regex)
 
-    def test_data_shadowroot(self):
+    def test_folder_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
@@ -992,7 +992,7 @@ scrapbook.meta({
             output = fh.read()
             self.assertRegex(output, expected_regex)
 
-    def test_data_skip_special_tags(self):
+    def test_folder_data_skip_special_tags(self):
         """Do not rewrite content in <template>, <xml>, <math>, etc.
         """
         with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
