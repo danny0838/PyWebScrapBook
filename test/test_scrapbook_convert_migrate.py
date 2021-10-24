@@ -971,14 +971,14 @@ scrapbook.meta({
   }
 })""")
 
-        input = r"""<html><body>foo</body><div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div><script data-scrapbook-elem="basic-loader">dummy</script></body></html></html>"""
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
 
-        expected_regex = """<html><body>foo</body><div data-scrapbook-shadowdom="
+        expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
 &lt;div&gt;Sub-content.&lt;/div&gt;
 
 &lt;p data-scrapbook-shadowdom=&quot;
 &amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
-&quot;&gt;Hidden content.&lt;/p&gt;">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html></html>"""
+&quot;&gt;Hidden content.&lt;/p&gt;">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
