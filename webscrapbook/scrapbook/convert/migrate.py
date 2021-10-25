@@ -828,7 +828,7 @@ class ConvertDataFilesV0:
                 for file in files:
                     if HTML_FILE_FILTER.search(file):
                         file = os.path.join(root, file)
-                        yield Info('debug', f'Checking: {file}...')
+                        yield Info('debug', f'Checking: "{file}"...')
                         try:
                             conv = ConvertHtmlFileV0(file)
                             conv.run()
