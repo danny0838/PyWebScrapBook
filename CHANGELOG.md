@@ -3,6 +3,9 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [0.45.0] - 2021-10-25
+* Added support of HTZ, MAFF, and single HTML formats for the `migrate` converter.
+
 ## [0.44.2] - 2021-09-21
 * Fixed a compatibility issue for saved tree data with old browsers not supporting ES2019.
 
