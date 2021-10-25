@@ -869,6 +869,39 @@ scrapbook.meta({
             self.assertEqual(output, expected)
 
 class TestConvertDataFilesV0(Test):
+    def test_skip_postit(self):
+        """Do not touch postit items (even if HTML content happens to meet the criteria).
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "postit",
+    "index": "20200101000000000/index.html"
+  }
+})""")
+
+        input = r"""\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+postit page content
+</pre><div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write(input)
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
+            output = fh.read()
+            self.assertEqual(output, input)
+
     def test_folder_data_loaders_unchanged(self):
         """Don't update loaders if there's no change detected.
         """
