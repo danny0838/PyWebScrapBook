@@ -1124,6 +1124,39 @@ scrapbook.meta({
             output = zh.read('index.html').decode('UTF-8')
             self.assertRegex(output, expected_regex)
 
+    def test_htz_timestamp(self):
+        """Don't touch ZIP file if no content is changed.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.htz"
+  }
+})""")
+
+        input = r"""<html><body>foo</body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000.htz')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('index.html', input)
+
+        input_mtime = os.stat(index_file).st_mtime_ns
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        index_file = os.path.join(self.test_output, '20200101000000000.htz')
+        with zipfile.ZipFile(index_file, 'r') as zh:
+            output = zh.read('index.html').decode('UTF-8')
+
+        output_mtime = os.stat(index_file).st_mtime_ns
+
+        self.assertEqual(output, input)
+        self.assertEqual(input_mtime, output_mtime)
+
     def test_maff_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
         """
@@ -1158,6 +1191,40 @@ scrapbook.meta({
         with zipfile.ZipFile(index_file, 'r') as zh:
             output = zh.read('20200101000000000/index.html').decode('UTF-8')
             self.assertRegex(output, expected_regex)
+
+    def test_maff_timestamp(self):
+        """Don't touch ZIP file if no content is changed.
+        """
+        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "",
+    "index": "20200101000000000.maff"
+  }
+})""")
+
+        input = r"""<html><body>foo</body></html>"""
+
+        index_file = os.path.join(self.test_input, '20200101000000000.maff')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with zipfile.ZipFile(index_file, 'w') as zh:
+            zh.writestr('20200101000000000/index.html', input)
+            zh.writestr('20200101000000000/index.rdf', """dummy""")
+
+        input_mtime = os.stat(index_file).st_mtime_ns
+
+        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+            pass
+
+        index_file = os.path.join(self.test_output, '20200101000000000.maff')
+        with zipfile.ZipFile(index_file, 'r') as zh:
+            output = zh.read('20200101000000000/index.html').decode('UTF-8')
+
+        output_mtime = os.stat(index_file).st_mtime_ns
+
+        self.assertEqual(output, input)
+        self.assertEqual(input_mtime, output_mtime)
 
     def test_single_file_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].

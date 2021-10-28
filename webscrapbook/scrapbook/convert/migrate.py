@@ -846,6 +846,8 @@ class ConvertDataFilesV0:
                 tempzipdir = os.path.join(tempdir, 'zip')
                 try:
                     util.zip_extract(index_file, tempzipdir)
+
+                    changed = False
                     for root, dirs, files in os.walk(tempzipdir):
                         for file in files:
                             if HTML_FILE_FILTER.search(file):
@@ -855,10 +857,15 @@ class ConvertDataFilesV0:
                                 try:
                                     conv = ConvertHtmlFileV0(file)
                                     conv.run()
+                                    if conv.changed:
+                                        changed = True
                                 except Exception as exc:
                                     traceback.print_exc()
                                     yield Info('error', f'Failed to convert "{subpath}" in "{index_file}" for "{id}": {exc}', exc=exc)
-                    util.zip_compress(index_file, tempzipdir, '')
+
+                    # don't recompress (and change mtime) if no content changed
+                    if changed:
+                        util.zip_compress(index_file, tempzipdir, '')
                 finally:
                     try:
                         shutil.rmtree(tempdir)
