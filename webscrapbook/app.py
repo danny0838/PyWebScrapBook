@@ -1579,6 +1579,11 @@ def action_copy(sourcepaths, targetpaths):
 @handle_action_token
 def action_backup():
     """Bakup file or directory."""
+    format = request.format
+
+    if not format:
+        abort(400, "Action not supported.")
+
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
@@ -1591,6 +1596,7 @@ def action_backup():
     host.init_backup(ts, note=note)
     try:
         host.auto_backup(localpaths[0], move=move)
+        return http_response(os.path.basename(host._backup_dir), format=request.format)
     finally:
         host.init_backup(False)
 
@@ -1599,12 +1605,18 @@ def action_backup():
 @handle_action_token
 def action_unbackup():
     """Remove a backup."""
+    format = request.format
+
+    if not format:
+        abort(400, "Action not supported.")
+
     ts = request.values.get('ts') or util.datetime_to_id()
     note = request.values.get('note')
 
     host.init_backup(ts, note=note)
     try:
         host.unbackup(host._backup_dir)
+        return http_response(os.path.basename(host._backup_dir), format=request.format)
     finally:
         host.init_backup(False)
 

@@ -5154,6 +5154,17 @@ class TestBackup(TestActions):
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_format_check(self, mock_abort):
+        """Require format."""
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'backup',
+                })
+
+        mock_abort.assert_called_once_with(400, 'Action not supported.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with app.test_client() as c:
@@ -5181,6 +5192,13 @@ class TestBackup(TestActions):
             move=False,
             )
 
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405',
+            })
+
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_file02(self, mock_func):
         with app.test_client() as c:
@@ -5198,6 +5216,13 @@ class TestBackup(TestActions):
             base=None,
             move=True,
             )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405',
+            })
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_file03(self, mock_func):
@@ -5217,6 +5242,13 @@ class TestBackup(TestActions):
             move=False,
             )
 
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405-foo_bar_中文_',
+            })
+
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_directory01(self, mock_func):
         with app.test_client() as c:
@@ -5233,6 +5265,13 @@ class TestBackup(TestActions):
             base=None,
             move=False,
             )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405',
+            })
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_directory02(self, mock_func):
@@ -5252,6 +5291,13 @@ class TestBackup(TestActions):
             move=True,
             )
 
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405',
+            })
+
 class TestUnbackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
@@ -5264,6 +5310,17 @@ class TestUnbackup(TestActions):
                 })
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_format_check(self, mock_abort):
+        """Require format."""
+        with app.test_client() as c:
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'unbackup',
+                })
+
+        mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
@@ -5290,6 +5347,13 @@ class TestUnbackup(TestActions):
             os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
             )
 
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405',
+            })
+
     @mock.patch('webscrapbook.scrapbook.host.Host.unbackup')
     def test_params02(self, mock_func):
         with app.test_client() as c:
@@ -5304,6 +5368,13 @@ class TestUnbackup(TestActions):
         mock_func.assert_called_once_with(
             os.path.join(server_root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
             )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers['Content-Type'], 'application/json')
+        self.assertEqual(r.json, {
+            'success': True,
+            'data': '20200102030405-foo_bar_中文_',
+            })
 
 class TestCache(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
