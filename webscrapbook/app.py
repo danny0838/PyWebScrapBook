@@ -1111,6 +1111,10 @@ def action_config():
     data = {k:v for k, v in data.items() if k in ('app', 'book')}
     data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme', 'locale')}
 
+    # expose backup_dir if it's web accessible
+    if os.path.normcase(os.path.join(host.backup_dir, '')).startswith(os.path.normcase(os.path.join(host.chroot, ''))):
+        data['app']['backup_dir'] = host.backup_dir[len(os.path.join(host.chroot, '')):].replace('\\', '/')
+
     # add and rewrite values for client to better know the server
     data['app']['base'] = request.script_root
     data['app']['is_local'] = is_local_access()

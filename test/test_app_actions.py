@@ -2053,6 +2053,7 @@ class TestConfig(unittest.TestCase):
                     'locale': '',
                     'base': '',
                     'is_local': True,
+                    'backup_dir': '.wsb/backup',
                     },
                 'book': {
                     '': {
