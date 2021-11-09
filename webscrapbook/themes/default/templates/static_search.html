@@ -413,6 +413,7 @@ const scrapbook = {
       }[meta.type] || 'icon/item.png';
     }
     icon.alt = "";
+    icon.loading = "lazy";
 
     var a = div.appendChild(document.createElement("a"));
     a.href = book.path + book.indexPage + "#item-" + id;

@@ -253,6 +253,7 @@ var scrapbook = {
         icon.src = scrapbook.conf.defaultIcons[meta.type] || scrapbook.conf.defaultIcons[''];
       }
       icon.alt = "";
+      icon.loading = "lazy";
 
       if (meta.type !== 'bookmark' && meta.source) {
         var srcLink = div.appendChild(document.createElement('a'));

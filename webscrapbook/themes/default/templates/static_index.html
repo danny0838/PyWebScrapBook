@@ -30,7 +30,7 @@
       {%- if not icon -%}
         {%- set icon = default_icons.get(type, default_icons['']) -%}
       {%- endif -%}
-<a{{ print_attr('href', url) }}><img{{ print_attr('src', icon) }} alt="">{{ title }}</a>
+<a{{ print_attr('href', url) }}><img{{ print_attr('src', icon) }} alt="" loading="lazy">{{ title }}</a>
       {%- if type != 'bookmark' and source -%}
 <a title="{{ i18n('cache_index_source_link_title') }}" class="scrapbook-external" target="_blank" href="{{ source }}"><img src="icon/external.png" alt=""></a>
       {%- endif -%}
