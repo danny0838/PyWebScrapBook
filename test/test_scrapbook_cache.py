@@ -3775,7 +3775,7 @@ scrapbook.toc({
 
         self.assertEqual(
             etree.tostring(div, encoding='unicode', with_tail=False),
-            '<div><a><img src="icon/item.png" alt=""/>20200101000000000</a></div>',
+            '<div><a><img src="icon/item.png" alt="" loading="lazy"/>20200101000000000</a></div>',
             )
 
     def test_static_index_title02(self):
@@ -3807,7 +3807,7 @@ scrapbook.toc({
 
         self.assertEqual(
             etree.tostring(div, encoding='unicode', with_tail=False),
-            '<div><a><img src="icon/item.png" alt=""/>My title 中文</a></div>',
+            '<div><a><img src="icon/item.png" alt="" loading="lazy"/>My title 中文</a></div>',
             )
 
     def test_static_index_title03(self):
