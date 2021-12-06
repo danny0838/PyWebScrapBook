@@ -144,14 +144,14 @@ function () {
 class Converter:
     def __init__(self, input, output, book_ids=None, *,
             convert_legacy=False,
-            convert_v0=False,
+            convert_v1=False,
             use_native_tags=False,
             ):
         self.input = input
         self.output = output
         self.book_ids = book_ids
         self.convert_legacy = convert_legacy
-        self.convert_v0 = convert_v0
+        self.convert_v1 = convert_v1
         self.use_native_tags = use_native_tags
 
     def run(self):
@@ -180,9 +180,9 @@ class Converter:
                 converter = ConvertDataFilesLegacy(book, use_native_tags=self.use_native_tags)
                 yield from converter.run()
 
-            if self.convert_v0:
-                yield Info('info', 'Migrating to WebScrapBook 0.*...')
-                converter = ConvertDataFilesV0(book, use_native_tags=self.use_native_tags)
+            if self.convert_v1:
+                yield Info('info', 'Migrating to WebScrapBook 1.*...')
+                converter = ConvertDataFilesV1(book, use_native_tags=self.use_native_tags)
                 yield from converter.run()
 
     def _copy_files(self):
@@ -804,8 +804,8 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         return rv
 
 
-class ConvertDataFilesV0:
-    """Convert data files to latest WebScrapBook 0.*
+class ConvertDataFilesV1:
+    """Convert data files to latest WebScrapBook 1.*
     """
     def __init__(self, book, *, use_native_tags):
         self.book = book
@@ -833,7 +833,7 @@ class ConvertDataFilesV0:
                             file = os.path.join(root, file)
                             yield Info('debug', f'Checking: "{file}"...')
                             try:
-                                conv = ConvertHtmlFileV0(file)
+                                conv = ConvertHtmlFileV1(file)
                                 conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
@@ -855,7 +855,7 @@ class ConvertDataFilesV0:
                                 subpath = file[len(tempzipdir) + 1:].replace('\\', '/')
                                 yield Info('debug', f'Checking: "{subpath}" in "{index_file}"...')
                                 try:
-                                    conv = ConvertHtmlFileV0(file)
+                                    conv = ConvertHtmlFileV1(file)
                                     conv.run()
                                     if conv.changed:
                                         changed = True
@@ -877,14 +877,14 @@ class ConvertDataFilesV0:
                 file = os.path.normpath(os.path.join(book.data_dir, index))
                 yield Info('debug', f'Checking: "{file}"...')
                 try:
-                    conv = ConvertHtmlFileV0(file)
+                    conv = ConvertHtmlFileV1(file)
                     conv.run()
                 except Exception as exc:
                     traceback.print_exc()
                     yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
 
 
-class ConvertHtmlFileV0(HtmlRewriter):
+class ConvertHtmlFileV1(HtmlRewriter):
     def run(self):
         self.require_basic_loader = False
         self.require_annotation_loader = False
@@ -1093,7 +1093,7 @@ class ConvertHtmlFileV0(HtmlRewriter):
 
 def run(input, output, book_ids=None, *,
         convert_legacy=False,
-        convert_v0=False,
+        convert_v1=False,
         use_native_tags=False,
         ):
     start = time.time()
@@ -1103,7 +1103,7 @@ def run(input, output, book_ids=None, *,
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')
     yield Info('info', f'book(s): {book_ids_text}')
     yield Info('info', f'convert legacy: {convert_legacy}')
-    yield Info('info', f'convert v0: {convert_v0}')
+    yield Info('info', f'convert v1: {convert_v1}')
     yield Info('info', f'use native tags: {use_native_tags}')
     yield Info('info', '')
 
@@ -1113,7 +1113,7 @@ def run(input, output, book_ids=None, *,
     try:
         conv = Converter(input, output, book_ids=book_ids,
             convert_legacy=convert_legacy,
-            convert_v0=convert_v0,
+            convert_v1=convert_v1,
             use_native_tags=use_native_tags,
             )
         yield from conv.run()

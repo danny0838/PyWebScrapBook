@@ -869,7 +869,7 @@ scrapbook.meta({
             output = fh.read()
             self.assertEqual(output, expected)
 
-class TestConvertDataFilesV0(Test):
+class TestConvertDataFilesV1(Test):
     def test_skip_postit(self):
         """Do not touch postit items (even if HTML content happens to meet the criteria).
         """
@@ -896,7 +896,7 @@ postit page content
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -930,7 +930,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -958,7 +958,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -986,7 +986,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -1019,7 +1019,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -1083,7 +1083,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -1116,7 +1116,7 @@ scrapbook.meta({
         with zipfile.ZipFile(index_file, 'w') as zh:
             zh.writestr('index.html', input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.htz')
@@ -1145,7 +1145,7 @@ scrapbook.meta({
 
         input_mtime = os.stat(index_file).st_mtime_ns
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.htz')
@@ -1184,7 +1184,7 @@ scrapbook.meta({
             zh.writestr('20200101000000000/index.html', input)
             zh.writestr('20200101000000000/index.rdf', """dummy""")
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.maff')
@@ -1214,7 +1214,7 @@ scrapbook.meta({
 
         input_mtime = os.stat(index_file).st_mtime_ns
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.maff')
@@ -1252,7 +1252,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v0=True):
+        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000.html'), encoding='UTF-8') as fh:
