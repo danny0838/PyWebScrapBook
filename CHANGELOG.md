@@ -3,6 +3,19 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.0.0] - 2021-12-07
+* Bumped version to 1.0.*.
+
+## [0.48.0] - 2021-11-13
+* Updated converted CSS for `wsb convert migrate`.
+
+## [0.47.0] - 2021-11-09
+* Load item icons lazily for generated static site files.
+
+## [0.46.0] - 2021-11-04
+* Expose `backup_dir` config to the client if it's web accessible.
+* `backup` and `unbackup` actions now return the target directory name.
+
 ## [0.45.0] - 2021-10-25
 * Added support of HTZ, MAFF, and single HTML formats for the `migrate` converter.
 
