@@ -454,7 +454,7 @@ index =
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path1(self, mock_make_server, mock_browser):
-        # app.base not set, browser.index not set
+        # app.base not set, app.index not set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -464,8 +464,6 @@ browse = true
 
 [app]
 base =
-
-[browser]
 index =
 """)
 
@@ -475,7 +473,7 @@ index =
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path2(self, mock_make_server, mock_browser):
-        # app.base set, browser.index not set
+        # app.base set, app.index not set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -485,8 +483,6 @@ browse = true
 
 [app]
 base = /wsb
-
-[browser]
 index =
 """)
 
@@ -496,7 +492,7 @@ index =
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path3(self, mock_make_server, mock_browser):
-        # app.base not set, browser.index set
+        # app.base not set, app.index set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -515,7 +511,7 @@ index = index.html
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path4(self, mock_make_server, mock_browser):
-        # app.base set, browser.index set
+        # app.base set, app.index set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
