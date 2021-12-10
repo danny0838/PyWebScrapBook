@@ -3029,7 +3029,6 @@ class TestStaticSiteGenerator(TestCache):
             with self.subTest(path=path):
                 file = os.path.normpath(os.path.join(self.test_tree, path))
                 self.assertTrue(os.path.exists(file))
-
                 orig_stats[file] = os.stat(file)
 
         # generate again, all existed files should be unchanged
@@ -3041,7 +3040,8 @@ class TestStaticSiteGenerator(TestCache):
         for path in check_files:
             with self.subTest(path=path):
                 file = os.path.normpath(os.path.join(self.test_tree, path))
-                self.assertEqual(os.stat(file), orig_stats[file])
+                self.assertEqual(os.stat(file).st_mtime, orig_stats[file].st_mtime)
+                self.assertEqual(os.stat(file).st_size, orig_stats[file].st_size)
 
     def test_update02(self):
         """Overwrite existing different files"""
@@ -3079,6 +3079,7 @@ class TestStaticSiteGenerator(TestCache):
         for path in check_files:
             with self.subTest(path=path):
                 file = os.path.normpath(os.path.join(self.test_tree, path))
+                self.assertNotEqual(os.stat(file).st_mtime, orig_stats[file].st_mtime)
                 self.assertNotEqual(os.stat(file).st_size, orig_stats[file].st_size)
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
