@@ -79,7 +79,6 @@ class Config():
             'theme': 'default',
             'locale': '',
             'root': '.',
-            'base': '',
             'index': '',
             'backup_dir': '.wsb/backup',
             'content_security_policy': 'strict',

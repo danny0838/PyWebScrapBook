@@ -1731,12 +1731,6 @@ def action_check():
 
 @bp.before_request
 def handle_before_request():
-    # replace SCRIPT_NAME with the custom if set
-    if host.config['app']['base']:
-        # Flask treats SCRIPT_NAME in the same way as PATH_INFO, which is an
-        # IRI string decoded as ISO-8859-1 according to WSGI standard).
-        request.environ['SCRIPT_NAME'] = unquote(host.config['app']['base']).encode('UTF-8').decode('ISO-8859-1')
-
     # handle authorization
     try:
         auth_config = host.config['auth']

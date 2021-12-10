@@ -56,9 +56,8 @@ def serve(root, browse=None):
         browse = config['server']['browse']
 
     if browse:
-        base = config['app']['base'].rstrip('/')
         index = config['app']['index'].lstrip('/')
-        path = base + (('/' + index) if index else '')
+        path = ('/' + index) if index else ''
         url = f'{scheme}://{host3}{port2}{path}'
         srv.log('info', f'Launching browser at {url} ...')
         try:

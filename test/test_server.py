@@ -454,7 +454,7 @@ index =
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path1(self, mock_make_server, mock_browser):
-        # app.base not set, app.index not set
+        # app.index not set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -463,7 +463,6 @@ ssl_on = false
 browse = true
 
 [app]
-base =
 index =
 """)
 
@@ -473,7 +472,7 @@ index =
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path2(self, mock_make_server, mock_browser):
-        # app.base set, app.index not set
+        # app.index set
         with open(server_config, 'w', encoding='UTF-8') as f:
             f.write("""[server]
 host = 127.0.0.1
@@ -482,50 +481,11 @@ ssl_on = false
 browse = true
 
 [app]
-base = /wsb
-index =
-""")
-
-        server.serve(server_root)
-        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/wsb ...')
-
-    @mock.patch('webbrowser.get')
-    @mock.patch('webscrapbook.server.make_server')
-    def test_url_path3(self, mock_make_server, mock_browser):
-        # app.base not set, app.index set
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
-host = 127.0.0.1
-port = 7357
-ssl_on = false
-browse = true
-
-[app]
-base =
 index = index.html
 """)
 
         server.serve(server_root)
         self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/index.html ...')
-
-    @mock.patch('webbrowser.get')
-    @mock.patch('webscrapbook.server.make_server')
-    def test_url_path4(self, mock_make_server, mock_browser):
-        # app.base set, app.index set
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
-host = 127.0.0.1
-port = 7357
-ssl_on = false
-browse = true
-
-[app]
-base = /wsb
-index = index.html
-""")
-
-        server.serve(server_root)
-        self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/wsb/index.html ...')
 
 if __name__ == '__main__':
     unittest.main()

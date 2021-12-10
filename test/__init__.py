@@ -35,7 +35,6 @@ class TestClassConfig(unittest.TestCase):
             ('theme', 'mytheme'),
             ('locale', ''),
             ('root', 'myroot'),
-            ('base', 'mybase'),
             ('index', ''),
             ('backup_dir', '.wsb/backup'),
             ('content_security_policy', 'strict'),
@@ -104,7 +103,6 @@ class TestClassConfig(unittest.TestCase):
             ('theme', 'default'),
             ('locale', ''),
             ('root', '.'),
-            ('base', ''),
             ('index', ''),
             ('backup_dir', '.wsb/backup'),
             ('content_security_policy', 'strict'),
@@ -201,7 +199,6 @@ name = mywsb
 theme = mytheme
 locale = 
 root = myroot
-base = mybase
 index = 
 backup_dir = .wsb/backup
 content_security_policy = strict
@@ -271,7 +268,6 @@ permission = all
                     ('theme', 'mytheme'),
                     ('locale', ''),
                     ('root', 'myroot'),
-                    ('base', 'mybase'),
                     ('index', ''),
                     ('backup_dir', '.wsb/backup'),
                     ('content_security_policy', 'strict'),
