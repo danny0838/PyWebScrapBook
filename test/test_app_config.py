@@ -374,7 +374,7 @@ allowed_x_port = 1
             self.assertEqual(r.headers['Location'], 'https://example.com:8000/subdir/')
 
     # emulate that the app is run behind a reverse proxy server at "example.com"
-    @mock.patch('werkzeug.wrappers.base_request.BaseRequest.host', 'example.com')
+    @mock.patch('werkzeug.wrappers.request.Request.host', 'example.com')
     def test_x_for(self):
         # allowed_x_for = 0
         with open(server_config, 'w', encoding='UTF-8') as f:
