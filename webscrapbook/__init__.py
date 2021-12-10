@@ -53,6 +53,9 @@ mimetypes.add_type('application/epub+zip', '.epub')
 mimetypes.add_type('application/x-7z-compressed', '.7z')
 mimetypes.add_type('application/vnd.rar', '.rar')
 
+# .js is mapped to application/x-javascript in some mime types sources
+mimetypes.add_type('application/javascript', '.js')
+
 # .bmp is mapped to image/x-ms-bmp on POSIX
 # ref: https://bugs.python.org/issue42028
 mimetypes.add_type('image/bmp', '.bmp')
