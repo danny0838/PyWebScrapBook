@@ -509,7 +509,6 @@ scrapbook.meta({
 </head>
 <body>
 <span data-sb-id="">suscipit</span>
-<span data-sb-id="123">finibus</span>
 <span data-sb-id="999999999999999999999999999999999999999999999999999999999">finibus</span>
 <span data-sb-id="abc">varius</span>
 </body>
@@ -524,7 +523,6 @@ scrapbook.meta({
 </head>
 <body>
 <span data-scrapbook-id="">suscipit</span>
-<span data-scrapbook-id="123">finibus</span>
 <span data-scrapbook-id="999999999999999999999999999999999999999999999999999999999">finibus</span>
 <span data-scrapbook-id="abc">varius</span>
 </body>
