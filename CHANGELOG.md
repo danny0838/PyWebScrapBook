@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.1.0] - 2021-12-10
+* Dropped support of config `app.base`.
+* Fixed an issue that the mimetype of `.js` becomes `application/x-javascript` in some environment.
+* Fixed several errors of unit tests.
+
 ## [1.0.0] - 2021-12-07
 * Bumped version to 1.0.*.
 
