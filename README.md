@@ -63,7 +63,7 @@ Switch current working directory (CWD) to a directory you'd like to host.
 
     cd /path/to/scrapbook
 
-> In Windows, an additional command to change drive might be required. For example, if the directory to host is `D:\path\to\scrapbook` while the current drive is `C`, an additional command `D:` is required besides `cd D:\path\to\scrapbook`.
+> In Windows, an additional command or parameter to change drive may be required. For example, if the directory to host is `E:\path\to\scrapbook` while the current drive is `C`, an additional command `E:` (or parameter `/d`) is required besides `cd E:\path\to\scrapbook`.
 >
 > You can also use the shortcurt: `Shift + Right-click` on the desired folder and select `Open command window here` or `Open PowerShell window here`.
 
