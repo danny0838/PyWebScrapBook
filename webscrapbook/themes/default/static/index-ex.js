@@ -103,7 +103,6 @@ async function viewerGallery() {
 
   const addFigure = () => {
     const figure = wrapper.appendChild(document.createElement('figure'));
-    figure.style ='display: inline-block; margin: 0.2em; border: 0; padding: 0;';
     return figure;
   };
 
@@ -129,7 +128,6 @@ async function viewerGallery() {
     const img = anchor.appendChild(document.createElement('img'));
     img.src = a.href;
     img.alt = img.title = a.textContent;
-    img.style = 'margin: 0; border: 0; padding: 0; max-width: 100%; max-height: 200px;';
 
     return figure;
   };
@@ -141,7 +139,6 @@ async function viewerGallery() {
     audio.src = a.href;
     audio.setAttribute("controls", "");
     audio.title = a.textContent;
-    audio.style = 'margin: 0; border: 0; padding: 0; max-width: 100%; max-height: 200px;';
 
     return figure;
   };
@@ -153,7 +150,6 @@ async function viewerGallery() {
     video.src = a.href;
     video.setAttribute("controls", "");
     video.title = a.textContent;
-    video.style = 'margin: 0; border: 0; padding: 0; max-width: 100%; max-height: 200px;';
 
     return figure;
   };
@@ -217,7 +213,6 @@ async function viewerList() {
 
   const addFigure = () => {
     const figure = wrapper.appendChild(document.createElement('figure'));
-    figure.style = 'margin-left: 0; margin-right: 0;';
     return figure;
   };
 
@@ -243,7 +238,6 @@ async function viewerList() {
     const img = anchor.appendChild(document.createElement('img'));
     img.src = a.href;
     img.alt = img.title = a.textContent;
-    img.style = 'max-width: 90vw; max-height: 90vh;';
 
     return figure;
   };
@@ -255,7 +249,6 @@ async function viewerList() {
     audio.src = a.href;
     audio.setAttribute("controls", "");
     audio.title = a.textContent;
-    audio.style = 'max-width: 90vw; max-height: 90vh;';
 
     return figure;
   };
@@ -267,7 +260,6 @@ async function viewerList() {
     video.src = a.href;
     video.setAttribute("controls", "");
     video.title = a.textContent;
-    video.style = 'max-width: 90vw; max-height: 90vh;';
 
     return figure;
   };

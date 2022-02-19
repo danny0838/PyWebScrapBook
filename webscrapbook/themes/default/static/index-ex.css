@@ -1,0 +1,28 @@
+#img-gallery-view figure {
+  display: inline-block;
+  margin: 0.2em; 
+  border: 0;
+  padding: 0;
+}
+
+#img-gallery-view figure img,
+#img-gallery-view figure audio,
+#img-gallery-view figure video {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  max-width: 100%;
+  max-height: 200px;
+}
+
+#img-list-view figure {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+#img-list-view figure img,
+#img-list-view figure audio,
+#img-list-view figure video {
+  max-width: 90vw;
+  max-height: 90vh;
+}
