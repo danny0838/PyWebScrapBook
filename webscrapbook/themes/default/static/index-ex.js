@@ -44,9 +44,9 @@ function highlightElem(elem, willHighlight) {
 function getTypeFromUrl(url) {
   if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(url)) {
     return 'image';
-  } else if (/\.(mp4|ogg|webm)$/i.test(url)) {
+  } else if (/\.(mp4|ogv|ogx|ogg|webm)$/i.test(url)) {
     return 'video';
-  } else if (/\.(wav|mp3)$/i.test(url)) {
+  } else if (/\.(wav|mp3|oga|weba)$/i.test(url)) {
     return 'audio';
   } else {
     return 'unknown';
