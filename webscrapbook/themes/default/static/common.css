@@ -41,19 +41,19 @@ html[dir=rtl] a.icon {
   padding-right: 1.5em;
 }
 
-a.icon:hover {
+.icon:hover {
   text-decoration: underline;
 }
 
-a.link {
+.icon.link {
   background: url("link.png?a=static") left top no-repeat;
 }
 
-a.file {
+.icon.file {
   background: url("item.png?a=static") left top no-repeat;
 }
 
-a.dir {
+.icon.dir {
   background: url("fclose.png?a=static") left top no-repeat;
 }
 

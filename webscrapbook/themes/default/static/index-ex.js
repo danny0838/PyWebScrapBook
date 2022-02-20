@@ -112,8 +112,14 @@ async function viewerGallery() {
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
     anchor.target = "_blank";
-    anchor.textContent = a.textContent;
-    anchor.className = 'icon ' + type;
+    anchor.title = a.textContent;
+
+    const div = anchor.appendChild(document.createElement('div'));
+    div.classList.add('icon');
+    div.classList.add(type);
+
+    const span = anchor.appendChild(document.createElement('span'));
+    span.textContent = a.textContent;
 
     return figure;
   };
@@ -124,10 +130,16 @@ async function viewerGallery() {
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
     anchor.target = "_blank";
+    anchor.title = a.textContent;
 
-    const img = anchor.appendChild(document.createElement('img'));
+    const div = anchor.appendChild(document.createElement('div'));
+
+    const img = div.appendChild(document.createElement('img'));
     img.src = a.href;
-    img.alt = img.title = a.textContent;
+    img.alt = a.textContent;
+
+    const span = anchor.appendChild(document.createElement('span'));
+    span.textContent = a.textContent;
 
     return figure;
   };
@@ -135,10 +147,19 @@ async function viewerGallery() {
   const addAudio = (a) => {
     const figure = addFigure();
 
-    const audio = figure.appendChild(document.createElement('audio'));
+    const div = figure.appendChild(document.createElement('div'));
+
+    const audio = div.appendChild(document.createElement('audio'));
     audio.src = a.href;
     audio.setAttribute("controls", "");
-    audio.title = a.textContent;
+
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = a.href;
+    anchor.target = "_blank";
+    anchor.title = a.textContent;
+
+    const span = anchor.appendChild(document.createElement('span'));
+    span.textContent = a.textContent;
 
     return figure;
   };
@@ -146,10 +167,19 @@ async function viewerGallery() {
   const addVideo = (a) => {
     const figure = addFigure();
 
-    const video = figure.appendChild(document.createElement('video'));
+    const div = figure.appendChild(document.createElement('div'));
+
+    const video = div.appendChild(document.createElement('video'));
     video.src = a.href;
     video.setAttribute("controls", "");
-    video.title = a.textContent;
+
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = a.href;
+    anchor.target = "_blank";
+    anchor.title = a.textContent;
+
+    const span = anchor.appendChild(document.createElement('span'));
+    span.textContent = a.textContent;
 
     return figure;
   };
@@ -175,8 +205,6 @@ async function viewerGallery() {
     });
   }));
 
-  const deferredElems = [];
-
   for (const {a, type} of tasks) {
     if (!a) { continue; }
 
@@ -191,14 +219,9 @@ async function viewerGallery() {
         addVideo(a);
         break;
       default:
-        deferredElems.push(addAnchor(a, type));
+        addAnchor(a, type);
         break;
     }
-  }
-
-  // move deferred elems to last
-  for (const elem of deferredElems) {
-    wrapper.appendChild(elem);
   }
 
   dataViewer.parentNode.replaceChild(wrapper, dataViewer);
