@@ -254,13 +254,16 @@ async function viewerList() {
   const addImage = (a) => {
     const figure = addFigure();
 
+    const div = figure.appendChild(document.createElement('div'));
+
+    const img = div.appendChild(document.createElement('img'));
+    img.src = a.href;
+    img.alt = img.title = a.textContent;
+
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
     anchor.target = "_blank";
-
-    const img = anchor.appendChild(document.createElement('img'));
-    img.src = a.href;
-    img.alt = img.title = a.textContent;
+    anchor.textContent = a.textContent;
 
     return figure;
   };
@@ -268,10 +271,17 @@ async function viewerList() {
   const addAudio = (a) => {
     const figure = addFigure();
 
-    const audio = figure.appendChild(document.createElement('audio'));
+    const div = figure.appendChild(document.createElement('div'));
+
+    const audio = div.appendChild(document.createElement('audio'));
     audio.src = a.href;
     audio.setAttribute("controls", "");
     audio.title = a.textContent;
+
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = a.href;
+    anchor.target = "_blank";
+    anchor.textContent = a.textContent;
 
     return figure;
   };
@@ -279,10 +289,17 @@ async function viewerList() {
   const addVideo = (a) => {
     const figure = addFigure();
 
-    const video = figure.appendChild(document.createElement('video'));
+    const div = figure.appendChild(document.createElement('div'));
+
+    const video = div.appendChild(document.createElement('video'));
     video.src = a.href;
     video.setAttribute("controls", "");
     video.title = a.textContent;
+
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = a.href;
+    anchor.target = "_blank";
+    anchor.textContent = a.textContent;
 
     return figure;
   };
@@ -308,8 +325,6 @@ async function viewerList() {
     });
   }));
 
-  const deferredElems = [];
-
   for (const {a, type} of tasks) {
     if (!a) { continue; }
 
@@ -324,14 +339,9 @@ async function viewerList() {
         addVideo(a);
         break;
       default:
-        deferredElems.push(addAnchor(a, type));
+        addAnchor(a, type);
         break;
     }
-  }
-
-  // move deferred elems to last
-  for (const elem of deferredElems) {
-    wrapper.appendChild(elem);
   }
 
   dataViewer.parentNode.replaceChild(wrapper, dataViewer);
