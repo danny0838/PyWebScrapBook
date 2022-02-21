@@ -106,13 +106,14 @@ async function viewerGallery() {
   const wrapper = document.createElement('div');
   wrapper.id = "img-gallery-view";
 
-  const addFigure = () => {
+  const addFigure = (type) => {
     const figure = wrapper.appendChild(document.createElement('figure'));
+    figure.classList.add(type);
     return figure;
   };
 
   const addAnchor = (a, type) => {
-    const figure = addFigure();
+    const figure = addFigure(type);
 
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
@@ -129,8 +130,8 @@ async function viewerGallery() {
     return figure;
   };
 
-  const addImage = (a) => {
-    const figure = addFigure();
+  const addImage = (a, type) => {
+    const figure = addFigure(type);
 
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
@@ -149,8 +150,8 @@ async function viewerGallery() {
     return figure;
   };
 
-  const addAudio = (a) => {
-    const figure = addFigure();
+  const addAudio = (a, type) => {
+    const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
@@ -169,8 +170,8 @@ async function viewerGallery() {
     return figure;
   };
 
-  const addVideo = (a) => {
-    const figure = addFigure();
+  const addVideo = (a, type) => {
+    const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
@@ -215,13 +216,13 @@ async function viewerGallery() {
 
     switch (type) {
       case 'image':
-        addImage(a);
+        addImage(a, type);
         break;
       case 'audio':
-        addAudio(a);
+        addAudio(a, type);
         break;
       case 'video':
-        addVideo(a);
+        addVideo(a, type);
         break;
       default:
         addAnchor(a, type);
@@ -239,13 +240,14 @@ async function viewerList() {
   const wrapper = document.createElement('div');
   wrapper.id = "img-list-view";
 
-  const addFigure = () => {
+  const addFigure = (type) => {
     const figure = wrapper.appendChild(document.createElement('figure'));
+    figure.classList.add(type);
     return figure;
   };
 
   const addAnchor = (a, type) => {
-    const figure = addFigure();
+    const figure = addFigure(type);
 
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = a.href;
@@ -256,8 +258,8 @@ async function viewerList() {
     return figure;
   };
 
-  const addImage = (a) => {
-    const figure = addFigure();
+  const addImage = (a, type) => {
+    const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
@@ -273,8 +275,8 @@ async function viewerList() {
     return figure;
   };
 
-  const addAudio = (a) => {
-    const figure = addFigure();
+  const addAudio = (a, type) => {
+    const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
@@ -291,8 +293,8 @@ async function viewerList() {
     return figure;
   };
 
-  const addVideo = (a) => {
-    const figure = addFigure();
+  const addVideo = (a, type) => {
+    const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
@@ -335,13 +337,13 @@ async function viewerList() {
 
     switch (type) {
       case 'image':
-        addImage(a);
+        addImage(a, type);
         break;
       case 'audio':
-        addAudio(a);
+        addAudio(a, type);
         break;
       case 'video':
-        addVideo(a);
+        addVideo(a, type);
         break;
       default:
         addAnchor(a, type);
