@@ -59,7 +59,7 @@ function browseHtmlFolder() {
   /* handle .htd */
   if (/\.(htd)\/?$/i.test(path)) {
     // if there's index.html, redirect to view it
-    var indexAnchor = dataTable.querySelector('tr:not(.extra) a[href="index.html"]');
+    var indexAnchor = dataTable.querySelector('tr a[href="index.html"]');
     if (indexAnchor) {
       location.replace(indexAnchor.href);
       return;
@@ -184,7 +184,7 @@ async function viewerGallery() {
     return figure;
   };
 
-  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tr:not(.extra)'), (tr) => {
+  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tr'), (tr) => {
     let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
     const a = tr.querySelector('a[href]');
     if (!a) { return {a, type}; }
@@ -304,7 +304,7 @@ async function viewerList() {
     return figure;
   };
 
-  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tr:not(.extra)'), (tr) => {
+  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tr'), (tr) => {
     let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
     const a = tr.querySelector('a[href]');
     if (!a) { return {a, type}; }
@@ -368,7 +368,7 @@ async function viewerDeepList() {
       })).response;
       const trNext = tr.nextSibling;
       Array.prototype.forEach.call(
-        doc.querySelectorAll('#data-table tr:not(.extra)'),
+        doc.querySelectorAll('#data-table tr'),
         row => {
           const anchor = row.querySelector('a[href]');
           if (!anchor) { return; }
@@ -387,7 +387,7 @@ async function viewerDeepList() {
     }
   };
 
-  for (const tr of dataTable.querySelectorAll('tr:not(.extra):not([data-expanded])')) {
+  for (const tr of dataTable.querySelectorAll('tr:not([data-expanded])')) {
     await expandRow(tr);
   }
 }
