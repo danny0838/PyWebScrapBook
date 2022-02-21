@@ -1,4 +1,8 @@
 const utils = {
+  escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  },
+
   async wait(ms) {
     await new Promise(r => setTimeout(r, ms));
   },

@@ -196,7 +196,7 @@ async function viewerGallery() {
     return figure;
   };
 
-  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr'), (tr) => {
+  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), (tr) => {
     let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
     const a = tr.querySelector('a[href]');
     if (!a) { return {a, type}; }
@@ -320,7 +320,7 @@ async function viewerList() {
     return figure;
   };
 
-  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr'), (tr) => {
+  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), (tr) => {
     let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
     const a = tr.querySelector('a[href]');
     if (!a) { return {a, type}; }
@@ -373,6 +373,7 @@ async function expandTableRow(tr, deep = false) {
   const tdDir = tr.querySelector('td');
   const dirSortKey = tdDir.getAttribute("data-sort") + "/";
   const dirTitle = tdDir.querySelector('a').title + "/";
+  const hidden = tr.hidden;
 
   tr.setAttribute("data-expanded", "");
 
@@ -385,6 +386,8 @@ async function expandTableRow(tr, deep = false) {
     for (const trNew of doc.querySelectorAll('#data-table tbody tr')) {
       const anchor = trNew.querySelector('a[href]');
       if (!anchor) { continue; }
+
+      trNew.hidden = hidden;
 
       const tdDir = trNew.querySelector('td');
       tdDir.setAttribute("data-sort", dirSortKey + tdDir.getAttribute("data-sort"));
@@ -428,6 +431,35 @@ async function onToolsChange(event) {
     case 'expand-all': {
       for (const tr of document.querySelectorAll('#data-table tbody tr:not([data-expanded])')) {
         await expandTableRow(tr, true);
+      }
+      break;
+    }
+    case 'filter': {
+      const kw = prompt('Filter with the keyword (string or "/pattern/flags" for regex):');
+      if (kw === null) { break; }
+      let regex;
+      if (/^\/(.*)\/([a-z]*)$/i.test(kw)) {
+        try {
+          regex = new RegExp(RegExp.$1, RegExp.$2);
+        } catch (ex) {
+          alert(`Invalid regex "${kw}": ${ex.message}`);
+          break;
+        }
+      } else {
+        regex = new RegExp(utils.escapeRegExp(kw), 'i');
+      }
+      for (const tr of document.querySelectorAll('#data-table tbody tr:not([hidden])')) {
+        const anchor = tr.querySelector('a[href]');
+        regex.lastIndex = 0;
+        if (!regex.test(anchor.textContent)) {
+          tr.hidden = true;
+        }
+      }
+      break;
+    }
+    case 'filter-clear': {
+      for (const tr of document.querySelectorAll('#data-table tbody tr[hidden]')) {
+        tr.hidden = false;
       }
       break;
     }
