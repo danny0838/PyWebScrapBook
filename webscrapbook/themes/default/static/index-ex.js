@@ -96,12 +96,18 @@ function viewerApply(mode) {
 function viewerDefault() {
   if (dataViewer === dataTable) { return; }
 
+  document.getElementById('tools').disabled = false;
+  document.getElementById('command').disabled = false;
+
   dataViewer.parentNode.replaceChild(dataTable, dataViewer);
   dataViewer = dataTable;
 }
 
 async function viewerGallery() {
   if (dataViewer.id === "img-gallery-view") { return; }
+
+  document.getElementById('tools').disabled = true;
+  document.getElementById('command').disabled = true;
 
   const wrapper = document.createElement('div');
   wrapper.id = "img-gallery-view";
@@ -236,6 +242,9 @@ async function viewerGallery() {
 
 async function viewerList() {
   if (dataViewer.id === "img-list-view") { return; }
+
+  document.getElementById('tools').disabled = true;
+  document.getElementById('command').disabled = true;
 
   const wrapper = document.createElement('div');
   wrapper.id = "img-list-view";
