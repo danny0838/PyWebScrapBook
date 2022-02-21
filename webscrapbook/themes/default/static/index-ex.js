@@ -367,21 +367,19 @@ async function viewerDeepList() {
         responseType: 'document',
       })).response;
       const trNext = tr.nextSibling;
-      Array.prototype.forEach.call(
-        doc.querySelectorAll('#data-table tr'),
-        row => {
-          const anchor = row.querySelector('a[href]');
-          if (!anchor) { return; }
+      for (const trNew of doc.querySelectorAll('#data-table tr')) {
+        const anchor = trNew.querySelector('a[href]');
+        if (!anchor) { continue; }
 
-          const tdDir = row.querySelector('td');
-          tdDir.setAttribute("data-sort", dirSortKey + tdDir.getAttribute("data-sort"));
-          tdDir.querySelector('a').title = dirTitle + tdDir.querySelector('a').title;
+        const tdDir = trNew.querySelector('td');
+        tdDir.setAttribute("data-sort", dirSortKey + tdDir.getAttribute("data-sort"));
+        tdDir.querySelector('a').title = dirTitle + tdDir.querySelector('a').title;
 
-          anchor.href = anchor.href;
+        anchor.href = anchor.href;
 
-          tr.parentNode.insertBefore(row, trNext);
-          expandRow(row);
-        });
+        tr.parentNode.insertBefore(trNew, trNext);
+        expandRow(trNew);
+      }
     } catch (ex) {
       console.error(ex);
     }
