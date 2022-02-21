@@ -349,44 +349,47 @@ async function viewerList() {
 }
 
 async function viewerDeepList() {
-  const expandRow = async function (tr) {
-    if (!tr.classList.contains("dir")) { return; }
-
-    const a = tr.querySelector('a[href]');
-    if (!a) { return; }
-
-    const tdDir = tr.querySelector('td');
-    const dirSortKey = tdDir.getAttribute("data-sort") + "/";
-    const dirTitle = tdDir.querySelector('a').title + "/";
-
-    tr.setAttribute("data-expanded", "");
-
-    try {
-      const doc = (await utils.xhr({
-        url: a.href,
-        responseType: 'document',
-      })).response;
-      const trNext = tr.nextSibling;
-      for (const trNew of doc.querySelectorAll('#data-table tbody tr')) {
-        const anchor = trNew.querySelector('a[href]');
-        if (!anchor) { continue; }
-
-        const tdDir = trNew.querySelector('td');
-        tdDir.setAttribute("data-sort", dirSortKey + tdDir.getAttribute("data-sort"));
-        tdDir.querySelector('a').title = dirTitle + tdDir.querySelector('a').title;
-
-        anchor.href = anchor.href;
-
-        tr.parentNode.insertBefore(trNew, trNext);
-        expandRow(trNew);
-      }
-    } catch (ex) {
-      console.error(ex);
-    }
-  };
-
   for (const tr of dataTable.querySelectorAll('tbody tr:not([data-expanded])')) {
-    await expandRow(tr);
+    await expandTableRow(tr, true);
+  }
+}
+
+async function expandTableRow(tr, deep = false) {
+  if (!tr.classList.contains("dir")) { return; }
+
+  const a = tr.querySelector('a[href]');
+  if (!a) { return; }
+
+  const tdDir = tr.querySelector('td');
+  const dirSortKey = tdDir.getAttribute("data-sort") + "/";
+  const dirTitle = tdDir.querySelector('a').title + "/";
+
+  tr.setAttribute("data-expanded", "");
+
+  try {
+    const doc = (await utils.xhr({
+      url: a.href,
+      responseType: 'document',
+    })).response;
+    const trNext = tr.nextSibling;
+    for (const trNew of doc.querySelectorAll('#data-table tbody tr')) {
+      const anchor = trNew.querySelector('a[href]');
+      if (!anchor) { continue; }
+
+      const tdDir = trNew.querySelector('td');
+      tdDir.setAttribute("data-sort", dirSortKey + tdDir.getAttribute("data-sort"));
+      tdDir.querySelector('a').title = dirTitle + tdDir.querySelector('a').title;
+
+      anchor.href = anchor.href;
+
+      tr.parentNode.insertBefore(trNew, trNext);
+
+      if (deep) {
+        expandTableRow(trNew, deep);
+      }
+    }
+  } catch (ex) {
+    console.error(ex);
   }
 }
 
