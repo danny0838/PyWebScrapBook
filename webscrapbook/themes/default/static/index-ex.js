@@ -1,7 +1,7 @@
 /**
  * Support viewer and command. Require ES8.
  */
-var dataViewer;
+let dataViewer;
 
 document.addEventListener("DOMContentLoaded", function () {
   /* Extend data table to support selection */
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
 }, false);
 
 function onDataTableBodyClick(event) {
-  var elem = event.target;
+  let elem = event.target;
   if (elem.tagName.toLowerCase() !== 'tr') {
     elem = elem.closest('tr');
   }
@@ -54,12 +54,12 @@ function getTypeFromUrl(url) {
 }
 
 function browseHtmlFolder() {
-  var path = document.getElementById('data-table').getAttribute('data-path');
+  const path = document.getElementById('data-table').getAttribute('data-path');
 
   /* handle .htd */
   if (/\.(htd)\/?$/i.test(path)) {
     // if there's index.html, redirect to view it
-    var indexAnchor = dataTable.querySelector('tbody tr a[href="index.html"]');
+    const indexAnchor = dataTable.querySelector('tbody tr a[href="index.html"]');
     if (indexAnchor) {
       location.replace(indexAnchor.href);
       return;
