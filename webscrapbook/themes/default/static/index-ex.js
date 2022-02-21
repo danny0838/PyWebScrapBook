@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   /* Media viewers */
   dataViewer = dataTable;
   browseHtmlFolder();
-  document.getElementById("viewer").addEventListener("change", viewerApply, false);
+  document.getElementById("viewer").addEventListener("change", onViewerChange, false);
 
   /* Command handler */
   document.getElementById("command").addEventListener("focus", onCommandFocus, false);
@@ -66,13 +66,18 @@ function browseHtmlFolder() {
     }
 
     // otherwise, use gallery view
-    document.getElementById("viewer").value = 'gallery';
-    viewerApply();
+    viewerApply('gallery');
   }
 }
 
-function viewerApply() {
-  switch (document.getElementById("viewer").value) {
+function viewerApply(mode) {
+  if (!mode) {
+    mode = document.getElementById("viewer").value;
+  } else {
+    document.getElementById("viewer").value = mode;
+  }
+
+  switch (mode) {
     case "gallery":
       viewerGallery();
       break;
@@ -391,6 +396,10 @@ async function expandTableRow(tr, deep = false) {
   } catch (ex) {
     console.error(ex);
   }
+}
+
+function onViewerChange(event) {
+  viewerApply();
 }
 
 function onCommandFocus(event) {
