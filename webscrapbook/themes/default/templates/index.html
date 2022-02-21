@@ -50,16 +50,16 @@
   </select>
   <select id="command">
     <option value="" selected>...</option>
+    <option value="mkdir" hidden>New folder</option>
+    <option value="mkzip" hidden>New zip</option>
+    <option value="mkfile" hidden>New file</option>
+    <option value="upload" hidden>Upload</option>
     <option value="source" hidden>View source</option>
     <option value="download" hidden>Download</option>
     <option value="exec" hidden{{ '' if is_local else ' disabled' }}>Run natively</option>
     <option value="browse" hidden{{ '' if is_local else ' disabled' }}>Browse natively</option>
-    <option value="mkdir" hidden>New folder</option>
-    <option value="mkzip" hidden>New zip</option>
-    <option value="mkfile" hidden>New file</option>
     <option value="edit" hidden>Edit</option>
     <option value="editx" hidden>Edit page</option>
-    <option value="upload" hidden>Upload</option>
     <option value="move" hidden>Move</option>
     <option value="copy" hidden>Copy</option>
     <option value="link" hidden>Create link</option>

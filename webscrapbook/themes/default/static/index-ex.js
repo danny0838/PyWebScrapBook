@@ -398,16 +398,16 @@ function onCommandFocus(event) {
 
   switch (selectedEntries.length) {
     case 0: {
+      cmdElem.querySelector('[value="mkdir"]').hidden = false;
+      cmdElem.querySelector('[value="mkzip"]').hidden = false;
+      cmdElem.querySelector('[value="mkfile"]').hidden = false;
+      cmdElem.querySelector('[value="upload"]').hidden = false;
       cmdElem.querySelector('[value="source"]').hidden = true;
       cmdElem.querySelector('[value="download"]').hidden = true;
       cmdElem.querySelector('[value="exec"]').hidden = true;
       cmdElem.querySelector('[value="browse"]').hidden = true;
-      cmdElem.querySelector('[value="mkdir"]').hidden = false;
-      cmdElem.querySelector('[value="mkzip"]').hidden = false;
-      cmdElem.querySelector('[value="mkfile"]').hidden = false;
       cmdElem.querySelector('[value="edit"]').hidden = true;
       cmdElem.querySelector('[value="editx"]').hidden = true;
-      cmdElem.querySelector('[value="upload"]').hidden = false;
       cmdElem.querySelector('[value="move"]').hidden = true;
       cmdElem.querySelector('[value="copy"]').hidden = true;
       cmdElem.querySelector('[value="link"]').hidden = true;
@@ -419,46 +419,46 @@ function onCommandFocus(event) {
       const elem = selectedEntries[0];
       const isHtml = /\.(?:x?html?|xht)$/i.test(elem.querySelector('a[href]').href);
       if (elem.classList.contains('link')) {
+        cmdElem.querySelector('[value="mkdir"]').hidden = true;
+        cmdElem.querySelector('[value="mkzip"]').hidden = true;
+        cmdElem.querySelector('[value="mkfile"]').hidden = true;
+        cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="source"]').hidden = false;
         cmdElem.querySelector('[value="download"]').hidden = false;
         cmdElem.querySelector('[value="exec"]').hidden = false;
         cmdElem.querySelector('[value="browse"]').hidden = false;
-        cmdElem.querySelector('[value="mkdir"]').hidden = true;
-        cmdElem.querySelector('[value="mkzip"]').hidden = true;
-        cmdElem.querySelector('[value="mkfile"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = true;
         cmdElem.querySelector('[value="editx"]').hidden = true;
-        cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="move"]').hidden = false;
         cmdElem.querySelector('[value="copy"]').hidden = false;
         cmdElem.querySelector('[value="link"]').hidden = false;
         cmdElem.querySelector('[value="delete"]').hidden = false;
       } else if (elem.classList.contains('file')) {
+        cmdElem.querySelector('[value="mkdir"]').hidden = true;
+        cmdElem.querySelector('[value="mkzip"]').hidden = true;
+        cmdElem.querySelector('[value="mkfile"]').hidden = true;
+        cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="source"]').hidden = false;
         cmdElem.querySelector('[value="download"]').hidden = false;
         cmdElem.querySelector('[value="exec"]').hidden = false;
         cmdElem.querySelector('[value="browse"]').hidden = false;
-        cmdElem.querySelector('[value="mkdir"]').hidden = true;
-        cmdElem.querySelector('[value="mkzip"]').hidden = true;
-        cmdElem.querySelector('[value="mkfile"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = false;
         cmdElem.querySelector('[value="editx"]').hidden = !isHtml;
-        cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="move"]').hidden = false;
         cmdElem.querySelector('[value="copy"]').hidden = false;
         cmdElem.querySelector('[value="link"]').hidden = false;
         cmdElem.querySelector('[value="delete"]').hidden = false;
       } else if (elem.classList.contains('dir')) {
+        cmdElem.querySelector('[value="mkdir"]').hidden = true;
+        cmdElem.querySelector('[value="mkzip"]').hidden = true;
+        cmdElem.querySelector('[value="mkfile"]').hidden = true;
+        cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="source"]').hidden = true;
         cmdElem.querySelector('[value="download"]').hidden = false;
         cmdElem.querySelector('[value="exec"]').hidden = false;
         cmdElem.querySelector('[value="browse"]').hidden = false;
-        cmdElem.querySelector('[value="mkdir"]').hidden = true;
-        cmdElem.querySelector('[value="mkzip"]').hidden = true;
-        cmdElem.querySelector('[value="mkfile"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = true;
         cmdElem.querySelector('[value="editx"]').hidden = true;
-        cmdElem.querySelector('[value="upload"]').hidden = true;
         cmdElem.querySelector('[value="move"]').hidden = false;
         cmdElem.querySelector('[value="copy"]').hidden = false;
         cmdElem.querySelector('[value="link"]').hidden = false;
@@ -468,16 +468,16 @@ function onCommandFocus(event) {
     }
 
     default: { // multiple
+      cmdElem.querySelector('[value="mkdir"]').hidden = true;
+      cmdElem.querySelector('[value="mkzip"]').hidden = true;
+      cmdElem.querySelector('[value="mkfile"]').hidden = true;
+      cmdElem.querySelector('[value="upload"]').hidden = true;
       cmdElem.querySelector('[value="source"]').hidden = true;
       cmdElem.querySelector('[value="download"]').hidden = false;
       cmdElem.querySelector('[value="exec"]').hidden = true;
       cmdElem.querySelector('[value="browse"]').hidden = true;
-      cmdElem.querySelector('[value="mkdir"]').hidden = true;
-      cmdElem.querySelector('[value="mkzip"]').hidden = true;
-      cmdElem.querySelector('[value="mkfile"]').hidden = true;
       cmdElem.querySelector('[value="edit"]').hidden = true;
       cmdElem.querySelector('[value="editx"]').hidden = true;
-      cmdElem.querySelector('[value="upload"]').hidden = true;
       cmdElem.querySelector('[value="move"]').hidden = false;
       cmdElem.querySelector('[value="copy"]').hidden = false;
       cmdElem.querySelector('[value="link"]').hidden = false;
