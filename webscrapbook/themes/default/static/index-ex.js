@@ -12,6 +12,9 @@ document.addEventListener("DOMContentLoaded", function () {
   viewerInit();
   document.getElementById("viewer").addEventListener("change", onViewerChange, false);
 
+  /* Tools */
+  document.getElementById("tools").addEventListener("change", onToolsChange, false);
+
   /* Command handler */
   document.getElementById("command").addEventListener("focus", onCommandFocus, false);
   document.getElementById("command").addEventListener("change", onCommandChange, false);
@@ -83,9 +86,6 @@ function viewerApply(mode) {
       break;
     case "list":
       viewerList();
-      break;
-    case "deep":
-      viewerDeepList();
       break;
     default:
       viewerDefault();
@@ -355,12 +355,6 @@ async function viewerList() {
   dataViewer = wrapper;
 }
 
-async function viewerDeepList() {
-  for (const tr of dataTable.querySelectorAll('tbody tr:not([data-expanded])')) {
-    await expandTableRow(tr, true);
-  }
-}
-
 async function expandTableRow(tr, deep = false) {
   if (!tr.classList.contains("dir")) { return; }
 
@@ -402,6 +396,21 @@ async function expandTableRow(tr, deep = false) {
 
 function onViewerChange(event) {
   viewerApply();
+}
+
+async function onToolsChange(event) {
+  event.preventDefault();
+  const command = event.target.value;
+  event.target.value = '';
+
+  switch (command) {
+    case 'expand-all': {
+      for (const tr of dataTable.querySelectorAll('tbody tr:not([data-expanded])')) {
+        await expandTableRow(tr, true);
+      }
+      break;
+    }
+  }
 }
 
 function onCommandFocus(event) {
