@@ -1,5 +1,5 @@
 /**
- * Support viewer and command. Require ES6.
+ * Support viewer and command. Require ES8.
  */
 var dataViewer;
 
