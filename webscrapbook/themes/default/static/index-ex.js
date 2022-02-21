@@ -404,6 +404,18 @@ async function onToolsChange(event) {
   event.target.value = '';
 
   switch (command) {
+    case 'select-all': {
+      for (const tr of document.querySelectorAll('#data-table tbody tr')) {
+        highlightElem(tr, true);
+      }
+      break;
+    }
+    case 'deselect-all': {
+      for (const tr of document.querySelectorAll('#data-table tbody tr')) {
+        highlightElem(tr, false);
+      }
+      break;
+    }
     case 'expand-all': {
       for (const tr of document.querySelectorAll('#data-table tbody tr:not([data-expanded])')) {
         await expandTableRow(tr, true);
