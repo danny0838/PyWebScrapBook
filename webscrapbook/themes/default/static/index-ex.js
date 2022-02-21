@@ -405,7 +405,7 @@ async function onToolsChange(event) {
 
   switch (command) {
     case 'expand-all': {
-      for (const tr of dataTable.querySelectorAll('tbody tr:not([data-expanded])')) {
+      for (const tr of document.querySelectorAll('#data-table tbody tr:not([data-expanded])')) {
         await expandTableRow(tr, true);
       }
       break;
