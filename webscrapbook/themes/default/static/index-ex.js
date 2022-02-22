@@ -131,8 +131,14 @@ function viewerApply(mode) {
     case "gallery":
       viewerGallery();
       break;
+    case "gallery2":
+      viewerGallery({loadMetadata: true});
+      break;
     case "list":
       viewerList();
+      break;
+    case "list2":
+      viewerList({loadMetadata: true});
       break;
     default:
       viewerDefault();
@@ -150,9 +156,7 @@ function viewerDefault() {
   dataViewer = dataTable;
 }
 
-async function viewerGallery() {
-  if (dataViewer.id === "img-gallery-view") { return; }
-
+async function viewerGallery(options = {}) {
   document.getElementById('tools').disabled = true;
   document.getElementById('command').disabled = true;
 
@@ -259,6 +263,7 @@ async function viewerGallery() {
     return a;
   }));
 
+  const medias = [];
   for (const a of anchors) {
     if (!a) { continue; }
 
@@ -268,24 +273,23 @@ async function viewerGallery() {
         addImage(a, type);
         break;
       case 'audio':
-        addAudio(a, type);
+        medias.push(addAudio(a, type).querySelector('audio'));
         break;
       case 'video':
-        addVideo(a, type);
+        medias.push(addVideo(a, type).querySelector('video'));
         break;
       default:
         addAnchor(a, type);
         break;
     }
   }
+  preloadMediaMetadata(medias, options); // async
 
   dataViewer.parentNode.replaceChild(wrapper, dataViewer);
   dataViewer = wrapper;
 }
 
-async function viewerList() {
-  if (dataViewer.id === "img-list-view") { return; }
-
+async function viewerList(options = {}) {
   document.getElementById('tools').disabled = true;
   document.getElementById('command').disabled = true;
 
@@ -379,6 +383,7 @@ async function viewerList() {
     return a;
   }));
 
+  const medias = [];
   for (const a of anchors) {
     if (!a) { continue; }
 
@@ -388,16 +393,17 @@ async function viewerList() {
         addImage(a, type);
         break;
       case 'audio':
-        addAudio(a, type);
+        medias.push(addAudio(a, type).querySelector('audio'));
         break;
       case 'video':
-        addVideo(a, type);
+        medias.push(addVideo(a, type).querySelector('video'));
         break;
       default:
         addAnchor(a, type);
         break;
     }
   }
+  preloadMediaMetadata(medias, options); // async
 
   dataViewer.parentNode.replaceChild(wrapper, dataViewer);
   dataViewer = wrapper;
@@ -442,6 +448,177 @@ async function expandTableRow(tr, deep = false) {
     }
   } catch (ex) {
     console.error(ex);
+  }
+}
+
+async function preloadMediaMetadata(medias, {
+  loadMetadata = false,
+  loadTracks = true,
+} = {}) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  const loadFileListMap = new Map();
+  const loadFileList = async (src) => {
+    let p = loadFileListMap.get(src);
+    if (p) { return p; }
+    p = (async () => {
+      const xhr = await utils.wsb({
+        url: src + '?a=list&f=json',
+        responseType: 'json',
+        method: "GET",
+      });
+      return xhr.response.data;
+    })();
+    loadFileListMap.set(src, p);
+    return p;
+  };
+
+  async function preloadMetadata(media) {
+    // Special handling to prevent medias unplayable during native Firefox
+    // preloading.
+    if (utils.userAgent.is('firefox')) {
+      // skip if metadata already loaded
+      if (!Number.isNaN(media.duration)) {
+        return;
+      }
+
+      // Media loading may halt permanently when preloading many WebM files.
+      // Preload only the video poster instead.
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1756988
+      if (/\.webm$/i.test(media.src) && media.matches('video')) {
+        return await preloadPoster(media);
+      }
+
+      return await preloadMetadataSequentially(media);
+    }
+
+    media.preload = 'metadata';
+  }
+
+  async function preloadMetadataSequentially(media) {
+    let resolve, reject;
+    const onloadedmetadata = (event) => {
+      resolve();
+    };
+    const onerror = (event) => {
+      reject(new Error(`Unable to load ${media.src}`));
+    };
+    const onabort = (event) => {
+      reject(new Error(`Aborted loading ${media.src}`));
+    };
+    const p = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+      media.addEventListener('loadedmetadata', onloadedmetadata);
+      media.addEventListener('error', onerror);
+      media.addEventListener('abort', onabort);
+      media.preload = 'metadata';
+    })
+    p.catch((ex) => {}).then(() => {
+      media.removeEventListener('loadedmetadata', onloadedmetadata);
+      media.removeEventListener('error', onerror);
+      media.removeEventListener('abort', onabort);
+    });
+    return await p;
+  }
+
+  async function preloadPoster(media) {
+    let resolve, reject;
+    const loader = document.createElement(media.tagName);
+    const onloadeddata = async (event) => {
+      try {
+        const loader = event.target;
+        const {videoWidth: w, videoHeight: h} = loader;
+
+        // canvas is cleared when width/height is set
+        canvas.width =  w;
+        canvas.height = h;
+
+        context.drawImage(loader, 0, 0, w, h);
+
+        const dummySrc = URL.createObjectURL(new MediaSource());
+        loader.src = dummySrc;
+        loader.load();
+        URL.revokeObjectURL(dummySrc);
+
+        const imgBlob = await new Promise(r => canvas.toBlob(r));
+        const imgSrc = URL.createObjectURL(imgBlob);
+        media.poster = imgSrc;
+        URL.revokeObjectURL(imgSrc);
+
+        resolve();
+      } catch (ex) {
+        reject(ex);
+      }
+    };
+    const onerror = (event) => {
+      reject(new Error(`Unable to load ${media.src}`));
+    };
+    const onabort = (event) => {
+      reject(new Error(`Aborted loading ${media.src}`));
+    };
+    const p = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+      loader.addEventListener('loadeddata', onloadeddata);
+      loader.addEventListener('error', onerror);
+      loader.addEventListener('abort', onabort);
+      loader.src = media.src;
+    })
+    p.catch((ex) => {}).then(() => {
+      loader.removeEventListener('loadeddata', onloadeddata);
+      loader.removeEventListener('error', onerror);
+      loader.removeEventListener('abort', onabort);
+    });
+    return await p;
+  }
+
+  async function preloadTracks(media) {
+    const u = new URL(media.src);
+    /^(.*\/)([^\/]*)$/.test(u.pathname);
+    u.pathname = RegExp.$1;
+    u.search = u.hash = '';
+    const filename = decodeURIComponent(RegExp.$2);
+    const basename = filename.replace(/\.[^.]*$/, '');
+    const pattern = new RegExp(utils.escapeRegExp(basename) + '\.((?:.+\.)*vtt)$', 'i');
+    const dirSrc = u.href;
+    let list;
+    let first = true;
+    try {
+      list = await loadFileList(dirSrc);
+    } catch (ex) {
+      console.error(`Unable to fetch directory list "${dirSrc}": ${ex.message}`);
+      return;
+    }
+    for (const {name, type} of list) {
+      if (type !== 'file') { continue; }
+      if (!pattern.test(name)) { continue; }
+      const track = media.appendChild(document.createElement('track'));
+      track.label = RegExp.$1;
+      track.src = dirSrc + encodeURIComponent(name);
+      track.srclang = '';
+      if (first) {
+        track.default = true;
+        first = false;
+      }
+    }
+  }
+
+  // preload tracks parallelly
+  if (loadTracks) {
+    await Promise.all(medias.map(media => preloadTracks(media).catch ((ex) => {
+      console.error(ex);
+    })));
+  }
+
+  // preload metadata sequentially
+  if (loadMetadata) {
+    for (const media of medias) {
+      await preloadMetadata(media).catch ((ex) => {
+        console.error(ex);
+      });
+    }
   }
 }
 

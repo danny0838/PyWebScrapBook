@@ -1,4 +1,46 @@
 const utils = {
+  get userAgent() {
+    const ua = navigator.userAgent;
+
+    const soup = new Set([]);
+    const flavor = {
+      major: 0,
+      soup: soup,
+      is: (value) => soup.has(value),
+    };
+
+    if (/\bMobile\b/.test(ua)) {
+      soup.add('mobile');
+    }
+
+    // Synchronous -- order of tests is important
+    let match;
+    if ((match = /\bFirefox\/(\d+)/.exec(ua)) !== null) {
+      flavor.major = parseInt(match[1], 10) || 0;
+      soup.add('mozilla').add('firefox');
+    } else if ((match = /\bEdge\/(\d+)/.exec(ua)) !== null) {
+      flavor.major = parseInt(match[1], 10) || 0;
+      soup.add('microsoft').add('edge');
+    } else if ((match = /\bOPR\/(\d+)/.exec(ua)) !== null) {
+      const reEx = /\bChrom(?:e|ium)\/([\d.]+)/;
+      if (reEx.test(ua)) { match = reEx.exec(ua); }
+      flavor.major = parseInt(match[1], 10) || 0;
+      soup.add('opera').add('chromium');
+    } else if ((match = /\bChromium\/(\d+)/.exec(ua)) !== null) {
+      flavor.major = parseInt(match[1], 10) || 0;
+      soup.add('chromium');
+    } else if ((match = /\bChrome\/(\d+)/.exec(ua)) !== null) {
+      flavor.major = parseInt(match[1], 10) || 0;
+      soup.add('google').add('chromium');
+    } else if ((match = /\bSafari\/(\d+)/.exec(ua)) !== null) {
+      flavor.major = parseInt(match[1], 10) || 0;
+      soup.add('apple').add('safari');
+    }
+
+    Object.defineProperty(this, 'userAgent', { value: flavor });
+    return flavor;
+  },
+
   escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   },
