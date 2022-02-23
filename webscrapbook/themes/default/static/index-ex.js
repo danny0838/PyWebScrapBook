@@ -216,7 +216,8 @@ async function viewerGallery() {
 
     const audio = div.appendChild(document.createElement('audio'));
     audio.src = href;
-    audio.setAttribute("controls", "");
+    audio.controls = true;
+    audio.preload = 'none';
 
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = href;
@@ -238,7 +239,8 @@ async function viewerGallery() {
 
     const video = div.appendChild(document.createElement('video'));
     video.src = href;
-    video.setAttribute("controls", "");
+    video.controls = true;
+    video.preload = 'none';
 
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = href;
@@ -338,7 +340,8 @@ async function viewerList() {
 
     const audio = div.appendChild(document.createElement('audio'));
     audio.src = href;
-    audio.setAttribute("controls", "");
+    audio.controls = true;
+    audio.preload = 'none';
     audio.title = a.textContent;
 
     const anchor = figure.appendChild(document.createElement('a'));
@@ -358,7 +361,8 @@ async function viewerList() {
 
     const video = div.appendChild(document.createElement('video'));
     video.src = href;
-    video.setAttribute("controls", "");
+    video.controls = true;
+    video.preload = 'none';
     video.title = a.textContent;
 
     const anchor = figure.appendChild(document.createElement('a'));
