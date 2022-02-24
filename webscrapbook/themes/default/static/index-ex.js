@@ -45,15 +45,62 @@ function highlightElem(elem, willHighlight) {
 }
 
 function getTypeFromUrl(url) {
+  if (/\/$/i.test(url)) {
+    return 'dir';
+  }
+
   if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(url)) {
     return 'image';
-  } else if (/\.(mp4|ogv|ogx|ogg|webm)$/i.test(url)) {
-    return 'video';
-  } else if (/\.(wav|mp3|oga|weba)$/i.test(url)) {
-    return 'audio';
-  } else {
-    return 'unknown';
   }
+
+  if (/\.(mp4|ogv|ogx|ogg|webm)$/i.test(url)) {
+    return 'video';
+  }
+
+  if (/\.(wav|mp3|oga|weba)$/i.test(url)) {
+    return 'audio';
+  }
+
+  return 'file';
+}
+
+async function getRedirectedUrl(url, {catchError = true} = {}) {
+  // resolve a possible redirect
+  if (/\.(htm)$/i.test(url)) {
+    try {
+      const response = await fetch(url, {method: 'HEAD'});
+      return response.url;
+    } catch (ex) {
+      // cross-origin, invalid, circular, or non-accessible URL
+      if (catchError) {
+        return url;
+      }
+      throw ex;
+    }
+  }
+
+  return url;
+}
+
+async function loadAnchorMetadata(anchor) {
+  // skip if already loaded
+  if (anchor.dataset.type) {
+    return;
+  }
+
+  const href = anchor.href;
+  let href2;
+  try {
+    href2 = await getRedirectedUrl(href, {catchError: false});
+  } catch (ex) {
+    anchor.dataset.type = 'link';
+    return;
+  }
+
+  if (href !== href2) { 
+    anchor.dataset.href = href2;
+  }
+  anchor.dataset.type = getTypeFromUrl(href2);
 }
 
 function viewerInit() {
@@ -119,10 +166,12 @@ async function viewerGallery() {
   };
 
   const addAnchor = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.title = a.textContent;
 
@@ -137,17 +186,19 @@ async function viewerGallery() {
   };
 
   const addImage = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.title = a.textContent;
 
     const div = anchor.appendChild(document.createElement('div'));
 
     const img = div.appendChild(document.createElement('img'));
-    img.src = a.href;
+    img.src = href;
     img.alt = a.textContent;
 
     const span = anchor.appendChild(document.createElement('span'));
@@ -157,16 +208,18 @@ async function viewerGallery() {
   };
 
   const addAudio = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
     const audio = div.appendChild(document.createElement('audio'));
-    audio.src = a.href;
+    audio.src = href;
     audio.setAttribute("controls", "");
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.title = a.textContent;
 
@@ -177,16 +230,18 @@ async function viewerGallery() {
   };
 
   const addVideo = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
     const video = div.appendChild(document.createElement('video'));
-    video.src = a.href;
+    video.src = href;
     video.setAttribute("controls", "");
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.title = a.textContent;
 
@@ -196,30 +251,16 @@ async function viewerGallery() {
     return figure;
   };
 
-  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), (tr) => {
-    let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
+  const anchors = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), async (tr) => {
     const a = tr.querySelector('a[href]');
-    if (!a) { return {a, type}; }
-
-    if (type === 'dir') { return {a, type}; }
-
-    type = getTypeFromUrl(a.href);
-    if (type !== 'unknown') { return {a, type}; }
-
-    return fetch(a.href, {method: 'HEAD'}).then(r => {
-      type = getTypeFromUrl(r.url);
-      if (type !== 'unknown') { return {a, type}; }
-      type = 'file';
-      return {a, type};
-    }).catch(ex => {
-      type = 'link';
-      return {a, type};
-    });
+    if (a) { await loadAnchorMetadata(a); }
+    return a;
   }));
 
-  for (const {a, type} of tasks) {
+  for (const a of anchors) {
     if (!a) { continue; }
 
+    const type = a.dataset.type;
     switch (type) {
       case 'image':
         addImage(a, type);
@@ -256,10 +297,12 @@ async function viewerList() {
   };
 
   const addAnchor = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.textContent = a.textContent;
     anchor.className = 'icon ' + type;
@@ -268,16 +311,18 @@ async function viewerList() {
   };
 
   const addImage = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
     const img = div.appendChild(document.createElement('img'));
-    img.src = a.href;
+    img.src = href;
     img.alt = img.title = a.textContent;
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.textContent = a.textContent;
 
@@ -285,17 +330,19 @@ async function viewerList() {
   };
 
   const addAudio = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
     const audio = div.appendChild(document.createElement('audio'));
-    audio.src = a.href;
+    audio.src = href;
     audio.setAttribute("controls", "");
     audio.title = a.textContent;
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.textContent = a.textContent;
 
@@ -303,47 +350,35 @@ async function viewerList() {
   };
 
   const addVideo = (a, type) => {
+    const href = a.dataset.href || a.href;
+
     const figure = addFigure(type);
 
     const div = figure.appendChild(document.createElement('div'));
 
     const video = div.appendChild(document.createElement('video'));
-    video.src = a.href;
+    video.src = href;
     video.setAttribute("controls", "");
     video.title = a.textContent;
 
     const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = a.href;
+    anchor.href = href;
     anchor.target = "_blank";
     anchor.textContent = a.textContent;
 
     return figure;
   };
 
-  const tasks = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), (tr) => {
-    let type = tr.classList.contains('dir') ? 'dir' : 'unknown';
+  const anchors = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), async (tr) => {
     const a = tr.querySelector('a[href]');
-    if (!a) { return {a, type}; }
-
-    if (type === 'dir') { return {a, type}; }
-
-    type = getTypeFromUrl(a.href);
-    if (type !== 'unknown') { return {a, type}; }
-
-    return fetch(a.href, {method: 'HEAD'}).then(r => {
-      type = getTypeFromUrl(r.url);
-      if (type !== 'unknown') { return {a, type}; }
-      type = 'file';
-      return {a, type};
-    }).catch(ex => {
-      type = 'link';
-      return {a, type};
-    });
+    if (a) { await loadAnchorMetadata(a); }
+    return a;
   }));
 
-  for (const {a, type} of tasks) {
+  for (const a of anchors) {
     if (!a) { continue; }
 
+    const type = a.dataset.type;
     switch (type) {
       case 'image':
         addImage(a, type);
