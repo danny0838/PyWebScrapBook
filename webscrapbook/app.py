@@ -1449,7 +1449,7 @@ def action_move(sourcepaths, targetpaths):
                     os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                 except OSError:
                     traceback.print_exc()
-                    abort(500, "Unable to copy to this path.")
+                    abort(500, "Unable to move to this path.")
 
                 shutil.move(sourcepaths[0], targetpaths[0])
 
