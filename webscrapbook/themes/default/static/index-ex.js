@@ -816,26 +816,30 @@ onCommandRun.commands = {
   async exec(selectedEntries) {
     const target = selectedEntries[0].querySelector('a[href]').href;
     try {
-      let xhr = await utils.wsb({
+      await utils.wsb({
         url: target + '?a=exec&f=json',
         responseType: 'json',
         method: "GET",
       });
     } catch (ex) {
-      alert(`Unable to run "${target}": ${ex.message}`);
+      const base = document.getElementById('data-table').getAttribute('data-base');
+      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      alert(`Unable to run "${oldPath}": ${ex.message}`);
     }
   },
 
   async browse(selectedEntries) {
     const target = selectedEntries[0].querySelector('a[href]').href;
     try {
-      let xhr = await utils.wsb({
+      await utils.wsb({
         url: target + '?a=browse&f=json',
         responseType: 'json',
         method: "GET",
       });
     } catch (ex) {
-      alert(`Unable to browse "${target}": ${ex.message}`);
+      const base = document.getElementById('data-table').getAttribute('data-base');
+      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      alert(`Unable to browse "${oldPath}": ${ex.message}`);
     }
   },
 
@@ -850,7 +854,7 @@ onCommandRun.commands = {
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
 
-      const xhr = await utils.wsb({
+      await utils.wsb({
         url: target + '?a=mkdir&f=json',
         responseType: 'json',
         method: "POST",
@@ -874,7 +878,7 @@ onCommandRun.commands = {
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
 
-      const xhr = await utils.wsb({
+      await utils.wsb({
         url: target + '?a=mkzip&f=json',
         responseType: 'json',
         method: "POST",
