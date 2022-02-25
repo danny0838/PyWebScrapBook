@@ -784,6 +784,14 @@ function onCommandRun(detail) {
   func(selectedEntries, detail);
 }
 
+onCommandRun.sortEntries = function sortEntries(a, b) {
+  const ka = a.oldPath;
+  const kb = b.oldPath;
+  if (ka < kb) { return -1; }
+  if (ka > kb) { return 1; }
+  return 0;
+};
+
 onCommandRun.commands = {
   async source(selectedEntries) {
     const target = selectedEntries[0].querySelector('a[href]').href;
@@ -923,27 +931,33 @@ onCommandRun.commands = {
   },
 
   async move(selectedEntries) {
+    const moveEntry = async (target, oldPath, newPath) => {
+      const formData = new FormData();
+      formData.append('token', await utils.acquireToken(target));
+      formData.append('target', newPath);
+
+      await utils.wsb({
+        url: target + '?a=move&f=json',
+        responseType: 'json',
+        method: "POST",
+        formData,
+      });
+    };
+
+    const base = document.getElementById('data-table').getAttribute('data-base');
     const dir = document.getElementById('data-table').getAttribute('data-path');
     if (selectedEntries.length === 1) {
-      const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-      const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
+      const target = selectedEntries[0].querySelector('a[href]').href;
+      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      const newPath = prompt('Input the new path:', oldPath);
       if (!newPath) {
         return;
       }
 
       try {
-        const formData = new FormData();
-        formData.append('token', await utils.acquireToken(target));
-        formData.append('target', newPath);
-
-        let xhr = await utils.wsb({
-          url: target + '?a=move&f=json',
-          responseType: 'json',
-          method: "POST",
-          formData: formData,
-        });
+        await moveEntry(target, oldPath, newPath);
       } catch (ex) {
-        alert(`Unable to move "${target}": ${ex.message}`);
+        alert(`Unable to move "${oldPath}" => "${newPath}": ${ex.message}`);
         return;
       }
     } else {
@@ -953,23 +967,25 @@ onCommandRun.commands = {
       }
 
       newDir = newDir.replace(/\/+$/, '') + '/';
-      for (const entry of selectedEntries) {
-        const target = entry.querySelector('a[href]').getAttribute('href');
-        const newPath = newDir + decodeURIComponent(target);
 
+      const entries = Array.prototype.map.call(selectedEntries, entry => {
+        const target = entry.querySelector('a[href]').href;
+        const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+        const newPath = newDir + oldPath.match(/[^\/]+\/?$/)[0];
+        return {target, oldPath, newPath};
+      });
+      const errors = [];
+      for (const {target, oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          const formData = new FormData();
-          formData.append('token', await utils.acquireToken(target));
-          formData.append('target', newPath);
-
-          let xhr = await utils.wsb({
-            url: target + '?a=move&f=json',
-            responseType: 'json',
-            method: "POST",
-            formData: formData,
-          });
+          await moveEntry(target, oldPath, newPath);
         } catch (ex) {
-          alert(`Unable to move "${target}": ${ex.message}`);
+          errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
+        }
+      }
+      if (errors.length) {
+        const msg = 'Unable to move entries:\n' + errors.reverse().join('\n');
+        alert(msg);
+        if (errors.length === entries.length) {
           return;
         }
       }
@@ -978,27 +994,33 @@ onCommandRun.commands = {
   },
 
   async copy(selectedEntries) {
+    const copyEntry = async (target, oldPath, newPath) => {
+      const formData = new FormData();
+      formData.append('token', await utils.acquireToken(target));
+      formData.append('target', newPath);
+
+      await utils.wsb({
+        url: target + '?a=copy&f=json',
+        responseType: 'json',
+        method: "POST",
+        formData,
+      });
+    };
+
+    const base = document.getElementById('data-table').getAttribute('data-base');
     const dir = document.getElementById('data-table').getAttribute('data-path');
     if (selectedEntries.length === 1) {
-      const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-      const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
+      const target = selectedEntries[0].querySelector('a[href]').href;
+      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      const newPath = prompt('Input the new path:', oldPath);
       if (!newPath) {
         return;
       }
 
       try {
-        const formData = new FormData();
-        formData.append('token', await utils.acquireToken(target));
-        formData.append('target', newPath);
-
-        let xhr = await utils.wsb({
-          url: target + '?a=copy&f=json',
-          responseType: 'json',
-          method: "POST",
-          formData: formData,
-        });
+        await copyEntry(target, oldPath, newPath);
       } catch (ex) {
-        alert(`Unable to copy "${target}": ${ex.message}`);
+        alert(`Unable to copy "${oldPath}" => "${newPath}": ${ex.message}`);
         return;
       }
     } else {
@@ -1008,23 +1030,25 @@ onCommandRun.commands = {
       }
 
       newDir = newDir.replace(/\/+$/, '') + '/';
-      for (const entry of selectedEntries) {
-        const target = entry.querySelector('a[href]').getAttribute('href');
-        const newPath = newDir + decodeURIComponent(target);
 
+      const entries = Array.prototype.map.call(selectedEntries, entry => {
+        const target = entry.querySelector('a[href]').href;
+        const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+        const newPath = newDir + oldPath.match(/[^\/]+\/?$/)[0];
+        return {target, oldPath, newPath};
+      });
+      const errors = [];
+      for (const {target, oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          const formData = new FormData();
-          formData.append('token', await utils.acquireToken(target));
-          formData.append('target', newPath);
-
-          let xhr = await utils.wsb({
-            url: target + '?a=copy&f=json',
-            responseType: 'json',
-            method: "POST",
-            formData: formData,
-          });
+          await copyEntry(target, oldPath, newPath);
         } catch (ex) {
-          alert(`Unable to copy "${target}": ${ex.message}`);
+          errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
+        }
+      }
+      if (errors.length) {
+        const msg = 'Unable to copy entries:\n' + errors.reverse().join('\n');
+        alert(msg);
+        if (errors.length === entries.length) {
           return;
         }
       }
@@ -1051,34 +1075,41 @@ onCommandRun.commands = {
       return pathname;
     };
 
+    const linkEntry = async (source, target, oldPath, newPath) => {
+      const url = getRelativePath(oldPath, newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
+      const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
+
+      const formData = new FormData();
+      formData.append('token', await utils.acquireToken(source));
+      // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
+      formData.append('text', unescape(encodeURIComponent(content)));
+
+      await utils.wsb({
+        url: target + '?a=save&f=json',
+        responseType: 'json',
+        method: "POST",
+        formData: formData,
+      });
+    };
+
     const base = document.getElementById('data-table').getAttribute('data-base');
     const dir = document.getElementById('data-table').getAttribute('data-path');
     if (selectedEntries.length === 1) {
-      const source = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-      const newPath = prompt('Input the new path:', dir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm');
+      const source = selectedEntries[0].querySelector('a[href]').href;
+      const oldPath = decodeURIComponent(new URL(source).pathname).slice(base.length);
+      let newPath = oldPath.replace(/\/$/, '') + '.lnk.htm';
+      newPath = prompt('Input the new path:', newPath);
       if (!newPath) {
         return;
       }
 
-      const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+      const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
 
       try {
-        const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
-        const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
-
-        const formData = new FormData();
-        formData.append('token', await utils.acquireToken(source));
-        // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
-        formData.append('text', unescape(encodeURIComponent(content)));
-
-        let xhr = await utils.wsb({
-          url: target + '?a=save&f=json',
-          responseType: 'json',
-          method: "POST",
-          formData: formData,
-        });
+        await linkEntry(source, target, oldPath, newPath);
       } catch (ex) {
-        alert(`Unable to create link at "${target}": ${ex.message}`);
+        alert(`Unable to create link "${oldPath}" => "${newPath}": ${ex.message}`);
+        return;
       }
     } else {
       let newDir = prompt('Create links at the path:', dir);
@@ -1087,28 +1118,25 @@ onCommandRun.commands = {
       }
 
       newDir = newDir.replace(/\/+$/, '') + '/';
-      for (const entry of selectedEntries) {
-        const source = entry.querySelector('a[href]').getAttribute('href');
-        const newPath = newDir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm';
-        const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-
+      const entries = Array.prototype.map.call(selectedEntries, entry => {
+        const source = entry.querySelector('a[href]').href;
+        const oldPath = decodeURIComponent(new URL(source).pathname).slice(base.length);
+        const newPath = newDir + oldPath.match(/[^\/]+\/?$/)[0].replace(/\/$/, '') + '.lnk.htm';
+        const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+        return {source, target, oldPath, newPath};
+      }).sort(onCommandRun.sortEntries).reverse();
+      const errors = [];
+      for (const {source, target, oldPath, newPath} of entries) {
         try {
-          const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
-          const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
-
-          const formData = new FormData();
-          formData.append('token', await utils.acquireToken(source));
-          // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
-          formData.append('text', unescape(encodeURIComponent(content)));
-
-          let xhr = await utils.wsb({
-            url: target + '?a=save&f=json',
-            responseType: 'json',
-            method: "POST",
-            formData: formData,
-          });
+          await linkEntry(source, target, oldPath, newPath);
         } catch (ex) {
-          alert(`Unable to create link at "${target}": ${ex.message}`);
+          errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
+        }
+      }
+      if (errors.length) {
+        const msg = 'Unable to create links:\n' + errors.reverse().join('\n');
+        alert(msg);
+        if (errors.length === entries.length) {
           return;
         }
       }
@@ -1117,20 +1145,35 @@ onCommandRun.commands = {
   },
 
   async delete(selectedEntries) {
-    for (const entry of selectedEntries) {
+    const base = document.getElementById('data-table').getAttribute('data-base');
+    const entries = Array.prototype.map.call(selectedEntries, entry => {
       const target = entry.querySelector('a[href]').href;
+      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      return {target, oldPath};
+    });
+    const errors = [];
+    for (const {target, oldPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
       try {
         const formData = new FormData();
         formData.append('token', await utils.acquireToken(target));
 
-        const xhr = await utils.wsb({
+        await utils.wsb({
           url: target + '?a=delete&f=json',
           responseType: 'json',
           method: "POST",
           formData: formData,
         });
       } catch (ex) {
-        alert(`Unable to delete "${target}": ${ex.message}`);
+        errors.push(`"${oldPath}": ${ex.message}`);
+      }
+    }
+    if (errors.length) {
+      const msg = entries.length === 1 ?
+        'Unable to delete ' + errors.join('\n'):
+        'Unable to delete entries:\n' + errors.reverse().join('\n');
+      alert(msg);
+      if (errors.length === entries.length) {
+        return;
       }
     }
     location.reload();
