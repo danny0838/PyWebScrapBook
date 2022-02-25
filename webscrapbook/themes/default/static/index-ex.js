@@ -626,61 +626,63 @@ function onViewerChange(event) {
   viewerApply();
 }
 
-async function onToolsChange(event) {
+function onToolsChange(event) {
   event.preventDefault();
   const command = event.target.value;
   event.target.value = '';
 
-  switch (command) {
-    case 'select-all': {
-      for (const tr of document.querySelectorAll('#data-table tbody tr')) {
-        highlightElem(tr, true);
-      }
-      break;
-    }
-    case 'deselect-all': {
-      for (const tr of document.querySelectorAll('#data-table tbody tr')) {
-        highlightElem(tr, false);
-      }
-      break;
-    }
-    case 'expand-all': {
-      for (const tr of document.querySelectorAll('#data-table tbody tr:not([data-expanded])')) {
-        await expandTableRow(tr, true);
-      }
-      break;
-    }
-    case 'filter': {
-      const kw = prompt('Filter with the keyword (string or "/pattern/flags" for regex):');
-      if (kw === null) { break; }
-      let regex;
-      if (/^\/(.*)\/([a-z]*)$/i.test(kw)) {
-        try {
-          regex = new RegExp(RegExp.$1, RegExp.$2);
-        } catch (ex) {
-          alert(`Invalid regex "${kw}": ${ex.message}`);
-          break;
-        }
-      } else {
-        regex = new RegExp(utils.escapeRegExp(kw), 'i');
-      }
-      for (const tr of document.querySelectorAll('#data-table tbody tr:not([hidden])')) {
-        const anchor = tr.querySelector('a[href]');
-        regex.lastIndex = 0;
-        if (!regex.test(anchor.textContent)) {
-          tr.hidden = true;
-        }
-      }
-      break;
-    }
-    case 'filter-clear': {
-      for (const tr of document.querySelectorAll('#data-table tbody tr[hidden]')) {
-        tr.hidden = false;
-      }
-      break;
-    }
-  }
+  const func = onToolsChange.commands[command];
+  func();
 }
+
+onToolsChange.commands = {
+  'select-all': function selectAll() {
+    for (const tr of document.querySelectorAll('#data-table tbody tr')) {
+      highlightElem(tr, true);
+    }
+  },
+
+  'deselect-all': function deselectAll() {
+    for (const tr of document.querySelectorAll('#data-table tbody tr')) {
+      highlightElem(tr, false);
+    }
+  },
+
+  'expand-all': async function expandAll() {
+    for (const tr of document.querySelectorAll('#data-table tbody tr:not([data-expanded])')) {
+      await expandTableRow(tr, true);
+    }
+  },
+
+  'filter': function filter() {
+    const kw = prompt('Filter with the keyword (string or "/pattern/flags" for regex):');
+    if (kw === null) { return; }
+    let regex;
+    if (/^\/(.*)\/([a-z]*)$/i.test(kw)) {
+      try {
+        regex = new RegExp(RegExp.$1, RegExp.$2);
+      } catch (ex) {
+        alert(`Invalid regex "${kw}": ${ex.message}`);
+        return;
+      }
+    } else {
+      regex = new RegExp(utils.escapeRegExp(kw), 'i');
+    }
+    for (const tr of document.querySelectorAll('#data-table tbody tr:not([hidden])')) {
+      const anchor = tr.querySelector('a[href]');
+      regex.lastIndex = 0;
+      if (!regex.test(anchor.textContent)) {
+        tr.hidden = true;
+      }
+    }
+  },
+
+  'filter-clear': function filterClear() {
+    for (const tr of document.querySelectorAll('#data-table tbody tr[hidden]')) {
+      tr.hidden = false;
+    }
+  },
+};
 
 function onCommandFocus(event) {
   const cmdElem = document.getElementById('command');
@@ -775,166 +777,185 @@ function onCommandChange(event) {
   }
 }
 
-async function onCommandRun(detail) {
+function onCommandRun(detail) {
   const command = detail.cmd;
+  const func = onCommandRun.commands[command];
   const selectedEntries = document.querySelectorAll('#data-table .highlight');
+  func(selectedEntries, detail);
+}
 
-  switch (command) {
-    case 'source': {
+onCommandRun.commands = {
+  async source(selectedEntries) {
+    const target = selectedEntries[0].querySelector('a[href]').href;
+    location.href = target + '?a=source';
+  },
+
+  async download(selectedEntries) {
+    if (selectedEntries.length === 1) {
       const target = selectedEntries[0].querySelector('a[href]').href;
-      location.href = target + '?a=source';
-      break;
+      location.href = target + '?a=download';
+    } else {
+      const u = new URL(utils.getTargetUrl(location.href));
+      u.searchParams.append('a', 'download');
+      for (const elem of selectedEntries) {
+        const entry = elem.querySelector('a[title]').getAttribute('title');
+        u.searchParams.append('i', entry);
+      }
+      location.href = u.href;
+    }
+  },
+
+  async exec(selectedEntries) {
+    const target = selectedEntries[0].querySelector('a[href]').href;
+    try {
+      let xhr = await utils.wsb({
+        url: target + '?a=exec&f=json',
+        responseType: 'json',
+        method: "GET",
+      });
+    } catch (ex) {
+      alert(`Unable to run "${target}": ${ex.message}`);
+    }
+  },
+
+  async browse(selectedEntries) {
+    const target = selectedEntries[0].querySelector('a[href]').href;
+    try {
+      let xhr = await utils.wsb({
+        url: target + '?a=browse&f=json',
+        responseType: 'json',
+        method: "GET",
+      });
+    } catch (ex) {
+      alert(`Unable to browse "${target}": ${ex.message}`);
+    }
+  },
+
+  async mkdir(selectedEntries) {
+    const newFolderName = prompt('Input a name:', 'new-folder');
+    if (!newFolderName) {
+      return;
     }
 
-    case 'download': {
-      if (selectedEntries.length === 1) {
-        const target = selectedEntries[0].querySelector('a[href]').href;
-        location.href = target + '?a=download';
-      } else {
-        const u = new URL(utils.getTargetUrl(location.href));
-        u.searchParams.append('a', 'download');
-        for (const elem of selectedEntries) {
-          const entry = elem.querySelector('a[title]').getAttribute('title');
-          u.searchParams.append('i', entry);
-        }
-        location.href = u.href;
-      }
-      break;
+    const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFolderName);
+    try {
+      const formData = new FormData();
+      formData.append('token', await utils.acquireToken(target));
+
+      const xhr = await utils.wsb({
+        url: target + '?a=mkdir&f=json',
+        responseType: 'json',
+        method: "POST",
+        formData: formData,
+      });
+    } catch (ex) {
+      alert(`Unable to create directory "${newFolderName}": ${ex.message}`);
+      return;
+    }
+    location.reload();
+  },
+
+  async mkzip(selectedEntries) {
+    const newFileName = prompt('Input a name:', 'new-archive.zip');
+    if (!newFileName) {
+      return;
     }
 
-    case 'exec': {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      try {
-        let xhr = await utils.wsb({
-          url: target + '?a=exec&f=json',
-          responseType: 'json',
-          method: "GET",
-        });
-      } catch (ex) {
-        alert(`Unable to run "${target}": ${ex.message}`);
-      }
-      break;
+    const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
+    try {
+      const formData = new FormData();
+      formData.append('token', await utils.acquireToken(target));
+
+      const xhr = await utils.wsb({
+        url: target + '?a=mkzip&f=json',
+        responseType: 'json',
+        method: "POST",
+        formData: formData,
+      });
+    } catch (ex) {
+      alert(`Unable to create ZIP "${newFileName}": ${ex.message}`);
+      return;
+    }
+    location.reload();
+  },
+
+  async mkfile(selectedEntries) {
+    const newFileName = prompt('Input a name:', 'new-file.txt');
+    if (!newFileName) {
+      return;
     }
 
-    case 'browse': {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      try {
-        let xhr = await utils.wsb({
-          url: target + '?a=browse&f=json',
-          responseType: 'json',
-          method: "GET",
-        });
-      } catch (ex) {
-        alert(`Unable to browse "${target}": ${ex.message}`);
-      }
-      break;
-    }
+    const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
+    location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
+  },
 
-    case 'mkdir': {
-      const newFolderName = prompt('Input a name:', 'new-folder');
-      if (!newFolderName) {
-        break;
-      }
+  async edit(selectedEntries) {
+    const target = selectedEntries[0].querySelector('a[href]').href;
+    location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
+  },
 
-      const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFolderName);
+  async editx(selectedEntries) {
+    const target = selectedEntries[0].querySelector('a[href]').href;
+    location.href = target + '?a=editx&back=' + encodeURIComponent(location.href);
+  },
+
+  async upload(selectedEntries, detail) {
+    const dir = utils.getTargetUrl(location.href);
+
+    for (const file of detail.files) {
+      const target = dir + file.name;
       try {
         const formData = new FormData();
-        formData.append('token', await utils.acquireToken(target));
+        formData.append('token', await utils.acquireToken(dir));
+        formData.append('upload', file);
 
-        const xhr = await utils.wsb({
-          url: target + '?a=mkdir&f=json',
+        let xhr = await utils.wsb({
+          url: target + '?a=save&f=json',
           responseType: 'json',
           method: "POST",
           formData: formData,
         });
       } catch (ex) {
-        alert(`Unable to create directory "${newFolderName}": ${ex.message}`);
-        break;
+        alert(`Unable to upload to "${target}": ${ex.message}`);
       }
-      location.reload();
-      break;
     }
+    location.reload();
+  },
 
-    case 'mkzip': {
-      const newFileName = prompt('Input a name:', 'new-archive.zip');
-      if (!newFileName) {
-        break;
+  async move(selectedEntries) {
+    const dir = document.getElementById('data-table').getAttribute('data-path');
+    if (selectedEntries.length === 1) {
+      const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
+      const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
+      if (!newPath) {
+        return;
       }
 
-      const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
       try {
         const formData = new FormData();
         formData.append('token', await utils.acquireToken(target));
+        formData.append('target', newPath);
 
-        const xhr = await utils.wsb({
-          url: target + '?a=mkzip&f=json',
+        let xhr = await utils.wsb({
+          url: target + '?a=move&f=json',
           responseType: 'json',
           method: "POST",
           formData: formData,
         });
       } catch (ex) {
-        alert(`Unable to create ZIP "${newFileName}": ${ex.message}`);
-        break;
+        alert(`Unable to move "${target}": ${ex.message}`);
+        return;
       }
-      location.reload();
-      break;
-    }
-
-    case 'mkfile': {
-      const newFileName = prompt('Input a name:', 'new-file.txt');
-      if (!newFileName) {
-        break;
+    } else {
+      let newDir = prompt('Move to the path:', dir);
+      if (!newDir) {
+        return;
       }
 
-      const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
-      location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
-      break;
-    }
-
-    case 'edit': {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
-      break;
-    }
-
-    case 'editx': {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      location.href = target + '?a=editx&back=' + encodeURIComponent(location.href);
-      break;
-    }
-
-    case 'upload': {
-      const dir = utils.getTargetUrl(location.href);
-
-      for (const file of detail.files) {
-        const target = dir + file.name;
-        try {
-          const formData = new FormData();
-          formData.append('token', await utils.acquireToken(dir));
-          formData.append('upload', file);
-
-          let xhr = await utils.wsb({
-            url: target + '?a=save&f=json',
-            responseType: 'json',
-            method: "POST",
-            formData: formData,
-          });
-        } catch (ex) {
-          alert(`Unable to upload to "${target}": ${ex.message}`);
-        }
-      }
-      location.reload();
-      break;
-    }
-
-    case 'move': {
-      const dir = document.getElementById('data-table').getAttribute('data-path');
-      if (selectedEntries.length === 1) {
-        const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-        const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
-        if (!newPath) {
-          break;
-        }
+      newDir = newDir.replace(/\/+$/, '') + '/';
+      for (const entry of selectedEntries) {
+        const target = entry.querySelector('a[href]').getAttribute('href');
+        const newPath = newDir + decodeURIComponent(target);
 
         try {
           const formData = new FormData();
@@ -949,48 +970,47 @@ async function onCommandRun(detail) {
           });
         } catch (ex) {
           alert(`Unable to move "${target}": ${ex.message}`);
-          break;
-        }
-      } else {
-        let newDir = prompt('Move to the path:', dir);
-        if (!newDir) {
-          break;
-        }
-
-        newDir = newDir.replace(/\/+$/, '') + '/';
-        for (const entry of selectedEntries) {
-          const target = entry.querySelector('a[href]').getAttribute('href');
-          const newPath = newDir + decodeURIComponent(target);
-
-          try {
-            const formData = new FormData();
-            formData.append('token', await utils.acquireToken(target));
-            formData.append('target', newPath);
-
-            let xhr = await utils.wsb({
-              url: target + '?a=move&f=json',
-              responseType: 'json',
-              method: "POST",
-              formData: formData,
-            });
-          } catch (ex) {
-            alert(`Unable to move "${target}": ${ex.message}`);
-            break;
-          }
+          return;
         }
       }
-      location.reload();
-      break;
     }
+    location.reload();
+  },
 
-    case 'copy': {
-      const dir = document.getElementById('data-table').getAttribute('data-path');
-      if (selectedEntries.length === 1) {
-        const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-        const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
-        if (!newPath) {
-          break;
-        }
+  async copy(selectedEntries) {
+    const dir = document.getElementById('data-table').getAttribute('data-path');
+    if (selectedEntries.length === 1) {
+      const target = selectedEntries[0].querySelector('a[href]').getAttribute('href');
+      const newPath = prompt('Input the new path:', dir + decodeURIComponent(target));
+      if (!newPath) {
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('token', await utils.acquireToken(target));
+        formData.append('target', newPath);
+
+        let xhr = await utils.wsb({
+          url: target + '?a=copy&f=json',
+          responseType: 'json',
+          method: "POST",
+          formData: formData,
+        });
+      } catch (ex) {
+        alert(`Unable to copy "${target}": ${ex.message}`);
+        return;
+      }
+    } else {
+      let newDir = prompt('Copy to the path:', dir);
+      if (!newDir) {
+        return;
+      }
+
+      newDir = newDir.replace(/\/+$/, '') + '/';
+      for (const entry of selectedEntries) {
+        const target = entry.querySelector('a[href]').getAttribute('href');
+        const newPath = newDir + decodeURIComponent(target);
 
         try {
           const formData = new FormData();
@@ -1005,68 +1025,71 @@ async function onCommandRun(detail) {
           });
         } catch (ex) {
           alert(`Unable to copy "${target}": ${ex.message}`);
-          break;
-        }
-      } else {
-        let newDir = prompt('Copy to the path:', dir);
-        if (!newDir) {
-          break;
-        }
-
-        newDir = newDir.replace(/\/+$/, '') + '/';
-        for (const entry of selectedEntries) {
-          const target = entry.querySelector('a[href]').getAttribute('href');
-          const newPath = newDir + decodeURIComponent(target);
-
-          try {
-            const formData = new FormData();
-            formData.append('token', await utils.acquireToken(target));
-            formData.append('target', newPath);
-
-            let xhr = await utils.wsb({
-              url: target + '?a=copy&f=json',
-              responseType: 'json',
-              method: "POST",
-              formData: formData,
-            });
-          } catch (ex) {
-            alert(`Unable to copy "${target}": ${ex.message}`);
-            break;
-          }
+          return;
         }
       }
-      location.reload();
-      break;
     }
+    location.reload();
+  },
 
-    case 'link': {
-      const getRelativePath = (target, base) => {
-        const targetPathParts = target.split('/');
-        const basePathParts = base.split('/');
+  async link(selectedEntries) {
+    const getRelativePath = (target, base) => {
+      const targetPathParts = target.split('/');
+      const basePathParts = base.split('/');
 
-        let commonIndex;
-        basePathParts.every((v, i) => {
-          if (v === targetPathParts[i]) {
-            commonIndex = i;
-            return true;
-          }
-          return false;
-        });
-
-        let pathname = '../'.repeat(basePathParts.length - commonIndex - 2);
-        pathname += targetPathParts.slice(commonIndex + 1).join('/');
-        return pathname;
-      };
-
-      const base = document.getElementById('data-table').getAttribute('data-base');
-      const dir = document.getElementById('data-table').getAttribute('data-path');
-      if (selectedEntries.length === 1) {
-        const source = selectedEntries[0].querySelector('a[href]').getAttribute('href');
-        const newPath = prompt('Input the new path:', dir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm');
-        if (!newPath) {
-          break;
+      let commonIndex;
+      basePathParts.every((v, i) => {
+        if (v === targetPathParts[i]) {
+          commonIndex = i;
+          return true;
         }
+        return false;
+      });
 
+      let pathname = '../'.repeat(basePathParts.length - commonIndex - 2);
+      pathname += targetPathParts.slice(commonIndex + 1).join('/');
+      return pathname;
+    };
+
+    const base = document.getElementById('data-table').getAttribute('data-base');
+    const dir = document.getElementById('data-table').getAttribute('data-path');
+    if (selectedEntries.length === 1) {
+      const source = selectedEntries[0].querySelector('a[href]').getAttribute('href');
+      const newPath = prompt('Input the new path:', dir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm');
+      if (!newPath) {
+        return;
+      }
+
+      const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+
+      try {
+        const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
+        const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
+
+        const formData = new FormData();
+        formData.append('token', await utils.acquireToken(source));
+        // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
+        formData.append('text', unescape(encodeURIComponent(content)));
+
+        let xhr = await utils.wsb({
+          url: target + '?a=save&f=json',
+          responseType: 'json',
+          method: "POST",
+          formData: formData,
+        });
+      } catch (ex) {
+        alert(`Unable to create link at "${target}": ${ex.message}`);
+      }
+    } else {
+      let newDir = prompt('Create links at the path:', dir);
+      if (!newDir) {
+        return;
+      }
+
+      newDir = newDir.replace(/\/+$/, '') + '/';
+      for (const entry of selectedEntries) {
+        const source = entry.querySelector('a[href]').getAttribute('href');
+        const newPath = newDir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm';
         const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
 
         try {
@@ -1086,66 +1109,33 @@ async function onCommandRun(detail) {
           });
         } catch (ex) {
           alert(`Unable to create link at "${target}": ${ex.message}`);
-        }
-      } else {
-        let newDir = prompt('Create links at the path:', dir);
-        if (!newDir) {
-          break;
-        }
-
-        newDir = newDir.replace(/\/+$/, '') + '/';
-        for (const entry of selectedEntries) {
-          const source = entry.querySelector('a[href]').getAttribute('href');
-          const newPath = newDir + decodeURIComponent(source.replace(/\/$/, '')) + '.lnk.htm';
-          const target = (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-
-          try {
-            const url = getRelativePath(dir + decodeURIComponent(source), newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
-            const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
-
-            const formData = new FormData();
-            formData.append('token', await utils.acquireToken(source));
-            // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
-            formData.append('text', unescape(encodeURIComponent(content)));
-
-            let xhr = await utils.wsb({
-              url: target + '?a=save&f=json',
-              responseType: 'json',
-              method: "POST",
-              formData: formData,
-            });
-          } catch (ex) {
-            alert(`Unable to create link at "${target}": ${ex.message}`);
-            break;
-          }
+          return;
         }
       }
-      location.reload();
-      break;
     }
+    location.reload();
+  },
 
-    case 'delete': {
-      for (const entry of selectedEntries) {
-        const target = entry.querySelector('a[href]').href;
-        try {
-          const formData = new FormData();
-          formData.append('token', await utils.acquireToken(target));
+  async delete(selectedEntries) {
+    for (const entry of selectedEntries) {
+      const target = entry.querySelector('a[href]').href;
+      try {
+        const formData = new FormData();
+        formData.append('token', await utils.acquireToken(target));
 
-          const xhr = await utils.wsb({
-            url: target + '?a=delete&f=json',
-            responseType: 'json',
-            method: "POST",
-            formData: formData,
-          });
-        } catch (ex) {
-          alert(`Unable to delete "${target}": ${ex.message}`);
-        }
+        const xhr = await utils.wsb({
+          url: target + '?a=delete&f=json',
+          responseType: 'json',
+          method: "POST",
+          formData: formData,
+        });
+      } catch (ex) {
+        alert(`Unable to delete "${target}": ${ex.message}`);
       }
-      location.reload();
-      break;
     }
-  }
-}
+    location.reload();
+  },
+};
 
 function onUploadFileChange(event) {
   event.preventDefault();
