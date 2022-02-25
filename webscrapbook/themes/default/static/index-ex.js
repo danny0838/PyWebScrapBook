@@ -907,24 +907,35 @@ onCommandRun.commands = {
     location.href = target + '?a=editx&back=' + encodeURIComponent(location.href);
   },
 
-  async upload(selectedEntries, detail) {
-    const dir = utils.getTargetUrl(location.href);
-
-    for (const file of detail.files) {
-      const target = dir + file.name;
+  async upload(selectedEntries, {files: entries}) {
+    const base = document.getElementById('data-table').getAttribute('data-base');
+    const dir = document.getElementById('data-table').getAttribute('data-path');
+    const errors = [];
+    for (const file of entries) {
+      const newPath = dir + file.name;
+      const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
       try {
         const formData = new FormData();
         formData.append('token', await utils.acquireToken(dir));
         formData.append('upload', file);
 
-        let xhr = await utils.wsb({
+        await utils.wsb({
           url: target + '?a=save&f=json',
           responseType: 'json',
           method: "POST",
           formData: formData,
         });
       } catch (ex) {
-        alert(`Unable to upload to "${target}": ${ex.message}`);
+        errors.push(`"${newPath}": ${ex.message}`);
+      }
+    }
+    if (errors.length) {
+      const msg = entries.length === 1 ?
+        'Unable to upload file ' + errors.join('\n'):
+        'Unable to upload files:\n' + errors.join('\n');
+      alert(msg);
+      if (errors.length === entries.length) {
+        return;
       }
     }
     location.reload();
