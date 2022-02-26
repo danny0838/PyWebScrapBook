@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* Media viewers */
   dataViewer = dataTable;
-  browseHtmlFolder();
+  viewerInit();
   document.getElementById("viewer").addEventListener("change", onViewerChange, false);
 
   /* Command handler */
@@ -53,11 +53,11 @@ function getTypeFromUrl(url) {
   }
 }
 
-function browseHtmlFolder() {
-  const path = document.getElementById('data-table').getAttribute('data-path');
+function viewerInit() {
+  const dir = document.getElementById('data-table').getAttribute('data-path');
 
   /* handle .htd */
-  if (/\.(htd)\/?$/i.test(path)) {
+  if (/\.(htd)\/?$/i.test(dir)) {
     // if there's index.html, redirect to view it
     const indexAnchor = dataTable.querySelector('tbody tr a[href="index.html"]');
     if (indexAnchor) {
