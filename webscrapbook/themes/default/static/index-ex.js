@@ -134,12 +134,6 @@ function viewerApply(mode) {
     case "gallery2":
       viewerGallery({loadMetadata: true});
       break;
-    case "list":
-      viewerList();
-      break;
-    case "list2":
-      viewerList({loadMetadata: true});
-      break;
     default:
       viewerDefault();
       break;
@@ -253,126 +247,6 @@ async function viewerGallery(options = {}) {
 
     const span = anchor.appendChild(document.createElement('span'));
     span.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const anchors = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), async (tr) => {
-    const a = tr.querySelector('a[href]');
-    if (a) { await loadAnchorMetadata(a); }
-    return a;
-  }));
-
-  const medias = [];
-  for (const a of anchors) {
-    if (!a) { continue; }
-
-    const type = a.dataset.type;
-    switch (type) {
-      case 'image':
-        addImage(a, type);
-        break;
-      case 'audio':
-        medias.push(addAudio(a, type).querySelector('audio'));
-        break;
-      case 'video':
-        medias.push(addVideo(a, type).querySelector('video'));
-        break;
-      default:
-        addAnchor(a, type);
-        break;
-    }
-  }
-  preloadMediaMetadata(medias, options); // async
-
-  dataViewer.parentNode.replaceChild(wrapper, dataViewer);
-  dataViewer = wrapper;
-}
-
-async function viewerList(options = {}) {
-  document.getElementById('tools').disabled = true;
-  document.getElementById('command').disabled = true;
-
-  const wrapper = document.createElement('div');
-  wrapper.id = "img-list-view";
-
-  const addFigure = (type) => {
-    const figure = wrapper.appendChild(document.createElement('figure'));
-    figure.classList.add(type);
-    return figure;
-  };
-
-  const addAnchor = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.textContent = a.textContent;
-    anchor.className = 'icon ' + type;
-
-    return figure;
-  };
-
-  const addImage = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const img = div.appendChild(document.createElement('img'));
-    img.src = href;
-    img.alt = img.title = a.textContent;
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const addAudio = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const audio = div.appendChild(document.createElement('audio'));
-    audio.src = href;
-    audio.controls = true;
-    audio.preload = 'none';
-    audio.title = a.textContent;
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const addVideo = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const video = div.appendChild(document.createElement('video'));
-    video.src = href;
-    video.controls = true;
-    video.preload = 'none';
-    video.title = a.textContent;
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.textContent = a.textContent;
 
     return figure;
   };
