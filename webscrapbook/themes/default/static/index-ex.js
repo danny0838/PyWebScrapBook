@@ -309,6 +309,8 @@ Keybord shortcuts:
         const img = figure.appendChild(document.createElement('img'));
         img.alt = anchor.textContent;
         img.dataset.ratio = 1;
+        img.dataset.deltaX = 0;
+        img.dataset.deltaY = 0;
         await new Promise((resolve, reject) => {
           const onload = () => {
             resolve(true);
@@ -339,6 +341,8 @@ Keybord shortcuts:
         video.controls = true;
         video.autoplay = true;
         video.dataset.ratio = 1;
+        video.dataset.deltaX = 0;
+        video.dataset.deltaY = 0;
         video.focus();
         const p1 = new Promise((resolve, reject) => {
           const onplaying = () => {
@@ -381,175 +385,151 @@ Keybord shortcuts:
     this.wrapper.remove();
   },
 
-  zoom(ratio, {mode = 'relative-ratio', showTooltip = true} = {}) {
+  zoom(ratio, {mode = 'delta-relative-ratio', updateLastRatio = true, showTooltip = true} = {}) {
     const figure = this.wrapper.querySelector('figure');
+
+    // determine related properties
+    let media, widthProp, naturalWidthProp;
     switch (figure.dataset.type) {
       case 'image': {
-        const img = figure.querySelector('img');
-        switch (mode) {
-          case 'relative-sum': {
-            const currentRatio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
-            ratio = currentRatio + ratio;
-            break;
-          }
-          case 'relative-ratio': {
-            const currentRatio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
-            ratio = ratio >= 0 ? currentRatio * (1 + ratio) : currentRatio / (1 - ratio);
-            break;
-          }
-          // 'absolute' or otherwise
-        }
-        ratio = Math.max(ratio, this.minZoomRatio);
-        img.dataset.ratio = ratio;
-        img.style.width = (ratio * (img.naturalWidth || this.defaultNaturalWidth)) + 'px';
-        img.style.maxWidth = 'none';
-        img.style.maxHeight = 'none';
-        if (showTooltip) {
-          this.showTooltip((ratio * 100).toFixed(0) + '%');
-        }
+        media = figure.querySelector('img');
+        widthProp = 'width';
+        naturalWidthProp = 'naturalWidth';
         break;
       }
       case 'video': {
-        const video = figure.querySelector('video');
-        switch (mode) {
-          case 'relative-sum': {
-            const currentRatio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
-            ratio = currentRatio + ratio;
-            break;
-          }
-          case 'relative-ratio': {
-            const currentRatio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
-            ratio = ratio >= 0 ? currentRatio * (1 + ratio) : currentRatio / (1 - ratio);
-            break;
-          }
-          // 'absolute' or otherwise
-        }
-        ratio = Math.max(ratio, this.minZoomRatio);
-        video.dataset.ratio = ratio;
-        video.style.width = (ratio * (video.videoWidth || this.defaultNaturalWidth)) + 'px';
-        video.style.maxWidth = 'none';
-        video.style.maxHeight = 'none';
-        if (showTooltip) {
-          this.showTooltip((ratio * 100).toFixed(0) + '%');
-        }
+        media = figure.querySelector('video');
+        widthProp = 'offsetWidth';
+        naturalWidthProp = 'videoWidth';
         break;
       }
+      default: {
+        // cannot zoom this type
+        return;
+      }
+    }
+
+    const getCurrentRatio = (media) => {
+      return media[widthProp] / (media[naturalWidthProp] || this.defaultNaturalWidth);
+    };
+
+    // apply zooming
+    let newRatio;
+    handleZooming: {
+      // determine absolute ratio and other properties
+      switch (mode) {
+        case 'delta-ratio': {
+          const currentRatio = getCurrentRatio(media);
+          newRatio = currentRatio + ratio;
+          break;
+        }
+
+        case 'delta-relative-ratio': {
+          const currentRatio = getCurrentRatio(media);
+          newRatio = ratio >= 0 ? currentRatio * (1 + ratio) : currentRatio / (1 - ratio);
+          break;
+        }
+
+        case 'toggle-natural-last': {
+          let natural;
+          switch (ratio) {
+            case 1: {
+              natural = true;
+              break;
+            }
+            case 0: {
+              natural = false;
+              break;
+            }
+            default: {
+              const currentRatio = getCurrentRatio(media);
+              natural = currentRatio !== 1;
+              break;
+            }
+          }
+
+          newRatio = natural ? 1 : Number(media.dataset.ratio);
+          break;
+        }
+
+        case 'fit': {
+          media.style.width = null;
+          media.style.maxWidth = null;
+          media.style.maxHeight = null;
+          newRatio = getCurrentRatio(media);
+          break handleZooming;
+        }
+
+        case 'absolute':
+        default: {
+          newRatio = ratio;
+          break;
+        }
+      }
+      newRatio = Math.max(newRatio, this.minZoomRatio);
+
+      // apply newRatio
+      media.style.width = (newRatio * (media[naturalWidthProp] || this.defaultNaturalWidth)) + 'px';
+      media.style.maxWidth = 'none';
+      media.style.maxHeight = 'none';
+    }
+
+    if (updateLastRatio) {
+      media.dataset.ratio = newRatio;
+    }
+    if (showTooltip) {
+      this.showTooltip((newRatio * 100).toFixed(0) + '%');
     }
   },
 
-  zoomNatural(natural, {showTooltip = true} = {}) {
+  move(deltaX, deltaY, {mode = 'delta', updateLastDelta = true, showTooltip = false} = {}) {
     const figure = this.wrapper.querySelector('figure');
+
+    // determine related properties
+    let media;
     switch (figure.dataset.type) {
       case 'image': {
-        const img = figure.querySelector('img');
-        if (typeof natural === 'undefined') {
-          const currentRatio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
-          natural = currentRatio !== 1;
-        }
-        if (natural) {
-          img.style.width = (img.naturalWidth || this.defaultNaturalWidth) + 'px';
-          if (showTooltip) {
-            this.showTooltip('100%');
-          }
-        } else {
-          const ratio = img.dataset.ratio;
-          img.style.width = (ratio * (img.naturalWidth || this.defaultNaturalWidth)) + 'px';
-          if (showTooltip) {
-            this.showTooltip((ratio * 100).toFixed(0) + '%');
-          }
-        }
-        img.style.maxWidth = 'none';
-        img.style.maxHeight = 'none';
+        media = figure.querySelector('img');
         break;
       }
       case 'video': {
-        const video = figure.querySelector('video');
-        if (typeof natural === 'undefined') {
-          const currentRatio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
-          natural = currentRatio !== 1;
-        }
-        if (natural) {
-          video.style.width = (video.videoWidth || this.defaultNaturalWidth) + 'px';
-          if (showTooltip) {
-            this.showTooltip('100%');
-          }
-        } else {
-          const ratio = video.dataset.ratio;
-          video.style.width = (ratio * (video.videoWidth || this.defaultNaturalWidth)) + 'px';
-          if (showTooltip) {
-            this.showTooltip((ratio * 100).toFixed(0) + '%');
-          }
-        }
-        video.style.maxWidth = 'none';
-        video.style.maxHeight = 'none';
+        media = figure.querySelector('video');
         break;
+      }
+      default: {
+        // cannot move this type
+        return;
       }
     }
-  },
 
-  zoomFit({showTooltip = true} = {}) {
-    const figure = this.wrapper.querySelector('figure');
-    switch (figure.dataset.type) {
-      case 'image': {
-        const img = figure.querySelector('img');
-        img.style.width = null;
-        img.style.maxWidth = null;
-        img.style.maxHeight = null;
-        const ratio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
-        if (showTooltip) {
-          this.showTooltip((ratio * 100).toFixed(0) + '%');
+    // apply moving
+    let newDeltaX, newDeltaY;
+    handleZooming: {
+      switch (mode) {
+        case 'delta': {
+          newDeltaX = Number(media.dataset.deltaX) + deltaX;
+          newDeltaY = Number(media.dataset.deltaY) + deltaY;
+          break;
         }
-        break;
-      }
-      case 'video': {
-        const video = figure.querySelector('video');
-        video.style.width = null;
-        video.style.maxWidth = null;
-        video.style.maxHeight = null;
-        const ratio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
-        if (showTooltip) {
-          this.showTooltip((ratio * 100).toFixed(0) + '%');
+        case 'absolute':
+        default: {
+          newDeltaX = deltaX;
+          newDeltaY = deltaY;
+          break;
         }
-        break;
       }
+
+      // apply new position
+      media.style.left = `calc(50% + ${newDeltaX}px)`;
+      media.style.top = `calc(50% + ${newDeltaY}px)`;
     }
-  },
 
-  move(deltaX, deltaY, {mode = 'relative'} = {}) {
-    const figure = this.wrapper.querySelector('figure');
-    switch (figure.dataset.type) {
-      case 'image': {
-        const img = figure.querySelector('img');
-        switch (mode) {
-          case 'relative': {
-            deltaX = (typeof img.dataset.deltaX !== 'undefined' ? Number(img.dataset.deltaX) : 0) + deltaX;
-            deltaY = (typeof img.dataset.deltaY !== 'undefined' ? Number(img.dataset.deltaY) : 0) + deltaY;
-            break;
-          }
-          // 'absolute' or otherwise
-        }
-        img.dataset.deltaX = deltaX;
-        img.dataset.deltaY = deltaY;
-        img.style.left = `calc(50% + ${deltaX}px)`;
-        img.style.top = `calc(50% + ${deltaY}px)`;
-        break;
-      }
-      case 'video': {
-        const video = figure.querySelector('video');
-        switch (mode) {
-          case 'relative': {
-            deltaX = (typeof video.dataset.deltaX !== 'undefined' ? Number(video.dataset.deltaX) : 0) + deltaX;
-            deltaY = (typeof video.dataset.deltaY !== 'undefined' ? Number(video.dataset.deltaY) : 0) + deltaY;
-            break;
-          }
-          // 'absolute' or otherwise
-        }
-        video.dataset.deltaX = deltaX;
-        video.dataset.deltaY = deltaY;
-        video.style.left = `calc(50% + ${deltaX}px)`;
-        video.style.top = `calc(50% + ${deltaY}px)`;
-        break;
-      }
+    if (updateLastDelta) {
+      media.dataset.deltaX = newDeltaX;
+      media.dataset.deltaY = newDeltaY;
+    }
+    if (showTooltip) {
+      this.showTooltip(`(${newDeltaX}, ${newDeltaY})`);
     }
   },
 
@@ -672,7 +652,7 @@ Keybord shortcuts:
           break;
         }
         event.preventDefault();
-        this.zoomFit();
+        this.zoom(null, {mode: 'fit', updateLastRatio: false});
         break;
       }
 
@@ -681,7 +661,7 @@ Keybord shortcuts:
           break;
         }
         event.preventDefault();
-        this.zoomNatural();
+        this.zoom(null, {mode: 'toggle-natural-last', updateLastRatio: false});
         break;
       }
 
