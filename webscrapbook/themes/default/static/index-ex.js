@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("command").addEventListener("focus", onCommandFocus, false);
   document.getElementById("command").addEventListener("change", onCommandChange, false);
   document.getElementById('upload-file-selector').addEventListener('change', onUploadFileChange, false);
+  document.getElementById('upload-dir-selector').addEventListener('change', onUploadDirChange, false);
 
   /* Show panel if init ok */
   document.getElementById("panel").hidden = false;
@@ -1196,6 +1197,7 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="mkzip"]').hidden = false;
       cmdElem.querySelector('[value="mkfile"]').hidden = false;
       cmdElem.querySelector('[value="upload"]').hidden = false;
+      cmdElem.querySelector('[value="uploaddir"]').hidden = false;
       cmdElem.querySelector('[value="source"]').hidden = true;
       cmdElem.querySelector('[value="download"]').hidden = true;
       cmdElem.querySelector('[value="exec"]').hidden = true;
@@ -1216,6 +1218,7 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="mkzip"]').hidden = true;
       cmdElem.querySelector('[value="mkfile"]').hidden = true;
       cmdElem.querySelector('[value="upload"]').hidden = true;
+      cmdElem.querySelector('[value="uploaddir"]').hidden = true;
       cmdElem.querySelector('[value="exec"]').hidden = false;
       cmdElem.querySelector('[value="browse"]').hidden = false;
       cmdElem.querySelector('[value="download"]').hidden = false;
@@ -1244,6 +1247,7 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="mkzip"]').hidden = true;
       cmdElem.querySelector('[value="mkfile"]').hidden = true;
       cmdElem.querySelector('[value="upload"]').hidden = true;
+      cmdElem.querySelector('[value="uploaddir"]').hidden = true;
       cmdElem.querySelector('[value="source"]').hidden = true;
       cmdElem.querySelector('[value="download"]').hidden = false;
       cmdElem.querySelector('[value="exec"]').hidden = true;
@@ -1272,6 +1276,13 @@ function onCommandChange(event) {
       break;
     }
 
+    case 'uploaddir': {
+      const elem = document.getElementById('upload-dir-selector');
+      elem.value = '';
+      elem.click();
+      break;
+    }
+
     default: {
       return onCommandRun({cmd: command});
       break;
@@ -1285,6 +1296,40 @@ function onCommandRun(detail) {
   const selectedEntries = document.querySelectorAll('#data-table .highlight');
   func(selectedEntries, detail);
 }
+
+onCommandRun.upload = async function upload(entries) {
+  const base = document.getElementById('data-table').getAttribute('data-base');
+  const dir = document.getElementById('data-table').getAttribute('data-path');
+  const errors = [];
+  for (const {path, file} of entries) {
+    const newPath = dir + path;
+    const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+    try {
+      const formData = new FormData();
+      formData.append('token', await utils.acquireToken(dir));
+      formData.append('upload', file);
+
+      await utils.wsb({
+        url: target + '?a=save&f=json',
+        responseType: 'json',
+        method: "POST",
+        formData: formData,
+      });
+    } catch (ex) {
+      errors.push(`"${newPath}": ${ex.message}`);
+    }
+  }
+  if (errors.length) {
+    const msg = entries.length === 1 ?
+      'Unable to upload file ' + errors.join('\n'):
+      'Unable to upload files:\n' + errors.join('\n');
+    alert(msg);
+    if (errors.length === entries.length) {
+      return;
+    }
+  }
+  location.reload();
+};
 
 onCommandRun.sortEntries = function sortEntries(a, b) {
   const ka = a.oldPath;
@@ -1413,38 +1458,20 @@ onCommandRun.commands = {
     location.href = target + '?a=editx&back=' + encodeURIComponent(location.href);
   },
 
-  async upload(selectedEntries, {files: entries}) {
-    const base = document.getElementById('data-table').getAttribute('data-base');
-    const dir = document.getElementById('data-table').getAttribute('data-path');
-    const errors = [];
-    for (const file of entries) {
-      const newPath = dir + file.name;
-      const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-      try {
-        const formData = new FormData();
-        formData.append('token', await utils.acquireToken(dir));
-        formData.append('upload', file);
+  async upload(selectedEntries, {files}) {
+    const entries = Array.prototype.map.call(files, (file) => {
+      const path = file.name;
+      return {path, file};
+    });
+    return await onCommandRun.upload(entries);
+  },
 
-        await utils.wsb({
-          url: target + '?a=save&f=json',
-          responseType: 'json',
-          method: "POST",
-          formData: formData,
-        });
-      } catch (ex) {
-        errors.push(`"${newPath}": ${ex.message}`);
-      }
-    }
-    if (errors.length) {
-      const msg = entries.length === 1 ?
-        'Unable to upload file ' + errors.join('\n'):
-        'Unable to upload files:\n' + errors.join('\n');
-      alert(msg);
-      if (errors.length === entries.length) {
-        return;
-      }
-    }
-    location.reload();
+  async uploaddir(selectedEntries, {files}) {
+    const entries = Array.prototype.map.call(files, (file) => {
+      const path = file.webkitRelativePath;
+      return {path, file};
+    });
+    return await onCommandRun.upload(entries);
   },
 
   async move(selectedEntries) {
@@ -1700,4 +1727,9 @@ onCommandRun.commands = {
 function onUploadFileChange(event) {
   event.preventDefault();
   return onCommandRun({cmd: 'upload', files: event.target.files});
+}
+
+function onUploadDirChange(event) {
+  event.preventDefault();
+  return onCommandRun({cmd: 'uploaddir', files: event.target.files});
 }

@@ -62,6 +62,7 @@
     <option value="mkzip" hidden>New zip</option>
     <option value="mkfile" hidden>New file</option>
     <option value="upload" hidden>Upload</option>
+    <option value="uploaddir" hidden>Upload folder</option>
     <option value="source" hidden>View source</option>
     <option value="download" hidden>Download</option>
     <option value="exec" hidden{{ '' if is_local else ' disabled' }}>Run natively</option>
@@ -74,6 +75,7 @@
     <option value="delete" hidden>Delete</option>
   </select>
   <input type="file" id="upload-file-selector" multiple hidden>
+  <input type="file" id="upload-dir-selector" webkitdirectory hidden>
 </form>
 </footer>
 {% endblock %}
