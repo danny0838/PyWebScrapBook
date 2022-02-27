@@ -3,6 +3,17 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.2.0] - 2022-02-27
+* Added MIME type support for WebP and WebM files.
+* Fixed incorrect API messages.
+* Improved the default theme of the web interface:
+  * Added a tools selector for operations like selecting, expanding, filtering, etc.
+  * Added new `Preview mode` in place of `List view`.
+  * Added new `Gallery mode (+media)`, and `Gally mode` now shows images without preloading media.
+  * Added support for more file types.
+  * Fixed path error in certain cases for commands.
+  * Improved the error messages for commands.
+
 ## [1.1.0] - 2021-12-10
 * Dropped support of config `app.base`.
 * Fixed an issue that the mimetype of `.js` becomes `application/x-javascript` in some environment.
