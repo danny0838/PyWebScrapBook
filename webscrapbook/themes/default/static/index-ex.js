@@ -162,6 +162,7 @@ viewerDefault.previewer = {
   anchors: null,
   currentIndex: null,
 
+  defaultNaturalWidth: 500,
   zoomRatio: 0.15,
   minZoomRatio: 0.01,
   movePixels: 25,
@@ -320,7 +321,7 @@ Keybord shortcuts:
           img.src = href;
         }).then(loaded => {
           if (!loaded) { return; }
-          img.dataset.ratio = img.width / img.naturalWidth;
+          img.dataset.ratio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
         });
         break;
       }
@@ -351,7 +352,7 @@ Keybord shortcuts:
           video.src = href;
         }).then(loaded => {
           if (!loaded) { return; }
-          video.dataset.ratio = video.offsetWidth / video.videoWidth;
+          video.dataset.ratio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
         });
         const p2 = preloadMediaMetadata([video]);
         await Promise.all([p1, p2]);
@@ -387,12 +388,12 @@ Keybord shortcuts:
         const img = figure.querySelector('img');
         switch (mode) {
           case 'relative-sum': {
-            const currentRatio = img.width / img.naturalWidth;
+            const currentRatio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
             ratio = currentRatio + ratio;
             break;
           }
           case 'relative-ratio': {
-            const currentRatio = img.width / img.naturalWidth;
+            const currentRatio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
             ratio = ratio >= 0 ? currentRatio * (1 + ratio) : currentRatio / (1 - ratio);
             break;
           }
@@ -400,7 +401,7 @@ Keybord shortcuts:
         }
         ratio = Math.max(ratio, this.minZoomRatio);
         img.dataset.ratio = ratio;
-        img.style.width = (ratio * img.naturalWidth) + 'px';
+        img.style.width = (ratio * (img.naturalWidth || this.defaultNaturalWidth)) + 'px';
         img.style.maxWidth = 'none';
         img.style.maxHeight = 'none';
         if (showTooltip) {
@@ -412,12 +413,12 @@ Keybord shortcuts:
         const video = figure.querySelector('video');
         switch (mode) {
           case 'relative-sum': {
-            const currentRatio = video.offsetWidth / video.videoWidth;
+            const currentRatio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
             ratio = currentRatio + ratio;
             break;
           }
           case 'relative-ratio': {
-            const currentRatio = video.offsetWidth / video.videoWidth;
+            const currentRatio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
             ratio = ratio >= 0 ? currentRatio * (1 + ratio) : currentRatio / (1 - ratio);
             break;
           }
@@ -425,7 +426,7 @@ Keybord shortcuts:
         }
         ratio = Math.max(ratio, this.minZoomRatio);
         video.dataset.ratio = ratio;
-        video.style.width = (ratio * video.videoWidth) + 'px';
+        video.style.width = (ratio * (video.videoWidth || this.defaultNaturalWidth)) + 'px';
         video.style.maxWidth = 'none';
         video.style.maxHeight = 'none';
         if (showTooltip) {
@@ -442,17 +443,17 @@ Keybord shortcuts:
       case 'image': {
         const img = figure.querySelector('img');
         if (typeof natural === 'undefined') {
-          const currentRatio = img.width / img.naturalWidth;
+          const currentRatio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
           natural = currentRatio !== 1;
         }
         if (natural) {
-          img.style.width = img.naturalWidth + 'px';
+          img.style.width = (img.naturalWidth || this.defaultNaturalWidth) + 'px';
           if (showTooltip) {
             this.showTooltip('100%');
           }
         } else {
           const ratio = img.dataset.ratio;
-          img.style.width = (ratio * img.naturalWidth) + 'px';
+          img.style.width = (ratio * (img.naturalWidth || this.defaultNaturalWidth)) + 'px';
           if (showTooltip) {
             this.showTooltip((ratio * 100).toFixed(0) + '%');
           }
@@ -464,17 +465,17 @@ Keybord shortcuts:
       case 'video': {
         const video = figure.querySelector('video');
         if (typeof natural === 'undefined') {
-          const currentRatio = video.offsetWidth / video.videoWidth;
+          const currentRatio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
           natural = currentRatio !== 1;
         }
         if (natural) {
-          video.style.width = video.videoWidth + 'px';
+          video.style.width = (video.videoWidth || this.defaultNaturalWidth) + 'px';
           if (showTooltip) {
             this.showTooltip('100%');
           }
         } else {
           const ratio = video.dataset.ratio;
-          video.style.width = (ratio * video.videoWidth) + 'px';
+          video.style.width = (ratio * (video.videoWidth || this.defaultNaturalWidth)) + 'px';
           if (showTooltip) {
             this.showTooltip((ratio * 100).toFixed(0) + '%');
           }
@@ -494,7 +495,7 @@ Keybord shortcuts:
         img.style.width = null;
         img.style.maxWidth = null;
         img.style.maxHeight = null;
-        const ratio = img.width / img.naturalWidth;
+        const ratio = img.width / (img.naturalWidth || this.defaultNaturalWidth);
         if (showTooltip) {
           this.showTooltip((ratio * 100).toFixed(0) + '%');
         }
@@ -505,7 +506,7 @@ Keybord shortcuts:
         video.style.width = null;
         video.style.maxWidth = null;
         video.style.maxHeight = null;
-        const ratio = video.offsetWidth / video.videoWidth;
+        const ratio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
         if (showTooltip) {
           this.showTooltip((ratio * 100).toFixed(0) + '%');
         }
