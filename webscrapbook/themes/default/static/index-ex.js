@@ -482,7 +482,7 @@ Keybord shortcuts:
     }
   },
 
-  move(deltaX, deltaY, {mode = 'delta', updateLastDelta = true, showTooltip = false} = {}) {
+  move(deltaX, deltaY, {mode = 'delta', updateLastDelta = true, showTooltip = true} = {}) {
     const figure = this.wrapper.querySelector('figure');
 
     // determine related properties
