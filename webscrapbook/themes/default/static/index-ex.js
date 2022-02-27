@@ -401,7 +401,6 @@ Keybord shortcuts:
         ratio = Math.max(ratio, this.minZoomRatio);
         img.dataset.ratio = ratio;
         img.style.width = (ratio * img.naturalWidth) + 'px';
-        img.style.height = (ratio * img.naturalHeight) + 'px';
         img.style.maxWidth = 'none';
         img.style.maxHeight = 'none';
         if (showTooltip) {
@@ -427,7 +426,6 @@ Keybord shortcuts:
         ratio = Math.max(ratio, this.minZoomRatio);
         video.dataset.ratio = ratio;
         video.style.width = (ratio * video.videoWidth) + 'px';
-        video.style.height = (ratio * video.videoHeight) + 'px';
         video.style.maxWidth = 'none';
         video.style.maxHeight = 'none';
         if (showTooltip) {
@@ -449,14 +447,12 @@ Keybord shortcuts:
         }
         if (natural) {
           img.style.width = img.naturalWidth + 'px';
-          img.style.height = img.naturalHeight + 'px';
           if (showTooltip) {
             this.showTooltip('100%');
           }
         } else {
           const ratio = img.dataset.ratio;
           img.style.width = (ratio * img.naturalWidth) + 'px';
-          img.style.height = (ratio * img.naturalHeight) + 'px';
           if (showTooltip) {
             this.showTooltip((ratio * 100).toFixed(0) + '%');
           }
@@ -473,14 +469,12 @@ Keybord shortcuts:
         }
         if (natural) {
           video.style.width = video.videoWidth + 'px';
-          video.style.height = video.videoHeight + 'px';
           if (showTooltip) {
             this.showTooltip('100%');
           }
         } else {
           const ratio = video.dataset.ratio;
           video.style.width = (ratio * video.videoWidth) + 'px';
-          video.style.height = (ratio * video.videoHeight) + 'px';
           if (showTooltip) {
             this.showTooltip((ratio * 100).toFixed(0) + '%');
           }
@@ -498,7 +492,6 @@ Keybord shortcuts:
       case 'image': {
         const img = figure.querySelector('img');
         img.style.width = null;
-        img.style.height = null;
         img.style.maxWidth = null;
         img.style.maxHeight = null;
         const ratio = img.width / img.naturalWidth;
@@ -510,7 +503,6 @@ Keybord shortcuts:
       case 'video': {
         const video = figure.querySelector('video');
         video.style.width = null;
-        video.style.height = null;
         video.style.maxWidth = null;
         video.style.maxHeight = null;
         const ratio = video.offsetWidth / video.videoWidth;
