@@ -6,6 +6,12 @@
 
 var dataTableHandler = {
   elem: null,
+  sortKeyHandlers: {
+    string: function (k) { return String(k); },
+    string_ci: function (k) { return String(k).toLowerCase(); },
+    float: function (k) { return parseFloat(k) || 0; },
+    integer: function (k) { return parseInt(k) || 0; }
+  },
   init: init,
   orderBy: orderBy,
   onDataTableHeaderClick: onDataTableHeaderClick
@@ -30,21 +36,14 @@ function orderBy(column, order) {
   table.setAttribute("data-orderby", column);
   table.setAttribute("data-order", order);
 
-  var keyFuncForColumn = [
-    function (k) { return k.toLowerCase(); },
-    function (k) { return k.toLowerCase(); },
-    function (k) { return parseFloat(k) || 0; },
-    function (k) { return parseInt(k) || 0; }
-  ];
-
+  var sortType = table.tHead.rows[0].cells[column].getAttribute("data-sort-type");
+  var sortKeyFunc = dataTableHandler.sortKeyHandlers[sortType] || dataTableHandler.sortKeyHandlers['string'];
   var tbody = table.tBodies[0];
   var rows = Array.prototype.slice.call(tbody.rows);
 
   rows.sort(function (a, b) {
-    var ka = a.cells[column].getAttribute("data-sort") || "";
-    var kb = b.cells[column].getAttribute("data-sort") || "";
-    ka = keyFuncForColumn[column](ka);
-    kb = keyFuncForColumn[column](kb);
+    var ka = sortKeyFunc(a.cells[column].getAttribute("data-sort") || "");
+    var kb = sortKeyFunc(b.cells[column].getAttribute("data-sort") || "");
 
     if (ka < kb) {
       return -order;

@@ -24,7 +24,7 @@
 <main data-sitename="{{ sitename }}" data-base="{{ base }}" data-path="{{ path }}">
 <table id="data-table">
 <thead>
-  <tr><th><a hidden>Directory</a></th><th><a>Name</a></th><th class="detail"><a>Last modified</a></th><th class="detail"><a>Size</a></th></tr>
+  <tr><th data-sort-type="string_ci"><a hidden>Directory</a></th><th data-sort-type="string_ci"><a>Name</a></th><th class="detail" data-sort-type="float"><a>Last modified</a></th><th class="detail" data-sort-type="integer"><a>Size</a></th></tr>
 </thead>
 <tbody>
 {%- for info in subentries %}
