@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("command").addEventListener("change", onCommandChange, false);
   document.getElementById('upload-file-selector').addEventListener('change', onUploadFileChange, false);
   document.getElementById('upload-dir-selector').addEventListener('change', onUploadDirChange, false);
+  document.addEventListener("dragover", onDragOver, false);
+  document.addEventListener("drop", onDrop, false);
 
   /* Show panel if init ok */
   document.getElementById("panel").hidden = false;
@@ -1305,6 +1307,21 @@ onCommandRun.upload = async function upload(entries) {
     const newPath = dir + path;
     const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
     try {
+      // directory
+      if (!file) {
+        const formData = new FormData();
+        formData.append('token', await utils.acquireToken(dir));
+
+        await utils.wsb({
+          url: target + '?a=mkdir&f=json',
+          responseType: 'json',
+          method: "POST",
+          formData: formData,
+        });
+
+        continue;
+      }
+
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(dir));
       formData.append('upload', file);
@@ -1471,6 +1488,40 @@ onCommandRun.commands = {
       const path = file.webkitRelativePath;
       return {path, file};
     });
+    return await onCommandRun.upload(entries);
+  },
+
+  async uploadx(selectedEntries, {files}) {
+    const entries = [];
+    const addEntry = async (entry) => {
+      const path = entry.fullPath.slice(1); // remove starting '/'
+      if (entry.isDirectory) {
+        const reader = entry.createReader();
+        let hasSubEntry = false;
+        while (true) {
+          const subEntries = await new Promise((resolve, reject) => {
+            reader.readEntries(resolve, reject);
+          });
+          if (!subEntries.length) { break; }
+          hasSubEntry = true;
+          for (const subEntry of subEntries) {
+            await addEntry(subEntry);
+          }
+        }
+        // add an entry for empty directory
+        if (!hasSubEntry) {
+          entries.push({path, file: null});
+        }
+      } else {
+        const file = await new Promise((resolve, reject) => {
+          entry.file(resolve, reject);
+        });
+        entries.push({path, file});
+      }
+    };
+    for (const entry of files) {
+      await addEntry(entry);
+    }
     return await onCommandRun.upload(entries);
   },
 
@@ -1732,4 +1783,28 @@ function onUploadFileChange(event) {
 function onUploadDirChange(event) {
   event.preventDefault();
   return onCommandRun({cmd: 'uploaddir', files: event.target.files});
+}
+
+function onDragOver(event) {
+  if (event.dataTransfer.types.includes('Files')) {
+    event.preventDefault(); // required to allow drop
+    event.dataTransfer.dropEffect = 'copy';
+    return;
+  }
+
+  event.dataTransfer.dropEffect = 'none';
+}
+
+function onDrop(event) {
+  event.preventDefault();
+
+  // skip if command disabled
+  if (document.getElementById("command").disabled) {
+    return;
+  }
+
+  return onCommandRun({
+    cmd: 'uploadx',
+    files: Array.prototype.map.call(event.dataTransfer.items, x => x.webkitGetAsEntry()),
+  });
 }
