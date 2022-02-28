@@ -1317,7 +1317,7 @@ onCommandRun.upload = async function upload(entries) {
       // directory
       if (!file) {
         const formData = new FormData();
-        formData.append('token', await utils.acquireToken(dir));
+        formData.append('token', await utils.acquireToken(target));
 
         await utils.wsb({
           url: target + '?a=mkdir&f=json',
@@ -1330,7 +1330,7 @@ onCommandRun.upload = async function upload(entries) {
       }
 
       const formData = new FormData();
-      formData.append('token', await utils.acquireToken(dir));
+      formData.append('token', await utils.acquireToken(target));
       formData.append('upload', file);
 
       await utils.wsb({
