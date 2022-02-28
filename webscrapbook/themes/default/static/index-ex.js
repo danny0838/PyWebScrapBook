@@ -1292,11 +1292,18 @@ function onCommandChange(event) {
   }
 }
 
-function onCommandRun(detail) {
+async function onCommandRun(detail) {
   const command = detail.cmd;
   const func = onCommandRun.commands[command];
   const selectedEntries = document.querySelectorAll('#data-table .highlight');
-  func(selectedEntries, detail);
+  const commandElem = document.getElementById("command");
+  commandElem.disabled = true;
+  try {
+    await func(selectedEntries, detail);
+  } catch (ex) {
+    console.error(ex);
+  }
+  commandElem.disabled = false;
 }
 
 onCommandRun.upload = async function upload(entries) {
