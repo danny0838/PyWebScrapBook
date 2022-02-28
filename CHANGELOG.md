@@ -3,6 +3,14 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.3.0] - 2022-02-28
+* Improved the default theme of the web interface:
+  * Added `upload folder` command.
+  * Added support of uploading files and directories through drag-and-drop.
+  * Command selector is now disabled when a command is running.
+  * Moving a media in preview mode now shows a tooltip.
+  * Fixed zooming error for some SVG images in preview mode.
+
 ## [1.2.0] - 2022-02-27
 * Added MIME type support for WebP and WebM files.
 * Fixed incorrect API messages.
