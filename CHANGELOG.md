@@ -3,8 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.3.2] - 2022-03-02
+* Fixed some issues of the previewer of the default theme of the web interface:
+  * Fixed possible code conflict after the previewer mode has been toggled repeatedly.
+  * Fixed layout error for rtl direction.
+
 ## [1.3.1] - 2022-02-28
-* Fixed token error during uploading through the web interface when not hosted at root path.
+* Fixed token error during uploading through the default theme of the web interface when not hosted at root path.
 
 ## [1.3.0] - 2022-02-28
 * Improved the default theme of the web interface:
