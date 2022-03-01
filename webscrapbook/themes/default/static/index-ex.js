@@ -173,6 +173,7 @@ viewerDefault.previewer = {
   get wrapper() {
     const wrapper = document.createElement('div');
     wrapper.classList.add('previewer');
+    wrapper.dir = 'ltr';
 
     const figure = wrapper.appendChild(document.createElement('figure'));
 
