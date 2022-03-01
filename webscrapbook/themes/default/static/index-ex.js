@@ -262,15 +262,15 @@ Keybord shortcuts:
         attributes: true,
         subtree: true,
       });
-      this.dataTable.addEventListener('click', this.onAnchorClick.bind(this));
-      window.addEventListener('keydown', this.onKeyDown.bind(this));
-      window.addEventListener('wheel', this.onWheel.bind(this), {passive:false});
+      this.dataTable.addEventListener('click', this.onAnchorClick);
+      window.addEventListener('keydown', this.onKeyDown);
+      window.addEventListener('wheel', this.onWheel, {passive:false});
     } else {
       this.unpreview();
       this.mutationObserver.disconnect();
-      this.dataTable.removeEventListener('click', this.onAnchorClick.bind(this));
-      window.removeEventListener('keydown', this.onKeyDown.bind(this));
-      window.removeEventListener('wheel', this.onWheel.bind(this));
+      this.dataTable.removeEventListener('click', this.onAnchorClick);
+      window.removeEventListener('keydown', this.onKeyDown);
+      window.removeEventListener('wheel', this.onWheel);
     }
   },
 
@@ -560,207 +560,219 @@ Keybord shortcuts:
     }, 1000);
   },
 
-  onAnchorClick(event) {
-    const anchor = event.target.closest('a[href]');
-    if (!anchor) { return; }
+  get onAnchorClick() {
+    const func = (event) => {
+      const anchor = event.target.closest('a[href]');
+      if (!anchor) { return; }
 
-    const index = this.anchors.indexOf(anchor);
+      const index = this.anchors.indexOf(anchor);
 
-    // not registered item
-    if (index === -1) {
-      return;
-    }
+      // not registered item
+      if (index === -1) {
+        return;
+      }
 
-    event.preventDefault();
-    this.preview(index);
+      event.preventDefault();
+      this.preview(index);
+    };
+    Object.defineProperty(this, 'onAnchorClick', {value: func});
+    return func;
   },
 
-  onKeyDown(event) {
-    // skip if not previewing
-    if (this.currentIndex === null) { 
-      return;
-    }
-
-    switch (event.key) {
-      case 'Escape': {
-        event.preventDefault();
-        this.unpreview();
-        break;
+  get onKeyDown() {
+    const func = (event) => {
+      // skip if not previewing
+      if (this.currentIndex === null) { 
+        return;
       }
 
-      case 'Home': {
-        event.preventDefault();
-        this.preview(0);
-        break;
-      }
-
-      case 'End': {
-        event.preventDefault();
-        this.preview(this.anchors.length - 1);
-        break;
-      }
-
-      case 'PageUp': {
-        event.preventDefault();
-        this.prev();
-        break;
-      }
-
-      case 'PageDown': {
-        event.preventDefault();
-        this.next();
-        break;
-      }
-
-      case 'i': {
-        event.preventDefault();
-        this.toggleInfobar();
-        break;
-      }
-
-      case ' ': {
-        // skip if focusing a media to prevent interruption of control
-        if (document.activeElement.closest('audio, video')) {
-          break;
-        }
-
-        event.preventDefault();
-        this.toggleInfobar();
-        break;
-      }
-
-      case 'Enter': {
-        const anchor = this.wrapper.querySelector('.previewer-infobar a[href]');
-        if (!anchor) { break; }
-
-        event.preventDefault();
-        anchor.click();
-        break;
-      }
-
-      case '+': {
-        event.preventDefault();
-        this.zoom(this.zoomRatio);
-        break;
-      }
-
-      case '-': {
-        event.preventDefault();
-        this.zoom(-this.zoomRatio);
-        break;
-      }
-
-      case '0': {
-        if (!(event.ctrlKey || event.metaKey)) {
-          break;
-        }
-        event.preventDefault();
-        this.zoom(null, {mode: 'fit', updateLastRatio: false});
-        break;
-      }
-
-      case '1': {
-        if (!(event.ctrlKey || event.metaKey)) {
-          break;
-        }
-        event.preventDefault();
-        this.zoom(null, {mode: 'toggle-natural-last', updateLastRatio: false});
-        break;
-      }
-
-      case 'ArrowLeft': {
-        // move if Ctrl/Command/Shift is hold
-        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      switch (event.key) {
+        case 'Escape': {
           event.preventDefault();
-          this.move(-this.movePixels, 0);
+          this.unpreview();
           break;
         }
 
-        // skip if focusing a media to prevent interruption of control
-        if (document.activeElement.closest('audio, video') && !event.altKey) {
-          break;
-        }
-
-        event.preventDefault();
-        this.prev();
-        break;
-      }
-
-      case 'ArrowRight': {
-        // move if Ctrl/Command/Shift is hold
-        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+        case 'Home': {
           event.preventDefault();
-          this.move(+this.movePixels, 0);
+          this.preview(0);
           break;
         }
 
-        // skip if focusing a media to prevent interruption of control
-        if (document.activeElement.closest('audio, video') && !event.altKey) {
-          break;
-        }
-
-        event.preventDefault();
-        this.next();
-        break;
-      }
-
-      case 'ArrowUp': {
-        // move if Ctrl/Command/Shift is hold
-        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+        case 'End': {
           event.preventDefault();
-          this.move(0, -this.movePixels);
+          this.preview(this.anchors.length - 1);
           break;
         }
 
-        // skip if focusing a media to prevent interruption of control
-        if (document.activeElement.closest('audio, video') && !event.altKey) {
-          break;
-        }
-
-        event.preventDefault();
-        this.zoom(this.zoomRatio);
-        break;
-      }
-
-      case 'ArrowDown': {
-        // move if Ctrl/Command/Shift is hold
-        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+        case 'PageUp': {
           event.preventDefault();
-          this.move(0, +this.movePixels);
+          this.prev();
           break;
         }
 
-        // skip if focusing a media to prevent interruption of control
-        if (document.activeElement.closest('audio, video') && !event.altKey) {
+        case 'PageDown': {
+          event.preventDefault();
+          this.next();
           break;
         }
 
-        event.preventDefault();
-        this.zoom(-this.zoomRatio);
-        break;
+        case 'i': {
+          event.preventDefault();
+          this.toggleInfobar();
+          break;
+        }
+
+        case ' ': {
+          // skip if focusing a media to prevent interruption of control
+          if (document.activeElement.closest('audio, video')) {
+            break;
+          }
+
+          event.preventDefault();
+          this.toggleInfobar();
+          break;
+        }
+
+        case 'Enter': {
+          const anchor = this.wrapper.querySelector('.previewer-infobar a[href]');
+          if (!anchor) { break; }
+
+          event.preventDefault();
+          anchor.click();
+          break;
+        }
+
+        case '+': {
+          event.preventDefault();
+          this.zoom(this.zoomRatio);
+          break;
+        }
+
+        case '-': {
+          event.preventDefault();
+          this.zoom(-this.zoomRatio);
+          break;
+        }
+
+        case '0': {
+          if (!(event.ctrlKey || event.metaKey)) {
+            break;
+          }
+          event.preventDefault();
+          this.zoom(null, {mode: 'fit', updateLastRatio: false});
+          break;
+        }
+
+        case '1': {
+          if (!(event.ctrlKey || event.metaKey)) {
+            break;
+          }
+          event.preventDefault();
+          this.zoom(null, {mode: 'toggle-natural-last', updateLastRatio: false});
+          break;
+        }
+
+        case 'ArrowLeft': {
+          // move if Ctrl/Command/Shift is hold
+          if (event.ctrlKey || event.metaKey || event.shiftKey) {
+            event.preventDefault();
+            this.move(-this.movePixels, 0);
+            break;
+          }
+
+          // skip if focusing a media to prevent interruption of control
+          if (document.activeElement.closest('audio, video') && !event.altKey) {
+            break;
+          }
+
+          event.preventDefault();
+          this.prev();
+          break;
+        }
+
+        case 'ArrowRight': {
+          // move if Ctrl/Command/Shift is hold
+          if (event.ctrlKey || event.metaKey || event.shiftKey) {
+            event.preventDefault();
+            this.move(+this.movePixels, 0);
+            break;
+          }
+
+          // skip if focusing a media to prevent interruption of control
+          if (document.activeElement.closest('audio, video') && !event.altKey) {
+            break;
+          }
+
+          event.preventDefault();
+          this.next();
+          break;
+        }
+
+        case 'ArrowUp': {
+          // move if Ctrl/Command/Shift is hold
+          if (event.ctrlKey || event.metaKey || event.shiftKey) {
+            event.preventDefault();
+            this.move(0, -this.movePixels);
+            break;
+          }
+
+          // skip if focusing a media to prevent interruption of control
+          if (document.activeElement.closest('audio, video') && !event.altKey) {
+            break;
+          }
+
+          event.preventDefault();
+          this.zoom(this.zoomRatio);
+          break;
+        }
+
+        case 'ArrowDown': {
+          // move if Ctrl/Command/Shift is hold
+          if (event.ctrlKey || event.metaKey || event.shiftKey) {
+            event.preventDefault();
+            this.move(0, +this.movePixels);
+            break;
+          }
+
+          // skip if focusing a media to prevent interruption of control
+          if (document.activeElement.closest('audio, video') && !event.altKey) {
+            break;
+          }
+
+          event.preventDefault();
+          this.zoom(-this.zoomRatio);
+          break;
+        }
       }
-    }
+    };
+    Object.defineProperty(this, 'onKeyDown', {value: func});
+    return func;
   },
 
-  onWheel(event) {
-    // skip if not previewing
-    if (this.currentIndex === null) {
-      return;
-    }
+  get onWheel() {
+    const func = (event) => {
+      // skip if not previewing
+      if (this.currentIndex === null) {
+        return;
+      }
 
-    // wheel down
-    if (event.deltaY > 0) {
-      event.preventDefault();
-      this.zoom(-this.zoomRatio);
-      return;
-    }
+      // wheel down
+      if (event.deltaY > 0) {
+        event.preventDefault();
+        this.zoom(-this.zoomRatio);
+        return;
+      }
 
-    // wheel up
-    if (event.deltaY < 0) {
-      event.preventDefault();
-      this.zoom(this.zoomRatio);
-      return;
-    }
+      // wheel up
+      if (event.deltaY < 0) {
+        event.preventDefault();
+        this.zoom(this.zoomRatio);
+        return;
+      }
+    };
+    Object.defineProperty(this, 'onWheel', {value: func});
+    return func;
   },
 
   _renewAnchors() {
