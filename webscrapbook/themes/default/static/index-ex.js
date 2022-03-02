@@ -1,14 +1,11 @@
 /**
  * Support viewer and command. Require ES8.
  */
-let dataViewer;
-
 document.addEventListener("DOMContentLoaded", function () {
   /* Extend data table to support selection */
-  dataTable.tBodies[0].addEventListener("click", onDataTableBodyClick, false);
+  dataTableHandler.elem.tBodies[0].addEventListener("click", onDataTableBodyClick, false);
 
   /* Media viewers */
-  dataViewer = dataTable;
   viewerInit();
   document.getElementById("viewer").addEventListener("change", onViewerChange, false);
 
@@ -151,13 +148,14 @@ function viewerApply(mode) {
 function viewerDefault({preview = false} = {}) {
   viewerDefault.previewer.toggle(preview);
 
-  if (dataViewer === dataTable) { return; }
+  const mainElem = document.querySelector('main');
+  if (mainElem.contains(dataTableHandler.elem)) { return; }
 
   document.getElementById('tools').disabled = false;
   document.getElementById('command').disabled = false;
 
-  dataViewer.parentNode.replaceChild(dataTable, dataViewer);
-  dataViewer = dataTable;
+  mainElem.textContent = '';
+  mainElem.appendChild(dataTableHandler.elem);
 }
 
 viewerDefault.previewer = {
@@ -832,10 +830,12 @@ async function viewerGallery(options = {}) {
   document.getElementById('tools').disabled = true;
   document.getElementById('command').disabled = true;
 
+  const mainElem = document.querySelector('main');
+
   const wrapper = document.createElement('div');
   wrapper.id = "img-gallery-view";
 
-  const entries = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('[data-entry]:not([hidden])'), async (entry) => {
+  const entries = await Promise.all(Array.prototype.map.call(mainElem.querySelectorAll('[data-entry]:not([hidden])'), async (entry) => {
     const a = entry.querySelector('a[href]');
     if (a) { await loadAnchorMetadata(a); }
     return entry;
@@ -893,8 +893,8 @@ async function viewerGallery(options = {}) {
   }
   preloadMediaMetadata(medias, options); // async
 
-  dataViewer.parentNode.replaceChild(wrapper, dataViewer);
-  dataViewer = wrapper;
+  mainElem.textContent = '';
+  mainElem.appendChild(wrapper);
 }
 
 async function expandTableRow(tr, deep = false) {

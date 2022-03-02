@@ -2,25 +2,33 @@
  * Basic implementation of the sort feature.
  * Supports ES3, but not IE < 9.
  */
-var dataTable;
+(function (globalThis) {
 
-document.addEventListener("DOMContentLoaded", function () {
-  dataTable = document.getElementById("data-table");
-  var head_row = dataTable.tHead.rows[0];
-  for (var i = 0, I = head_row.cells.length; i < I; i++) {
-    var elem = head_row.cells[i];
+var dataTableHandler = {
+  elem: null,
+  init: init,
+  orderBy: orderBy,
+  onDataTableHeaderClick: onDataTableHeaderClick
+};
+
+function init() {
+  var table = dataTableHandler.elem = document.getElementById("data-table");
+  var headRowCells = table.tHead.rows[0].cells;
+  for (var i = 0, I = headRowCells.length; i < I; i++) {
+    var elem = headRowCells[i];
     elem.setAttribute("data-orderby", i);
-    elem.addEventListener("click", onDataTableHeaderClick, false);
+    elem.addEventListener("click", dataTableHandler.onDataTableHeaderClick, false);
   }
-}, false);
+}
 
 function orderBy(column, order) {
+  var table = dataTableHandler.elem;
   if (typeof order === "undefined") {
-    order = (dataTable.getAttribute("data-order") == 1) ? -1 : 1;
+    order = (table.getAttribute("data-order") == 1) ? -1 : 1;
   }
 
-  dataTable.setAttribute("data-orderby", column);
-  dataTable.setAttribute("data-order", order);
+  table.setAttribute("data-orderby", column);
+  table.setAttribute("data-order", order);
 
   var keyFuncForColumn = [
     function (k) { return k.toLowerCase(); },
@@ -29,7 +37,7 @@ function orderBy(column, order) {
     function (k) { return parseInt(k) || 0; }
   ];
 
-  var tbody = dataTable.tBodies[0];
+  var tbody = table.tBodies[0];
   var rows = Array.prototype.slice.call(tbody.rows);
 
   rows.sort(function (a, b) {
@@ -53,5 +61,13 @@ function orderBy(column, order) {
 }
 
 function onDataTableHeaderClick(event) {
-  orderBy(parseInt(event.currentTarget.getAttribute('data-orderby'), 10));
+  dataTableHandler.orderBy(parseInt(event.currentTarget.getAttribute('data-orderby'), 10));
 }
+
+globalThis.document.addEventListener("DOMContentLoaded", function () {
+  dataTableHandler.init();
+}, false);
+
+globalThis.dataTableHandler = dataTableHandler;
+
+})(this);
