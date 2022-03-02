@@ -3,7 +3,7 @@
  */
 document.addEventListener("DOMContentLoaded", function () {
   /* Extend data table to support selection */
-  dataTableHandler.elem.tBodies[0].addEventListener("click", onDataTableBodyClick, false);
+  document.querySelector('main').addEventListener("click", onMainClick, false);
 
   /* Media viewers */
   viewerInit();
@@ -24,11 +24,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("panel").hidden = false;
 }, false);
 
-function onDataTableBodyClick(event) {
-  let elem = event.target;
-  if (elem.tagName.toLowerCase() !== 'tr') {
-    elem = elem.closest('tr');
-  }
+function onMainClick(event) {
+  const elem = event.target.closest('[data-entry]');
+  if (!elem) { return; }
   highlightElem(elem);
 }
 
@@ -151,8 +149,7 @@ function viewerDefault({preview = false} = {}) {
   const mainElem = document.querySelector('main');
   if (mainElem.contains(dataTableHandler.elem)) { return; }
 
-  document.getElementById('tools').disabled = false;
-  document.getElementById('command').disabled = false;
+  document.getElementById('tools').querySelector('[value="expand-all"]').disabled = false;
 
   mainElem.textContent = '';
   mainElem.appendChild(dataTableHandler.elem);
@@ -827,8 +824,7 @@ Keybord shortcuts:
 };
 
 async function viewerGallery(options = {}) {
-  document.getElementById('tools').disabled = true;
-  document.getElementById('command').disabled = true;
+  document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
 
   const mainElem = document.querySelector('main');
 

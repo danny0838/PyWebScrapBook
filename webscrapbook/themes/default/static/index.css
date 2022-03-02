@@ -1,9 +1,9 @@
 /* polyfill for some older browser that does not support hidden */
 [hidden] {
-  display: none;
+  display: none !important;
 }
 
-#data-table .highlight {
+main .highlight {
   outline: 1px solid #7DA2CE;
   background: #EBF4FD; /* fallback */
   background: linear-gradient(#EBF4FD, #C4DDFC);
