@@ -978,6 +978,7 @@ async function expandTableRow(tr, deep = false) {
       url: a.href,
       responseType: 'document',
     })).response;
+    const tasks = [];
     const trNext = tr.nextSibling;
     for (const trNew of doc.querySelectorAll('#data-table tbody tr')) {
       const anchor = trNew.querySelector('a[href]');
@@ -994,9 +995,10 @@ async function expandTableRow(tr, deep = false) {
       tr.parentNode.insertBefore(trNew, trNext);
 
       if (deep) {
-        expandTableRow(trNew, deep);
+        tasks.push(expandTableRow(trNew, deep));
       }
     }
+    await Promise.all(tasks);
   } catch (ex) {
     console.error(ex);
   }
