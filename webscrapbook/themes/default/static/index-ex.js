@@ -1,13 +1,9 @@
 /**
- * Support viewer and command. Require ES8.
+ * Support explorer and command. Require ES8.
  */
 document.addEventListener("DOMContentLoaded", function () {
-  /* Extend data table to support selection */
-  document.querySelector('main').addEventListener("click", onMainClick, false);
-
-  /* Media viewers */
-  viewerInit();
-  document.getElementById("viewer").addEventListener("change", onViewerChange, false);
+  /* Explorer */
+  explorer.init();
 
   /* Tools */
   document.getElementById("tools").addEventListener("change", onToolsChange, false);
@@ -24,23 +20,85 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("panel").hidden = false;
 }, false);
 
-function onMainClick(event) {
-  const elem = event.target.closest('[data-entry]');
-  if (!elem) { return; }
-  highlightElem(elem);
-}
+const explorer = {
+  init() {
+    const mainElem = document.querySelector('main');
 
-function highlightElem(elem, willHighlight) {
-  if (typeof willHighlight === "undefined") {
-    willHighlight = !elem.classList.contains("highlight");
-  }
+    /* Extend data table to support selection */
+    document.querySelector('main').addEventListener("click", this.onMainClick, false);
+    document.getElementById("explorer").addEventListener("change", this.onExplorerChange, false);
 
-  if (willHighlight) {
-    elem.classList.add("highlight");
-  } else {
-    elem.classList.remove("highlight");
-  }
-}
+    const dir = mainElem.dataset.path;
+
+    /* handle .htd */
+    if (/\.(htd)\/?$/i.test(dir)) {
+      // if there's index.html, redirect to view it
+      const indexAnchor = mainElem.querySelector('[data-entry] a[href="index.html"]');
+      if (indexAnchor) {
+        location.replace(indexAnchor.href);
+        return;
+      }
+
+      // otherwise, preview the first entry
+      this.apply('preview');
+      explorerDefault.previewer.preview(0);
+    }
+  },
+
+  apply(mode) {
+    const switcher = document.getElementById("explorer");
+    if (!mode) {
+      mode = switcher.value;
+    } else {
+      switcher.value = mode;
+    }
+
+    switch (mode) {
+      case "preview":
+        explorerDefault({preview: true});
+        break;
+      case "gallery":
+        explorerGallery();
+        break;
+      case "gallery2":
+        explorerGallery({loadMetadata: true});
+        break;
+      default:
+        explorerDefault();
+        break;
+    }
+  },
+
+  highlightElem(elem, willHighlight) {
+    if (typeof willHighlight === "undefined") {
+      willHighlight = !elem.classList.contains("highlight");
+    }
+
+    if (willHighlight) {
+      elem.classList.add("highlight");
+    } else {
+      elem.classList.remove("highlight");
+    }
+  },
+
+  get onMainClick() {
+    const func = (event) => {
+      const elem = event.target.closest('[data-entry]');
+      if (!elem) { return; }
+      this.highlightElem(elem);
+    };
+    Object.defineProperty(this, 'onMainClick', {value: func});
+    return func;
+  },
+
+  get onExplorerChange() {
+    const func = (event) => {
+      this.apply();
+    };
+    Object.defineProperty(this, 'onExplorerChange', {value: func});
+    return func;
+  },
+};
 
 function getTypeFromUrl(url) {
   if (/\/$/i.test(url)) {
@@ -101,50 +159,8 @@ async function loadAnchorMetadata(anchor) {
   anchor.dataset.type = getTypeFromUrl(href2);
 }
 
-function viewerInit() {
-  const mainElem = document.querySelector('main');
-  const dir = mainElem.dataset.path;
-
-  /* handle .htd */
-  if (/\.(htd)\/?$/i.test(dir)) {
-    // if there's index.html, redirect to view it
-    const indexAnchor = mainElem.querySelector('[data-entry] a[href="index.html"]');
-    if (indexAnchor) {
-      location.replace(indexAnchor.href);
-      return;
-    }
-
-    // otherwise, preview the first entry
-    viewerApply('preview');
-    viewerDefault.previewer.preview(0);
-  }
-}
-
-function viewerApply(mode) {
-  if (!mode) {
-    mode = document.getElementById("viewer").value;
-  } else {
-    document.getElementById("viewer").value = mode;
-  }
-
-  switch (mode) {
-    case "preview":
-      viewerDefault({preview: true});
-      break;
-    case "gallery":
-      viewerGallery();
-      break;
-    case "gallery2":
-      viewerGallery({loadMetadata: true});
-      break;
-    default:
-      viewerDefault();
-      break;
-  }
-}
-
-function viewerDefault({preview = false} = {}) {
-  viewerDefault.previewer.toggle(preview);
+function explorerDefault({preview = false} = {}) {
+  explorerDefault.previewer.toggle(preview);
 
   const mainElem = document.querySelector('main');
   if (mainElem.contains(dataTableHandler.elem)) { return; }
@@ -155,7 +171,7 @@ function viewerDefault({preview = false} = {}) {
   mainElem.appendChild(dataTableHandler.elem);
 }
 
-viewerDefault.previewer = {
+explorerDefault.previewer = {
   active: false,
   mainElem: null,
   anchors: null,
@@ -823,7 +839,7 @@ Keybord shortcuts:
   },
 };
 
-async function viewerGallery(options = {}) {
+async function explorerGallery(options = {}) {
   document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
 
   const mainElem = document.querySelector('main');
@@ -1105,10 +1121,6 @@ async function preloadMediaMetadata(medias, {
   }
 }
 
-function onViewerChange(event) {
-  viewerApply();
-}
-
 function onToolsChange(event) {
   event.preventDefault();
   const command = event.target.value;
@@ -1121,13 +1133,13 @@ function onToolsChange(event) {
 onToolsChange.commands = {
   'select-all': function selectAll() {
     for (const entry of document.querySelectorAll('main [data-entry]:not([hidden])')) {
-      highlightElem(entry, true);
+      explorer.highlightElem(entry, true);
     }
   },
 
   'deselect-all': function deselectAll() {
     for (const entry of document.querySelectorAll('main [data-entry]')) {
-      highlightElem(entry, false);
+      explorer.highlightElem(entry, false);
     }
   },
 
@@ -1156,7 +1168,7 @@ onToolsChange.commands = {
       regex.lastIndex = 0;
       if (!regex.test(filename)) {
         entry.hidden = true;
-        highlightElem(entry, false);
+        explorer.highlightElem(entry, false);
       }
     }
   },
