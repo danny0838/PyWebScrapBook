@@ -369,7 +369,7 @@ Keybord shortcuts:
       default: {
         const div = figure.appendChild(document.createElement('div'));
         div.classList.add('icon');
-        div.classList.add(type);
+        div.dataset.type = type;
         break;
       }
     }
@@ -852,7 +852,7 @@ async function viewerGallery(options = {}) {
 
     const div = anchor.appendChild(document.createElement('div'));
     div.classList.add('icon');
-    div.classList.add(type);
+    div.dataset.type = type;
 
     const span = anchor.appendChild(document.createElement('span'));
     span.textContent = a.textContent;

@@ -30,31 +30,16 @@ ul.breadcrumbs > li {
   display: inline;
 }
 
-a.icon {
-  padding-left: 1.5em;
-  text-decoration: none;
+.icon[data-type="link"] {
+  background: url("link.png?a=static") center no-repeat;
 }
 
-html[dir=rtl] a.icon {
-  background-position-x: right;
-  padding-left: 0;
-  padding-right: 1.5em;
+.icon[data-type="file"] {
+  background: url("item.png?a=static") center no-repeat;
 }
 
-.icon:hover {
-  text-decoration: underline;
-}
-
-.icon.link {
-  background: url("link.png?a=static") left top no-repeat;
-}
-
-.icon.file {
-  background: url("item.png?a=static") left top no-repeat;
-}
-
-.icon.dir {
-  background: url("fclose.png?a=static") left top no-repeat;
+.icon[data-type="dir"] {
+  background: url("fclose.png?a=static") center no-repeat;
 }
 
 #data-table {

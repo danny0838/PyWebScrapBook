@@ -71,6 +71,17 @@ html[dir=rtl] #data-table td.detail {
   }
 }
 
+#data-table .icon {
+  padding-left: 1.5em;
+  background-position: left top;
+}
+
+html[dir=rtl] #data-table .icon {
+  background-position-x: right;
+  padding-left: 0;
+  padding-right: 1.5em;
+}
+
 #tools,
 #command {
   width: 2.8em;
