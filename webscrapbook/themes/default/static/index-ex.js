@@ -903,7 +903,6 @@ async function expandTableRow(tr, deep = false) {
   if (!a) { return; }
 
   const dirPath = tr.dataset.path + '/';
-  const hidden = tr.hidden;
 
   tr.dataset.expanded = '';
 
@@ -919,7 +918,6 @@ async function expandTableRow(tr, deep = false) {
       if (!anchor) { continue; }
 
       trNew.dataset.path = dirPath + trNew.dataset.path;
-      trNew.hidden = hidden;
 
       const tdDir = trNew.querySelector('td');
       tdDir.dataset.sort = dirPath + tdDir.dataset.sort;
@@ -1125,7 +1123,7 @@ function onToolsChange(event) {
 
 onToolsChange.commands = {
   'select-all': function selectAll() {
-    for (const entry of document.querySelectorAll('#data-table [data-entry]')) {
+    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([hidden])')) {
       highlightElem(entry, true);
     }
   },
@@ -1137,7 +1135,7 @@ onToolsChange.commands = {
   },
 
   'expand-all': async function expandAll() {
-    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([data-expanded])')) {
+    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([hidden]):not([data-expanded])')) {
       await expandTableRow(entry, true);
     }
   },
@@ -1161,6 +1159,7 @@ onToolsChange.commands = {
       regex.lastIndex = 0;
       if (!regex.test(filename)) {
         entry.hidden = true;
+        highlightElem(entry, false);
       }
     }
   },
