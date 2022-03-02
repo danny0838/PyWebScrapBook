@@ -398,12 +398,14 @@ Keybord shortcuts:
       case 'image': {
         media = figure.querySelector('img');
         widthProp = 'width';
+        heightProp = 'height';
         naturalWidthProp = 'naturalWidth';
         break;
       }
       case 'video': {
         media = figure.querySelector('video');
         widthProp = 'offsetWidth';
+        heightProp = 'offsetHeight';
         naturalWidthProp = 'videoWidth';
         break;
       }
@@ -478,6 +480,23 @@ Keybord shortcuts:
       media.style.maxHeight = 'none';
     }
 
+    // fit new position when zoom in
+    const mediaWidth = media[widthProp];
+    const mediaHeight = media[heightProp];
+    const totalWidth = figure.offsetWidth;
+    const totalHeight = figure.offsetHeight;
+    let newDeltaX = Number(media.dataset.deltaX);
+    let newDeltaY = Number(media.dataset.deltaY);
+    newDeltaX = Math.max(newDeltaX, -Math.abs(totalWidth - mediaWidth) / 2);
+    newDeltaX = Math.min(newDeltaX, Math.abs(totalWidth - mediaWidth) / 2);
+    newDeltaY = Math.max(newDeltaY, -Math.abs(totalHeight - mediaHeight) / 2);
+    newDeltaY = Math.min(newDeltaY, Math.abs(totalHeight - mediaHeight) / 2);
+
+    media.style.left = `calc(50% + ${newDeltaX}px)`;
+    media.style.top = `calc(50% + ${newDeltaY}px)`;
+    media.dataset.deltaX = newDeltaX;
+    media.dataset.deltaY = newDeltaY;
+
     if (updateLastRatio) {
       media.dataset.ratio = newRatio;
     }
@@ -494,10 +513,14 @@ Keybord shortcuts:
     switch (figure.dataset.type) {
       case 'image': {
         media = figure.querySelector('img');
+        widthProp = 'width';
+        heightProp = 'height';
         break;
       }
       case 'video': {
         media = figure.querySelector('video');
+        widthProp = 'offsetWidth';
+        heightProp = 'offsetHeight';
         break;
       }
       default: {
@@ -522,6 +545,16 @@ Keybord shortcuts:
           break;
         }
       }
+
+      // fit new position
+      const mediaWidth = media[widthProp];
+      const mediaHeight = media[heightProp];
+      const totalWidth = figure.offsetWidth;
+      const totalHeight = figure.offsetHeight;
+      newDeltaX = Math.max(newDeltaX, -Math.abs(totalWidth - mediaWidth) / 2);
+      newDeltaX = Math.min(newDeltaX, Math.abs(totalWidth - mediaWidth) / 2);
+      newDeltaY = Math.max(newDeltaY, -Math.abs(totalHeight - mediaHeight) / 2);
+      newDeltaY = Math.min(newDeltaY, Math.abs(totalHeight - mediaHeight) / 2);
 
       // apply new position
       media.style.left = `calc(50% + ${newDeltaX}px)`;
