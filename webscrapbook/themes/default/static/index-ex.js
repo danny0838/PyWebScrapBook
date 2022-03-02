@@ -107,12 +107,13 @@ async function loadAnchorMetadata(anchor) {
 }
 
 function viewerInit() {
-  const dir = document.getElementById('data-table').getAttribute('data-path');
+  const mainElem = document.querySelector('main');
+  const dir = mainElem.dataset.path;
 
   /* handle .htd */
   if (/\.(htd)\/?$/i.test(dir)) {
     // if there's index.html, redirect to view it
-    const indexAnchor = dataTable.querySelector('[data-entry] a[href="index.html"]');
+    const indexAnchor = mainElem.querySelector('[data-entry] a[href="index.html"]');
     if (indexAnchor) {
       location.replace(indexAnchor.href);
       return;
@@ -161,7 +162,7 @@ function viewerDefault({preview = false} = {}) {
 
 viewerDefault.previewer = {
   active: false,
-  dataTable: null,
+  mainElem: null,
   anchors: null,
   currentIndex: null,
 
@@ -255,21 +256,21 @@ Keybord shortcuts:
       willActive = !this.active;
     }
 
-    this.dataTable = dataTable;
+    this.mainElem = document.querySelector('main');
     if (willActive) {
       this._renewAnchors();
-      this.mutationObserver.observe(this.dataTable, {
+      this.mutationObserver.observe(this.mainElem, {
         childList: true,
         attributes: true,
         subtree: true,
       });
-      this.dataTable.addEventListener('click', this.onAnchorClick);
+      this.mainElem.addEventListener('click', this.onAnchorClick);
       window.addEventListener('keydown', this.onKeyDown);
       window.addEventListener('wheel', this.onWheel, {passive:false});
     } else {
       this.unpreview();
       this.mutationObserver.disconnect();
-      this.dataTable.removeEventListener('click', this.onAnchorClick);
+      this.mainElem.removeEventListener('click', this.onAnchorClick);
       window.removeEventListener('keydown', this.onKeyDown);
       window.removeEventListener('wheel', this.onWheel);
     }
@@ -810,7 +811,7 @@ Keybord shortcuts:
   },
 
   _renewAnchors() {
-    this.anchors = Array.from(this.dataTable.querySelectorAll('[data-entry]:not([hidden]) a[href]'));
+    this.anchors = Array.from(this.mainElem.querySelectorAll('[data-entry]:not([hidden]) a[href]'));
   },
 
   _clearPreviewContent() {
@@ -913,7 +914,7 @@ async function expandTableRow(tr, deep = false) {
     })).response;
     const tasks = [];
     const trNext = tr.nextSibling;
-    for (const trNew of doc.querySelectorAll('#data-table [data-entry]')) {
+    for (const trNew of doc.querySelectorAll('main [data-entry]')) {
       const anchor = trNew.querySelector('a[href]');
       if (!anchor) { continue; }
 
@@ -1123,19 +1124,19 @@ function onToolsChange(event) {
 
 onToolsChange.commands = {
   'select-all': function selectAll() {
-    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([hidden])')) {
+    for (const entry of document.querySelectorAll('main [data-entry]:not([hidden])')) {
       highlightElem(entry, true);
     }
   },
 
   'deselect-all': function deselectAll() {
-    for (const entry of document.querySelectorAll('#data-table [data-entry]')) {
+    for (const entry of document.querySelectorAll('main [data-entry]')) {
       highlightElem(entry, false);
     }
   },
 
   'expand-all': async function expandAll() {
-    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([hidden]):not([data-expanded])')) {
+    for (const entry of document.querySelectorAll('main [data-entry]:not([hidden]):not([data-expanded])')) {
       await expandTableRow(entry, true);
     }
   },
@@ -1154,7 +1155,7 @@ onToolsChange.commands = {
     } else {
       regex = new RegExp(utils.escapeRegExp(kw), 'i');
     }
-    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([hidden])')) {
+    for (const entry of document.querySelectorAll('main [data-entry]:not([hidden])')) {
       const filename = entry.dataset.path.replace(/^.*\//, '');
       regex.lastIndex = 0;
       if (!regex.test(filename)) {
@@ -1165,7 +1166,7 @@ onToolsChange.commands = {
   },
 
   'filter-clear': function filterClear() {
-    for (const entry of document.querySelectorAll('#data-table [data-entry][hidden]')) {
+    for (const entry of document.querySelectorAll('main [data-entry][hidden]')) {
       entry.hidden = false;
     }
   },
@@ -1173,7 +1174,7 @@ onToolsChange.commands = {
 
 function onCommandFocus(event) {
   const cmdElem = document.getElementById('command');
-  const selectedEntries = document.querySelectorAll('#data-table .highlight');
+  const selectedEntries = document.querySelectorAll('main .highlight');
 
   switch (selectedEntries.length) {
     case 0: {
@@ -1277,7 +1278,7 @@ function onCommandChange(event) {
 async function onCommandRun(detail) {
   const command = detail.cmd;
   const func = onCommandRun.commands[command];
-  const selectedEntries = document.querySelectorAll('#data-table .highlight');
+  const selectedEntries = document.querySelectorAll('main .highlight');
   const commandElem = document.getElementById("command");
   commandElem.disabled = true;
   try {
@@ -1289,8 +1290,8 @@ async function onCommandRun(detail) {
 }
 
 onCommandRun.upload = async function upload(entries) {
-  const base = document.getElementById('data-table').getAttribute('data-base');
-  const dir = document.getElementById('data-table').getAttribute('data-path');
+  const base = document.querySelector('main').dataset.base;
+  const dir = document.querySelector('main').dataset.path;
   const errors = [];
   for (const {path, file} of entries) {
     const newPath = dir + path;
@@ -1375,7 +1376,7 @@ onCommandRun.commands = {
         method: "GET",
       });
     } catch (ex) {
-      const base = document.getElementById('data-table').getAttribute('data-base');
+      const base = document.querySelector('main').dataset.base;
       const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
       alert(`Unable to run "${oldPath}": ${ex.message}`);
     }
@@ -1390,7 +1391,7 @@ onCommandRun.commands = {
         method: "GET",
       });
     } catch (ex) {
-      const base = document.getElementById('data-table').getAttribute('data-base');
+      const base = document.querySelector('main').dataset.base;
       const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
       alert(`Unable to browse "${oldPath}": ${ex.message}`);
     }
@@ -1528,8 +1529,8 @@ onCommandRun.commands = {
       });
     };
 
-    const base = document.getElementById('data-table').getAttribute('data-base');
-    const dir = document.getElementById('data-table').getAttribute('data-path');
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
       const target = selectedEntries[0].querySelector('a[href]').href;
       const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
@@ -1591,8 +1592,8 @@ onCommandRun.commands = {
       });
     };
 
-    const base = document.getElementById('data-table').getAttribute('data-base');
-    const dir = document.getElementById('data-table').getAttribute('data-path');
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
       const target = selectedEntries[0].querySelector('a[href]').href;
       const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
@@ -1676,8 +1677,8 @@ onCommandRun.commands = {
       });
     };
 
-    const base = document.getElementById('data-table').getAttribute('data-base');
-    const dir = document.getElementById('data-table').getAttribute('data-path');
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
       const source = selectedEntries[0].querySelector('a[href]').href;
       const oldPath = decodeURIComponent(new URL(source).pathname).slice(base.length);
@@ -1729,7 +1730,7 @@ onCommandRun.commands = {
   },
 
   async delete(selectedEntries) {
-    const base = document.getElementById('data-table').getAttribute('data-base');
+    const base = document.querySelector('main').dataset.base;
     const entries = Array.prototype.map.call(selectedEntries, entry => {
       const target = entry.querySelector('a[href]').href;
       const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
