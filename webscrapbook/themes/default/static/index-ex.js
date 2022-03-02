@@ -40,9 +40,12 @@ const explorer = {
       }
 
       // otherwise, preview the first entry
-      this.apply('preview');
-      explorerDefault.previewer.preview(0);
+      previewer.toggle(true);
+      previewer.preview(0);
+      return;
     }
+
+    previewer.toggle(false);
   },
 
   apply(mode) {
@@ -54,9 +57,6 @@ const explorer = {
     }
 
     switch (mode) {
-      case "preview":
-        explorerDefault({preview: true});
-        break;
       case "gallery":
         explorerGallery();
         break;
@@ -159,9 +159,7 @@ async function loadAnchorMetadata(anchor) {
   anchor.dataset.type = getTypeFromUrl(href2);
 }
 
-function explorerDefault({preview = false} = {}) {
-  explorerDefault.previewer.toggle(preview);
-
+function explorerDefault() {
   const mainElem = document.querySelector('main');
   if (mainElem.contains(dataTableHandler.elem)) { return; }
 
@@ -171,7 +169,7 @@ function explorerDefault({preview = false} = {}) {
   mainElem.appendChild(dataTableHandler.elem);
 }
 
-explorerDefault.previewer = {
+const previewer = {
   active: false,
   mainElem: null,
   anchors: null,
@@ -278,12 +276,18 @@ Keybord shortcuts:
       this.mainElem.addEventListener('click', this.onAnchorClick);
       window.addEventListener('keydown', this.onKeyDown);
       window.addEventListener('wheel', this.onWheel, {passive:false});
+
+      document.querySelector('#tools option[value="preview-on"]').hidden = true;
+      document.querySelector('#tools option[value="preview-off"]').hidden = false;
     } else {
       this.unpreview();
       this.mutationObserver.disconnect();
       this.mainElem.removeEventListener('click', this.onAnchorClick);
       window.removeEventListener('keydown', this.onKeyDown);
       window.removeEventListener('wheel', this.onWheel);
+
+      document.querySelector('#tools option[value="preview-on"]').hidden = false;
+      document.querySelector('#tools option[value="preview-off"]').hidden = true;
     }
   },
 
@@ -1131,6 +1135,14 @@ function onToolsChange(event) {
 }
 
 onToolsChange.commands = {
+  'preview-on': function previewOn() {
+    previewer.toggle(true);
+  },
+
+  'preview-off': function previewOff() {
+    previewer.toggle(false);
+  },
+
   'select-all': function selectAll() {
     for (const entry of document.querySelectorAll('main [data-entry]:not([hidden])')) {
       explorer.highlightElem(entry, true);
