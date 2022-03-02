@@ -35,7 +35,7 @@
   {%- set size_text = format_filesize(size) if size else '' %}
   {%- set lm = info.last_modified %}
   {%- set lm_text = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(lm)) %}
-  <tr class="{{ filetype }}"><td data-sort="{{ filename }}"><a title="{{ filename }}"><span class="icon" data-type="{{ filetype }}"></span></a><td data-sort="{{ filename }}"><a href="{{ url }}">{{ filename }}</a></td><td class="detail" data-sort="{{ lm or '' }}">{{ lm_text }}</td><td class="detail" data-sort="{{ size or '' }}">{{ size_text }}</td></tr>
+  <tr data-entry data-type="{{ filetype }}" data-path="{{ filename }}"><td data-sort="{{ filename }}"><span class="icon" data-type="{{ filetype }}" title="{{ filename }}"></span><td data-sort="{{ filename }}"><a href="{{ url }}">{{ filename }}</a></td><td class="detail" data-sort="{{ lm or '' }}">{{ lm_text }}</td><td class="detail" data-sort="{{ size or '' }}">{{ size_text }}</td></tr>
 {%- endfor %}
 </tbody>
 </table>

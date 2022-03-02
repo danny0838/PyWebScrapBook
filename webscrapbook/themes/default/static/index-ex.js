@@ -112,7 +112,7 @@ function viewerInit() {
   /* handle .htd */
   if (/\.(htd)\/?$/i.test(dir)) {
     // if there's index.html, redirect to view it
-    const indexAnchor = dataTable.querySelector('tbody tr a[href="index.html"]');
+    const indexAnchor = dataTable.querySelector('[data-entry] a[href="index.html"]');
     if (indexAnchor) {
       location.replace(indexAnchor.href);
       return;
@@ -810,7 +810,7 @@ Keybord shortcuts:
   },
 
   _renewAnchors() {
-    this.anchors = Array.from(this.dataTable.querySelectorAll('tbody tr:not([hidden]) a[href]'));
+    this.anchors = Array.from(this.dataTable.querySelectorAll('[data-entry]:not([hidden]) a[href]'));
   },
 
   _clearPreviewContent() {
@@ -834,125 +834,61 @@ async function viewerGallery(options = {}) {
   const wrapper = document.createElement('div');
   wrapper.id = "img-gallery-view";
 
-  const addFigure = (type) => {
-    const figure = wrapper.appendChild(document.createElement('figure'));
-    figure.classList.add(type);
-    return figure;
-  };
-
-  const addAnchor = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-    div.classList.add('icon');
-    div.dataset.type = type;
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.title = a.textContent;
-
-    const span = anchor.appendChild(document.createElement('span'));
-    span.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const addImage = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const img = div.appendChild(document.createElement('img'));
-    img.src = href;
-    img.alt = a.textContent;
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.title = a.textContent;
-
-    const span = anchor.appendChild(document.createElement('span'));
-    span.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const addAudio = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const audio = div.appendChild(document.createElement('audio'));
-    audio.src = href;
-    audio.controls = true;
-    audio.preload = 'none';
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.title = a.textContent;
-
-    const span = anchor.appendChild(document.createElement('span'));
-    span.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const addVideo = (a, type) => {
-    const href = a.dataset.href || a.href;
-
-    const figure = addFigure(type);
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const video = div.appendChild(document.createElement('video'));
-    video.src = href;
-    video.controls = true;
-    video.preload = 'none';
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.title = a.textContent;
-
-    const span = anchor.appendChild(document.createElement('span'));
-    span.textContent = a.textContent;
-
-    return figure;
-  };
-
-  const anchors = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('tbody tr:not([hidden])'), async (tr) => {
-    const a = tr.querySelector('a[href]');
+  const entries = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('[data-entry]:not([hidden])'), async (entry) => {
+    const a = entry.querySelector('a[href]');
     if (a) { await loadAnchorMetadata(a); }
-    return a;
+    return entry;
   }));
 
   const medias = [];
-  for (const a of anchors) {
+  for (const entry of entries) {
+    const a = entry.querySelector('a[href]');
     if (!a) { continue; }
 
+    const figure = wrapper.appendChild(document.createElement('figure'));
+    figure.dataset.entry = '';
+    figure.dataset.type = entry.dataset.type;
+    figure.dataset.path = entry.dataset.path;
+
+    const div = figure.appendChild(document.createElement('div'));
+
     const type = a.dataset.type;
+    const href = a.dataset.href || a.href;
     switch (type) {
-      case 'image':
-        addImage(a, type);
+      case 'image': {
+        const img = div.appendChild(document.createElement('img'));
+        img.src = href;
+        img.alt = a.textContent;
         break;
-      case 'audio':
-        medias.push(addAudio(a, type).querySelector('audio'));
+      }
+      case 'audio': {
+        const audio = div.appendChild(document.createElement('audio'));
+        audio.src = href;
+        audio.controls = true;
+        audio.preload = 'none';
+        medias.push(audio);
         break;
-      case 'video':
-        medias.push(addVideo(a, type).querySelector('video'));
+      }
+      case 'video': {
+        const video = div.appendChild(document.createElement('video'));
+        video.src = href;
+        video.controls = true;
+        video.preload = 'none';
+        medias.push(video);
         break;
-      default:
-        addAnchor(a, type);
+      }
+      default: {
+        div.classList.add('icon');
+        div.dataset.type = type;
         break;
+      }
     }
+
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = href;
+    anchor.target = "_blank";
+    anchor.title = a.textContent;
+    anchor.textContent = a.textContent;
   }
   preloadMediaMetadata(medias, options); // async
 
@@ -961,17 +897,15 @@ async function viewerGallery(options = {}) {
 }
 
 async function expandTableRow(tr, deep = false) {
-  if (!tr.classList.contains("dir")) { return; }
+  if (tr.dataset.type !== 'dir') { return; }
 
   const a = tr.querySelector('a[href]');
   if (!a) { return; }
 
-  const tdDir = tr.querySelector('td');
-  const dirSortKey = tdDir.getAttribute("data-sort") + "/";
-  const dirTitle = tdDir.querySelector('a').title + "/";
+  const dirPath = tr.dataset.path + '/';
   const hidden = tr.hidden;
 
-  tr.setAttribute("data-expanded", "");
+  tr.dataset.expanded = '';
 
   try {
     const doc = (await utils.xhr({
@@ -980,15 +914,16 @@ async function expandTableRow(tr, deep = false) {
     })).response;
     const tasks = [];
     const trNext = tr.nextSibling;
-    for (const trNew of doc.querySelectorAll('#data-table tbody tr')) {
+    for (const trNew of doc.querySelectorAll('#data-table [data-entry]')) {
       const anchor = trNew.querySelector('a[href]');
       if (!anchor) { continue; }
 
+      trNew.dataset.path = dirPath + trNew.dataset.path;
       trNew.hidden = hidden;
 
       const tdDir = trNew.querySelector('td');
-      tdDir.setAttribute("data-sort", dirSortKey + tdDir.getAttribute("data-sort"));
-      tdDir.querySelector('a').title = dirTitle + tdDir.querySelector('a').title;
+      tdDir.dataset.sort = dirPath + tdDir.dataset.sort;
+      tdDir.querySelector('span').title = dirPath + tdDir.querySelector('span').title;
 
       anchor.href = anchor.href;
 
@@ -1190,20 +1125,20 @@ function onToolsChange(event) {
 
 onToolsChange.commands = {
   'select-all': function selectAll() {
-    for (const tr of document.querySelectorAll('#data-table tbody tr')) {
-      highlightElem(tr, true);
+    for (const entry of document.querySelectorAll('#data-table [data-entry]')) {
+      highlightElem(entry, true);
     }
   },
 
   'deselect-all': function deselectAll() {
-    for (const tr of document.querySelectorAll('#data-table tbody tr')) {
-      highlightElem(tr, false);
+    for (const entry of document.querySelectorAll('#data-table [data-entry]')) {
+      highlightElem(entry, false);
     }
   },
 
   'expand-all': async function expandAll() {
-    for (const tr of document.querySelectorAll('#data-table tbody tr:not([data-expanded])')) {
-      await expandTableRow(tr, true);
+    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([data-expanded])')) {
+      await expandTableRow(entry, true);
     }
   },
 
@@ -1221,18 +1156,18 @@ onToolsChange.commands = {
     } else {
       regex = new RegExp(utils.escapeRegExp(kw), 'i');
     }
-    for (const tr of document.querySelectorAll('#data-table tbody tr:not([hidden])')) {
-      const anchor = tr.querySelector('a[href]');
+    for (const entry of document.querySelectorAll('#data-table [data-entry]:not([hidden])')) {
+      const filename = entry.dataset.path.replace(/^.*\//, '');
       regex.lastIndex = 0;
-      if (!regex.test(anchor.textContent)) {
-        tr.hidden = true;
+      if (!regex.test(filename)) {
+        entry.hidden = true;
       }
     }
   },
 
   'filter-clear': function filterClear() {
-    for (const tr of document.querySelectorAll('#data-table tbody tr[hidden]')) {
-      tr.hidden = false;
+    for (const entry of document.querySelectorAll('#data-table [data-entry][hidden]')) {
+      entry.hidden = false;
     }
   },
 };
@@ -1276,15 +1211,15 @@ function onCommandFocus(event) {
       cmdElem.querySelector('[value="copy"]').hidden = false;
       cmdElem.querySelector('[value="link"]').hidden = false;
       cmdElem.querySelector('[value="delete"]').hidden = false;
-      if (elem.classList.contains('link')) {
+      if (elem.dataset.type === 'link') {
         cmdElem.querySelector('[value="source"]').hidden = false;
         cmdElem.querySelector('[value="edit"]').hidden = true;
         cmdElem.querySelector('[value="editx"]').hidden = true;
-      } else if (elem.classList.contains('file')) {
+      } else if (elem.dataset.type === 'file') {
         cmdElem.querySelector('[value="source"]').hidden = false;
         cmdElem.querySelector('[value="edit"]').hidden = false;
         cmdElem.querySelector('[value="editx"]').hidden = !isHtml;
-      } else if (elem.classList.contains('dir')) {
+      } else if (elem.dataset.type === 'dir') {
         cmdElem.querySelector('[value="source"]').hidden = true;
         cmdElem.querySelector('[value="edit"]').hidden = true;
         cmdElem.querySelector('[value="editx"]').hidden = true;

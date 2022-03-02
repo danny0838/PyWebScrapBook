@@ -7,14 +7,6 @@
   height: 12em;
 }
 
-#img-gallery-view figure a {
-  text-decoration: none;
-}
-
-#img-gallery-view figure a:hover {
-  text-decoration: underline;
-}
-
 #img-gallery-view figure div {
   position: relative;
   width: 100%;
@@ -37,7 +29,7 @@
   max-height: 100%;
 }
 
-#img-gallery-view figure span {
+#img-gallery-view figure a {
   display: block;
   margin: auto;
   max-width: 100%;
@@ -45,6 +37,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
+  text-decoration: none;
+}
+
+#img-gallery-view figure a:hover {
+  text-decoration: underline;
 }
 
 #img-gallery-view .icon {
