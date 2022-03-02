@@ -845,14 +845,14 @@ async function viewerGallery(options = {}) {
 
     const figure = addFigure(type);
 
+    const div = figure.appendChild(document.createElement('div'));
+    div.classList.add('icon');
+    div.dataset.type = type;
+
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = href;
     anchor.target = "_blank";
     anchor.title = a.textContent;
-
-    const div = anchor.appendChild(document.createElement('div'));
-    div.classList.add('icon');
-    div.dataset.type = type;
 
     const span = anchor.appendChild(document.createElement('span'));
     span.textContent = a.textContent;
@@ -865,16 +865,16 @@ async function viewerGallery(options = {}) {
 
     const figure = addFigure(type);
 
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.target = "_blank";
-    anchor.title = a.textContent;
-
-    const div = anchor.appendChild(document.createElement('div'));
+    const div = figure.appendChild(document.createElement('div'));
 
     const img = div.appendChild(document.createElement('img'));
     img.src = href;
     img.alt = a.textContent;
+
+    const anchor = figure.appendChild(document.createElement('a'));
+    anchor.href = href;
+    anchor.target = "_blank";
+    anchor.title = a.textContent;
 
     const span = anchor.appendChild(document.createElement('span'));
     span.textContent = a.textContent;
