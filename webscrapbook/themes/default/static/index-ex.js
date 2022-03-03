@@ -171,12 +171,19 @@ async function loadAnchorMetadata(anchor) {
 
 function explorerDefault() {
   const mainElem = document.querySelector('main');
-  if (mainElem.contains(dataTableHandler.elem)) { return; }
+  const dataTable = dataTableHandler.elem;
+
+  if (mainElem.contains(dataTable)) { return; }
 
   document.getElementById('tools').querySelector('[value="expand-all"]').disabled = false;
 
+  // clear selection
+  for (const entry of dataTable.querySelectorAll('[data-entry]')) {
+    explorer.highlightElem(entry, false);
+  }
+
   mainElem.textContent = '';
-  mainElem.appendChild(dataTableHandler.elem);
+  mainElem.appendChild(dataTable);
 }
 
 const previewer = {
