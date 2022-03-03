@@ -62,14 +62,14 @@ const explorer = {
 
     switch (mode) {
       case "gallery":
-        explorerGallery();
+        this.explorerGallery();
         break;
       case "gallery2":
-        explorerGallery({loadMetadata: true});
+        this.explorerGallery({loadMetadata: true});
         break;
       default:
         mode = 'default';
-        explorerDefault();
+        this.explorerDefault();
         break;
     }
 
@@ -77,6 +77,92 @@ const explorer = {
       sessionStorage.setItem('explorer', mode);
       localStorage.setItem('explorer', mode);
     }
+  },
+
+  explorerDefault() {
+    const mainElem = document.querySelector('main');
+    const dataTable = dataTableHandler.elem;
+
+    if (mainElem.contains(dataTable)) { return; }
+
+    document.getElementById('tools').querySelector('[value="expand-all"]').disabled = false;
+
+    // clear selection
+    for (const entry of dataTable.querySelectorAll('[data-entry]')) {
+      explorer.highlightElem(entry, false);
+    }
+
+    mainElem.textContent = '';
+    mainElem.appendChild(dataTable);
+  },
+
+  async explorerGallery(options = {}) {
+    document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
+
+    const mainElem = document.querySelector('main');
+
+    const wrapper = document.createElement('div');
+    wrapper.id = "img-gallery-view";
+
+    const entries = await Promise.all(Array.prototype.map.call(mainElem.querySelectorAll('[data-entry]:not([hidden])'), async (entry) => {
+      const a = entry.querySelector('a[href]');
+      if (a) { await this.loadAnchorMetadata(a); }
+      return entry;
+    }));
+
+    const medias = [];
+    for (const entry of entries) {
+      const a = entry.querySelector('a[href]');
+      if (!a) { continue; }
+
+      const figure = wrapper.appendChild(document.createElement('figure'));
+      figure.dataset.entry = '';
+      figure.dataset.type = entry.dataset.type;
+      figure.dataset.path = entry.dataset.path;
+
+      const div = figure.appendChild(document.createElement('div'));
+
+      const type = a.dataset.type;
+      const href = a.dataset.href || a.href;
+      switch (type) {
+        case 'image': {
+          const img = div.appendChild(document.createElement('img'));
+          img.src = href;
+          img.alt = a.textContent;
+          break;
+        }
+        case 'audio': {
+          const audio = div.appendChild(document.createElement('audio'));
+          audio.src = href;
+          audio.controls = true;
+          audio.preload = 'none';
+          medias.push(audio);
+          break;
+        }
+        case 'video': {
+          const video = div.appendChild(document.createElement('video'));
+          video.src = href;
+          video.controls = true;
+          video.preload = 'none';
+          medias.push(video);
+          break;
+        }
+        default: {
+          div.classList.add('icon');
+          div.dataset.type = type;
+          break;
+        }
+      }
+
+      const anchor = figure.appendChild(document.createElement('a'));
+      anchor.href = href;
+      anchor.title = a.textContent;
+      anchor.textContent = a.textContent;
+    }
+    this.preloadMediaMetadata(medias, options); // async
+
+    mainElem.textContent = '';
+    mainElem.appendChild(wrapper);
   },
 
   highlightElem(elem, willHighlight) {
@@ -88,6 +174,277 @@ const explorer = {
       elem.classList.add("highlight");
     } else {
       elem.classList.remove("highlight");
+    }
+  },
+
+  getTypeFromUrl(url) {
+    if (/\/$/i.test(url)) {
+      return 'dir';
+    }
+
+    if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(url)) {
+      return 'image';
+    }
+
+    if (/\.(mp4|ogv|ogx|ogg|webm)$/i.test(url)) {
+      return 'video';
+    }
+
+    if (/\.(wav|mp3|oga|weba)$/i.test(url)) {
+      return 'audio';
+    }
+
+    return 'file';
+  },
+
+  async getRedirectedUrl(url, {catchError = true} = {}) {
+    // resolve a possible redirect
+    if (/\.(htm)$/i.test(url)) {
+      try {
+        const response = await fetch(url, {method: 'HEAD'});
+        return response.url;
+      } catch (ex) {
+        // cross-origin, invalid, circular, or non-accessible URL
+        if (catchError) {
+          return url;
+        }
+        throw ex;
+      }
+    }
+
+    return url;
+  },
+
+  async loadAnchorMetadata(anchor) {
+    // skip if already loaded
+    if (anchor.dataset.type) {
+      return;
+    }
+
+    const href = anchor.href;
+    let href2;
+    try {
+      href2 = await this.getRedirectedUrl(href, {catchError: false});
+    } catch (ex) {
+      anchor.dataset.type = 'link';
+      return;
+    }
+
+    if (href !== href2) { 
+      anchor.dataset.href = href2;
+    }
+    anchor.dataset.type = this.getTypeFromUrl(href2);
+  },
+
+  async preloadMediaMetadata(medias, {
+    loadMetadata = false,
+    loadTracks = true,
+  } = {}) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    const loadFileListMap = new Map();
+    const loadFileList = async (src) => {
+      let p = loadFileListMap.get(src);
+      if (p) { return p; }
+      p = (async () => {
+        const xhr = await utils.wsb({
+          url: src + '?a=list&f=json',
+          responseType: 'json',
+          method: "GET",
+        });
+        return xhr.response.data;
+      })();
+      loadFileListMap.set(src, p);
+      return p;
+    };
+
+    async function preloadMetadata(media) {
+      // Special handling to prevent medias unplayable during native Firefox
+      // preloading.
+      if (utils.userAgent.is('firefox')) {
+        // skip if metadata already loaded
+        if (!Number.isNaN(media.duration)) {
+          return;
+        }
+
+        // Media loading may halt permanently when preloading many WebM files.
+        // Preload only the video poster instead.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1756988
+        if (/\.webm$/i.test(media.src) && media.matches('video')) {
+          return await preloadPoster(media);
+        }
+
+        return await preloadMetadataSequentially(media);
+      }
+
+      media.preload = 'metadata';
+    }
+
+    async function preloadMetadataSequentially(media) {
+      let resolve, reject;
+      const onloadedmetadata = (event) => {
+        resolve();
+      };
+      const onerror = (event) => {
+        reject(new Error(`Unable to load ${media.src}`));
+      };
+      const onabort = (event) => {
+        reject(new Error(`Aborted loading ${media.src}`));
+      };
+      const p = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+        media.addEventListener('loadedmetadata', onloadedmetadata);
+        media.addEventListener('error', onerror);
+        media.addEventListener('abort', onabort);
+        media.preload = 'metadata';
+      })
+      p.catch((ex) => {}).then(() => {
+        media.removeEventListener('loadedmetadata', onloadedmetadata);
+        media.removeEventListener('error', onerror);
+        media.removeEventListener('abort', onabort);
+      });
+      return await p;
+    }
+
+    async function preloadPoster(media) {
+      let resolve, reject;
+      const loader = document.createElement(media.tagName);
+      const onloadeddata = async (event) => {
+        try {
+          const loader = event.target;
+          const {videoWidth: w, videoHeight: h} = loader;
+
+          // canvas is cleared when width/height is set
+          canvas.width =  w;
+          canvas.height = h;
+
+          context.drawImage(loader, 0, 0, w, h);
+
+          const dummySrc = URL.createObjectURL(new MediaSource());
+          loader.src = dummySrc;
+          loader.load();
+          URL.revokeObjectURL(dummySrc);
+
+          const imgBlob = await new Promise(r => canvas.toBlob(r));
+          const imgSrc = URL.createObjectURL(imgBlob);
+          media.poster = imgSrc;
+          URL.revokeObjectURL(imgSrc);
+
+          resolve();
+        } catch (ex) {
+          reject(ex);
+        }
+      };
+      const onerror = (event) => {
+        reject(new Error(`Unable to load ${media.src}`));
+      };
+      const onabort = (event) => {
+        reject(new Error(`Aborted loading ${media.src}`));
+      };
+      const p = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+        loader.addEventListener('loadeddata', onloadeddata);
+        loader.addEventListener('error', onerror);
+        loader.addEventListener('abort', onabort);
+        loader.src = media.src;
+      })
+      p.catch((ex) => {}).then(() => {
+        loader.removeEventListener('loadeddata', onloadeddata);
+        loader.removeEventListener('error', onerror);
+        loader.removeEventListener('abort', onabort);
+      });
+      return await p;
+    }
+
+    async function preloadTracks(media) {
+      const u = new URL(media.src);
+      /^(.*\/)([^\/]*)$/.test(u.pathname);
+      u.pathname = RegExp.$1;
+      u.search = u.hash = '';
+      const filename = decodeURIComponent(RegExp.$2);
+      const basename = filename.replace(/\.[^.]*$/, '');
+      const pattern = new RegExp(utils.escapeRegExp(basename) + '\.((?:.+\.)*vtt)$', 'i');
+      const dirSrc = u.href;
+      let list;
+      let first = true;
+      try {
+        list = await loadFileList(dirSrc);
+      } catch (ex) {
+        console.error(`Unable to fetch directory list "${dirSrc}": ${ex.message}`);
+        return;
+      }
+      for (const {name, type} of list) {
+        if (type !== 'file') { continue; }
+        if (!pattern.test(name)) { continue; }
+        const track = media.appendChild(document.createElement('track'));
+        track.label = RegExp.$1;
+        track.src = dirSrc + encodeURIComponent(name);
+        track.srclang = '';
+        if (first) {
+          track.default = true;
+          first = false;
+        }
+      }
+    }
+
+    // preload tracks parallelly
+    if (loadTracks) {
+      await Promise.all(medias.map(media => preloadTracks(media).catch ((ex) => {
+        console.error(ex);
+      })));
+    }
+
+    // preload metadata sequentially
+    if (loadMetadata) {
+      for (const media of medias) {
+        await preloadMetadata(media).catch ((ex) => {
+          console.error(ex);
+        });
+      }
+    }
+  },
+
+  async expandTableRow(tr, deep = false) {
+    if (tr.dataset.type !== 'dir') { return; }
+
+    const a = tr.querySelector('a[href]');
+    if (!a) { return; }
+
+    const dirPath = tr.dataset.path + '/';
+
+    tr.dataset.expanded = '';
+
+    try {
+      const doc = (await utils.xhr({
+        url: a.href,
+        responseType: 'document',
+      })).response;
+      const tasks = [];
+      const trNext = tr.nextSibling;
+      for (const trNew of doc.querySelectorAll('main [data-entry]')) {
+        const anchor = trNew.querySelector('a[href]');
+        if (!anchor) { continue; }
+
+        trNew.dataset.path = dirPath + trNew.dataset.path;
+
+        const tdDir = trNew.querySelector('td');
+        tdDir.dataset.sort = dirPath + tdDir.dataset.sort;
+        tdDir.querySelector('span').title = dirPath + tdDir.querySelector('span').title;
+
+        anchor.href = anchor.href;
+
+        tr.parentNode.insertBefore(trNew, trNext);
+
+        if (deep) {
+          tasks.push(this.expandTableRow(trNew, deep));
+        }
+      }
+      await Promise.all(tasks);
+    } catch (ex) {
+      console.error(ex);
     }
   },
 
@@ -109,82 +466,6 @@ const explorer = {
     return func;
   },
 };
-
-function getTypeFromUrl(url) {
-  if (/\/$/i.test(url)) {
-    return 'dir';
-  }
-
-  if (/\.(jpg|jpeg?|gif|png|bmp|ico|webp|svg)$/i.test(url)) {
-    return 'image';
-  }
-
-  if (/\.(mp4|ogv|ogx|ogg|webm)$/i.test(url)) {
-    return 'video';
-  }
-
-  if (/\.(wav|mp3|oga|weba)$/i.test(url)) {
-    return 'audio';
-  }
-
-  return 'file';
-}
-
-async function getRedirectedUrl(url, {catchError = true} = {}) {
-  // resolve a possible redirect
-  if (/\.(htm)$/i.test(url)) {
-    try {
-      const response = await fetch(url, {method: 'HEAD'});
-      return response.url;
-    } catch (ex) {
-      // cross-origin, invalid, circular, or non-accessible URL
-      if (catchError) {
-        return url;
-      }
-      throw ex;
-    }
-  }
-
-  return url;
-}
-
-async function loadAnchorMetadata(anchor) {
-  // skip if already loaded
-  if (anchor.dataset.type) {
-    return;
-  }
-
-  const href = anchor.href;
-  let href2;
-  try {
-    href2 = await getRedirectedUrl(href, {catchError: false});
-  } catch (ex) {
-    anchor.dataset.type = 'link';
-    return;
-  }
-
-  if (href !== href2) { 
-    anchor.dataset.href = href2;
-  }
-  anchor.dataset.type = getTypeFromUrl(href2);
-}
-
-function explorerDefault() {
-  const mainElem = document.querySelector('main');
-  const dataTable = dataTableHandler.elem;
-
-  if (mainElem.contains(dataTable)) { return; }
-
-  document.getElementById('tools').querySelector('[value="expand-all"]').disabled = false;
-
-  // clear selection
-  for (const entry of dataTable.querySelectorAll('[data-entry]')) {
-    explorer.highlightElem(entry, false);
-  }
-
-  mainElem.textContent = '';
-  mainElem.appendChild(dataTable);
-}
 
 const previewer = {
   active: false,
@@ -338,7 +619,7 @@ Keybord shortcuts:
 
     const figure = wrapper.querySelector('figure');
 
-    await loadAnchorMetadata(anchor);
+    await explorer.loadAnchorMetadata(anchor);
     const href = anchor.dataset.href || anchor.href;
     const type = anchor.dataset.type;
 
@@ -380,7 +661,7 @@ Keybord shortcuts:
         audio.controls = true;
         audio.autoplay = true;
         audio.focus();
-        await preloadMediaMetadata([audio]);
+        await explorer.preloadMediaMetadata([audio]);
         break;
       }
       case 'video': {
@@ -405,7 +686,7 @@ Keybord shortcuts:
           if (!loaded) { return; }
           video.dataset.ratio = video.offsetWidth / (video.videoWidth || this.defaultNaturalWidth);
         });
-        const p2 = preloadMediaMetadata([video]);
+        const p2 = explorer.preloadMediaMetadata([video]);
         await Promise.all([p1, p2]);
         break;
       }
@@ -870,287 +1151,6 @@ Keybord shortcuts:
   },
 };
 
-async function explorerGallery(options = {}) {
-  document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
-
-  const mainElem = document.querySelector('main');
-
-  const wrapper = document.createElement('div');
-  wrapper.id = "img-gallery-view";
-
-  const entries = await Promise.all(Array.prototype.map.call(mainElem.querySelectorAll('[data-entry]:not([hidden])'), async (entry) => {
-    const a = entry.querySelector('a[href]');
-    if (a) { await loadAnchorMetadata(a); }
-    return entry;
-  }));
-
-  const medias = [];
-  for (const entry of entries) {
-    const a = entry.querySelector('a[href]');
-    if (!a) { continue; }
-
-    const figure = wrapper.appendChild(document.createElement('figure'));
-    figure.dataset.entry = '';
-    figure.dataset.type = entry.dataset.type;
-    figure.dataset.path = entry.dataset.path;
-
-    const div = figure.appendChild(document.createElement('div'));
-
-    const type = a.dataset.type;
-    const href = a.dataset.href || a.href;
-    switch (type) {
-      case 'image': {
-        const img = div.appendChild(document.createElement('img'));
-        img.src = href;
-        img.alt = a.textContent;
-        break;
-      }
-      case 'audio': {
-        const audio = div.appendChild(document.createElement('audio'));
-        audio.src = href;
-        audio.controls = true;
-        audio.preload = 'none';
-        medias.push(audio);
-        break;
-      }
-      case 'video': {
-        const video = div.appendChild(document.createElement('video'));
-        video.src = href;
-        video.controls = true;
-        video.preload = 'none';
-        medias.push(video);
-        break;
-      }
-      default: {
-        div.classList.add('icon');
-        div.dataset.type = type;
-        break;
-      }
-    }
-
-    const anchor = figure.appendChild(document.createElement('a'));
-    anchor.href = href;
-    anchor.title = a.textContent;
-    anchor.textContent = a.textContent;
-  }
-  preloadMediaMetadata(medias, options); // async
-
-  mainElem.textContent = '';
-  mainElem.appendChild(wrapper);
-}
-
-async function expandTableRow(tr, deep = false) {
-  if (tr.dataset.type !== 'dir') { return; }
-
-  const a = tr.querySelector('a[href]');
-  if (!a) { return; }
-
-  const dirPath = tr.dataset.path + '/';
-
-  tr.dataset.expanded = '';
-
-  try {
-    const doc = (await utils.xhr({
-      url: a.href,
-      responseType: 'document',
-    })).response;
-    const tasks = [];
-    const trNext = tr.nextSibling;
-    for (const trNew of doc.querySelectorAll('main [data-entry]')) {
-      const anchor = trNew.querySelector('a[href]');
-      if (!anchor) { continue; }
-
-      trNew.dataset.path = dirPath + trNew.dataset.path;
-
-      const tdDir = trNew.querySelector('td');
-      tdDir.dataset.sort = dirPath + tdDir.dataset.sort;
-      tdDir.querySelector('span').title = dirPath + tdDir.querySelector('span').title;
-
-      anchor.href = anchor.href;
-
-      tr.parentNode.insertBefore(trNew, trNext);
-
-      if (deep) {
-        tasks.push(expandTableRow(trNew, deep));
-      }
-    }
-    await Promise.all(tasks);
-  } catch (ex) {
-    console.error(ex);
-  }
-}
-
-async function preloadMediaMetadata(medias, {
-  loadMetadata = false,
-  loadTracks = true,
-} = {}) {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  const loadFileListMap = new Map();
-  const loadFileList = async (src) => {
-    let p = loadFileListMap.get(src);
-    if (p) { return p; }
-    p = (async () => {
-      const xhr = await utils.wsb({
-        url: src + '?a=list&f=json',
-        responseType: 'json',
-        method: "GET",
-      });
-      return xhr.response.data;
-    })();
-    loadFileListMap.set(src, p);
-    return p;
-  };
-
-  async function preloadMetadata(media) {
-    // Special handling to prevent medias unplayable during native Firefox
-    // preloading.
-    if (utils.userAgent.is('firefox')) {
-      // skip if metadata already loaded
-      if (!Number.isNaN(media.duration)) {
-        return;
-      }
-
-      // Media loading may halt permanently when preloading many WebM files.
-      // Preload only the video poster instead.
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=1756988
-      if (/\.webm$/i.test(media.src) && media.matches('video')) {
-        return await preloadPoster(media);
-      }
-
-      return await preloadMetadataSequentially(media);
-    }
-
-    media.preload = 'metadata';
-  }
-
-  async function preloadMetadataSequentially(media) {
-    let resolve, reject;
-    const onloadedmetadata = (event) => {
-      resolve();
-    };
-    const onerror = (event) => {
-      reject(new Error(`Unable to load ${media.src}`));
-    };
-    const onabort = (event) => {
-      reject(new Error(`Aborted loading ${media.src}`));
-    };
-    const p = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-      media.addEventListener('loadedmetadata', onloadedmetadata);
-      media.addEventListener('error', onerror);
-      media.addEventListener('abort', onabort);
-      media.preload = 'metadata';
-    })
-    p.catch((ex) => {}).then(() => {
-      media.removeEventListener('loadedmetadata', onloadedmetadata);
-      media.removeEventListener('error', onerror);
-      media.removeEventListener('abort', onabort);
-    });
-    return await p;
-  }
-
-  async function preloadPoster(media) {
-    let resolve, reject;
-    const loader = document.createElement(media.tagName);
-    const onloadeddata = async (event) => {
-      try {
-        const loader = event.target;
-        const {videoWidth: w, videoHeight: h} = loader;
-
-        // canvas is cleared when width/height is set
-        canvas.width =  w;
-        canvas.height = h;
-
-        context.drawImage(loader, 0, 0, w, h);
-
-        const dummySrc = URL.createObjectURL(new MediaSource());
-        loader.src = dummySrc;
-        loader.load();
-        URL.revokeObjectURL(dummySrc);
-
-        const imgBlob = await new Promise(r => canvas.toBlob(r));
-        const imgSrc = URL.createObjectURL(imgBlob);
-        media.poster = imgSrc;
-        URL.revokeObjectURL(imgSrc);
-
-        resolve();
-      } catch (ex) {
-        reject(ex);
-      }
-    };
-    const onerror = (event) => {
-      reject(new Error(`Unable to load ${media.src}`));
-    };
-    const onabort = (event) => {
-      reject(new Error(`Aborted loading ${media.src}`));
-    };
-    const p = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-      loader.addEventListener('loadeddata', onloadeddata);
-      loader.addEventListener('error', onerror);
-      loader.addEventListener('abort', onabort);
-      loader.src = media.src;
-    })
-    p.catch((ex) => {}).then(() => {
-      loader.removeEventListener('loadeddata', onloadeddata);
-      loader.removeEventListener('error', onerror);
-      loader.removeEventListener('abort', onabort);
-    });
-    return await p;
-  }
-
-  async function preloadTracks(media) {
-    const u = new URL(media.src);
-    /^(.*\/)([^\/]*)$/.test(u.pathname);
-    u.pathname = RegExp.$1;
-    u.search = u.hash = '';
-    const filename = decodeURIComponent(RegExp.$2);
-    const basename = filename.replace(/\.[^.]*$/, '');
-    const pattern = new RegExp(utils.escapeRegExp(basename) + '\.((?:.+\.)*vtt)$', 'i');
-    const dirSrc = u.href;
-    let list;
-    let first = true;
-    try {
-      list = await loadFileList(dirSrc);
-    } catch (ex) {
-      console.error(`Unable to fetch directory list "${dirSrc}": ${ex.message}`);
-      return;
-    }
-    for (const {name, type} of list) {
-      if (type !== 'file') { continue; }
-      if (!pattern.test(name)) { continue; }
-      const track = media.appendChild(document.createElement('track'));
-      track.label = RegExp.$1;
-      track.src = dirSrc + encodeURIComponent(name);
-      track.srclang = '';
-      if (first) {
-        track.default = true;
-        first = false;
-      }
-    }
-  }
-
-  // preload tracks parallelly
-  if (loadTracks) {
-    await Promise.all(medias.map(media => preloadTracks(media).catch ((ex) => {
-      console.error(ex);
-    })));
-  }
-
-  // preload metadata sequentially
-  if (loadMetadata) {
-    for (const media of medias) {
-      await preloadMetadata(media).catch ((ex) => {
-        console.error(ex);
-      });
-    }
-  }
-}
-
 function onToolsChange(event) {
   event.preventDefault();
   const command = event.target.value;
@@ -1183,7 +1183,7 @@ onToolsChange.commands = {
 
   'expand-all': async function expandAll() {
     for (const entry of document.querySelectorAll('main [data-entry]:not([hidden]):not([data-expanded])')) {
-      await expandTableRow(entry, true);
+      await explorer.expandTableRow(entry, true);
     }
   },
 
