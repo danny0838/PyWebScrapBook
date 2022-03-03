@@ -89,7 +89,7 @@ const explorer = {
 
     // clear selection
     for (const entry of dataTable.querySelectorAll('[data-entry]')) {
-      explorer.highlightElem(entry, false);
+      explorer.highlight(entry, false);
     }
 
     mainElem.textContent = '';
@@ -162,9 +162,13 @@ const explorer = {
     mainElem.appendChild(wrapper);
   },
 
-  highlightElem(elem, willHighlight) {
+  isHighlighted(elem) {
+    return elem.classList.contains("highlight");
+  },
+
+  highlight(elem, willHighlight) {
     if (typeof willHighlight === "undefined") {
-      willHighlight = !elem.classList.contains("highlight");
+      willHighlight = !this.isHighlighted(elem);
     }
 
     if (willHighlight) {
@@ -449,7 +453,7 @@ const explorer = {
     const func = (event) => {
       const elem = event.target.closest('[data-entry]');
       if (!elem) { return; }
-      this.highlightElem(elem);
+      this.highlight(elem);
     };
     Object.defineProperty(this, 'onMainClick', {value: func});
     return func;
@@ -1175,13 +1179,13 @@ onToolsChange.commands = {
 
   'select-all': function selectAll() {
     for (const entry of document.querySelectorAll('main [data-entry]:not([hidden])')) {
-      explorer.highlightElem(entry, true);
+      explorer.highlight(entry, true);
     }
   },
 
   'deselect-all': function deselectAll() {
     for (const entry of document.querySelectorAll('main [data-entry]')) {
-      explorer.highlightElem(entry, false);
+      explorer.highlight(entry, false);
     }
   },
 
@@ -1210,7 +1214,7 @@ onToolsChange.commands = {
       regex.lastIndex = 0;
       if (!regex.test(filename)) {
         entry.hidden = true;
-        explorer.highlightElem(entry, false);
+        explorer.highlight(entry, false);
       }
     }
   },
