@@ -920,6 +920,13 @@ Keybord shortcuts:
       const anchor = event.target.closest('a[href]');
       if (!anchor) { return; }
 
+      const entry = anchor.closest('[data-entry]');
+
+      // enter directly for directory
+      if (entry.dataset.type === 'dir') {
+        return;
+      }
+
       const index = this.anchors.indexOf(anchor);
 
       // not registered item
