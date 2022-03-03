@@ -1198,7 +1198,7 @@ function onCommandFocus(event) {
 
     case 1: {
       const elem = selectedEntries[0];
-      const isHtml = /\.(?:x?html?|xht)$/i.test(elem.querySelector('a[href]').href);
+      const isHtml = /\.(?:x?html?|xht)$/i.test(elem.dataset.path);
       cmdElem.querySelector('[value="mkdir"]').hidden = true;
       cmdElem.querySelector('[value="mkzip"]').hidden = true;
       cmdElem.querySelector('[value="mkfile"]').hidden = true;
@@ -1359,15 +1359,17 @@ onCommandRun.commands = {
     } else {
       const u = new URL(utils.getTargetUrl(location.href));
       u.searchParams.append('a', 'download');
-      for (const elem of selectedEntries) {
-        const entry = elem.querySelector('a[title]').getAttribute('title');
-        u.searchParams.append('i', entry);
+      for (const entry of selectedEntries) {
+        u.searchParams.append('i', entry.dataset.path);
       }
       location.href = u.href;
     }
   },
 
   async exec(selectedEntries) {
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    const oldPath = dir + selectedEntries[0].dataset.path;
     const target = selectedEntries[0].querySelector('a[href]').href;
     try {
       await utils.wsb({
@@ -1376,14 +1378,15 @@ onCommandRun.commands = {
         method: "GET",
       });
     } catch (ex) {
-      const base = document.querySelector('main').dataset.base;
-      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
       alert(`Unable to run "${oldPath}": ${ex.message}`);
     }
   },
 
   async browse(selectedEntries) {
-    const target = selectedEntries[0].querySelector('a[href]').href;
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    const oldPath = dir + selectedEntries[0].dataset.path;
+    const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
     try {
       await utils.wsb({
         url: target + '?a=browse&f=json',
@@ -1391,8 +1394,6 @@ onCommandRun.commands = {
         method: "GET",
       });
     } catch (ex) {
-      const base = document.querySelector('main').dataset.base;
-      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
       alert(`Unable to browse "${oldPath}": ${ex.message}`);
     }
   },
@@ -1456,12 +1457,18 @@ onCommandRun.commands = {
   },
 
   async edit(selectedEntries) {
-    const target = selectedEntries[0].querySelector('a[href]').href;
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    const oldPath = dir + selectedEntries[0].dataset.path;
+    const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
     location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
   },
 
   async editx(selectedEntries) {
-    const target = selectedEntries[0].querySelector('a[href]').href;
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    const oldPath = dir + selectedEntries[0].dataset.path;
+    const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
     location.href = target + '?a=editx&back=' + encodeURIComponent(location.href);
   },
 
@@ -1532,14 +1539,14 @@ onCommandRun.commands = {
     const base = document.querySelector('main').dataset.base;
     const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      const oldPath = dir + selectedEntries[0].dataset.path;
       const newPath = prompt('Input the new path:', oldPath);
       if (!newPath) {
         return;
       }
 
       try {
+        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
         await moveEntry(target, oldPath, newPath);
       } catch (ex) {
         alert(`Unable to move "${oldPath}" => "${newPath}": ${ex.message}`);
@@ -1554,9 +1561,9 @@ onCommandRun.commands = {
       newDir = newDir.replace(/\/+$/, '') + '/';
 
       const entries = Array.prototype.map.call(selectedEntries, entry => {
-        const target = entry.querySelector('a[href]').href;
-        const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
-        const newPath = newDir + oldPath.match(/[^\/]+\/?$/)[0];
+        const oldPath = dir + entry.dataset.path;
+        const newPath = newDir + oldPath.replace(/^.*\//, '');
+        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
         return {target, oldPath, newPath};
       });
       const errors = [];
@@ -1595,14 +1602,14 @@ onCommandRun.commands = {
     const base = document.querySelector('main').dataset.base;
     const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
-      const target = selectedEntries[0].querySelector('a[href]').href;
-      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      const oldPath = dir + selectedEntries[0].dataset.path;
       const newPath = prompt('Input the new path:', oldPath);
       if (!newPath) {
         return;
       }
 
       try {
+        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
         await copyEntry(target, oldPath, newPath);
       } catch (ex) {
         alert(`Unable to copy "${oldPath}" => "${newPath}": ${ex.message}`);
@@ -1617,9 +1624,9 @@ onCommandRun.commands = {
       newDir = newDir.replace(/\/+$/, '') + '/';
 
       const entries = Array.prototype.map.call(selectedEntries, entry => {
-        const target = entry.querySelector('a[href]').href;
-        const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
-        const newPath = newDir + oldPath.match(/[^\/]+\/?$/)[0];
+        const oldPath = dir + entry.dataset.path;
+        const newPath = newDir + oldPath.replace(/^.*\//, '');
+        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
         return {target, oldPath, newPath};
       });
       const errors = [];
@@ -1660,12 +1667,12 @@ onCommandRun.commands = {
       return pathname;
     };
 
-    const linkEntry = async (source, target, oldPath, newPath) => {
+    const linkEntry = async (target, oldPath, newPath) => {
       const url = getRelativePath(oldPath, newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
       const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
 
       const formData = new FormData();
-      formData.append('token', await utils.acquireToken(source));
+      formData.append('token', await utils.acquireToken(target));
       // encode the text as ISO-8859-1 (byte string) so that it's 100% recovered
       formData.append('text', unescape(encodeURIComponent(content)));
 
@@ -1680,18 +1687,16 @@ onCommandRun.commands = {
     const base = document.querySelector('main').dataset.base;
     const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
-      const source = selectedEntries[0].querySelector('a[href]').href;
-      const oldPath = decodeURIComponent(new URL(source).pathname).slice(base.length);
-      let newPath = oldPath.replace(/\/$/, '') + '.lnk.htm';
+      const oldPath = dir + selectedEntries[0].dataset.path;
+      let newPath = oldPath + '.lnk.htm';
       newPath = prompt('Input the new path:', newPath);
       if (!newPath) {
         return;
       }
 
-      const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-
       try {
-        await linkEntry(source, target, oldPath, newPath);
+        const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+        await linkEntry(target, oldPath, newPath);
       } catch (ex) {
         alert(`Unable to create link "${oldPath}" => "${newPath}": ${ex.message}`);
         return;
@@ -1704,16 +1709,15 @@ onCommandRun.commands = {
 
       newDir = newDir.replace(/\/+$/, '') + '/';
       const entries = Array.prototype.map.call(selectedEntries, entry => {
-        const source = entry.querySelector('a[href]').href;
-        const oldPath = decodeURIComponent(new URL(source).pathname).slice(base.length);
-        const newPath = newDir + oldPath.match(/[^\/]+\/?$/)[0].replace(/\/$/, '') + '.lnk.htm';
+        const oldPath = dir + entry.dataset.path;
+        const newPath = newDir + oldPath.replace(/^.*\//, '') + '.lnk.htm';
         const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        return {source, target, oldPath, newPath};
+        return {target, oldPath, newPath};
       }).sort(onCommandRun.sortEntries).reverse();
       const errors = [];
-      for (const {source, target, oldPath, newPath} of entries) {
+      for (const {target, oldPath, newPath} of entries) {
         try {
-          await linkEntry(source, target, oldPath, newPath);
+          await linkEntry(target, oldPath, newPath);
         } catch (ex) {
           errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
         }
@@ -1731,9 +1735,10 @@ onCommandRun.commands = {
 
   async delete(selectedEntries) {
     const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
     const entries = Array.prototype.map.call(selectedEntries, entry => {
-      const target = entry.querySelector('a[href]').href;
-      const oldPath = decodeURIComponent(new URL(target).pathname).slice(base.length);
+      const oldPath = dir + entry.dataset.path;
+      const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
       return {target, oldPath};
     });
     const errors = [];
