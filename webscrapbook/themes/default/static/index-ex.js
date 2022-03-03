@@ -30,8 +30,8 @@ const explorer = {
 
     const dir = mainElem.dataset.path;
 
-    /* handle .htd */
-    if (/\.(htd)\/?$/i.test(dir)) {
+    /* Auto view .htd (disable with any search or hash) */
+    if (/\.(htd)\/?$/i.test(dir) && !/[?#]/.test(location)) {
       // if there's index.html, redirect to view it
       const indexAnchor = mainElem.querySelector('[data-entry] a[href="index.html"]');
       if (indexAnchor) {
