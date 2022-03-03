@@ -45,10 +45,13 @@ const explorer = {
       return;
     }
 
+    const mode = sessionStorage.getItem('explorer') || localStorage.getItem('explorer') || 'default';
+    this.apply(mode, {persist: false});
+
     previewer.toggle(false);
   },
 
-  apply(mode) {
+  apply(mode, {persist = true} = {}) {
     const switcher = document.getElementById("explorer");
     if (!mode) {
       mode = switcher.value;
@@ -64,8 +67,14 @@ const explorer = {
         explorerGallery({loadMetadata: true});
         break;
       default:
+        mode = 'default';
         explorerDefault();
         break;
+    }
+
+    if (persist) {
+      sessionStorage.setItem('explorer', mode);
+      localStorage.setItem('explorer', mode);
     }
   },
 
