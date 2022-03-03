@@ -68,7 +68,7 @@ const explorer = {
         this.switchViewGallery({loadMetadata: true});
         break;
       default:
-        mode = 'default';
+        mode = 'table';
         this.switchViewTable();
         break;
     }
