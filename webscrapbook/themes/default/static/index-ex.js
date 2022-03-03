@@ -46,13 +46,13 @@ const explorer = {
     }
 
     const mode = sessionStorage.getItem('explorer') || localStorage.getItem('explorer') || 'default';
-    this.apply(mode, {persist: false});
+    this.switchView(mode, {persist: false});
 
     const preview = sessionStorage.getItem('previewer') || localStorage.getItem('previewer');
     previewer.toggle(!!preview, {persist: false});
   },
 
-  apply(mode, {persist = true} = {}) {
+  switchView(mode, {persist = true} = {}) {
     const switcher = document.getElementById("explorer");
     if (!mode) {
       mode = switcher.value;
@@ -62,14 +62,14 @@ const explorer = {
 
     switch (mode) {
       case "gallery":
-        this.explorerGallery();
+        this.switchViewGallery();
         break;
       case "gallery2":
-        this.explorerGallery({loadMetadata: true});
+        this.switchViewGallery({loadMetadata: true});
         break;
       default:
         mode = 'default';
-        this.explorerDefault();
+        this.switchViewTable();
         break;
     }
 
@@ -79,7 +79,7 @@ const explorer = {
     }
   },
 
-  explorerDefault() {
+  switchViewTable() {
     const mainElem = document.querySelector('main');
     const dataTable = dataTableHandler.elem;
 
@@ -96,7 +96,7 @@ const explorer = {
     mainElem.appendChild(dataTable);
   },
 
-  async explorerGallery(options = {}) {
+  async switchViewGallery(options = {}) {
     document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
 
     const mainElem = document.querySelector('main');
@@ -457,7 +457,7 @@ const explorer = {
 
   get onExplorerChange() {
     const func = (event) => {
-      this.apply();
+      this.switchView();
     };
     Object.defineProperty(this, 'onExplorerChange', {value: func});
     return func;
