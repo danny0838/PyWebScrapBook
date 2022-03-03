@@ -3,6 +3,10 @@
   display: none !important;
 }
 
+main [data-entry] {
+  cursor: cell;
+}
+
 main .highlight {
   outline: 1px solid #7DA2CE;
   background: #EBF4FD; /* fallback */

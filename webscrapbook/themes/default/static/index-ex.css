@@ -29,6 +29,11 @@
   max-height: 100%;
 }
 
+#img-gallery-view figure audio,
+#img-gallery-view figure video {
+  cursor: default;
+}
+
 #img-gallery-view figure a {
   display: block;
   margin: auto;
