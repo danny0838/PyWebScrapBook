@@ -903,7 +903,6 @@ async function explorerGallery(options = {}) {
 
     const anchor = figure.appendChild(document.createElement('a'));
     anchor.href = href;
-    anchor.target = "_blank";
     anchor.title = a.textContent;
     anchor.textContent = a.textContent;
   }
