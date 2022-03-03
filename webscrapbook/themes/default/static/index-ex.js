@@ -52,7 +52,7 @@ const explorer = {
     previewer.toggle(!!preview, {persist: false});
   },
 
-  switchView(mode, {persist = true} = {}) {
+  switchView(mode, {persist = true, syncTable = true} = {}) {
     const switcher = document.getElementById("explorer");
     if (!mode) {
       mode = switcher.value;
@@ -60,7 +60,9 @@ const explorer = {
       switcher.value = mode;
     }
 
-    this.syncTable();
+    if (syncTable) {
+      this.syncTable();
+    }
     switch (mode) {
       case "gallery":
         this.switchViewGallery();
@@ -86,15 +88,11 @@ const explorer = {
 
     if (mainElem.contains(dataTable)) { return; }
 
-    document.getElementById('tools').querySelector('[value="expand-all"]').disabled = false;
-
     mainElem.textContent = '';
     mainElem.appendChild(dataTable);
   },
 
   async switchViewGallery(options = {}) {
-    document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
-
     const mainElem = document.querySelector('main');
     const dataTable = dataTableHandler.elem;
 
@@ -422,7 +420,28 @@ const explorer = {
     }
   },
 
-  async expandTableRow(tr, deep = false) {
+  async expandDirs({recursively = true, includeHidden = false} = {}) {
+    const mode = document.getElementById("explorer").value;
+    const mainElem = document.querySelector('main');
+    const dataTable = dataTableHandler.elem;
+
+    // sync entry status if not table mode
+    if (mode !== 'table') {
+      this.syncTable();
+    }
+
+    for (const entry of dataTable.querySelectorAll('[data-entry]:not([data-expanded])')) {
+      if (!includeHidden && entry.hidden) { continue; }
+      await explorer.expandTableRow(entry, {recursively});
+    }
+
+    // reload if not table mode
+    if (mode !== 'table') {
+      await this.switchView(mode, {persist: false, syncTable: false});
+    }
+  },
+
+  async expandTableRow(tr, {recursively = false} = {}) {
     if (tr.dataset.type !== 'dir') { return; }
 
     const a = tr.querySelector('a[href]');
@@ -453,8 +472,8 @@ const explorer = {
 
         tr.parentNode.insertBefore(trNew, trNext);
 
-        if (deep) {
-          tasks.push(this.expandTableRow(trNew, deep));
+        if (recursively) {
+          tasks.push(this.expandTableRow(trNew, {recursively}));
         }
       }
       await Promise.all(tasks);
@@ -1204,9 +1223,7 @@ onToolsChange.commands = {
   },
 
   'expand-all': async function expandAll() {
-    for (const entry of document.querySelectorAll('main [data-entry]:not([hidden]):not([data-expanded])')) {
-      await explorer.expandTableRow(entry, true);
-    }
+    await explorer.expandDirs();
   },
 
   'filter': function filter() {
