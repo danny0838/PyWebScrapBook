@@ -40,7 +40,7 @@ const explorer = {
       }
 
       // otherwise, preview the first entry
-      previewer.toggle(true);
+      previewer.toggle(true, {persist: false});
       previewer.preview(0);
       return;
     }
@@ -48,7 +48,8 @@ const explorer = {
     const mode = sessionStorage.getItem('explorer') || localStorage.getItem('explorer') || 'default';
     this.apply(mode, {persist: false});
 
-    previewer.toggle(false);
+    const preview = sessionStorage.getItem('previewer') || localStorage.getItem('previewer');
+    previewer.toggle(!!preview, {persist: false});
   },
 
   apply(mode, {persist = true} = {}) {
@@ -269,7 +270,7 @@ Keybord shortcuts:
     return observer;
   },
 
-  toggle(willActive) {
+  toggle(willActive, {persist = true} = {}) {
     if (typeof willActive === 'undefined') {
       willActive = !this.active;
     }
@@ -288,6 +289,11 @@ Keybord shortcuts:
 
       document.querySelector('#tools option[value="preview-on"]').hidden = true;
       document.querySelector('#tools option[value="preview-off"]').hidden = false;
+
+      if (persist) {
+        sessionStorage.setItem('previewer', '1');
+        localStorage.setItem('previewer', '1');
+      }
     } else {
       this.unpreview();
       this.mutationObserver.disconnect();
@@ -297,6 +303,11 @@ Keybord shortcuts:
 
       document.querySelector('#tools option[value="preview-on"]').hidden = false;
       document.querySelector('#tools option[value="preview-off"]').hidden = true;
+
+      if (persist) {
+        sessionStorage.removeItem('previewer');
+        localStorage.removeItem('previewer');
+      }
     }
   },
 
