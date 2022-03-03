@@ -154,10 +154,7 @@ const explorer = {
         }
       }
 
-      const anchor = figure.appendChild(document.createElement('a'));
-      anchor.href = href;
-      anchor.title = a.textContent;
-      anchor.textContent = a.textContent;
+      const anchor = figure.appendChild(a.cloneNode(true));
     }
     this.preloadMediaMetadata(medias, options); // async
 
