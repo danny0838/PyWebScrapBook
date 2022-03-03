@@ -60,6 +60,7 @@ const explorer = {
       switcher.value = mode;
     }
 
+    this.syncTable();
     switch (mode) {
       case "gallery":
         this.switchViewGallery();
@@ -87,11 +88,6 @@ const explorer = {
 
     document.getElementById('tools').querySelector('[value="expand-all"]').disabled = false;
 
-    // clear selection
-    for (const entry of dataTable.querySelectorAll('[data-entry]')) {
-      explorer.highlight(entry, false);
-    }
-
     mainElem.textContent = '';
     mainElem.appendChild(dataTable);
   },
@@ -100,11 +96,12 @@ const explorer = {
     document.getElementById('tools').querySelector('[value="expand-all"]').disabled = true;
 
     const mainElem = document.querySelector('main');
+    const dataTable = dataTableHandler.elem;
 
     const wrapper = document.createElement('div');
     wrapper.id = "img-gallery-view";
 
-    const entries = await Promise.all(Array.prototype.map.call(mainElem.querySelectorAll('[data-entry]:not([hidden])'), async (entry) => {
+    const entries = await Promise.all(Array.prototype.map.call(dataTable.querySelectorAll('[data-entry]'), async (entry) => {
       const a = entry.querySelector('a[href]');
       if (a) { await this.loadAnchorMetadata(a); }
       return entry;
@@ -119,6 +116,8 @@ const explorer = {
       figure.dataset.entry = '';
       figure.dataset.type = entry.dataset.type;
       figure.dataset.path = entry.dataset.path;
+      figure.hidden = entry.hidden;
+      this.highlight(figure, this.isHighlighted(entry));
 
       const div = figure.appendChild(document.createElement('div'));
 
@@ -214,6 +213,21 @@ const explorer = {
     }
 
     return url;
+  },
+
+  syncTable() {
+    const mainElem = document.querySelector('main');
+    const dataTable = dataTableHandler.elem;
+
+    // nothing to sync
+    if (mainElem.contains(dataTable)) { return; }
+
+    for (const entry of mainElem.querySelectorAll('[data-entry]')) {
+      const tableEntry = dataTable.querySelector(`[data-entry][data-path="${CSS.escape(entry.dataset.path)}"]`);
+      tableEntry.hidden = entry.hidden;
+      this.highlight(tableEntry, this.isHighlighted(entry));
+      tableEntry.parentNode.appendChild(tableEntry);
+    }
   },
 
   async loadAnchorMetadata(anchor) {
