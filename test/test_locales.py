@@ -99,6 +99,12 @@ class TestI18N(unittest.TestCase):
         i18n = I18N(test_dirs, 'en')
         self.assertEqual(i18n('test'), 'Test host')
 
+    def test_call_args(self):
+        i18n = I18N(test_dirs, 'en')
+        self.assertEqual(i18n('test_args1', '111', '222', '333'), 'Test 111 222 333')
+        self.assertEqual(i18n('test_args2', '111', '222', '333'), 'Test 111 333 222')
+        self.assertEqual(i18n('test_args3', a='aaa', b='bbb', c='ccc'), 'Test aaa ccc bbb')
+
     def test_call_missing(self):
         i18n = I18N(test_dirs, 'zh_TW')
         self.assertEqual(i18n('MyMessage'), 'MyMessage')

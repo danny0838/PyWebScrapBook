@@ -73,7 +73,7 @@ class I18N:
                 else:
                     self.translators.append(mod)
 
-    def __call__(self, name):
+    def __call__(self, name, *args, **kwargs):
         """Search for a translate of the given message name.
 
         Fallbacks to non-variant, DEFAULT_LANG, and then the original name if
@@ -98,7 +98,7 @@ class I18N:
             except KeyError:
                 return name
 
-        return self._get(name)
+        return self._get(name, *args, **kwargs)
 
     def get(self, name, default=None):
         """Simulates dict.get()
@@ -107,10 +107,10 @@ class I18N:
         """
         return self.__call__(name)
 
-    def _get(self, name):
+    def _get(self, name, *args, **kwargs):
         for translator in self.translators:
             try:
-                return getattr(translator, name)
+                return getattr(translator, name).format(*args, **kwargs)
             except AttributeError:
                 pass
         return name
