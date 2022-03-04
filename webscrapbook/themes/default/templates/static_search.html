@@ -899,7 +899,7 @@ const searchEngine = {
 
   matchTextOr(rule, text) {
     text = text || "";
-    
+
     for (const key of rule.exclude) {
       if (key.test(text)) {
         return false;

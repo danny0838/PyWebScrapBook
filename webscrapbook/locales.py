@@ -106,7 +106,7 @@ class I18N:
         - default param is actually not used.
         """
         return self.__call__(name)
-            
+
     def _get(self, name):
         for translator in self.translators:
             try:

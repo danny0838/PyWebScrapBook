@@ -101,7 +101,7 @@ class CssRewriter:
                 return c
             if u:
                 return chr(int(u, 16))
-  
+
         def parse_url(text, callback):
             def parse_url_sub(m):
                 pre, url, post = m.groups()
