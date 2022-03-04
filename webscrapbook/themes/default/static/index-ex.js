@@ -52,7 +52,7 @@ const explorer = {
     previewer.toggle(!!preview, {persist: false});
   },
 
-  switchView(mode = null, {persist = true, syncTable = true} = {}) {
+  async switchView(mode = null, {persist = true, syncTable = true} = {}) {
     const switcher = document.getElementById("explorer");
     if (mode === null) {
       mode = switcher.value;
@@ -63,14 +63,14 @@ const explorer = {
     }
     switch (mode) {
       case "gallery":
-        this.switchViewGallery();
+        await this.switchViewGallery();
         break;
       case "gallery2":
-        this.switchViewGallery({loadMetadata: true});
+        await this.switchViewGallery({loadMetadata: true});
         break;
       default:
         mode = 'table';
-        this.switchViewTable();
+        await this.switchViewTable();
         break;
     }
 
