@@ -788,7 +788,7 @@ def format_filesize(bytes, si=False):
     e = math.floor(math.log(max(1, bytes)) / math.log(thresh))
     e = min(e, len(units) - 1)
     n = bytes / thresh ** e
-    tpl = '{:.1f} {}' if (e >=1 and n < 10) else '{:.0f} {}'
+    tpl = '{:.1f}\xA0{}' if (e >=1 and n < 10) else '{:.0f}\xA0{}'
     return tpl.format(n, units[e])
 
 
