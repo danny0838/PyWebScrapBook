@@ -115,7 +115,7 @@ const explorer = {
       figure.dataset.type = entry.dataset.type;
       figure.dataset.path = entry.dataset.path;
       figure.hidden = entry.hidden;
-      this.highlight(figure, this.isHighlighted(entry));
+      this.highlight(figure, this.isHighlighted(entry), {updateSelectionHint: false});
 
       const div = figure.appendChild(document.createElement('div'));
 
@@ -163,7 +163,7 @@ const explorer = {
     return elem.classList.contains("highlight");
   },
 
-  highlight(elem, willHighlight) {
+  highlight(elem, willHighlight, {updateSelectionHint = true} = {}) {
     if (typeof willHighlight === "undefined") {
       willHighlight = !this.isHighlighted(elem);
     }
@@ -172,6 +172,12 @@ const explorer = {
       elem.classList.add("highlight");
     } else {
       elem.classList.remove("highlight");
+    }
+
+    if (updateSelectionHint) {
+      const selections = document.querySelectorAll('main [data-entry].highlight').length;
+      const labelElem = document.getElementById('panel-selections');
+      labelElem.textContent = selections > 0 ? `${selections} selected` : '';
     }
   },
 
@@ -223,7 +229,7 @@ const explorer = {
     for (const entry of mainElem.querySelectorAll('[data-entry]')) {
       const tableEntry = dataTable.querySelector(`[data-entry][data-path="${CSS.escape(entry.dataset.path)}"]`);
       tableEntry.hidden = entry.hidden;
-      this.highlight(tableEntry, this.isHighlighted(entry));
+      this.highlight(tableEntry, this.isHighlighted(entry), {updateSelectionHint: false});
       tableEntry.parentNode.appendChild(tableEntry);
     }
   },
