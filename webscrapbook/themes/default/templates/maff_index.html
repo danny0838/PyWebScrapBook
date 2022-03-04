@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Pages of {{ path }}{% endblock %}
 {% block content %}
-<h1 id="header">Pages of {{ path }}</h1>
+<h1 id="header">{{ path }}</h1>
 <ul>
   {%- set root = os.path.basename(path) %}
   {%- for page in pages %}
