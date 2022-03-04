@@ -52,12 +52,10 @@ const explorer = {
     previewer.toggle(!!preview, {persist: false});
   },
 
-  switchView(mode, {persist = true, syncTable = true} = {}) {
+  switchView(mode = null, {persist = true, syncTable = true} = {}) {
     const switcher = document.getElementById("explorer");
-    if (!mode) {
+    if (mode === null) {
       mode = switcher.value;
-    } else {
-      switcher.value = mode;
     }
 
     if (syncTable) {
@@ -74,6 +72,10 @@ const explorer = {
         mode = 'table';
         this.switchViewTable();
         break;
+    }
+
+    if (switcher.value !== mode) {
+      switcher.value = mode;
     }
 
     if (persist) {
