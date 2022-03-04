@@ -1,4 +1,80 @@
 bidi_dir = 'ltr'
+html_lang = 'zh'
+
+data_table_header_directory = '資料夾'
+data_table_header_name = '檔名'
+data_table_header_last_modified = '最後修改'
+data_table_header_size = '大小'
+
+explorer_table = '表格檢視'
+explorer_gallery = '圖示檢視'
+explorer_gallery2 = '圖示檢視 (+多媒體)'
+
+tools_preview_on = '啟用預覽'
+tools_preview_off = '停用預覽'
+tools_select_all = '全選'
+tools_deselect_all = '取消全選'
+tools_expand_all = '展開所有項目'
+tools_filter = '篩選'
+tools_filter_clear = '清除篩選'
+
+command_mkdir = '新資料夾'
+command_mkzip = '新壓縮檔'
+command_mkfile = '新檔案'
+command_upload = '上傳'
+command_uploaddir = '上傳資料夾'
+command_source = '檢視原始碼'
+command_download = '下載'
+command_exec = '本地執行'
+command_browse = '本地檢視'
+command_edit = '編輯'
+command_editx = '編輯頁面'
+command_move = '移動'
+command_copy = '複製'
+command_link = '建立超連結'
+command_delete = '刪除'
+
+command_move_prompt = '移動至此路徑或資料夾:'
+command_move_prompt_multi = '移動至此資料夾:'
+command_copy_prompt = '複製至此路徑或資料夾:'
+command_copy_prompt_multi = '複製至此資料夾:'
+command_link_prompt = '建立超連結於此路徑或資料夾:'
+command_link_prompt_multi = '建立超連結於此資料夾:'
+
+label_selected = '已選取 %count% 項'
+
+previewer_toolbar_title = """\
+鍵盤快捷鍵:
+• [Esc]: 關閉預覽。
+• [I] 或 [Space]: 切換資訊欄。
+• [Enter]: 在新分頁開啟。
+• [PageUp] 或 [Alt+←] 或 [←]: 顯示上一項。
+• [PageDown] 或 [Alt+→] 或 [→]: 顯示下一項。
+• [Home]: 顯示第一項。
+• [End]: 顯示最後一項。
+• [+] 或 [Alt+↑] 或 [↑]: 放大。
+• [-] 或 [Alt+↓] 或 [↓]: 縮小。
+• [Ctrl+0]: 縮放至符合可視範圍。
+• [Ctrl+1]: 切換縮放為圖片大小與最後縮放大小。
+• [Ctrl+←] 或 [Shift+←]: 左移。
+• [Ctrl+→] 或 [Shift+→]: 右移。
+• [Ctrl+↑] 或 [Shift+↑]: 上移。
+• [Ctrl+↓] 或 [Shift+↓]: 下移。
+"""
+previewer_button_previous = '上一項'
+previewer_button_next = '下一項'
+previewer_button_infobar = '切換資訊欄'
+previewer_button_close = '關閉預覽'
+
+edit_title = '編輯 {path}'
+edit_error_no_javascript = '啟用 JavaScript 或升級瀏覽器以支援 JavaScript，此 HTML 編輯器才能正常運作。'
+edit_warning_encoding = '此檔案以 {encoding} 解碼，儲存時將編碼為 UTF-8。'
+
+markdown_title = '頁面 {path}'
+maff_index_title = '頁面於 {path}'
+
+button_save = '儲存'
+button_exit = '離開'
 
 
 #########################################################################

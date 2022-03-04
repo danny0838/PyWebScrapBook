@@ -45,6 +45,13 @@ const utils = {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   },
 
+  lang(key, args) {
+    const str = LANG[key];
+    if (typeof str !== 'string') { return key; }
+    const a = Object.assign({'': '%'}, args);
+    return str.replace(/%(\w*)%/g, (_, key) => a[key] || '');
+  },
+
   async wait(ms) {
     await new Promise(r => setTimeout(r, ms));
   },

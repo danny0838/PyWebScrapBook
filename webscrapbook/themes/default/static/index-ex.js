@@ -179,7 +179,7 @@ const explorer = {
     if (updateSelectionHint) {
       const selections = document.querySelectorAll('main [data-entry].highlight').length;
       const labelElem = document.getElementById('panel-selections');
-      labelElem.textContent = selections > 0 ? `${selections} selected` : '';
+      labelElem.textContent = selections > 0 ? utils.lang('label_selected', {count: selections}) : '';
     }
   },
 
@@ -529,28 +529,11 @@ const previewer = {
 
     const toolbar = wrapper.appendChild(document.createElement('div'));
     toolbar.classList.add('previewer-toolbar');
-    toolbar.title = `\
-Keybord shortcuts:
-• [Esc]: close preview.
-• [I] or [Space]: toggle infobar.
-• [Enter]: open in new tab.
-• [PageUp] or [Alt+←] or [←]: show previous entry.
-• [PageDown] or [Alt+→] or [→]: show next entry.
-• [Home]: show first entry.
-• [End]: show last entry.
-• [+] or [Alt+↑] or [↑]: zoom in.
-• [-] or [Alt+↓] or [↓]: zoom out.
-• [Ctrl+0]: zoom fit viewport.
-• [Ctrl+1]: zoom between natural size and last zoom size.
-• [Ctrl+←] or [Shift+←]: move left.
-• [Ctrl+→] or [Shift+→]: move right.
-• [Ctrl+↑] or [Shift+↑]: move up.
-• [Ctrl+↓] or [Shift+↓]: move down.
-`;
+    toolbar.title = utils.lang('previewer_toolbar_title');
 
     const toolbarPrev = toolbar.appendChild(document.createElement('button'));
     toolbarPrev.textContent = '\u23EA';
-    toolbarPrev.title = 'Previous';
+    toolbarPrev.title = utils.lang('previewer_button_previous');
     toolbarPrev.type = 'button';
     toolbarPrev.addEventListener('click', (event) => {
       this.prev();
@@ -558,7 +541,7 @@ Keybord shortcuts:
 
     const toolbarNext = toolbar.appendChild(document.createElement('button'));
     toolbarNext.textContent = '\u23E9';
-    toolbarNext.title = 'Next';
+    toolbarNext.title = utils.lang('previewer_button_next');
     toolbarNext.type = 'button';
     toolbarNext.addEventListener('click', (event) => {
       this.next();
@@ -566,7 +549,7 @@ Keybord shortcuts:
 
     const toolbarInfo = toolbar.appendChild(document.createElement('button'));
     toolbarInfo.textContent = '\u24D8';
-    toolbarInfo.title = 'Toggle infobar';
+    toolbarInfo.title = utils.lang('previewer_button_infobar');
     toolbarInfo.type = 'button';
     toolbarInfo.addEventListener('click', (event) => {
       this.toggleInfobar();
@@ -574,7 +557,7 @@ Keybord shortcuts:
 
     const toolbarClose = toolbar.appendChild(document.createElement('button'));
     toolbarClose.textContent = '\u2715';
-    toolbarClose.title = 'Close preview';
+    toolbarClose.title = utils.lang('previewer_button_close');
     toolbarClose.type = 'button';
     toolbarClose.addEventListener('click', (event) => {
       this.unpreview();
@@ -1634,7 +1617,7 @@ onCommandRun.commands = {
     const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
       const oldPath = dir + selectedEntries[0].dataset.path;
-      const newPath = prompt('Input the new path:', oldPath);
+      const newPath = prompt(utils.lang('command_move_prompt'), oldPath);
       if (!newPath) {
         return;
       }
@@ -1646,7 +1629,7 @@ onCommandRun.commands = {
         return;
       }
     } else {
-      let newDir = prompt('Move to the path:', dir);
+      let newDir = prompt(utils.lang('command_move_prompt_multi'), dir);
       if (!newDir) {
         return;
       }
@@ -1696,7 +1679,7 @@ onCommandRun.commands = {
     const dir = document.querySelector('main').dataset.path;
     if (selectedEntries.length === 1) {
       const oldPath = dir + selectedEntries[0].dataset.path;
-      const newPath = prompt('Input the new path:', oldPath);
+      const newPath = prompt(utils.lang('command_copy_prompt'), oldPath);
       if (!newPath) {
         return;
       }
@@ -1708,7 +1691,7 @@ onCommandRun.commands = {
         return;
       }
     } else {
-      let newDir = prompt('Copy to the path:', dir);
+      let newDir = prompt(utils.lang('command_copy_prompt_multi'), dir);
       if (!newDir) {
         return;
       }
@@ -1792,7 +1775,7 @@ onCommandRun.commands = {
     if (selectedEntries.length === 1) {
       const oldPath = dir + selectedEntries[0].dataset.path;
       let newPath = oldPath + '.lnk.htm';
-      newPath = prompt('Input the new path:', newPath);
+      newPath = prompt(utils.lang('command_link_prompt'), newPath);
       if (!newPath) {
         return;
       }
@@ -1815,7 +1798,7 @@ onCommandRun.commands = {
         return;
       }
     } else {
-      let newDir = prompt('Create links at the path:', dir);
+      let newDir = prompt(utils.lang('command_link_prompt_multi'), dir);
       if (!newDir) {
         return;
       }

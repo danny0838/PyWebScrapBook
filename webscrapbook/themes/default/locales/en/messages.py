@@ -1,4 +1,80 @@
 bidi_dir = 'ltr'
+html_lang = 'en'
+
+data_table_header_directory = 'Directory'
+data_table_header_name = 'Name'
+data_table_header_last_modified = 'Last modified'
+data_table_header_size = 'Size'
+
+explorer_table = 'Table view'
+explorer_gallery = 'Gallery view'
+explorer_gallery2 = 'Gallery view (+media)'
+
+tools_preview_on = 'Enable preview'
+tools_preview_off = 'Disable preview'
+tools_select_all = 'Select all'
+tools_deselect_all = 'Deselect all'
+tools_expand_all = 'Expand all'
+tools_filter = 'Filter'
+tools_filter_clear = 'Clear filter'
+
+command_mkdir = 'New folder'
+command_mkzip = 'New zip'
+command_mkfile = 'New file'
+command_upload = 'Upload'
+command_uploaddir = 'Upload folder'
+command_source = 'View source'
+command_download = 'Download'
+command_exec = 'Run natively'
+command_browse = 'Browse natively'
+command_edit = 'Edit'
+command_editx = 'Edit page'
+command_move = 'Move'
+command_copy = 'Copy'
+command_link = 'Create link'
+command_delete = 'Delete'
+
+command_move_prompt = 'Move to the path or folder:'
+command_move_prompt_multi = 'Move to the folder:'
+command_copy_prompt = 'Copy to the path or folder:'
+command_copy_prompt_multi = 'Copy to the folder:'
+command_link_prompt = 'Create a link at the path or under the folder:'
+command_link_prompt_multi = 'Create links under the folder:'
+
+label_selected = '%count% selected'
+
+previewer_toolbar_title = """\
+Keybord shortcuts:
+• [Esc]: close preview.
+• [I] or [Space]: toggle infobar.
+• [Enter]: open in new tab.
+• [PageUp] or [Alt+←] or [←]: show previous entry.
+• [PageDown] or [Alt+→] or [→]: show next entry.
+• [Home]: show first entry.
+• [End]: show last entry.
+• [+] or [Alt+↑] or [↑]: zoom in.
+• [-] or [Alt+↓] or [↓]: zoom out.
+• [Ctrl+0]: zoom fit viewport.
+• [Ctrl+1]: zoom between natural size and last zoom size.
+• [Ctrl+←] or [Shift+←]: move left.
+• [Ctrl+→] or [Shift+→]: move right.
+• [Ctrl+↑] or [Shift+↑]: move up.
+• [Ctrl+↓] or [Shift+↓]: move down.
+"""
+previewer_button_previous = 'Previous'
+previewer_button_next = 'Next'
+previewer_button_infobar = 'Toggle infobar'
+previewer_button_close = 'Close preview'
+
+edit_title = 'Edit {path}'
+edit_error_no_javascript = 'Enable JavaScript or upgrade your browser to support JavaScript, so that the HTML editor can work.'
+edit_warning_encoding = 'This file is decoded as {encoding}, and will be encoded as UTF-8 when saved.'
+
+markdown_title = 'Page {path}'
+maff_index_title = 'Pages of {path}'
+
+button_save = 'SAVE'
+button_exit = 'EXIT'
 
 
 #########################################################################

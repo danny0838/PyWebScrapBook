@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Page {{ path }}{% endblock %}
+{% block title %}{{ i18n('markdown_title', path=path) }}{% endblock %}
 {% block content %}
 <header>
 <h1 id="header" class="breadcrumbs">

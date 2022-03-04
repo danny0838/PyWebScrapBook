@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit {{ path }}{% endblock %}
+{% block title %}{{ i18n('edit_title', path=path) }}{% endblock %}
 {% block links %}
 <link rel="stylesheet" type="text/css" href="{{ static_url('edit.css') }}">
 {%- endblock %}
@@ -10,18 +10,18 @@
 {% block content %}
 <div id="pinned">
 <noscript>
-<div class="error">Enable JavaScript or upgrade your browser to support JavaScript, so that the HTML editor can work.</div>
+<div class="error">{{ i18n('edit_error_no_javascript') }}</div>
 </noscript>
 {%- if encoding %}
-<div class="warning">This file is decoded as {{ encoding }}, and will be encoded as UTF-8 when saved.</div>
+<div class="warning">{{ i18n('edit_warning_encoding', encoding=encoding) }}</div>
 {%- endif %}
 </div>
 <div id="wrapper">
 <textarea id="editor">{{ body }}</textarea>
 <div id="toolbar">
   <div>
-    <input id="btn-save" type="button" value="SAVE" autocomplete="off">
-    <input id="btn-exit" type="button" value="EXIT" autocomplete="off">
+    <input id="btn-save" type="button" value="{{ i18n('button_save') }}" autocomplete="off">
+    <input id="btn-exit" type="button" value="{{ i18n('button_exit') }}" autocomplete="off">
   </div>
 </div>
 </div>

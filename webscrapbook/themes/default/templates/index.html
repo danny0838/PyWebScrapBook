@@ -5,6 +5,22 @@
 <link rel="stylesheet" type="text/css" href="{{ static_url('index-ex.css') }}">
 {%- endblock %}
 {% block scripts %}
+<script>
+const LANG = {
+  label_selected: {{ i18n('label_selected') | tojson }},
+  command_move_prompt: {{ i18n('command_move_prompt') | tojson }},
+  command_move_prompt_multi: {{ i18n('command_move_prompt_multi') | tojson }},
+  command_copy_prompt: {{ i18n('command_copy_prompt') | tojson }},
+  command_copy_prompt_multi: {{ i18n('command_copy_prompt_multi') | tojson }},
+  command_link_prompt: {{ i18n('command_link_prompt') | tojson }},
+  command_link_prompt_multi: {{ i18n('command_link_prompt_multi') | tojson }},
+  previewer_toolbar_title: {{ i18n('previewer_toolbar_title') | tojson }},
+  previewer_button_previous: {{ i18n('previewer_button_previous') | tojson }},
+  previewer_button_next: {{ i18n('previewer_button_next') | tojson }},
+  previewer_button_infobar: {{ i18n('previewer_button_infobar') | tojson }},
+  previewer_button_close: {{ i18n('previewer_button_close') | tojson }},
+};
+</script>
 <script src="{{ static_url('common.js') }}"></script>
 <script src="{{ static_url('index.js') }}"></script>
 <script src="{{ static_url('index-ex.js') }}"></script>
@@ -24,7 +40,7 @@
 <main data-sitename="{{ sitename }}" data-base="{{ base }}" data-path="{{ path }}">
 <table id="data-table">
 <thead>
-  <tr><th data-sort-type="string_ci"><a hidden>Directory</a></th><th data-sort-type="string_ci"><a>Name</a></th><th class="detail" data-sort-type="float"><a>Last modified</a></th><th class="detail" data-sort-type="integer"><a>Size</a></th></tr>
+  <tr><th data-sort-type="string_ci"><a hidden>{{ i18n('data_table_header_directory') }}</a></th><th data-sort-type="string_ci"><a>{{ i18n('data_table_header_name') }}</a></th><th class="detail" data-sort-type="float"><a>{{ i18n('data_table_header_last_modified') }}</a></th><th class="detail" data-sort-type="integer"><a>{{ i18n('data_table_header_size') }}</a></th></tr>
 </thead>
 <tbody>
 {%- for info in subentries %}
@@ -43,37 +59,37 @@
 <footer>
 <form id="panel" autocomplete="off" hidden>
   <select id="explorer">
-    <option value="table" selected>Table view</option>
-    <option value="gallery">Gallery view</option>
-    <option value="gallery2">Gallery view (+media)</option>
+    <option value="table" selected>{{ i18n('explorer_table') }}</option>
+    <option value="gallery">{{ i18n('explorer_gallery') }}</option>
+    <option value="gallery2">{{ i18n('explorer_gallery2') }}</option>
   </select>
   <select id="tools">
     <option value="" selected>...</option>
-    <option value="preview-on">Enable preview</option>
-    <option value="preview-off">Disable preview</option>
-    <option value="select-all">Select all</option>
-    <option value="deselect-all">Deselect all</option>
-    <option value="expand-all">Expand all</option>
-    <option value="filter">Filter</option>
-    <option value="filter-clear">Clear filter</option>
+    <option value="preview-on">{{ i18n('tools_preview_on') }}</option>
+    <option value="preview-off">{{ i18n('tools_preview_off') }}</option>
+    <option value="select-all">{{ i18n('tools_select_all') }}</option>
+    <option value="deselect-all">{{ i18n('tools_deselect_all') }}</option>
+    <option value="expand-all">{{ i18n('tools_expand_all') }}</option>
+    <option value="filter">{{ i18n('tools_filter') }}</option>
+    <option value="filter-clear">{{ i18n('tools_filter_clear') }}</option>
   </select>
   <select id="command">
     <option value="" selected>...</option>
-    <option value="mkdir" hidden>New folder</option>
-    <option value="mkzip" hidden>New zip</option>
-    <option value="mkfile" hidden>New file</option>
-    <option value="upload" hidden>Upload</option>
-    <option value="uploaddir" hidden>Upload folder</option>
-    <option value="source" hidden>View source</option>
-    <option value="download" hidden>Download</option>
-    <option value="exec" hidden{{ '' if is_local else ' disabled' }}>Run natively</option>
-    <option value="browse" hidden{{ '' if is_local else ' disabled' }}>Browse natively</option>
-    <option value="edit" hidden>Edit</option>
-    <option value="editx" hidden>Edit page</option>
-    <option value="move" hidden>Move</option>
-    <option value="copy" hidden>Copy</option>
-    <option value="link" hidden>Create link</option>
-    <option value="delete" hidden>Delete</option>
+    <option value="mkdir" hidden>{{ i18n('command_mkdir') }}</option>
+    <option value="mkzip" hidden>{{ i18n('command_mkzip') }}</option>
+    <option value="mkfile" hidden>{{ i18n('command_mkfile') }}</option>
+    <option value="upload" hidden>{{ i18n('command_upload') }}</option>
+    <option value="uploaddir" hidden>{{ i18n('command_uploaddir') }}</option>
+    <option value="source" hidden>{{ i18n('command_source') }}</option>
+    <option value="download" hidden>{{ i18n('command_download') }}</option>
+    <option value="exec" hidden{{ '' if is_local else ' disabled' }}>{{ i18n('command_exec') }}</option>
+    <option value="browse" hidden{{ '' if is_local else ' disabled' }}>{{ i18n('command_browse') }}</option>
+    <option value="edit" hidden>{{ i18n('command_edit') }}</option>
+    <option value="editx" hidden>{{ i18n('command_editx') }}</option>
+    <option value="move" hidden>{{ i18n('command_move') }}</option>
+    <option value="copy" hidden>{{ i18n('command_copy') }}</option>
+    <option value="link" hidden>{{ i18n('command_link') }}</option>
+    <option value="delete" hidden>{{ i18n('command_delete') }}</option>
   </select>
   <label id="panel-selections"></label>
   <input type="file" id="upload-file-selector" multiple hidden>

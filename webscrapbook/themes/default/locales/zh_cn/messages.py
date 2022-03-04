@@ -1,4 +1,80 @@
 bidi_dir = 'ltr'
+html_lang = 'zh-Hans-CN'
+
+data_table_header_directory = '文件夹'
+data_table_header_name = '文件名'
+data_table_header_last_modified = '最后修改'
+data_table_header_size = '大小'
+
+explorer_table = '表格检视'
+explorer_gallery = '图示检视'
+explorer_gallery2 = '图示检视 (+多媒体)'
+
+tools_preview_on = '启用预览'
+tools_preview_off = '停用预览'
+tools_select_all = '全选'
+tools_deselect_all = '取消全选'
+tools_expand_all = '展开所有项目'
+tools_filter = '筛选'
+tools_filter_clear = '清除筛选'
+
+command_mkdir = '新文件夹'
+command_mkzip = '新压缩文件'
+command_mkfile = '新文件'
+command_upload = '上传'
+command_uploaddir = '上传文件夹'
+command_source = '检视源代码'
+command_download = '下载'
+command_exec = '本地执行'
+command_browse = '本地检视'
+command_edit = '编辑'
+command_editx = '编辑页面'
+command_move = '移动'
+command_copy = '复制'
+command_link = '建立链接'
+command_delete = '删除'
+
+command_move_prompt = '移动至此路径或文件夹:'
+command_move_prompt_multi = '移动至此文件夹:'
+command_copy_prompt = '复制至此路径或文件夹:'
+command_copy_prompt_multi = '复制至此文件夹:'
+command_link_prompt = '建立链接于此路径或文件夹:'
+command_link_prompt_multi = '建立链接于此文件夹:'
+
+label_selected = '已选择 %count% 项'
+
+previewer_toolbar_title = """\
+键盘快捷键:
+• [Esc]: 关闭预览。
+• [I] 或 [Space]: 切换信息栏。
+• [Enter]: 在新分页开启。
+• [PageUp] 或 [Alt+←] 或 [←]: 显示上一项。
+• [PageDown] 或 [Alt+→] 或 [→]: 显示下一项。
+• [Home]: 显示第一项。
+• [End]: 显示最后一项。
+• [+] 或 [Alt+↑] 或 [↑]: 放大。
+• [-] 或 [Alt+↓] 或 [↓]: 缩小。
+• [Ctrl+0]: 缩放至符合可视范围。
+• [Ctrl+1]: 切换缩放为图片大小与最后缩放大小。
+• [Ctrl+←] 或 [Shift+←]: 左移。
+• [Ctrl+→] 或 [Shift+→]: 右移。
+• [Ctrl+↑] 或 [Shift+↑]: 上移。
+• [Ctrl+↓] 或 [Shift+↓]: 下移。
+"""
+previewer_button_previous = '上一项'
+previewer_button_next = '下一项'
+previewer_button_infobar = '切换信息栏'
+previewer_button_close = '关闭预览'
+
+edit_title = '编辑 {path}'
+edit_error_no_javascript = '启用 JavaScript 或升级浏览器以支援 JavaScript，此 HTML 编辑器才能正常运作。'
+edit_warning_encoding = '此文件以 {encoding} 解码，保存时将编码为 UTF-8。'
+
+markdown_title = '页面 {path}'
+maff_index_title = '页面于 {path}'
+
+button_save = '保存'
+button_exit = '离开'
 
 
 #########################################################################
