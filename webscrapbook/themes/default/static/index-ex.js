@@ -1616,7 +1616,8 @@ onCommandRun.commands = {
   },
 
   async move(selectedEntries) {
-    const moveEntry = async (target, oldPath, newPath) => {
+    const moveEntry = async (oldPath, newPath) => {
+      const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
       formData.append('target', newPath);
@@ -1639,8 +1640,7 @@ onCommandRun.commands = {
       }
 
       try {
-        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        await moveEntry(target, oldPath, newPath);
+        await moveEntry(oldPath, newPath);
       } catch (ex) {
         alert(`Unable to move "${oldPath}" => "${newPath}": ${ex.message}`);
         return;
@@ -1656,13 +1656,12 @@ onCommandRun.commands = {
       const entries = Array.prototype.map.call(selectedEntries, entry => {
         const oldPath = dir + entry.dataset.path;
         const newPath = newDir + oldPath.replace(/^.*\//, '');
-        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        return {target, oldPath, newPath};
+        return {oldPath, newPath};
       });
       const errors = [];
-      for (const {target, oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
+      for (const {oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          await moveEntry(target, oldPath, newPath);
+          await moveEntry(oldPath, newPath);
         } catch (ex) {
           errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
         }
@@ -1679,7 +1678,8 @@ onCommandRun.commands = {
   },
 
   async copy(selectedEntries) {
-    const copyEntry = async (target, oldPath, newPath) => {
+    const copyEntry = async (oldPath, newPath) => {
+      const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
       formData.append('target', newPath);
@@ -1702,8 +1702,7 @@ onCommandRun.commands = {
       }
 
       try {
-        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        await copyEntry(target, oldPath, newPath);
+        await copyEntry(oldPath, newPath);
       } catch (ex) {
         alert(`Unable to copy "${oldPath}" => "${newPath}": ${ex.message}`);
         return;
@@ -1719,13 +1718,12 @@ onCommandRun.commands = {
       const entries = Array.prototype.map.call(selectedEntries, entry => {
         const oldPath = dir + entry.dataset.path;
         const newPath = newDir + oldPath.replace(/^.*\//, '');
-        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        return {target, oldPath, newPath};
+        return {oldPath, newPath};
       });
       const errors = [];
-      for (const {target, oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
+      for (const {oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          await copyEntry(target, oldPath, newPath);
+          await copyEntry(oldPath, newPath);
         } catch (ex) {
           errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
         }
@@ -1760,7 +1758,8 @@ onCommandRun.commands = {
       return pathname;
     };
 
-    const linkEntry = async (target, oldPath, newPath) => {
+    const linkEntry = async (oldPath, newPath) => {
+      const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
       const url = getRelativePath(oldPath, newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
       const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
 
@@ -1788,8 +1787,7 @@ onCommandRun.commands = {
       }
 
       try {
-        const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        await linkEntry(target, oldPath, newPath);
+        await linkEntry(oldPath, newPath);
       } catch (ex) {
         alert(`Unable to create link "${oldPath}" => "${newPath}": ${ex.message}`);
         return;
@@ -1804,13 +1802,12 @@ onCommandRun.commands = {
       const entries = Array.prototype.map.call(selectedEntries, entry => {
         const oldPath = dir + entry.dataset.path;
         const newPath = newDir + oldPath.replace(/^.*\//, '') + '.lnk.htm';
-        const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
-        return {target, oldPath, newPath};
-      }).sort(onCommandRun.sortEntries).reverse();
+        return {oldPath, newPath};
+      });
       const errors = [];
-      for (const {target, oldPath, newPath} of entries) {
+      for (const {oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          await linkEntry(target, oldPath, newPath);
+          await linkEntry(oldPath, newPath);
         } catch (ex) {
           errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
         }
@@ -1831,12 +1828,12 @@ onCommandRun.commands = {
     const dir = document.querySelector('main').dataset.path;
     const entries = Array.prototype.map.call(selectedEntries, entry => {
       const oldPath = dir + entry.dataset.path;
-      const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
-      return {target, oldPath};
+      return {oldPath};
     });
     const errors = [];
-    for (const {target, oldPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
+    for (const {oldPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
       try {
+        const target = location.origin + (base + oldPath).split('/').map(x => encodeURIComponent(x)).join('/');
         const formData = new FormData();
         formData.append('token', await utils.acquireToken(target));
 
