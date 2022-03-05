@@ -6,10 +6,12 @@ data_table_header_name = '檔名'
 data_table_header_last_modified = '最後修改'
 data_table_header_size = '大小'
 
+explorer_tooltip = '檢視模式 [{}]'
 explorer_table = '表格檢視'
 explorer_gallery = '圖示檢視'
 explorer_gallery2 = '圖示檢視 (+多媒體)'
 
+tools_tooltip = '工具 [{}]'
 tools_preview_on = '啟用預覽'
 tools_preview_off = '停用預覽'
 tools_select_all = '全選'
@@ -18,6 +20,7 @@ tools_expand_all = '展開所有項目'
 tools_filter = '篩選'
 tools_filter_clear = '清除篩選'
 
+command_tooltip = '命令 [{}]'
 command_mkdir = '新資料夾'
 command_mkzip = '新壓縮檔'
 command_mkfile = '新檔案'
@@ -74,7 +77,9 @@ markdown_title = '頁面 {path}'
 maff_index_title = '頁面於 {path}'
 
 button_save = '儲存'
+button_save_tooltip = '儲存 [{}]'
 button_exit = '離開'
+button_exit_tooltip = '離開 [{}]'
 
 
 #########################################################################

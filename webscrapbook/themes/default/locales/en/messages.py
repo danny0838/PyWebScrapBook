@@ -6,10 +6,12 @@ data_table_header_name = 'Name'
 data_table_header_last_modified = 'Last modified'
 data_table_header_size = 'Size'
 
+explorer_tooltip = 'View mode [{}]'
 explorer_table = 'Table view'
 explorer_gallery = 'Gallery view'
 explorer_gallery2 = 'Gallery view (+media)'
 
+tools_tooltip = 'Tools [{}]'
 tools_preview_on = 'Enable preview'
 tools_preview_off = 'Disable preview'
 tools_select_all = 'Select all'
@@ -18,6 +20,7 @@ tools_expand_all = 'Expand all'
 tools_filter = 'Filter'
 tools_filter_clear = 'Clear filter'
 
+command_tooltip = 'Commands [{}]'
 command_mkdir = 'New folder'
 command_mkzip = 'New zip'
 command_mkfile = 'New file'
@@ -74,7 +77,9 @@ markdown_title = 'Page {path}'
 maff_index_title = 'Pages of {path}'
 
 button_save = 'SAVE'
+button_save_tooltip = 'Save [{}]'
 button_exit = 'EXIT'
+button_exit_tooltip = 'Exit [{}]'
 
 
 #########################################################################

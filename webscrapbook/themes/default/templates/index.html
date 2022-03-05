@@ -58,12 +58,12 @@ const LANG = {
 </main>
 <footer>
 <form id="panel" autocomplete="off" hidden>
-  <select id="explorer">
+  <select id="explorer" title="{{ i18n('explorer_tooltip', 'V') }}" accesskey="V">
     <option value="table" selected>{{ i18n('explorer_table') }}</option>
     <option value="gallery">{{ i18n('explorer_gallery') }}</option>
     <option value="gallery2">{{ i18n('explorer_gallery2') }}</option>
   </select>
-  <select id="tools">
+  <select id="tools" title="{{ i18n('tools_tooltip', 'T') }}" accesskey="T">
     <option value="" selected>...</option>
     <option value="preview-on">{{ i18n('tools_preview_on') }}</option>
     <option value="preview-off">{{ i18n('tools_preview_off') }}</option>
@@ -73,7 +73,7 @@ const LANG = {
     <option value="filter">{{ i18n('tools_filter') }}</option>
     <option value="filter-clear">{{ i18n('tools_filter_clear') }}</option>
   </select>
-  <select id="command">
+  <select id="command" title="{{ i18n('command_tooltip', 'C') }}" accesskey="C">
     <option value="" selected>...</option>
     <option value="mkdir" hidden>{{ i18n('command_mkdir') }}</option>
     <option value="mkzip" hidden>{{ i18n('command_mkzip') }}</option>
