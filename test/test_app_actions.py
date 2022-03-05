@@ -3955,6 +3955,15 @@ class TestMove(TestActions):
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                     )
+                z.writestr(
+                    zipfile.ZipInfo('subdir3/index.html/', (1987, 1, 2, 3, 0, 0)),
+                    '',
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir4/subdir', (1987, 1, 2, 4, 0, 0)),
+                    'Nested maff 測試',
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    )
             f.writestr('entry.maff', buf.getvalue())
             f.writestr(
                 zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
@@ -4224,34 +4233,6 @@ class TestMove(TestActions):
             mock_abort.assert_called_once_with(400, 'Found something at target.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_file_to_dir(self, mock_abort):
-        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-
-        with app.test_client() as c:
-            r = c.post('/temp/subdir/test.txt', data={
-                'token': token(c),
-                'a': 'move',
-                'f': 'json',
-                'target': '/temp/subdir2',
-                })
-
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
-
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_dir_to_dir(self, mock_abort):
-        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-
-        with app.test_client() as c:
-            r = c.post('/temp/subdir', data={
-                'token': token(c),
-                'a': 'move',
-                'f': 'json',
-                'target': '/temp/subdir2',
-                })
-
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
-
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
@@ -4266,6 +4247,126 @@ class TestMove(TestActions):
                 })
 
             mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    def test_file_to_dir(self):
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
+
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir', 'test.txt')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'test.txt')},
+                is_move=True,
+                )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_file_to_dir_with_same_file(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir2', 'test.txt'), 'w') as f:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_file_to_dir_with_same_dir(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2', 'test.txt'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    def test_dir_to_dir(self):
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir')})
+        orig_data2 = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
+
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subdir')},
+                is_move=True,
+                )
+            self.assert_file_equal(
+                orig_data2,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subdir', 'test.txt')},
+                is_move=True,
+                )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_dir_to_dir_with_same_file(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir2', 'subdir'), 'w') as f:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_dir_to_dir_with_same_dir(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip(self, mock_abort):
@@ -4362,7 +4463,101 @@ class TestMove(TestActions):
                             )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_zip_to_zip_existed1(self, mock_abort):
+    def test_zip_to_zip_nonexist(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/nonexist', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/deep/newdir',
+                })
+
+            mock_abort.assert_called_once_with(404, 'Source does not exist.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_file_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir/index.html',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_dir_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir/index.html',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    def test_zip_to_zip_file_to_dir(self):
+        with zipfile.ZipFile(self.test_zip) as zip1:
+            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir4',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/index.html')
+
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            orig_data,
+                            {'zip': zip2, 'filename': 'subdir4/index.html'},
+                            )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_file_to_dir_with_same_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir3',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    def test_zip_to_zip_dir_to_dir1(self):
+        with zipfile.ZipFile(self.test_zip) as zip1:
+            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/'})
+            orig_data2 = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
@@ -4371,10 +4566,36 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_zip_to_zip_existed2(self, mock_abort):
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/')
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/index.html')
+
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            orig_data,
+                            {'zip': zip2, 'filename': 'subdir/subdir/'},
+                            )
+                        self.assert_file_equal(
+                            orig_data2,
+                            {'zip': zip2, 'filename': 'subdir/subdir/index.html'},
+                            )
+
+    def test_zip_to_zip_dir_to_dir2(self):
+        with zipfile.ZipFile(self.test_zip) as zip1:
+            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/'})
+            orig_data2 = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
@@ -4383,7 +4604,54 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir2',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/')
+                with self.assertRaises(KeyError):
+                    zip1.getinfo('subdir/index.html')
+
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            orig_data,
+                            {'zip': zip2, 'filename': 'subdir2/subdir/'},
+                            )
+                        self.assert_file_equal(
+                            orig_data2,
+                            {'zip': zip2, 'filename': 'subdir2/subdir/index.html'},
+                            )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir4',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
 
 class TestCopy(TestActions):
     def setUp(self):
@@ -4408,6 +4676,15 @@ class TestCopy(TestActions):
                     )
                 z.writestr(
                     zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
+                    'Nested maff 測試',
+                    compress_type=zipfile.ZIP_DEFLATED,
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir3/index.html/', (1987, 1, 2, 3, 0, 0)),
+                    '',
+                    )
+                z.writestr(
+                    zipfile.ZipInfo('subdir4/subdir', (1987, 1, 2, 4, 0, 0)),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                     )
@@ -4801,8 +5078,6 @@ class TestCopy(TestActions):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
-        stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt'))
 
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -4810,38 +5085,6 @@ class TestCopy(TestActions):
                 'a': 'copy',
                 'f': 'json',
                 'target': '/temp/subdir2/test2.txt',
-                })
-
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
-
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_file_to_dir(self, mock_abort):
-        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        stat = os.stat(os.path.join(self.test_dir, 'subdir', 'test.txt'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
-
-        with app.test_client() as c:
-            r = c.post('/temp/subdir/test.txt', data={
-                'token': token(c),
-                'a': 'copy',
-                'f': 'json',
-                'target': '/temp/subdir2',
-                })
-
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
-
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_dir_to_dir(self, mock_abort):
-        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        stat = os.stat(os.path.join(self.test_dir, 'subdir'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2'))
-
-        with app.test_client() as c:
-            r = c.post('/temp/subdir', data={
-                'token': token(c),
-                'a': 'copy',
-                'f': 'json',
-                'target': '/temp/subdir2',
                 })
 
             mock_abort.assert_called_once_with(400, 'Found something at target.')
@@ -4851,8 +5094,6 @@ class TestCopy(TestActions):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
             f.write('你好 XYZ')
-        stat = os.stat(os.path.join(self.test_dir, 'subdir'))
-        stat2 = os.stat(os.path.join(self.test_dir, 'subdir2', 'test2.txt'))
 
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={
@@ -4863,6 +5104,112 @@ class TestCopy(TestActions):
                 })
 
             mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    def test_file_to_dir(self):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'test.txt')},
+                )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_file_to_dir_with_same_file(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir2', 'test.txt'), 'w') as f:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_file_to_dir_with_same_dir(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2', 'test.txt'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    def test_dir_to_dir(self):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'subdir')},
+                )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_dir_to_dir_with_same_file(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
+        with open(os.path.join(self.test_dir, 'subdir2', 'subdir'), 'w') as f:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_dir_to_dir_with_same_dir(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
 
     def test_disk_to_zip_file(self):
         with app.test_client() as c:
@@ -5015,6 +5362,96 @@ class TestCopy(TestActions):
                 with self.assertRaises(KeyError):
                     zip.getinfo('clone/symlink2/')
 
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_disk_to_zip_nonexist(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp/nonexist', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/deep/newdir',
+                })
+
+            mock_abort.assert_called_once_with(404, 'Source does not exist.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_disk_to_zip_file_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir/index.html',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_disk_to_zip_dir_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir/index.html',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    def test_disk_to_zip_file_to_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                            {'zip': zip2, 'filename': 'subdir/test.txt'},
+                            )
+
+    def test_disk_to_zip_dir_to_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'file': os.path.join(self.test_dir, 'subdir')},
+                            {'zip': zip2, 'filename': 'subdir/subdir/'},
+                            )
+                        self.assert_file_equal(
+                            {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                            {'zip': zip2, 'filename': 'subdir/subdir/test.txt'},
+                            )
+
     def test_zip_to_disk_file(self):
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir/index.html', data={
@@ -5062,6 +5499,92 @@ class TestCopy(TestActions):
                     {'zip': zip, 'filename': 'subdir/index.html'},
                     {'file': os.path.join(self.test_dir, 'deep', 'newdir', 'index.html')},
                     )
+
+    def test_zip_to_disk_file_to_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    self.assert_file_equal(
+                        {'zip': zip1, 'filename': 'subdir/index.html'},
+                        {'file': os.path.join(self.test_dir, 'subdir', 'index.html')},
+                        )
+
+    def test_zip_to_disk_dir_to_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    self.assert_file_equal(
+                        {'zip': zip1, 'filename': 'subdir/'},
+                        {'file': os.path.join(self.test_dir, 'subdir', 'subdir')},
+                        )
+                    self.assert_file_equal(
+                        {'zip': zip1, 'filename': 'subdir/index.html'},
+                        {'file': os.path.join(self.test_dir, 'subdir', 'subdir', 'index.html')},
+                        )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_disk_nonexist(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/nonexist', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir2',
+                })
+
+            mock_abort.assert_called_once_with(404, 'Source does not exist.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_disk_file_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir/test.txt',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_disk_dir_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp/subdir/test.txt',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
 
     def test_zip_to_zip_file(self):
         with app.test_client() as c:
@@ -5118,7 +5641,91 @@ class TestCopy(TestActions):
                             )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_zip_to_zip_existed1(self, mock_abort):
+    def test_zip_to_zip_nonexist(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/nonexist', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/deep/newdir',
+                })
+
+            mock_abort.assert_called_once_with(404, 'Source does not exist.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_file_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir/index.html',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_dir_to_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir/index.html',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found something at target.')
+
+    def test_zip_to_zip_file_to_dir(self):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir4',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/index.html'},
+                            {'zip': zip2, 'filename': 'subdir4/index.html'},
+                            )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_file_to_dir_with_same_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir3',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    def test_zip_to_zip_dir_to_dir1(self):
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
@@ -5127,10 +5734,27 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_zip_to_zip_existed2(self, mock_abort):
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/'},
+                            {'zip': zip2, 'filename': 'subdir/subdir/'},
+                            )
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/index.html'},
+                            {'zip': zip2, 'filename': 'subdir/subdir/index.html'},
+                            )
+
+    def test_zip_to_zip_dir_to_dir2(self):
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
                 'token': token(c),
@@ -5139,7 +5763,49 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir2',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            with zipfile.ZipFile(self.test_zip) as zip1:
+                with zip1.open('entry.maff') as f:
+                    f = zip_stream(f)
+                    with zipfile.ZipFile(f) as zip2:
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/'},
+                            {'zip': zip2, 'filename': 'subdir2/subdir/'},
+                            )
+                        self.assert_file_equal(
+                            {'zip': zip1, 'filename': 'subdir/index.html'},
+                            {'zip': zip2, 'filename': 'subdir2/subdir/index.html'},
+                            )
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '/temp.maff!/entry.maff!/subdir4',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
 
 class TestBackup(TestActions):
     def setUp(self):

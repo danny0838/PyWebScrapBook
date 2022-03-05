@@ -1787,6 +1787,17 @@ onCommandRun.commands = {
       }
 
       try {
+        // adjust newPath if it's a directory
+        const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+        const info = (await utils.wsb({
+          url: target + '?a=info&f=json',
+          responseType: 'json',
+          method: "GET",
+        })).response.data;
+        if (info.type === 'dir') {
+          newPath = newPath.replace(/\/+$/, '') + '/' + oldPath.replace(/^.*\//, '') + '.lnk.htm';
+        }
+
         await linkEntry(oldPath, newPath);
       } catch (ex) {
         alert(`Unable to create link "${oldPath}" => "${newPath}": ${ex.message}`);

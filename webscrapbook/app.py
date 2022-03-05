@@ -689,13 +689,31 @@ def handle_action_renaming(func):
                 try:
                     zip.getinfo(targetpaths[-1])
                 except KeyError:
+                    # target is an existing directory, treat as to target/<basename>
                     if util.zip_hasdir(zip, targetpaths[-1] + '/'):
-                        abort(400, 'Found something at target.')
+                        targetpaths[-1] = targetpaths[-1] + ('/' if targetpaths[-1] else '') + os.path.basename(localpaths[-1])
+
+                        # recheck if target exists
+                        try:
+                            zip.getinfo(targetpaths[-1])
+                        except KeyError:
+                            if util.zip_hasdir(zip, targetpaths[-1] + '/'):
+                                abort(400, 'Found identical entry under the target directory.')
+                        else:
+                            abort(400, 'Found identical entry under the target directory.')
                 else:
                     abort(400, 'Found something at target.')
         else:
             if os.path.lexists(targetpaths[0]):
-                abort(400, 'Found something at target.')
+                if os.path.isdir(targetpaths[0]):
+                    # target is an existing directory, treat as to target/<basename>
+                    targetpaths[0] = os.path.join(targetpaths[0], os.path.basename(localpaths[-1]))
+
+                    # recheck if target exists
+                    if os.path.lexists(targetpaths[0]):
+                        abort(400, 'Found identical entry under the target directory.')
+                else:
+                    abort(400, 'Found something at target.')
 
         return func(sourcepaths=localpaths, targetpaths=targetpaths, *args, **kwargs)
 
