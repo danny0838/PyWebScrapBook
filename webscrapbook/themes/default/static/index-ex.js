@@ -1760,6 +1760,17 @@ onCommandRun.commands = {
 
     const linkEntry = async (oldPath, newPath) => {
       const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+
+      // throw if target exists
+      const info = (await utils.wsb({
+        url: target + '?a=info&f=json',
+        responseType: 'json',
+        method: "GET",
+      })).response.data;
+      if (info.type !== null) {
+        throw new Error('Found something at target.');
+      }
+
       const url = getRelativePath(oldPath, newPath).replace(/[%#?]+/g, x => encodeURIComponent(x));
       const content = '<meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=' + url + '">';
 
