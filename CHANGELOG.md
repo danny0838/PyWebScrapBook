@@ -3,6 +3,26 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.4.0] - 2022-03-07
+* Changes of Backend server API:
+  * `info` action now returns "dir" type for an implicit ZIP directory.
+  * `move` or `copy` actions now accepts a directory as the target.
+* Improved the default theme of the web interface:
+  * Added support of i18n.
+  * Added support of selection and commands in all view modes.
+  * Added a hint for current selection count.
+  * Added support of responsive media sizing for gallery view mode.
+  * No more open link in new tab for the gallery view mode.
+  * Preview is now an individual mode and can be combined with any other view mode.
+  * Clicking a directory link now jumps into the directory when preview is enabled.
+  * The previewed media now always fits in the viewport.
+  * The current view mode is now remembered when jumps into another directory.
+  * Added support of moving/copying/linking a single entry at a folder.
+  * No more allow creating a link at an existing path.
+  * No more force special view for an `*.htd` directory when there's any query or hash in the URL.
+  * Added accesskey for common selectors and buttons.
+  * Miscellaneous data scheme changes, UI improvements, bug fixes, and code optimization.
+
 ## [1.3.2] - 2022-03-02
 * Fixed some issues of the previewer of the default theme of the web interface:
   * Fixed possible code conflict after the previewer mode has been toggled repeatedly.
