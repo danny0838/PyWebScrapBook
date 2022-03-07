@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Index of {{ path }}{% endblock %}
+{% block title %}{{ i18n('index_title', path=path) }}{% endblock %}
 {% block links %}
 <link rel="stylesheet" type="text/css" href="{{ static_url('index.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ static_url('index-ex.css') }}">

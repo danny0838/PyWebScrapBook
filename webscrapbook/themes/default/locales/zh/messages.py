@@ -1,6 +1,8 @@
 bidi_dir = 'ltr'
 html_lang = 'zh'
 
+index_title = '索引於 {path}'
+
 data_table_header_directory = '資料夾'
 data_table_header_name = '檔名'
 data_table_header_last_modified = '最後修改'

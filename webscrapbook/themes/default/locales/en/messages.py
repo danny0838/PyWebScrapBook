@@ -1,6 +1,8 @@
 bidi_dir = 'ltr'
 html_lang = 'en'
 
+index_title = 'Index of {path}'
+
 data_table_header_directory = 'Directory'
 data_table_header_name = 'Name'
 data_table_header_last_modified = 'Last modified'
