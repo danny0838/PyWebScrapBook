@@ -927,6 +927,11 @@ ul  >  li  :not([hidden])  {
                 )
 
             self.assertEqual(
+                util.zip_file_info(zip_filename, ''),
+                ('', None, None, None)
+                )
+
+            self.assertEqual(
                 util.zip_file_info(zip_filename, 'implicit_folder'),
                 ('implicit_folder', None, None, None)
                 )
@@ -934,6 +939,11 @@ ul  >  li  :not([hidden])  {
             self.assertEqual(
                 util.zip_file_info(zip_filename, 'implicit_folder/'),
                 ('implicit_folder', None, None, None)
+                )
+
+            self.assertEqual(
+                util.zip_file_info(zip_filename, '', check_implicit_dir=True),
+                ('', 'dir', None, None)
                 )
 
             self.assertEqual(

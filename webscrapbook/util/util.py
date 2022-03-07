@@ -983,7 +983,7 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
             return FileInfo(name=name, type='dir', size=None, last_modified=zip_timestamp(info))
 
         if check_implicit_dir:
-            base = subpath + '/'
+            base = subpath + ('/' if subpath else '')
             for entry in zh.namelist():
                 if entry.startswith(base):
                     return FileInfo(name=name, type='dir', size=None, last_modified=None)
