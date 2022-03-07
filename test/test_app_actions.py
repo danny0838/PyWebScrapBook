@@ -800,7 +800,7 @@ class TestInfo(unittest.TestCase):
 
                 buf1 = io.BytesIO()
                 with zipfile.ZipFile(buf1, 'w') as zh1:
-                    zh1.writestr(zipfile.ZipInfo('index.html', (1987, 1, 5, 0, 0, 0)), 'ABC')
+                    zh1.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 5, 0, 0, 0)), 'ABC')
                 zh.writestr(zipfile.ZipInfo('entry1.zip', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
 
             with app.test_client() as c:
@@ -834,6 +834,21 @@ class TestInfo(unittest.TestCase):
                         },
                     })
 
+                # directory (implicit, root)
+                r = c.get('/archive.zip!/', query_string={'a': 'info', 'f': 'json'})
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.headers['Content-Type'], 'application/json')
+                self.assertEqual(r.json, {
+                    'success': True,
+                    'data': {
+                        'name': '',
+                        'type': 'dir',
+                        'size': None,
+                        'last_modified': None,
+                        'mime': None,
+                        },
+                    })
+
                 # directory (implicit)
                 r = c.get('/archive.zip!/implicit_dir', query_string={'a': 'info', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
@@ -842,7 +857,7 @@ class TestInfo(unittest.TestCase):
                     'success': True,
                     'data': {
                         'name': 'implicit_dir',
-                        'type': None,
+                        'type': 'dir',
                         'size': None,
                         'last_modified': None,
                         'mime': None,
@@ -857,7 +872,7 @@ class TestInfo(unittest.TestCase):
                     'success': True,
                     'data': {
                         'name': 'implicit_dir',
-                        'type': None,
+                        'type': 'dir',
                         'size': None,
                         'last_modified': None,
                         'mime': None,
@@ -879,15 +894,15 @@ class TestInfo(unittest.TestCase):
                         },
                     })
 
-                # nested directory
-                r = c.get('/archive.zip!/entry1.zip!/', query_string={'a': 'info', 'f': 'json'})
+                # nested directory (implicit)
+                r = c.get('/archive.zip!/entry1.zip!/implicit_dir', query_string={'a': 'info', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
                 self.assertEqual(r.json, {
                     'success': True,
                     'data': {
-                        'name': '',
-                        'type': None,
+                        'name': 'implicit_dir',
+                        'type': 'dir',
                         'size': None,
                         'last_modified': None,
                         'mime': None,
@@ -895,7 +910,7 @@ class TestInfo(unittest.TestCase):
                     })
 
                 # nested file
-                r = c.get('/archive.zip!/entry1.zip!/index.html', query_string={'a': 'info', 'f': 'json'})
+                r = c.get('/archive.zip!/entry1.zip!/implicit_dir/index.html', query_string={'a': 'info', 'f': 'json'})
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
                 self.assertEqual(r.json, {

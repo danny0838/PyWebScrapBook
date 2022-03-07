@@ -923,7 +923,7 @@ def action_info():
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
-            info = util.zip_file_info(zip, localpaths[-1])
+            info = util.zip_file_info(zip, localpaths[-1], check_implicit_dir=True)
     else:
         info = util.file_info(localpaths[0])
 
