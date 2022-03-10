@@ -617,8 +617,17 @@ class TestFileLock(TestBase):
         try:
             lock.keep()
             mtime = os.stat(lock_file).st_mtime
-            time.sleep(0.005)
-            self.assertGreater(os.stat(lock_file).st_mtime, mtime)
+
+            # poll up to 0.5 seconds in case thread delay due to busyness
+            start = time.time()
+            while True:
+                time.sleep(0.005)
+                try:
+                    self.assertGreater(os.stat(lock_file).st_mtime, mtime)
+                except AssertionError as exc:
+                    if time.time() - start > 0.5: raise exc
+                else:
+                    break
         finally:
             lock.release()
 
@@ -629,8 +638,17 @@ class TestFileLock(TestBase):
 
         with lock.acquire() as lh:
             mtime = os.stat(lock_file).st_mtime
-            time.sleep(0.005)
-            self.assertGreater(os.stat(lock_file).st_mtime, mtime)
+
+            # poll up to 0.5 seconds in case thread delay due to busyness
+            start = time.time()
+            while True:
+                time.sleep(0.005)
+                try:
+                    self.assertGreater(os.stat(lock_file).st_mtime, mtime)
+                except AssertionError as exc:
+                    if time.time() - start > 0.5: raise exc
+                else:
+                    break
 
 if __name__ == '__main__':
     unittest.main()
