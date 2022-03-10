@@ -614,11 +614,13 @@ class TestFileLock(TestBase):
         lock = Host(self.test_root).get_lock('test', stale=0.01)
 
         lock.acquire()
-        lock.keep()
-        mtime = os.stat(lock_file).st_mtime
-        time.sleep(0.005)
-        self.assertGreater(os.stat(lock_file).st_mtime, mtime)
-        lock.release()
+        try:
+            lock.keep()
+            mtime = os.stat(lock_file).st_mtime
+            time.sleep(0.005)
+            self.assertGreater(os.stat(lock_file).st_mtime, mtime)
+        finally:
+            lock.release()
 
     def test_keep02(self):
         """Lock should be auto-extended until released."""
