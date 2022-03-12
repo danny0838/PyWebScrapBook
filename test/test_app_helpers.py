@@ -691,6 +691,89 @@ class TestFunctions(unittest.TestCase):
                 except FileNotFoundError:
                     pass
 
+    def test_get_breadcrumbs(self):
+        # directory
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('directory', '/path/to/directory/', '/', True)
+            ])
+
+        # conflicting directory/file
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/fake.ext!/'])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('fake.ext!', '/path/to/fake.ext!/', '/', True),
+            ])
+
+        # sub-archive path(s)
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', ''])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('archive.ext', '/path/to/archive.ext!/', '!/', True),
+            ])
+
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'subdir'])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('archive.ext', '/path/to/archive.ext!/', '!/', False),
+            ('subdir', '/path/to/archive.ext!/subdir/', '/', True),
+            ])
+
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'nested1.zip', ''])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('archive.ext', '/path/to/archive.ext!/', '!/', False),
+            ('nested1.zip', '/path/to/archive.ext!/nested1.zip!/', '!/', True),
+            ])
+
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'nested1.zip', 'subdir'])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('archive.ext', '/path/to/archive.ext!/', '!/', False),
+            ('nested1.zip', '/path/to/archive.ext!/nested1.zip!/', '!/', False),
+            ('subdir', '/path/to/archive.ext!/nested1.zip!/subdir/', '/', True),
+            ])
+
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'subdir/nested1.zip', ''])), [
+            ('.', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('archive.ext', '/path/to/archive.ext!/', '!/', False),
+            ('subdir', '/path/to/archive.ext!/subdir/', '/', False),
+            ('nested1.zip', '/path/to/archive.ext!/subdir/nested1.zip!/', '!/', True),
+            ])
+
+        # base
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'], base='/wsb')), [
+            ('.', '/wsb/', '/', False),
+            ('path', '/wsb/path/', '/', False),
+            ('to', '/wsb/path/to/', '/', False),
+            ('directory', '/wsb/path/to/directory/', '/', True),
+            ])
+
+        # base (with slash)
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'], base='/wsb/')), [
+            ('.', '/wsb/', '/', False),
+            ('path', '/wsb/path/', '/', False),
+            ('to', '/wsb/path/to/', '/', False),
+            ('directory', '/wsb/path/to/directory/', '/', True),
+            ])
+
+        # topname
+        self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'], topname='MyWsb')), [
+            ('MyWsb', '/', '/', False),
+            ('path', '/path/', '/', False),
+            ('to', '/path/to/', '/', False),
+            ('directory', '/path/to/directory/', '/', True)
+            ])
+
     @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
     def test_get_permission1(self, mock_encrypt):
         """Return corresponding permission for the matched user and '' for unmatched."""

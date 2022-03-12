@@ -306,6 +306,39 @@ def open_archive_path(localpaths, mode='r', filters=None):
             f.close()
 
 
+def get_breadcrumbs(paths, base='', topname='.'):
+    """Generate (label, subpath, sep, is_last) tuples.
+    """
+    base = base.rstrip('/') + '/'
+    paths = paths.copy()
+    paths[0] = paths[0].strip('/')
+
+    if not paths[0]:
+        yield (topname, base, '/', True)
+        return
+
+    yield (topname, base, '/', False)
+
+    # handle zip root, which is something like /archive.zip!/
+    is_zip_root = False
+    if paths[-1] == '':
+        paths.pop()
+        is_zip_root = True
+
+    paths_max = len(paths) - 1
+    pathlist = []
+    for path_idx, path in enumerate(paths):
+        pathlist.append([])
+        parts = path.split('/')
+        parts_max = len(parts) - 1
+        for part_idx, part in enumerate(parts):
+            pathlist[-1].append(part)
+            subpath = '!/'.join('/'.join(p) for p in pathlist)
+            sep = '!/' if part_idx == parts_max and (path_idx < paths_max or is_zip_root) else '/'
+            is_last = path_idx == paths_max and part_idx == parts_max
+            yield (part, base + subpath + sep, sep, is_last)
+
+
 def is_local_access():
     """Determine if the client is in same device.
     """
@@ -1922,7 +1955,7 @@ def make_app(root=".", config=None):
     app.jinja_env.globals.update({
             'os': os,
             'time': time,
-            'get_breadcrumbs': util.get_breadcrumbs,
+            'get_breadcrumbs': get_breadcrumbs,
             'format_filesize': util.format_filesize,
             'quote_path': quote_path,
             'static_url': static_url,
