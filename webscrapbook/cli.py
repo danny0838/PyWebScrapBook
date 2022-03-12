@@ -782,7 +782,15 @@ for the conversion)""")
     # -- file2wsb
     parser_convert_file2wsb = parser_convert_sub.add_parser('file2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert hierarchical files to a WebScrapBook scrapbook.""",
+        description="""\
+Convert hierarchical files to a WebScrapBook scrapbook.
+
+This "imports" a folder with web page captures and possibly supporting folders
+or sub-folders into structured scrapbook items. Metadata recorded by the
+original capture tool, such as WebScrapBook, SingleFile, or native browser
+saving, are translated into item metadata as much as possible. This is a lossy
+conversion—the folder structure are changed and interlinkings may be broken.
+""",
         help="""convert from hierarchical files to WebScrapBook""")
     parser_convert_file2wsb.add_argument('input', action='store',
         help="""the input directory""")
@@ -811,7 +819,19 @@ Explorer or a Chromium-based browser""")
     # -- wsb2file
     parser_convert_wsb2file = parser_convert_sub.add_parser('wsb2file',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="""Convert a WebScrapBook scrapbook to hierarchical files""",
+        description="""\
+Convert a WebScrapBook scrapbook to hierarchical files.
+
+This turns the scrapbook items into structured physical folders and files to be
+browsable with a file manager. Every output folder and file is prefixed with a
+number (by default) to keep the original order in the tree. This is a lossy
+conversion—item metadata are not preserved and interlinkings may be broken.
+
+* For an item titled `MyItem` with index file `*/index.html`, its descendant
+  items will be put under the `MyItem` subfolder, while its data files will be
+  put under the `MyItem.htd` folder.
+* A separator titled `MySep` will become the empty file `MySep.-`.
+""",
         help="""convert from WebScrapBook to hierarchical files""")
     parser_convert_wsb2file.add_argument('input', action='store',
         help="""the input directory""")
