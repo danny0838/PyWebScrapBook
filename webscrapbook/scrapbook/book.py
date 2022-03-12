@@ -116,11 +116,8 @@ class Book:
 
     def get_subpath(self, file):
         """Get subpath of a file related to root.
-
-        Also convert "\" to "/", which makes it useful for showing a file in
-            issue safely.
         """
-        return os.path.relpath(file, self.root).replace('\\', '/')
+        return self.host.get_subpath(file)
 
     def get_tree_file(self, name, index=0):
         return os.path.join(self.tree_dir, f'{name}{index or ""}.js')
