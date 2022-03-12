@@ -115,7 +115,7 @@ class Book:
         return f'{self.__class__.__name__}({repr_str})'
 
     def get_subpath(self, file):
-        """Get subpath of a file related to top_dir.
+        """Get subpath of a file related to root.
 
         Also convert "\" to "/", which makes it useful for showing a file in
             issue safely.

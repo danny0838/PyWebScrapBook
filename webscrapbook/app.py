@@ -186,7 +186,7 @@ def get_archive_path(filepath):
             pass
         else:
             with zip as zip:
-                def get_subpath(zp, filepath):
+                def add_subpath(zp, filepath):
                     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
                         archivepath = filepath[:m.start(0)]
                         conflicting = archivepath + '!/'
@@ -197,39 +197,39 @@ def get_archive_path(filepath):
                                 f = zip_stream(f)
                                 with zipfile.ZipFile(f, 'r') as zip:
                                     rv.append(archivepath)
-                                    get_subpath(zip, filepath[m.end(0):])
+                                    add_subpath(zip, filepath[m.end(0):])
                                     return
                         except (KeyError, zipfile.BadZipFile):
                             pass
                     rv.append(filepath.rstrip('/'))
 
                 rv = [archivepath]
-                get_subpath(zip, filepath[m.end(0):])
+                add_subpath(zip, filepath[m.end(0):])
                 return rv
 
     return [filepath.rstrip('/')]
 
 
 @contextmanager
-def open_archive_path(paths, mode='r', filters=None):
+def open_archive_path(localpaths, mode='r', filters=None):
     """Open the innermost zip.
 
     Args:
-        paths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
         mode: 'r' for reading, 'w' for modifying
         filters: a list of file or folder to remove
     """
-    last = len(paths) - 1
+    last = len(localpaths) - 1
     if last < 1:
         raise ValueError('length of paths must > 1')
 
     filtered = False
     stack = []
     try:
-        zip = zipfile.ZipFile(paths[0])
+        zip = zipfile.ZipFile(localpaths[0])
         stack.append(zip)
         for i in range(1, last):
-            f = zip.open(paths[i])
+            f = zip.open(localpaths[i])
             f = zip_stream(f)
             stack.append(f)
             zip = zipfile.ZipFile(f)
@@ -276,7 +276,7 @@ def open_archive_path(paths, mode='r', filters=None):
                 # writer to another buffer for the parent zip
                 buffer2 = io.BytesIO()
                 with zipfile.ZipFile(buffer2, 'w') as zip:
-                    zip.writestr(paths[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
+                    zip.writestr(localpaths[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
                 buffer.close()
                 buffer = buffer2
 
@@ -286,7 +286,7 @@ def open_archive_path(paths, mode='r', filters=None):
             # write to the outermost zip
             # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
             buffer.seek(0)
-            with open(paths[0], 'r+b') as fw, buffer as fr:
+            with open(localpaths[0], 'r+b') as fw, buffer as fr:
                 fw.truncate()
                 while True:
                     chunk = fr.read(8192)
@@ -348,11 +348,11 @@ def verify_authorization(perm, action):
     return False
 
 
-def handle_directory_listing(paths, zip=None, redirect_slash=True, format=None):
+def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=None):
     """List contents in a directory.
 
     Args:
-        paths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
         zip: an opened zipfile.ZipFile object for faster reading
     """
     # ensure directory has trailing '/'
@@ -368,14 +368,14 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, format=None):
         return redirect(new_url)
 
     # prepare index
-    if len(paths) > 1:
+    if len(localpaths) > 1:
         # support 304 if zip not modified
-        stats = os.stat(paths[0])
+        stats = os.stat(localpaths[0])
         last_modified = http_date(stats.st_mtime)
         etag = "%s-%s-%s" % (
             stats.st_mtime,
             stats.st_size,
-            adler32(paths[0].encode("utf-8")) & 0xFFFFFFFF,
+            adler32(localpaths[0].encode("utf-8")) & 0xFFFFFFFF,
             )
 
         if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
@@ -387,18 +387,18 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, format=None):
             'ETag': etag,
             }
 
-        with nullcontext(zip) if zip else open_archive_path(paths) as zip:
-            subentries = util.zip_listdir(zip, paths[-1])
+        with nullcontext(zip) if zip else open_archive_path(localpaths) as zip:
+            subentries = util.zip_listdir(zip, localpaths[-1])
 
     else:
         # disallow cache to reflect any content file change
-        stats = os.stat(paths[0])
+        stats = os.stat(localpaths[0])
         headers = {
             'Cache-Control': 'no-store',
             'Last-Modified': http_date(stats.st_mtime),
             }
 
-        subentries = util.listdir(paths[0])
+        subentries = util.listdir(localpaths[0])
 
     if format == 'sse':
         def gen():
@@ -436,11 +436,11 @@ def handle_directory_listing(paths, zip=None, redirect_slash=True, format=None):
     return http_response(body, headers=headers)
 
 
-def handle_archive_viewing(paths, mimetype):
+def handle_archive_viewing(localpaths, mimetype):
     """Handle direct visit of HTZ/MAFF file.
 
     Args:
-        paths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
     """
     def list_maff_pages(pages):
         """List available web pages in a MAFF file.
@@ -456,12 +456,12 @@ def handle_archive_viewing(paths, mimetype):
     if mimetype == "application/html+zip":
         subpath = "index.html"
     else:
-        if len(paths) > 1:
-            with open_archive_path(paths) as zip:
-                with zip.open(paths[-1]) as zh:
+        if len(localpaths) > 1:
+            with open_archive_path(localpaths) as zip:
+                with zip.open(localpaths[-1]) as zh:
                     pages = util.get_maff_pages(zh)
         else:
-            pages = util.get_maff_pages(paths[-1])
+            pages = util.get_maff_pages(localpaths[-1])
 
         if len(pages) > 1:
             # multiple index files
@@ -484,25 +484,25 @@ def handle_archive_viewing(paths, mimetype):
     return redirect(new_url)
 
 
-def handle_markdown_output(paths, zip=None):
+def handle_markdown_output(localpaths, zip=None):
     """Output processed markdown.
 
     Args:
-        paths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
         zip: an opened zipfile.ZipFile object for faster reading
     """
-    if len(paths) > 1:
+    if len(localpaths) > 1:
         if zip:
             context = nullcontext(zip)
         else:
-            context = open_archive_path(paths)
+            context = open_archive_path(localpaths)
     else:
         context = nullcontext(None)
 
     with context as zip:
         # calculate last-modified time and etag
         if zip:
-            info = zip.getinfo(paths[-1])
+            info = zip.getinfo(localpaths[-1])
             lm = util.zip_timestamp(info)
             last_modified = http_date(lm)
 
@@ -512,12 +512,12 @@ def handle_markdown_output(paths, zip=None):
                 adler32(info.filename.encode("utf-8")) & 0xFFFFFFFF,
                 )
         else:
-            stats = os.stat(paths[0])
+            stats = os.stat(localpaths[0])
             last_modified = http_date(stats.st_mtime)
             etag = "%s-%s-%s" % (
                 stats.st_mtime,
                 stats.st_size,
-                adler32(paths[0].encode("utf-8")) & 0xFFFFFFFF,
+                adler32(localpaths[0].encode("utf-8")) & 0xFFFFFFFF,
                 )
 
         if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
@@ -536,7 +536,7 @@ def handle_markdown_output(paths, zip=None):
             with zip.open(info) as f:
                 body = f.read().decode('UTF-8')
         else:
-            with open(paths[0], 'r', encoding='UTF-8') as f:
+            with open(localpaths[0], 'r', encoding='UTF-8') as f:
                 body = f.read()
 
     body = render_template('markdown.html',
@@ -562,7 +562,7 @@ class Request(flask.Request):
     @cached_property
     def localpath(self):
         """Corresponding filesystem path of the requested path."""
-        # Don't use os.path.join as if may result in an arbitrary path if
+        # Don't use os.path.join as it may result in an arbitrary path if
         # self.path is an absolute path on Windows.
         return os.path.normpath(host.chroot + os.sep + self.path.strip('/'))
 

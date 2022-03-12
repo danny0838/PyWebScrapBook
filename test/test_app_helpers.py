@@ -71,7 +71,7 @@ class TestFunctions(unittest.TestCase):
             self.assertFalse(wsbapp.is_local_access())
 
     def test_get_archive_path1(self):
-        """Basic logit for a sub-archive path."""
+        """Basic logic for a sub-archive path."""
         root = os.path.join(root_dir, 'test_app_helpers', 'general')
         app = wsbapp.make_app(root)
         with app.app_context():
