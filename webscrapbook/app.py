@@ -158,6 +158,15 @@ def http_response(body='', status=None, headers=None, format=None):
     return Response(body, status, headers, mimetype=mimetype)
 
 
+def get_localpath(path):
+    """Convert a request path to local filesystem path.
+    """
+    # Don't use os.path.join as it doesn't concatenate if path looks like
+    # absolute (e.g. "/path/to/foo" on POSIX or "X:/foo" on Windows), which
+    # can cause a security issue.
+    return os.path.normpath(host.chroot + os.sep + path)
+
+
 def get_archive_path(filepath):
     """Parse archive file path and the sub-archive path.
 
@@ -173,7 +182,7 @@ def get_archive_path(filepath):
     """
     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
         archivepath = filepath[:m.start(0)].rstrip('/')
-        archivefile = os.path.normpath(os.path.join(host.chroot, archivepath.lstrip('/')))
+        archivefile = get_localpath(archivepath)
         conflicting = archivefile + '!'
         if os.path.lexists(conflicting):
             break
@@ -562,15 +571,13 @@ class Request(flask.Request):
     @cached_property
     def localpath(self):
         """Corresponding filesystem path of the requested path."""
-        # Don't use os.path.join as it may result in an arbitrary path if
-        # self.path is an absolute path on Windows.
-        return os.path.normpath(host.chroot + os.sep + self.path.strip('/'))
+        return get_localpath(self.path)
 
     @cached_property
     def localpaths(self):
         """Like localpath, but with ZIP subpaths resolved."""
         paths = self.paths.copy()
-        paths[0] = os.path.normpath(host.chroot + os.sep + paths[0].lstrip('/'))
+        paths[0] = get_localpath(paths[0])
         return paths
 
     @cached_property
@@ -679,7 +686,7 @@ def handle_action_renaming(func):
             abort(400, 'Target is not specified.')
 
         targetpaths = get_archive_path(target)
-        targetpaths[0] = os.path.normpath(os.path.join(host.chroot, targetpaths[0].lstrip('/')))
+        targetpaths[0] = get_localpath(targetpaths[0])
 
         if not targetpaths[0].startswith(os.path.join(host.chroot, '')):
             abort(403, "Unable to operate beyond the root directory.")
