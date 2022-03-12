@@ -746,18 +746,19 @@ def action_view():
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
+            # List directory only when URL suffixed with "/", as it's not a
+            # common operation, and it's costy to check for directory existence
+            # in a ZIP.
+            if request.path.endswith('/'):
+                try:
+                    return handle_directory_listing(localpaths, zip, redirect_slash=False)
+                except util.ZipDirNotFoundError:
+                    abort(404)
+
             try:
                 info = zip.getinfo(localpaths[-1])
             except KeyError:
-                # File does not exist.  List directory only when URL
-                # suffixed with "/", as it's not a common operation,
-                # and it's costy to check for directory existence in
-                # a ZIP.
-                if request.path.endswith('/'):
-                    try:
-                        return handle_directory_listing(localpaths, zip, redirect_slash=False)
-                    except util.ZipDirNotFoundError:
-                        abort(404)
+                # File does not exist.
                 abort(404)
             else:
                 # view archive file
