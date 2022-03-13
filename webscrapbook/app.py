@@ -1302,7 +1302,7 @@ def action_mkzip():
                     zip0.getinfo(localpaths[-1])
                 except KeyError:
                     zip = zip0
-                except:
+                except Exception:
                     zip0.close()
                     raise
                 else:
