@@ -3995,10 +3995,12 @@ class TestDelete(TestActions):
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), [])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_zip_root(self, mock_abort):
+    def test_zip_root(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            pass
+            zh.writestr('file.txt', 'dummy')
+            zh.writestr('subdir/dir/', '')
+            zh.writestr('subdir/index.html', 'dummy')
+            zh.writestr('subdir2/test.txt', 'dummy')
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/', data={
@@ -4007,7 +4009,15 @@ class TestDelete(TestActions):
                 'f': 'json',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+            self.assertTrue(os.path.isfile(self.test_zip))
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                self.assertEqual(zh.namelist(), [])
 
 class TestMove(TestActions):
     def setUp(self):

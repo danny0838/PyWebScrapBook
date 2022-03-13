@@ -245,6 +245,15 @@ def get_archive_path(filepath):
     return paths
 
 
+def _open_archive_path_filter(path, filters):
+    for filter in filters:
+        filter = filter.rstrip('/')
+        if path == filter:
+            return True
+        if path.startswith(filter + ('/' if filter else '')):
+            return True
+    return False
+
 @contextmanager
 def open_archive_path(localpaths, mode='r', filters=None):
     """Open the innermost zip handler for reading or writing.
@@ -301,8 +310,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
                 with zipfile.ZipFile(buffer, 'a') as zip:
                     for info in zip0.infolist():
                         if filters and i == last:
-                            if any(info.filename == filter or info.filename.startswith(filter + '/')
-                                    for filter in filters):
+                            if _open_archive_path_filter(info.filename, filters):
                                 filtered = True
                                 continue
 
@@ -318,7 +326,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
                                 compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
                                 ))
 
-                if filters and not filtered:
+                if filters and not any(f == '' for f in filters) and not filtered:
                     raise KeyError('paths to filter do not exist')
 
                 if i == 1:
@@ -1494,9 +1502,6 @@ def action_delete():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        if localpaths[-1] == '':
-            abort(400, "Unable to write to this path in a ZIP.")
-
         try:
             with open_archive_path(localpaths, 'w', [localpaths[-1]]):
                 pass

@@ -714,6 +714,27 @@ class TestFunctions(unittest.TestCase):
                 except FileNotFoundError:
                     pass
 
+            # root (as an implicit directory)
+            try:
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    buf1 = io.BytesIO()
+                    with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.writestr('subdir/', '')
+                        zip1.writestr('subdir/index.html', 'Hello World!')
+                        zip1.writestr('subdir2/test.txt', 'dummy')
+                    zip.writestr('entry1.zip', buf1.getvalue())
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html'], 'w', ['']) as zip:
+                    pass
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    self.assertEqual(zip.namelist(), [])
+            finally:
+                try:
+                    os.remove(tempfile)
+                except FileNotFoundError:
+                    pass
+
             # multiple
             try:
                 with zipfile.ZipFile(tempfile, 'w') as zip:
