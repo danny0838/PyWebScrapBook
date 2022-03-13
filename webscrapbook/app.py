@@ -221,7 +221,23 @@ def get_archive_path(filepath):
 
 @contextmanager
 def open_archive_path(localpaths, mode='r', filters=None):
-    """Open the innermost zip.
+    """Open the innermost zip handler for reading or writing.
+
+    e.g. reading from localpaths=['/path/to/foo.zip', 'subdir/file.txt']:
+
+        with open_archive_path(localpaths) as zh:
+            with zh.open(localpaths[-1]) as fh:
+                print(fh.read())
+
+    e.g. writing to localpaths=['/path/to/foo.zip', 'subdir/file.txt']:
+
+        with open_archive_path(localpaths, 'w') as zh:
+            zh.writestr(localpaths[-1], 'foo')
+
+    e.g. deleting localpaths=['/path/to/foo.zip', 'subdir/']:
+
+        with open_archive_path(localpaths, 'w', [localpaths[-1]]) as zh:
+            pass
 
     Args:
         localpaths: [path-to-zip-file, subpath1, subpath2, ...]
