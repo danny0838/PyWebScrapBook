@@ -966,7 +966,7 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-    def test_zip_hasdir(self):
+    def test_zip_has(self):
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -975,16 +975,41 @@ ul  >  li  :not([hidden])  {
                 zh.writestr('folder/.gitkeep', '123')
                 zh.writestr('implicit_folder/.gitkeep', '1234')
 
-            self.assertTrue(util.zip_hasdir(zip_filename, ''))
-            self.assertTrue(util.zip_hasdir(zip_filename, '/'))
-            self.assertFalse(util.zip_hasdir(zip_filename, 'file.txt'))
-            self.assertFalse(util.zip_hasdir(zip_filename, 'file.txt/'))
-            self.assertTrue(util.zip_hasdir(zip_filename, 'folder'))
-            self.assertTrue(util.zip_hasdir(zip_filename, 'folder/'))
-            self.assertTrue(util.zip_hasdir(zip_filename, 'implicit_folder'))
-            self.assertTrue(util.zip_hasdir(zip_filename, 'implicit_folder/'))
-            self.assertFalse(util.zip_hasdir(zip_filename, 'implicit_folder/.gitkeep'))
-            self.assertFalse(util.zip_hasdir(zip_filename, 'implicit_folder/.gitkeep/'))
+            self.assertTrue(util.zip_has(zip_filename, '', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, '/', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'file.txt', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'file.txt/', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, 'folder', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, 'folder/', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='dir'))
+
+            self.assertFalse(util.zip_has(zip_filename, '', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, '/', type='file'))
+            self.assertTrue(util.zip_has(zip_filename, 'file.txt', type='file'))
+            self.assertTrue(util.zip_has(zip_filename, 'file.txt/', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'folder', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'folder/', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/', type='file'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='file'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='file'))
+
+            self.assertTrue(util.zip_has(zip_filename, '', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, '/', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'file.txt', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'file.txt/', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'folder', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'folder/', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='any'))
+            self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='any'))
         finally:
             try:
                 os.remove(zip_filename)

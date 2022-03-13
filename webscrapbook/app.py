@@ -746,11 +746,8 @@ def handle_action_renaming(func):
 
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zip:
-                try:
-                    zip.getinfo(localpaths[-1])
-                except KeyError:
-                    if not util.zip_hasdir(zip, localpaths[-1] + '/'):
-                        abort(404, "Source does not exist.")
+                if not util.zip_has(zip, localpaths[-1]):
+                    abort(404, "Source does not exist.")
         else:
             if not os.path.lexists(localpaths[0]):
                 abort(404, "Source does not exist.")
@@ -765,23 +762,17 @@ def handle_action_renaming(func):
 
         if len(targetpaths) > 1:
             with open_archive_path(targetpaths) as zip:
-                try:
-                    zip.getinfo(targetpaths[-1])
-                except KeyError:
-                    # target is an existing directory, treat as to target/<basename>
-                    if util.zip_hasdir(zip, targetpaths[-1] + '/'):
-                        targetpaths[-1] = targetpaths[-1] + ('/' if targetpaths[-1] else '') + os.path.basename(localpaths[-1])
-
-                        # recheck if target exists
-                        try:
-                            zip.getinfo(targetpaths[-1])
-                        except KeyError:
-                            if util.zip_hasdir(zip, targetpaths[-1] + '/'):
-                                abort(400, 'Found identical entry under the target directory.')
-                        else:
-                            abort(400, 'Found identical entry under the target directory.')
-                else:
+                # target is a file
+                if util.zip_has(zip, targetpaths[-1], type='file'):
                     abort(400, 'Found something at target.')
+
+                # target is a directory, treat as to target/<basename>
+                if util.zip_has(zip, targetpaths[-1], type='dir'):
+                    targetpaths[-1] = targetpaths[-1] + ('/' if targetpaths[-1] else '') + os.path.basename(localpaths[-1])
+
+                    # recheck if target exists
+                    if util.zip_has(zip, targetpaths[-1], type='any'):
+                        abort(400, 'Found identical entry under the target directory.')
         else:
             if os.path.lexists(targetpaths[0]):
                 if os.path.isdir(targetpaths[0]):

@@ -1007,32 +1007,47 @@ def zip_listdir(zip, subpath, recursive=False):
                 yield info
 
 
-def zip_hasdir(zip, subpath):
-    """Check if a directory exists in the ZIP.
+def zip_has(zip, subpath, type='any'):
+    """Check if a directory or file exists in the ZIP.
 
-    NOTE: It is possible that entry mydir/ does not exist while
-    mydir/foo.bar exists. Check for matching subentries to make sure whether
-    the directory exists.
+    NOTE: It is possible that entry mydir/ does not exist while mydir/foo.bar
+    exists. Check for matching subentries to make sure whether the implicit
+    directory exists.
 
     Args:
         zip: path, file-like object, or zipfile.ZipFile
+        subpath: the subpath in the ZIP, with or without trailing slash
+        type: 'dir', 'file', or 'any'
     """
-    base = subpath.rstrip('/') + '/'
-    if base == '/':
-        return True
+    if type not in ('dir', 'file', 'any'):
+        raise ValueError(f'Invalid type: "{type}"')
+
+    base = subpath.rstrip('/')
+    if base == '':
+        return True if type != 'file' else False
 
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
-        # if directory entry exists, we are done
-        try:
-            zh.getinfo(base)
-            return True
-        except KeyError:
-            pass
-
-        # otherwise, look for an implicit directory
-        for path in zh.namelist():
-            if path.startswith(base):
+        if type in ('file', 'any'):
+            try:
+                zh.getinfo(base)
+            except KeyError:
+                pass
+            else:
                 return True
+
+        base += '/'
+        if type in ('dir', 'any'):
+            try:
+                zh.getinfo(base + '/')
+            except KeyError:
+                pass
+            else:
+                return True
+
+            # check for an implicit directory
+            for path in zh.namelist():
+                if path.startswith(base):
+                    return True
 
     return False
 
