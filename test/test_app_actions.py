@@ -2917,6 +2917,27 @@ class TestMkdir(unittest.TestCase):
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), ['20200102/'])
 
+    def test_zip_root(self):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/', data={
+                'token': token(c),
+                'a': 'mkdir',
+                'f': 'json',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+            self.assertTrue(os.path.isfile(self.test_zip))
+            with zipfile.ZipFile(self.test_zip, 'r') as zh:
+                self.assertEqual(zh.namelist(), [])
+
 class TestMkzip(unittest.TestCase):
     def setUp(self):
         self.test_dir = os.path.join(server_root, 'temp')
@@ -3051,6 +3072,21 @@ class TestMkzip(unittest.TestCase):
                 with zh.open('entry.zip') as f:
                     f = zip_stream(f)
                     self.assertTrue(zipfile.is_zipfile(f))
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_root(self, mock_abort):
+        os.makedirs(self.test_dir, exist_ok=True)
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip!/', data={
+                'token': token(c),
+                'a': 'mkzip',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
 
 class TestSave(unittest.TestCase):
     def setUp(self):
@@ -3267,6 +3303,21 @@ class TestSave(unittest.TestCase):
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_save_zip_root(self, mock_abort):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/', data={
+                'token': token(c),
+                'a': 'save',
+                'f': 'json',
+                'text': 'ABC',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
+
     def test_upload_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
 
@@ -3436,6 +3487,21 @@ class TestSave(unittest.TestCase):
                     f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_upload_zip_root(self, mock_abort):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/', data={
+                'token': token(c),
+                'a': 'save',
+                'f': 'json',
+                'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
+                })
+
+            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
 
 class TestDelete(TestActions):
     def setUp(self):
@@ -3928,6 +3994,20 @@ class TestDelete(TestActions):
                     f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), [])
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_root(self, mock_abort):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            pass
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/', data={
+                'token': token(c),
+                'a': 'delete',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
 
 class TestMove(TestActions):
     def setUp(self):

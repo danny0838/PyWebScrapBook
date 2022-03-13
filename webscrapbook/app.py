@@ -1317,6 +1317,10 @@ def action_mkdir():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
+        # treat root as already exists
+        if localpaths[-1] == '':
+            return
+
         try:
             folderpath = localpaths[-1] + '/'
             zip = None
@@ -1364,6 +1368,9 @@ def action_mkzip():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
+        if localpaths[-1] == '':
+            abort(400, "Unable to write to this path in a ZIP.")
+
         try:
             zip = None
 
@@ -1422,6 +1429,9 @@ def action_save():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
+        if localpaths[-1] == '':
+            abort(400, "Unable to write to this path in a ZIP.")
+
         try:
             zip = None
 
@@ -1493,6 +1503,9 @@ def action_delete():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
+        if localpaths[-1] == '':
+            abort(400, "Unable to write to this path in a ZIP.")
+
         try:
             with open_archive_path(localpaths, 'w', [localpaths[-1]]):
                 pass
