@@ -167,6 +167,33 @@ def get_localpath(path):
     return os.path.normpath(host.chroot + os.sep + path)
 
 
+def _get_archive_path_add_subpath(paths, zh, subpath):
+    for m in reversed(list(re.finditer(r'!/', subpath, flags=re.I))):
+        archivepath = subpath[:m.start(0)]
+        conflicting = archivepath + '!/'
+
+        if any(i.startswith(conflicting) for i in zh.namelist()):
+            break
+
+        try:
+            f = zh.open(archivepath, 'r')
+        except KeyError:
+            continue
+
+        with f as f:
+            f = zip_stream(f)
+            try:
+                zip = zipfile.ZipFile(f, 'r')
+            except zipfile.BadZipFile:
+                continue
+
+            with zip as zip:
+                paths.append(archivepath)
+                _get_archive_path_add_subpath(paths, zip, subpath[m.end(0):])
+                return
+
+    paths.append(subpath.rstrip('/'))
+
 def get_archive_path(filepath):
     """Parse archive file path and the sub-archive path.
 
@@ -180,6 +207,7 @@ def get_archive_path(filepath):
         a list [path-to-directory-or-file]
         or [path-to-zip-file, subpath1, subpath2, ...]
     """
+    paths = []
     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
         archivepath = filepath[:m.start(0)].rstrip('/')
         archivefile = get_localpath(archivepath)
@@ -192,31 +220,15 @@ def get_archive_path(filepath):
         try:
             zip = zipfile.ZipFile(archivefile, 'r')
         except (zipfile.BadZipFile, FileNotFoundError, NotADirectoryError):
-            pass
-        else:
-            with zip as zip:
-                def add_subpath(zp, filepath):
-                    for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
-                        archivepath = filepath[:m.start(0)]
-                        conflicting = archivepath + '!/'
-                        if any(i.startswith(conflicting) for i in zp.namelist()):
-                            break
-                        try:
-                            with zp.open(archivepath, 'r') as f:
-                                f = zip_stream(f)
-                                with zipfile.ZipFile(f, 'r') as zip:
-                                    rv.append(archivepath)
-                                    add_subpath(zip, filepath[m.end(0):])
-                                    return
-                        except (KeyError, zipfile.BadZipFile):
-                            pass
-                    rv.append(filepath.rstrip('/'))
+            continue
 
-                rv = [archivepath]
-                add_subpath(zip, filepath[m.end(0):])
-                return rv
+        with zip as zip:
+            paths.append(archivepath)
+            _get_archive_path_add_subpath(paths, zip, filepath[m.end(0):])
+            return paths
 
-    return [filepath.rstrip('/')]
+    paths.append(filepath.rstrip('/'))
+    return paths
 
 
 @contextmanager
