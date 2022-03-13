@@ -1475,12 +1475,16 @@ onCommandRun.commands = {
   },
 
   async mkdir(selectedEntries) {
-    const newFolderName = prompt('Input a name:', 'new-folder');
-    if (!newFolderName) {
+    let newPath = prompt('Input a name:', 'new-folder');
+    if (!newPath) {
       return;
     }
 
-    const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFolderName);
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    newPath = dir + newPath;
+    const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+
     try {
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
@@ -1492,19 +1496,23 @@ onCommandRun.commands = {
         formData: formData,
       });
     } catch (ex) {
-      alert(`Unable to create directory "${newFolderName}": ${ex.message}`);
+      alert(`Unable to create directory "${newPath}": ${ex.message}`);
       return;
     }
     location.reload();
   },
 
   async mkzip(selectedEntries) {
-    const newFileName = prompt('Input a name:', 'new-archive.zip');
-    if (!newFileName) {
+    let newPath = prompt('Input a name:', 'new-archive.zip');
+    if (!newPath) {
       return;
     }
 
-    const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    newPath = dir + newPath;
+    const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+
     try {
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
@@ -1516,19 +1524,23 @@ onCommandRun.commands = {
         formData: formData,
       });
     } catch (ex) {
-      alert(`Unable to create ZIP "${newFileName}": ${ex.message}`);
+      alert(`Unable to create ZIP "${newPath}": ${ex.message}`);
       return;
     }
     location.reload();
   },
 
   async mkfile(selectedEntries) {
-    const newFileName = prompt('Input a name:', 'new-file.txt');
-    if (!newFileName) {
+    let newPath = prompt('Input a name:', 'new-file.txt');
+    if (!newPath) {
       return;
     }
 
-    const target = utils.getTargetUrl(location.href) + encodeURIComponent(newFileName);
+    const base = document.querySelector('main').dataset.base;
+    const dir = document.querySelector('main').dataset.path;
+    newPath = dir + newPath;
+    const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
+
     location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
   },
 
