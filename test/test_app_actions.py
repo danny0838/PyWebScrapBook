@@ -2763,7 +2763,7 @@ class TestMkdir(unittest.TestCase):
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    def test_directory(self):
+    def test_nonexist(self):
         with app.test_client() as c:
             r = c.post('/temp', data={
                 'token': token(c),
@@ -2779,7 +2779,7 @@ class TestMkdir(unittest.TestCase):
                 })
             self.assertTrue(os.path.isdir(self.test_dir))
 
-    def test_directory_nested(self):
+    def test_nonexist_deep(self):
         test_dir = os.path.join(server_root, 'temp', 'subdir')
 
         with app.test_client() as c:
@@ -2797,7 +2797,7 @@ class TestMkdir(unittest.TestCase):
                 })
             self.assertTrue(os.path.isdir(test_dir))
 
-    def test_directory_existed(self):
+    def test_dir(self):
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={
                 'token': token(c),
@@ -2814,7 +2814,7 @@ class TestMkdir(unittest.TestCase):
             self.assertTrue(os.path.isdir(self.test_dir))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_nondirectory_existed(self, mock_abort):
+    def test_file(self, mock_abort):
         with open(self.test_dir, 'w') as f:
             pass
 
@@ -2827,7 +2827,7 @@ class TestMkdir(unittest.TestCase):
 
             mock_abort.assert_called_once_with(400, 'Found a non-directory here.')
 
-    def test_zip_directory(self):
+    def test_zip_nonexist(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -2848,7 +2848,7 @@ class TestMkdir(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/'])
 
-    def test_zip_directory_prefixed(self):
+    def test_zip_nonexist_deep(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -2869,7 +2869,7 @@ class TestMkdir(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
 
-    def test_zip_directory_existed(self):
+    def test_zip_dir(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('temp/subdir/', '')
 
@@ -2890,7 +2890,7 @@ class TestMkdir(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
 
-    def test_zip_directory_nested(self):
+    def test_zip_dir_deep(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             buf1 = io.BytesIO()
             with zipfile.ZipFile(buf1, 'w') as zh1:
@@ -2916,6 +2916,20 @@ class TestMkdir(unittest.TestCase):
                     f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), ['20200102/'])
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_file(self, mock_abort):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            zh.writestr('temp/subdir', '123')
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/temp/subdir', data={
+                'token': token(c),
+                'a': 'mkdir',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found a non-directory here.')
 
     def test_zip_root(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -3015,7 +3029,7 @@ class TestMkzip(unittest.TestCase):
             self.assertTrue(zipfile.is_zipfile(self.test_zip))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_nonfile(self, mock_abort):
+    def test_dir(self, mock_abort):
         os.makedirs(self.test_zip, exist_ok=True)
 
         with app.test_client() as c:
@@ -3074,6 +3088,21 @@ class TestMkzip(unittest.TestCase):
                     self.assertTrue(zipfile.is_zipfile(f))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_zip_dir(self, mock_abort):
+        os.makedirs(self.test_dir, exist_ok=True)
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            zh.writestr('entry.zip/', '')
+
+        with app.test_client() as c:
+            r = c.post('/temp/test.zip!/entry.zip', data={
+                'token': token(c),
+                'a': 'mkzip',
+                'f': 'json',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found a non-file here.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_root(self, mock_abort):
         os.makedirs(self.test_dir, exist_ok=True)
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -3086,7 +3115,7 @@ class TestMkzip(unittest.TestCase):
                 'f': 'json',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
+            mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
 class TestSave(unittest.TestCase):
     def setUp(self):
@@ -3135,7 +3164,7 @@ class TestSave(unittest.TestCase):
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    def test_save_file(self):
+    def test_save_nonexist(self):
         os.makedirs(self.test_dir, exist_ok=True)
 
         with app.test_client() as c:
@@ -3156,7 +3185,7 @@ class TestSave(unittest.TestCase):
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
 
-    def test_save_file_nested(self):
+    def test_save_nonexist_deep(self):
         with app.test_client() as c:
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
@@ -3199,7 +3228,7 @@ class TestSave(unittest.TestCase):
                 self.assertEqual(f.read(), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_save_nonfile_existed(self, mock_abort):
+    def test_save_dir(self, mock_abort):
         os.makedirs(self.test_file, exist_ok=True)
 
         with app.test_client() as c:
@@ -3212,7 +3241,7 @@ class TestSave(unittest.TestCase):
 
             mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
-    def test_save_zip_file(self):
+    def test_save_zip_nonexist(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -3233,7 +3262,7 @@ class TestSave(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.read('index.html').decode('UTF-8'), 'ABC 你好')
 
-    def test_save_zip_file_prefixed(self):
+    def test_save_zip_nonexist_deep(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -3254,7 +3283,7 @@ class TestSave(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
-    def test_save_zip_file_existed(self):
+    def test_save_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('subdir/index.html', 'dummy')
 
@@ -3304,6 +3333,21 @@ class TestSave(unittest.TestCase):
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_save_zip_dir(self, mock_abort):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            zh.writestr('subdir/index.html/', '')
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'save',
+                'f': 'json',
+                'text': 'ABC',
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found a non-file here.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_save_zip_root(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
@@ -3316,9 +3360,9 @@ class TestSave(unittest.TestCase):
                 'text': 'ABC',
                 })
 
-            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
+            mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
-    def test_upload_file(self):
+    def test_upload_nonexist(self):
         os.makedirs(self.test_dir, exist_ok=True)
 
         with app.test_client() as c:
@@ -3339,7 +3383,7 @@ class TestSave(unittest.TestCase):
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
 
-    def test_upload_file_nested(self):
+    def test_upload_nonexist_deep(self):
         with app.test_client() as c:
             r = c.post('/temp/test.txt', data={
                 'token': token(c),
@@ -3358,7 +3402,7 @@ class TestSave(unittest.TestCase):
             with open(self.test_file, 'r', encoding='UTF-8') as f:
                 self.assertEqual(f.read(), 'ABC 你好')
 
-    def test_upload_file_existed(self):
+    def test_upload_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
         with open(self.test_file, 'w', encoding='UTF-8') as f:
             f.write('test')
@@ -3382,7 +3426,7 @@ class TestSave(unittest.TestCase):
                 self.assertEqual(f.read(), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_upload_nonfile_existed(self, mock_abort):
+    def test_upload_dir(self, mock_abort):
         os.makedirs(self.test_file, exist_ok=True)
 
         with app.test_client() as c:
@@ -3395,7 +3439,7 @@ class TestSave(unittest.TestCase):
 
             mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
-    def test_upload_zip_file(self):
+    def test_upload_zip_nonexist(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -3416,7 +3460,7 @@ class TestSave(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.read('index.html').decode('UTF-8'), 'ABC 你好')
 
-    def test_upload_zip_file_prefixed(self):
+    def test_upload_zip_nonexist_deep(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
@@ -3438,7 +3482,7 @@ class TestSave(unittest.TestCase):
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
-    def test_upload_zip_file_existed(self):
+    def test_upload_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('subdir/index.html', 'dummy')
 
@@ -3489,6 +3533,21 @@ class TestSave(unittest.TestCase):
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_upload_zip_dir(self, mock_abort):
+        with zipfile.ZipFile(self.test_zip, 'w') as zh:
+            zh.writestr('subdir/index.html/', '')
+
+        with app.test_client() as c:
+            r = c.post('/temp.maff!/subdir/index.html', data={
+                'token': token(c),
+                'a': 'save',
+                'f': 'json',
+                'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
+                })
+
+            mock_abort.assert_called_once_with(400, 'Found a non-file here.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_upload_zip_root(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
@@ -3501,7 +3560,7 @@ class TestSave(unittest.TestCase):
                 'upload': (io.BytesIO('ABC 你好'.encode('UTF-8')), 'test.txt'),
                 })
 
-            mock_abort.assert_called_once_with(400, 'Unable to write to this path in a ZIP.')
+            mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
 class TestDelete(TestActions):
     def setUp(self):

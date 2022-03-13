@@ -1316,34 +1316,31 @@ def action_mkdir():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        # treat root as already exists
-        if localpaths[-1] == '':
-            return
-
         try:
-            folderpath = localpaths[-1] + '/'
             zip = None
-
             with open_archive_path(localpaths) as zip0:
-                try:
-                    zip0.getinfo(folderpath)
-                except KeyError:
-                    # append for a non-nested zip
-                    if len(localpaths) == 2:
-                        zip = zipfile.ZipFile(localpaths[0], 'a')
-                else:
-                    # skip as the folder already exists
+                if util.zip_has(zip0, localpaths[-1], type='file'):
+                    abort(400, "Found a non-directory here.")
+
+                # skip if the folder already exists
+                if util.zip_has(zip0, localpaths[-1], type='dir'):
                     return
+
+                # append for a non-nested zip
+                if len(localpaths) == 2:
+                    zip = zipfile.ZipFile(localpaths[0], 'a')
 
             if zip is None:
                 zip = open_archive_path(localpaths, 'w')
 
             with zip as zip:
-                info = zipfile.ZipInfo(folderpath, time.localtime())
+                info = zipfile.ZipInfo(localpaths[-1] + '/', time.localtime())
                 zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
+        except HTTPException:
+            raise
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this ZIP file.")
+            abort(500, "Unable to create a directory here.")
 
     else:
         localpath = localpaths[0]
@@ -1367,24 +1364,16 @@ def action_mkzip():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        if localpaths[-1] == '':
-            abort(400, "Unable to write to this path in a ZIP.")
-
         try:
             zip = None
+            with open_archive_path(localpaths) as zip0:
+                if util.zip_has(zip0, localpaths[-1], type='dir'):
+                    abort(400, "Found a non-file here.")
 
-            # append for a nonexistent path in a non-nested zip
-            if len(localpaths) == 2:
-                zip0 = zipfile.ZipFile(localpaths[0], 'a')
-                try:
-                    zip0.getinfo(localpaths[-1])
-                except KeyError:
-                    zip = zip0
-                except Exception:
-                    zip0.close()
-                    raise
-                else:
-                    zip0.close()
+                # append for a nonexistent path in a non-nested zip
+                if len(localpaths) == 2:
+                    if not util.zip_has(zip0, localpaths[-1], type='file'):
+                        zip = zipfile.ZipFile(localpaths[0], 'a')
 
             if zip is None:
                 zip = open_archive_path(localpaths, 'w')
@@ -1395,6 +1384,8 @@ def action_mkzip():
                 with zipfile.ZipFile(buf, 'w'):
                     pass
                 zip.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_STORED)
+        except HTTPException:
+            raise
         except Exception:
             traceback.print_exc()
             abort(500, "Unable to write to this ZIP file.")
@@ -1428,24 +1419,16 @@ def action_save():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        if localpaths[-1] == '':
-            abort(400, "Unable to write to this path in a ZIP.")
-
         try:
             zip = None
+            with open_archive_path(localpaths) as zip0:
+                if util.zip_has(zip0, localpaths[-1], type='dir'):
+                    abort(400, "Found a non-file here.")
 
-            # append for a nonexistent path in a non-nested zip
-            if len(localpaths) == 2:
-                zip0 = zipfile.ZipFile(localpaths[0], 'a')
-                try:
-                    zip0.getinfo(localpaths[-1])
-                except KeyError:
-                    zip = zip0
-                except Exception:
-                    zip0.close()
-                    raise
-                else:
-                    zip0.close()
+                # append for a nonexistent path in a non-nested zip
+                if len(localpaths) == 2:
+                    if not util.zip_has(zip0, localpaths[-1], type='file'):
+                        zip = zipfile.ZipFile(localpaths[0], 'a')
 
             if zip is None:
                 zip = open_archive_path(localpaths, 'w')
@@ -1464,6 +1447,8 @@ def action_save():
                     bytes_ = request.values.get('text', '').encode('ISO-8859-1')
                     zip.writestr(info, bytes_,
                             **util.zip_compression_params(compress_type=zipfile.ZIP_DEFLATED, compresslevel=9))
+        except HTTPException:
+            raise
         except Exception:
             traceback.print_exc()
             abort(500, "Unable to write to this ZIP file.")
