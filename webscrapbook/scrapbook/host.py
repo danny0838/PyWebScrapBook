@@ -365,10 +365,17 @@ class Host:
     def get_subpath(self, file):
         """Get subpath of a file related to root.
 
-        Also convert "\" to "/", which makes it useful for showing a file in
-            issue safely.
+        Also canonicalize path separators to "/".
         """
-        return os.path.relpath(file, self.root).replace('\\', '/')
+        path = os.path.relpath(file, self.root)
+
+        # Convert non-standard path separators to '/'. (Currently this only
+        # happens on Windows, which uses '\', and it's safe to do so since
+        # Windows does not allow '/' in filename.)
+        if os.sep != '/':
+            path = path.replace(os.sep, '/')
+
+        return path
 
     def backup(self, file, backup_dir=None, base=None, move=False):
         """Create a backup for the file or directory.
