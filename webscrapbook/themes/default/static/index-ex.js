@@ -1514,6 +1514,16 @@ onCommandRun.commands = {
     const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
 
     try {
+      // throw if target exists
+      const info = (await utils.wsb({
+        url: target + '?a=info&f=json',
+        responseType: 'json',
+        method: "GET",
+      })).response.data;
+      if (info.type !== null) {
+        throw new Error('Found something at target.');
+      }
+
       const formData = new FormData();
       formData.append('token', await utils.acquireToken(target));
 
@@ -1541,7 +1551,22 @@ onCommandRun.commands = {
     newPath = dir + newPath;
     const target = location.origin + (base + newPath).split('/').map(x => encodeURIComponent(x)).join('/');
 
-    location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
+    try {
+      // throw if target exists
+      const info = (await utils.wsb({
+        url: target + '?a=info&f=json',
+        responseType: 'json',
+        method: "GET",
+      })).response.data;
+      if (info.type !== null) {
+        throw new Error('Found something at target.');
+      }
+
+      location.href = target + '?a=edit&back=' + encodeURIComponent(location.href);
+    } catch (ex) {
+      alert(`Unable to create file "${newPath}": ${ex.message}`);
+      return;
+    }
   },
 
   async edit(selectedEntries) {
