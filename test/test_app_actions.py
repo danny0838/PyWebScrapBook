@@ -4030,19 +4030,6 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target is not specified.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_path_check(self, mock_abort):
-        """Target must not beyond the root directory."""
-        with app.test_client() as c:
-            r = c.post('/temp/subdir/test.txt', data={
-                'token': token(c),
-                'a': 'move',
-                'f': 'json',
-                'target': '../test_app_actions1/temp/subdir2/test2.txt',
-                })
-
-            mock_abort.assert_called_once_with(403, 'Unable to operate beyond the root directory.')
-
     def test_file(self):
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
@@ -4215,6 +4202,32 @@ class TestMove(TestActions):
                 })
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
+
+    def test_beyond_root(self):
+        """Target must be restricted within the root directory."""
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
+
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '../temp/../../../temp/subdir2/test2.txt',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir', 'test.txt')))
+            self.assert_file_equal(
+                orig_data,
+                {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
+                is_move=True,
+                )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_to_file(self, mock_abort):
@@ -4755,19 +4768,6 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target is not specified.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
-    def test_path_check(self, mock_abort):
-        """Target must not beyond the root directory."""
-        with app.test_client() as c:
-            r = c.post('/temp/subdir/test.txt', data={
-                'token': token(c),
-                'a': 'copy',
-                'f': 'json',
-                'target': '../test_app_actions1/temp/subdir2/test2.txt',
-                })
-
-            mock_abort.assert_called_once_with(403, 'Unable to operate beyond the root directory.')
-
     def test_file(self):
         with app.test_client() as c:
             r = c.post('/temp/subdir/test.txt', data={
@@ -5072,6 +5072,28 @@ class TestCopy(TestActions):
                 })
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
+
+    def test_beyond_root(self):
+        """Target must be restricted within the root directory."""
+        with app.test_client() as c:
+            r = c.post('/temp/subdir/test.txt', data={
+                'token': token(c),
+                'a': 'copy',
+                'f': 'json',
+                'target': '../temp/../../../temp/subdir2/test2.txt',
+                })
+
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'success': True,
+                'data': 'Command run successfully.',
+                })
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
+                )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_to_file(self, mock_abort):

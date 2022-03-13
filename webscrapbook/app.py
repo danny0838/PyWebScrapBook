@@ -167,9 +167,23 @@ def get_localpath(path):
     return os.path.normpath(host.chroot + os.sep + path)
 
 
+def _get_archive_path_tidy(path, striproot=False):
+    has_initial_slash = path.startswith('/')
+    comps = path.split('/')
+    new_comps = []
+    for comp in comps:
+        if comp in ('', '.'):
+            continue
+        if comp == '..':
+            if new_comps:
+                new_comps.pop()
+            continue
+        new_comps.append(comp)
+    return ('/' if has_initial_slash and not striproot else '') + '/'.join(new_comps)
+
 def _get_archive_path_add_subpath(paths, zh, subpath):
     for m in reversed(list(re.finditer(r'!/', subpath, flags=re.I))):
-        archivepath = subpath[:m.start(0)]
+        archivepath = _get_archive_path_tidy(subpath[:m.start(0)], True)
         conflicting = archivepath + '!/'
 
         if any(i.startswith(conflicting) for i in zh.namelist()):
@@ -192,7 +206,7 @@ def _get_archive_path_add_subpath(paths, zh, subpath):
                 _get_archive_path_add_subpath(paths, zip, subpath[m.end(0):])
                 return
 
-    paths.append(subpath.rstrip('/'))
+    paths.append(_get_archive_path_tidy(subpath, True))
 
 def get_archive_path(filepath):
     """Parse archive file path and the sub-archive path.
@@ -209,7 +223,7 @@ def get_archive_path(filepath):
     """
     paths = []
     for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
-        archivepath = filepath[:m.start(0)].rstrip('/')
+        archivepath = _get_archive_path_tidy(filepath[:m.start(0)])
         archivefile = get_localpath(archivepath)
         conflicting = archivefile + '!'
         if os.path.lexists(conflicting):
@@ -227,7 +241,7 @@ def get_archive_path(filepath):
             _get_archive_path_add_subpath(paths, zip, filepath[m.end(0):])
             return paths
 
-    paths.append(filepath.rstrip('/'))
+    paths.append(_get_archive_path_tidy(filepath))
     return paths
 
 
@@ -748,9 +762,6 @@ def handle_action_renaming(func):
 
         targetpaths = get_archive_path(target)
         targetpaths[0] = get_localpath(targetpaths[0])
-
-        if not targetpaths[0].startswith(os.path.join(host.chroot, '')):
-            abort(403, "Unable to operate beyond the root directory.")
 
         if len(targetpaths) > 1:
             with open_archive_path(targetpaths) as zip:

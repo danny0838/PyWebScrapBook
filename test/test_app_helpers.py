@@ -544,6 +544,50 @@ class TestFunctions(unittest.TestCase):
                 except FileNotFoundError:
                     pass
 
+    def test_get_archive_path4(self):
+        """Tidy path."""
+        root = os.path.join(root_dir, 'test_app_helpers', 'general')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            tempdir = os.path.join(root, 'foo', 'bar')
+            tempfile = os.path.join(tempdir, 'entry.zip')
+            try:
+                os.makedirs(tempdir, exist_ok=True)
+                with zipfile.ZipFile(tempfile, 'w') as zip:
+                    pass
+
+                self.assertEqual(
+                    wsbapp.get_archive_path('//foo///bar////entry.zip//'),
+                    ['/foo/bar/entry.zip'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/./foo/././bar/./././entry.zip/./'),
+                    ['/foo/bar/entry.zip'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/foo/wtf/../bar/wtf/./wtf2/.././../entry.zip'),
+                    ['/foo/bar/entry.zip'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/../../../'),
+                    ['/'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/foo/bar/entry.zip!//foo//bar///baz.txt//'),
+                    ['/foo/bar/entry.zip', 'foo/bar/baz.txt'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/foo/bar/entry.zip!/./foo/./bar/././baz.txt/./'),
+                    ['/foo/bar/entry.zip', 'foo/bar/baz.txt'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/foo/bar/entry.zip!/foo/wtf/../bar/wtf/./wtf2/../../baz.txt'),
+                    ['/foo/bar/entry.zip', 'foo/bar/baz.txt'])
+                self.assertEqual(
+                    wsbapp.get_archive_path('/foo/bar/entry.zip!/../../'),
+                    ['/foo/bar/entry.zip', ''])
+            finally:
+                try:
+                    shutil.rmtree(tempdir)
+                except NotADirectoryError:
+                    os.remove(tempdir)
+                except FileNotFoundError:
+                    pass
+
     def test_open_archive_path_read(self):
         root = os.path.join(root_dir, 'test_app_helpers', 'general')
         tempfile = os.path.join(root, 'entry.zip')
