@@ -963,12 +963,13 @@ def zip_listdir(zip, subpath, recursive=False):
 
     Raise ZipDirNotFoundError if subpath does not exist.
 
-    NOTE: It is possible that entry mydir/ does not exist while
-    mydir/foo.bar exists. Check for matching subentries to make sure whether
-    the directory exists.
+    NOTE: It is possible that entry mydir/ does not exist while mydir/foo.bar
+    exists. Check for matching subentries to make sure whether the implicit
+    directory exists.
 
     Args:
         zip: path, file-like object, or zipfile.ZipFile
+        subpath: the subpath in the ZIP, with or without trailing slash
     """
     base = subpath.rstrip('/')
     if base: base += '/'
