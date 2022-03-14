@@ -43,7 +43,7 @@ const LANG = {
   <tr><th data-sort-type="string_ci"><a hidden>{{ i18n('data_table_header_directory') }}</a></th><th data-sort-type="string_ci"><a>{{ i18n('data_table_header_name') }}</a></th><th class="detail" data-sort-type="float"><a>{{ i18n('data_table_header_last_modified') }}</a></th><th class="detail" data-sort-type="integer"><a>{{ i18n('data_table_header_size') }}</a></th></tr>
 </thead>
 <tbody>
-{%- for info in subentries %}
+{%- for info in subentries if info.name %}
   {%- set filename = info.name %}
   {%- set url = quote_path(info.name) + ('/' if info.type == 'dir' else '') %}
   {%- set filetype = info.type %}
