@@ -3,6 +3,17 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.5.0] - 2022-03-14
+* Changes of Backend server API:
+  * `delete` at root path now deletes all entries in a ZIP.
+  * No more allow creating a folder if a file with the same path exists in a ZIP, and vise versa.
+  * Fixed an issue that a path like "/", "foo//bar", "foo/./bar", "foo/../bar", etc., is sometimes not tidied before further processing.
+* Improved the default theme of the web interface:
+  * No more allow creating a file or ZIP if anything exists at the target.
+  * No more list invalid entries in a ZIP.
+  * Commands now use canonical path in the error message.
+* Miscellaneous internal API changes and code optimization.
+
 ## [1.4.2] - 2022-03-12
 * Improved documentation about converters.
 * Improved some test code to prevent occasional false failures.
