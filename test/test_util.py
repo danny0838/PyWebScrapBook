@@ -1137,11 +1137,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-    def test_zip_extract(self):
+    def test_zip_extract01(self):
+        """root"""
         temp_dir = os.path.join(root_dir, 'test_util', 'temp')
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
 
-        # root
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1178,7 +1178,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # folder explicit
+    def test_zip_extract02(self):
+        """folder explicit"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1207,7 +1211,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # folder implicit
+    def test_zip_extract03(self):
+        """folder implicit"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1232,7 +1240,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # file
+    def test_zip_extract04(self):
+        """file"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1257,7 +1269,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # target exists
+    def test_zip_extract05(self):
+        """target exists"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1278,7 +1294,11 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
-        # timezone adjust
+    def test_zip_extract06(self):
+        """timezone adjust"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
         try:
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(zip_filename, 'w') as zh:
