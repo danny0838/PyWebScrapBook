@@ -801,6 +801,14 @@ ul  >  li  :not([hidden])  {
         self.assertFalse(util.is_wsba('20200101000000000/test.svg'))
         self.assertFalse(util.is_wsba('20200101000000000/whatever'))
 
+    def test_zip_fix_subpath(self):
+        subpath = 'abc/def/測試.txt'
+        self.assertEqual(util.zip_fix_subpath(subpath), subpath)
+
+    @unittest.skipUnless(os.sep != "/", 'requires os.sep != "/"')
+    def test_zip_fix_subpath_altsep(self):
+        self.assertEqual(util.zip_fix_subpath('abc\\def\\測試.txt'), 'abc/def/測試.txt')
+
     def test_zip_tuple_timestamp(self):
         self.assertEqual(
             util.zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
@@ -899,6 +907,23 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
+    @unittest.skipUnless(os.sep != "/", 'requires os.sep != "/"')
+    def test_zip_file_info_altsep(self):
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('implicit_folder\\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+
+            self.assertEqual(
+                util.zip_file_info(zip_filename, 'implicit_folder\\.gitkeep'),
+                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_zip_listdir(self):
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
         try:
@@ -966,6 +991,22 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
+    @unittest.skipUnless(os.sep != "/", 'requires os.sep != "/"')
+    def test_zip_listdir_altsep(self):
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo(r'implicit_folder\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+
+            self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder\\')), {
+                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
+                })
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
     def test_zip_has(self):
         zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
         try:
@@ -1010,6 +1051,39 @@ ul  >  li  :not([hidden])  {
             self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='any'))
             self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='any'))
             self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='any'))
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+
+    @unittest.skipUnless(os.sep != "/", 'requires os.sep != "/"')
+    def test_zip_has_altsep(self):
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        try:
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr('implicit_folder\\.gitkeep', '1234')
+
+            self.assertTrue(util.zip_has(zip_filename, '', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, '\\', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='dir'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='dir'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='dir'))
+
+            self.assertFalse(util.zip_has(zip_filename, '', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, '\\', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder', type='file'))
+            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\', type='file'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='file'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='file'))
+
+            self.assertTrue(util.zip_has(zip_filename, '', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, '\\', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='any'))
+            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='any'))
         finally:
             try:
                 os.remove(zip_filename)
@@ -1127,6 +1201,31 @@ ul  >  li  :not([hidden])  {
 
             with zipfile.ZipFile(zip_filename) as zh:
                 self.assertEqual(zh.read('myfile.txt').decode('UTF-8'), 'ABC中文')
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+    @unittest.skipUnless(os.sep != "/", 'requires os.sep != "/"')
+    def test_zip_compress05(self):
+        """altsep"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
+        try:
+            os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
+            with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+                fh.write('ABCDEF')
+
+            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
+
+            with zipfile.ZipFile(zip_filename) as zh:
+                self.assertEqual(zh.read('sub/folder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
         finally:
             try:
                 os.remove(zip_filename)
@@ -1311,6 +1410,33 @@ ul  >  li  :not([hidden])  {
             self.assertEqual(
                 os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
                 zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta
+                )
+        finally:
+            try:
+                os.remove(zip_filename)
+            except FileNotFoundError:
+                pass
+            try:
+                shutil.rmtree(temp_dir)
+            except FileNotFoundError:
+                pass
+
+    @unittest.skipUnless(os.sep != "/", 'requires os.sep != "/"')
+    def test_zip_extract07(self):
+        """altsep"""
+        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
+        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_filename, 'w') as zh:
+                zh.writestr(zipfile.ZipInfo('sub\\folder\\.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+
+            util.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
+
+            self.assertEqual(
+                os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
+                zip_tuple_timestamp((1987, 1, 4, 0, 0, 0))
                 )
         finally:
             try:

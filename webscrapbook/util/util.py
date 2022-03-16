@@ -875,6 +875,14 @@ class ZipDirNotFoundError(Exception):
     pass
 
 
+def zip_fix_subpath(subpath):
+    """Fix subpath to fit ZIP format specification.
+    """
+    if os.sep != "/" and os.sep in subpath:
+        subpath = subpath.replace(os.sep, "/")
+    return subpath
+
+
 def zip_compression_params(mimetype=None, compress_type=None, compresslevel=None, autodetector=is_compressible):
     """A helper for determining compress type and level.
 
@@ -928,6 +936,8 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
         zip: path, file-like object, or zipfile.ZipFile
         subpath: 'dir' and 'dir/' are both supported
     """
+    subpath = zip_fix_subpath(subpath)
+
     subpath = subpath.rstrip('/')
     if base is None:
         name = os.path.basename(subpath)
@@ -971,6 +981,8 @@ def zip_listdir(zip, subpath, recursive=False):
         zip: path, file-like object, or zipfile.ZipFile
         subpath: the subpath in the ZIP, with or without trailing slash
     """
+    subpath = zip_fix_subpath(subpath)
+
     base = subpath.rstrip('/')
     if base: base += '/'
     base_len = len(base)
@@ -1020,6 +1032,8 @@ def zip_has(zip, subpath, type='any'):
         subpath: the subpath in the ZIP, with or without trailing slash
         type: 'dir', 'file', or 'any'
     """
+    subpath = zip_fix_subpath(subpath)
+
     if type not in ('dir', 'file', 'any'):
         raise ValueError(f'Invalid type: "{type}"')
 
@@ -1066,6 +1080,8 @@ def zip_compress(zip, filename, subpath, filter=[]):
     Raises:
         shutil.Error: if any child file cannot be added to the zip
     """
+    subpath = zip_fix_subpath(subpath)
+
     filename = os.path.abspath(filename)
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'w') as zh:
         if os.path.isdir(filename):
@@ -1146,6 +1162,8 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
     Raises:
         FileExistsError: if dst already exists
     """
+    subpath = zip_fix_subpath(subpath)
+
     if os.path.lexists(dst):
         # trigger FileExistsError
         os.mkdir(dst)
