@@ -622,8 +622,10 @@ class TestFunctions(unittest.TestCase):
         with app.app_context():
             try:
                 with zipfile.ZipFile(tempfile, 'w') as zip:
+                    zip.comment = 'test zip comment 測試'.encode('UTF-8')
                     buf1 = io.BytesIO()
                     with zipfile.ZipFile(buf1, 'w') as zip1:
+                        zip1.comment = 'test zip comment 1 測試'.encode('UTF-8')
                         zip1.writestr('subdir/index.html', 'Hello World!')
                     zip.writestr('entry1.zip', buf1.getvalue())
 
@@ -640,6 +642,13 @@ class TestFunctions(unittest.TestCase):
 
                     # new
                     self.assertEqual(zip.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
+
+                # check comments are kept
+                with wsbapp.open_archive_path([tempfile, '']) as zip:
+                    self.assertEqual(zip.comment.decode('UTF-8'), 'test zip comment 測試')
+
+                with wsbapp.open_archive_path([tempfile, 'entry1.zip', 'subdir/index.html']) as zip:
+                    self.assertEqual(zip.comment.decode('UTF-8'), 'test zip comment 1 測試')
             finally:
                 try:
                     os.remove(tempfile)

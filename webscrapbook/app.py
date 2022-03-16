@@ -308,6 +308,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
             for i in reversed(range(1, last + 1)):
                 zip0 = stack.pop()
                 with zipfile.ZipFile(buffer, 'a') as zip:
+                    zip.comment = zip0.comment
                     for info in zip0.infolist():
                         if filters and i == last:
                             if _open_archive_path_filter(info.filename, filters):
