@@ -326,10 +326,12 @@ class Host:
 
         self.chroot = os.path.normpath(os.path.join(root, self.config['app']['root']))
         self.backup_dir = os.path.normpath(os.path.join(root, self.config['app']['backup_dir']))
+
+        theme = util.validate_filename(config['app']['theme'])
         self.themes = [
-            os.path.join(root, WSB_DIR, 'themes', config['app']['theme']),
-            os.path.join(WSB_USER_DIR, 'themes', config['app']['theme']),
-            os.path.normpath(os.path.join(__file__, '..', '..', 'themes', config['app']['theme'])),
+            os.path.join(root, WSB_DIR, 'themes', theme),
+            os.path.join(WSB_USER_DIR, 'themes', theme),
+            os.path.normpath(os.path.join(__file__, '..', '..', 'themes', theme)),
             ]
         self.statics = [os.path.join(t, 'static') for t in self.themes]
         self.templates = [os.path.join(t, 'templates') for t in self.themes]

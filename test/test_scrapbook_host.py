@@ -149,6 +149,26 @@ name = mybook2
             'id2': 'mybook2',
             })
 
+    @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
+    def test_init03(self):
+        """Validate theme name to avoid a potential bad path."""
+        for theme, theme_fixed in [
+                ('', '_'),
+                ('.', '_'),
+                ('..', '_'),
+                ('foo/bar', 'foo_bar'),
+                ('foo\\bar', 'foo_bar'),
+                ]:
+            with self.subTest(theme=theme):
+                with open(self.test_config, 'w', encoding='UTF-8') as f:
+                    f.write(f"[app]\ntheme = {theme}")
+                host = Host(self.test_root)
+                self.assertEqual([os.path.normcase(f) for f in host.themes], [
+                    os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', theme_fixed)),
+                    os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', theme_fixed)),
+                    os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', theme_fixed))),
+                    ])
+
     def test_get_static_file01(self):
         """Lookup static file from built-in themes"""
         host = Host(self.test_root)
