@@ -166,17 +166,17 @@ class TestUtils(unittest.TestCase):
             util.validate_filename('foo\\bar'),
             'foo_bar')
         self.assertEqual(
-            util.validate_filename(''.join(chr(i) for i in range(0x80))),
+            util.validate_filename(''.join(chr(i) for i in range(0xA0))),
             "!_#$%&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
         self.assertEqual(
-            util.validate_filename('\u0080中文𠀀'),
-            '\u0080中文𠀀')
+            util.validate_filename('\u00A0中文𠀀'),
+            '\u00A0中文𠀀')
         self.assertEqual(
-            util.validate_filename(''.join(chr(i) for i in range(0x80)), force_ascii=True),
+            util.validate_filename(''.join(chr(i) for i in range(0xA0)), force_ascii=True),
             "!_#$%25&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
         self.assertEqual(
-            util.validate_filename('\u0080中文𠀀', force_ascii=True),
-            '%C2%80%E4%B8%AD%E6%96%87%F0%A0%80%80')
+            util.validate_filename('\u00A0中文𠀀', force_ascii=True),
+            '%C2%A0%E4%B8%AD%E6%96%87%F0%A0%80%80')
 
     def test_crop(self):
         self.assertEqual(util.crop('dummy text', 10), 'dummy text')

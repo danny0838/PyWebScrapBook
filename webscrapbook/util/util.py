@@ -191,7 +191,7 @@ def validate_filename(filename, force_ascii=False):
     fn = filename
 
     # control chars are bad for filename
-    fn = re.sub(r'[\x00-\x1F\x7F]+', '', fn)
+    fn = re.sub(r'[\x00-\x1F\x7F\x80-\x9F]+', '', fn)
 
     # leading/trailing spaces and dots are not allowed on Windows
     fn = re.sub(r'^\.', '_.', fn)
