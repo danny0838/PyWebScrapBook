@@ -148,6 +148,12 @@ class TestUtils(unittest.TestCase):
             util.validate_filename(''),
             '_')
         self.assertEqual(
+            util.validate_filename('.'),
+            '_')
+        self.assertEqual(
+            util.validate_filename('..'),
+            '_')
+        self.assertEqual(
             util.validate_filename('.wsb'),
             '_.wsb')
         self.assertEqual(
@@ -156,6 +162,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             util.validate_filename('  wsb  '),
             'wsb')
+        self.assertEqual(
+            util.validate_filename('foo\\bar'),
+            'foo_bar')
         self.assertEqual(
             util.validate_filename(''.join(chr(i) for i in range(0x80))),
             "!_#$%&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
