@@ -46,7 +46,7 @@ setup(
     extras_require={
         'adhoc_ssl': ['cryptography'],
         },
-    packages=find_packages(exclude=['test']),
+    packages=find_packages(exclude=['tests']),
     package_data={
         'webscrapbook': [
             'resources/*.*',
