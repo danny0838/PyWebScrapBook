@@ -13,7 +13,6 @@ from datetime import datetime, timezone, timedelta
 import lxml.html
 from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
-from webscrapbook._compat import zip_stream
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_util')
@@ -1903,7 +1902,6 @@ foo   中文<br/>
 
             with zipfile.ZipFile(zip_filename, 'r') as zh:
                 with zh.open('refresh.html') as fh:
-                    fh = zip_stream(fh)
                     self.assertEqual(
                         list(util.iter_meta_refresh(fh)),
                         [(0, 'target.html', None)]
@@ -1954,7 +1952,6 @@ foo   中文<br/>
 
             with zipfile.ZipFile(zip_filename, 'r') as zh:
                 with zh.open('refresh.html') as fh:
-                    fh = zip_stream(fh)
                     self.assertEqual(
                         util.get_meta_refresh(fh),
                         (0, 'target.html', None)

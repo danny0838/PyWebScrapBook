@@ -24,9 +24,10 @@ from urllib.parse import urlsplit, urljoin
 from urllib.request import pathname2url, url2pathname
 from ipaddress import IPv6Address, AddressValueError
 from datetime import datetime, timezone
+from contextlib import nullcontext
+
 from lxml import etree
 import lxml.html
-from .._compat.contextlib import nullcontext
 
 
 #########################################################################

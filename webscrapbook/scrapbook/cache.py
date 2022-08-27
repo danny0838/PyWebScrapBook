@@ -15,6 +15,7 @@ import functools
 from collections import namedtuple, UserDict
 from urllib.parse import urlsplit, urljoin, quote, unquote
 from datetime import datetime, timezone
+from contextlib import nullcontext
 
 import jinja2
 from lxml import etree
@@ -22,8 +23,6 @@ from lxml import etree
 from .host import Host
 from .. import util
 from ..util import Info
-from .._compat import zip_stream
-from .._compat.contextlib import nullcontext
 
 
 class MutatingDict(UserDict):
@@ -662,7 +661,6 @@ class FulltextCacheGenerator():
             yield Info('debug', f'Skipped "{path}" of "{item.id}" (file not exist or accessible)')
             return None
 
-        fh = zip_stream(fh)
         try:
             mime, _ = mimetypes.guess_type(path)
             return (yield from self._get_fulltext_cache_for_fh(item, path, fh, mime))

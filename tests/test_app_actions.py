@@ -18,7 +18,6 @@ import webscrapbook
 from webscrapbook import WSB_DIR, WSB_CONFIG, WSB_EXTENSION_MIN_VERSION
 from webscrapbook.app import make_app
 from webscrapbook.util import make_hashable, frozendict, zip_timestamp, zip_tuple_timestamp
-from webscrapbook._compat import zip_stream
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_actions')
@@ -2913,7 +2912,6 @@ class TestMkdir(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), ['20200102/'])
 
@@ -3061,7 +3059,6 @@ class TestMkzip(unittest.TestCase):
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as f:
-                    f = zip_stream(f)
                     self.assertTrue(zipfile.is_zipfile(f))
 
     def test_zip_file(self):
@@ -3084,7 +3081,6 @@ class TestMkzip(unittest.TestCase):
                 })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as f:
-                    f = zip_stream(f)
                     self.assertTrue(zipfile.is_zipfile(f))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -3328,7 +3324,6 @@ class TestSave(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
@@ -3528,7 +3523,6 @@ class TestSave(unittest.TestCase):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
@@ -4050,7 +4044,6 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('20200101/entry.zip') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), [])
 
@@ -4578,7 +4571,6 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -4613,7 +4605,6 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -4684,7 +4675,6 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -4742,7 +4732,6 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -4780,7 +4769,6 @@ class TestMove(TestActions):
                     zip1.getinfo('subdir/index.html')
 
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             orig_data,
@@ -5587,7 +5575,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
@@ -5612,7 +5599,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'file': os.path.join(self.test_dir, 'subdir')},
@@ -5775,7 +5761,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/index.html'},
@@ -5800,7 +5785,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/'},
@@ -5865,7 +5849,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/index.html'},
@@ -5914,7 +5897,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/'},
@@ -5943,7 +5925,6 @@ class TestCopy(TestActions):
 
             with zipfile.ZipFile(self.test_zip) as zip1:
                 with zip1.open('entry.maff') as f:
-                    f = zip_stream(f)
                     with zipfile.ZipFile(f) as zip2:
                         self.assert_file_equal(
                             {'zip': zip1, 'filename': 'subdir/'},

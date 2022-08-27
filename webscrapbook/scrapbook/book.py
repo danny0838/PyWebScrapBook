@@ -7,7 +7,6 @@ import json
 from urllib.parse import urlsplit, unquote
 
 from .. import util
-from .._compat import zip_stream
 
 
 class TreeFileError(ValueError):
@@ -350,7 +349,6 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
             if util.is_htz(file):
                 with zipfile.ZipFile(file) as zh:
                     with zh.open('index.html') as fh:
-                        fh = zip_stream(fh)
                         return util.load_html_tree(fh)
 
             if util.is_maff(file):
@@ -360,7 +358,6 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
                 with zipfile.ZipFile(file) as zh:
                     with zh.open(info.indexfilename) as fh:
-                        fh = zip_stream(fh)
                         return util.load_html_tree(fh)
         except (OSError, zipfile.BadZipFile, KeyError):
             return None

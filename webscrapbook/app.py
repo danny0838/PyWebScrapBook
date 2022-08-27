@@ -14,6 +14,7 @@ from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote
 from zlib import adler32
 from contextlib import contextmanager
 from secrets import token_urlsafe
+from contextlib import nullcontext
 
 # dependency
 import flask
@@ -38,8 +39,6 @@ from . import util
 from .scrapbook import host as wsb_host
 from .scrapbook import cache as wsb_cache
 from .scrapbook import check as wsb_check
-from ._compat.contextlib import nullcontext
-from ._compat import zip_stream
 
 # see: https://url.spec.whatwg.org/#percent-encoded-bytes
 quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
@@ -195,7 +194,6 @@ def _get_archive_path_add_subpath(paths, zh, subpath):
             continue
 
         with f as f:
-            f = zip_stream(f)
             try:
                 zip = zipfile.ZipFile(f, 'r')
             except zipfile.BadZipFile:
@@ -290,7 +288,6 @@ def open_archive_path(localpaths, mode='r', filters=None):
         stack.append(zip)
         for i in range(1, last):
             f = zip.open(localpaths[i])
-            f = zip_stream(f)
             stack.append(f)
             zip = zipfile.ZipFile(f)
             stack.append(zip)
@@ -844,7 +841,6 @@ def action_view():
                 # convert meta refresh to 302 redirect
                 if localpaths[-1].lower().endswith('.htm'):
                     with zip.open(info) as fh:
-                        fh = zip_stream(fh)
                         target = util.get_meta_refresh(fh).target
 
                     if target is not None:

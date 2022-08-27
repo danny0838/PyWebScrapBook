@@ -8,12 +8,12 @@ import re
 import copy
 import uuid
 from datetime import datetime, timezone, timedelta
+from contextlib import nullcontext
 
 from .host import Host
 from .book import Book
 from .. import util
 from ..util import Info
-from .._compat.contextlib import nullcontext
 
 
 REGEX_TARGET_FILENAME_FORMATTER = re.compile(r'%([^%]*)%')

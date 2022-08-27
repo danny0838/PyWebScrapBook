@@ -22,7 +22,6 @@ setup(
         'Operating System :: OS Independent',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
@@ -35,7 +34,7 @@ setup(
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Science/Research',
         ],
-    python_requires='~=3.6',
+    python_requires='~=3.7',
     install_requires=[
         'flask >= 1.1',
         'werkzeug >= 1.0.0',

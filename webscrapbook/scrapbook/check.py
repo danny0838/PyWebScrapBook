@@ -7,6 +7,7 @@ import time
 import copy
 from urllib.parse import urlsplit, unquote
 from datetime import datetime
+from contextlib import nullcontext
 
 from .. import WSB_DIR
 from .host import Host
@@ -15,7 +16,6 @@ from .indexer import Indexer, FavIconCacher
 from .indexer import generate_item_create, generate_item_modify
 from .. import util
 from ..util import Info
-from .._compat.contextlib import nullcontext
 
 
 # threshold (in seconds) to report file mtime newer than item modify property

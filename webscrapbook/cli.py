@@ -7,13 +7,13 @@ import argparse
 from getpass import getpass
 import traceback
 from inspect import getdoc
+from time import time_ns
 
 # this package
 from . import __package_name__, __version__
 from . import *
 from . import server
 from . import util
-from ._compat.time import time_ns
 
 
 def log(*args):

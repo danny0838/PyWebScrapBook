@@ -10,7 +10,6 @@ from base64 import b64decode, b64encode
 from webscrapbook import WSB_DIR
 from webscrapbook import util
 from webscrapbook.scrapbook import exporter as wsb_exporter
-from webscrapbook._compat import zip_stream
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_exporter')
@@ -166,7 +165,6 @@ scrapbook.toc({
             with zh.open('export.json') as fh:
                 export_info = json.load(fh)
             with zh.open('data/20200101000000000.htz') as fh:
-                fh = zip_stream(fh)
                 with zipfile.ZipFile(fh) as zh2:
                     with zh2.open('index.html') as fh2:
                         index_data = fh2.read().decode('UTF-8')

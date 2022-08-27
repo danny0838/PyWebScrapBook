@@ -4,11 +4,11 @@ import zipfile
 import time
 import json
 from datetime import datetime, timezone, timedelta
+from contextlib import nullcontext
 
 from .host import Host
 from .. import util
 from ..util import Info
-from .._compat.contextlib import nullcontext
 
 
 class Exporter():
