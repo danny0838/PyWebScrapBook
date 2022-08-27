@@ -35,8 +35,7 @@ import lxml.html
 #########################################################################
 
 # common namedtuple for yielded messages for certain classes
-Info = namedtuple('Info', ['type', 'msg', 'data', 'exc'])
-Info.__new__.__defaults__ = (None, None)
+Info = namedtuple('Info', ('type', 'msg', 'data', 'exc'), defaults=(None, None))
 
 
 class frozendict(collections.abc.Mapping):
@@ -599,7 +598,7 @@ def get_relative_url(path, start, path_is_dir=True, start_is_dir=True):
 # Filesystem related manipulation
 #########################################################################
 
-FileInfo = namedtuple('FileInfo', ['name', 'type', 'size', 'last_modified'])
+FileInfo = namedtuple('FileInfo', ('name', 'type', 'size', 'last_modified'))
 
 
 def launch(path):
@@ -1215,7 +1214,7 @@ HEADER_TOKEN = r"[!#$%&'*+.0-9A-Z^_`a-z|~-]+"
 HEADER_QUOTED_STRING = r'(?:"[^"]*(?:\.[^"]*)*")'
 
 
-ContentType = namedtuple('ContentType', ['type', 'parameters'])
+ContentType = namedtuple('ContentType', ('type', 'parameters'))
 
 CONTENT_TYPE_REGEX = re.compile(fr"^{HEADER_TOKEN}/{HEADER_TOKEN}")
 CONTENT_TYPE_REGEX_PARAMETER = re.compile(fr"""
@@ -1263,7 +1262,7 @@ def parse_content_type(string):
     return ContentType(type, parameters)
 
 
-DataUri = namedtuple('DataUri', ['bytes', 'mime', 'parameters'])
+DataUri = namedtuple('DataUri', ('bytes', 'mime', 'parameters'))
 
 PARSE_DATAURI_REGEX_FIELDS = re.compile(r'^data:([^,]*?)(;base64)?,([^#]*)', re.I)
 PARSE_DATAURI_REGEX_KEY_VALUE = re.compile(r'^(.*?)=(.*?)$')
@@ -1429,7 +1428,7 @@ def load_html_tree(file, options={}):
             fh.close()
 
 
-MetaRefreshInfo = namedtuple('MetaRefreshInfo', ['time', 'target', 'context'])
+MetaRefreshInfo = namedtuple('MetaRefreshInfo', ('time', 'target', 'context'))
 
 # ref: https://html.spec.whatwg.org/multipage/semantics.html#attr-meta-http-equiv-refresh
 META_REFRESH_REGEX = re.compile(r"""
@@ -1627,7 +1626,7 @@ def get_meta_refreshed_file(file):
 # MAFF manipulation
 #########################################################################
 
-MaffPageInfo = namedtuple('MaffPageInfo', ['title', 'originalurl', 'archivetime', 'indexfilename', 'charset'])
+MaffPageInfo = namedtuple('MaffPageInfo', ('title', 'originalurl', 'archivetime', 'indexfilename', 'charset'))
 
 def get_maff_pages(zip):
     """Get a list of pages (MaffPageInfo).

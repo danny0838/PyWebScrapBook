@@ -47,8 +47,8 @@ class MutatingDict(UserDict):
 
 
 StaticIndexItem = namedtuple('StaticIndexItem',
-    ['event', 'level', 'id', 'type', 'marked', 'title', 'url', 'icon', 'source', 'comment'])
-StaticIndexItem.__new__.__defaults__ = (None, None, None, None, None, None, None, None)
+    ('event', 'level', 'id', 'type', 'marked', 'title', 'url', 'icon', 'source', 'comment'),
+    defaults=(None, None, None, None, None, None, None, None))
 
 class StaticSiteGenerator():
     """Main class for static site pages generation.
@@ -393,7 +393,7 @@ class RssFeedGenerator():
             yield Info('error', f'Failed to create RSS feed file "feed.atom": {exc.strerror}', exc=exc)
 
 
-FulltextCacheItem = namedtuple('FulltextCacheItem', ['id', 'meta', 'index', 'indexfile', 'files_to_update'])
+FulltextCacheItem = namedtuple('FulltextCacheItem', ('id', 'meta', 'index', 'indexfile', 'files_to_update'))
 
 class FulltextCacheGenerator():
     """Main class for fulltext cache generation.
