@@ -1,4 +1,8 @@
-/build/
-/dist/
+# Byte-compiled
+__pycache__/
 *.pyc
-*.egg-info
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
