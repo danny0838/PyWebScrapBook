@@ -319,10 +319,10 @@ def open_archive_path(localpaths, mode='r', filters=None):
                         else:
                             continue
 
-                        zip.writestr(info, zip0.read(info), **util.zip_compression_params(
+                        zip.writestr(info, zip0.read(info),
                                 compress_type=info.compress_type,
                                 compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                ))
+                                )
 
                 if filters and not any(f == '' for f in filters) and not filtered:
                     raise KeyError('paths to filter do not exist')
@@ -1442,8 +1442,7 @@ def action_save():
                             fh.write(chunk)
                 else:
                     bytes_ = request.values.get('text', '').encode('ISO-8859-1')
-                    zip.writestr(info, bytes_,
-                            **util.zip_compression_params(compress_type=zipfile.ZIP_DEFLATED, compresslevel=9))
+                    zip.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
         except HTTPException:
             raise
         except Exception:
@@ -1571,10 +1570,10 @@ def action_move(sourcepaths, targetpaths):
                         for entry in entries:
                             info = zip.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
-                            zip2.writestr(info, zip.read(entry), **util.zip_compression_params(
+                            zip2.writestr(info, zip.read(entry),
                                     compress_type=info.compress_type,
                                     compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    ))
+                                    )
 
                 with open_archive_path(sourcepaths, 'w', entries) as zip:
                     pass
@@ -1652,10 +1651,10 @@ def action_copy(sourcepaths, targetpaths):
                         for entry in entries:
                             info = zip.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
-                            zip2.writestr(info, zip.read(entry), **util.zip_compression_params(
+                            zip2.writestr(info, zip.read(entry),
                                     compress_type=info.compress_type,
                                     compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    ))
+                                    )
 
     except HTTPException:
         raise

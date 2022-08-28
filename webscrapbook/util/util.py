@@ -885,36 +885,16 @@ def zip_fix_subpath(subpath):
 
 def zip_compression_params(mimetype=None, compress_type=None, compresslevel=None, autodetector=is_compressible):
     """A helper for determining compress type and level.
-
-    - Also handles a compatibility issue of compresslevel in Python < 3.7.
     """
     if compress_type is None and compresslevel is None and autodetector is not None:
         compressible = autodetector(mimetype)
         compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
         compresslevel = 9 if compressible else None
 
-    rv = {
+    return {
         'compress_type': compress_type,
         'compresslevel': compresslevel,
         }
-
-    try:
-        support_compresslevel = getattr(zip_compression_params, '_support_compresslevel')
-    except AttributeError:
-        with zipfile.ZipFile(io.BytesIO(), 'w') as zh:
-            try:
-                zh.writestr('test.txt', '', compress_type=compress_type, compresslevel=compresslevel)
-            except TypeError:
-                # compresslevel is supported since Python 3.7
-                support_compresslevel = False
-            else:
-                support_compresslevel = True
-        setattr(zip_compression_params, '_support_compresslevel', support_compresslevel)
-
-    if not support_compresslevel:
-        del rv['compresslevel']
-
-    return rv
 
 
 def zip_tuple_timestamp(zipinfodate):
