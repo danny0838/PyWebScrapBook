@@ -390,7 +390,14 @@ def view():
 
 
 def parse_args(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    # Improve program name when executed through python -m
+    # NOTE: We don't expect a bad command name such as having a space.
+    if os.path.basename(sys.argv[0]) == '__main__.py':
+        prog = f'{os.path.basename(sys.executable)} -m webscrapbook'
+    else:
+        prog = None
+
+    parser = argparse.ArgumentParser(prog=prog, description=__doc__)
     parser.add_argument('--version', action='version', version=f'{__package_name__} {__version__}',
         help="""show version information and exit""")
     parser.add_argument('--root', default=".",
