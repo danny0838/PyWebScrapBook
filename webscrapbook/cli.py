@@ -389,7 +389,7 @@ def view():
     view_archive_files(args['files'])
 
 
-def main():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', action='version', version=f'{__package_name__} {__version__}',
         help="""show version information and exit""")
@@ -871,15 +871,19 @@ Available TOPICs:
     parser_view.add_argument('files', nargs='+',
         help="""files to view""")
 
-    # parse the command
-    args = vars(parser.parse_args())
+    return parser.parse_args(argv)
+
+
+def main():
+    args = vars(parse_args())
     try:
         func = args.pop('func')
     except KeyError:
-        parser.parse_args(['-h'])
+        parse_args(['-h'])
+        return
     else:
         if func is cmd_convert and args['mode'] is None:
-            parser.parse_args(['convert', '-h'])
+            parse_args(['convert', '-h'])
             return
 
         func(args)
