@@ -14,6 +14,8 @@ import lxml.html
 from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
 
+from . import SYMLINK_SUPPORTED
+
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_util')
 
@@ -391,19 +393,16 @@ ul  >  li  :not([hidden])  {
         entry = os.path.join(root_dir, 'test_util', 'file_info', 'nonexist')
         self.assertFalse(util.file_is_link(entry))
 
+    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
+        'requires administrator or Developer Mode on Windows')
     def test_file_is_link2(self):
         # symlink
         entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
-        try:
-            os.symlink(
-                os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
-                entry,
-                )
-        except OSError:
-            if platform.system() == 'Windows':
-                self.skipTest('requires administrator or Developer Mode on Windows')
-            else:
-                raise
+
+        os.symlink(
+            os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+            entry,
+            )
 
         try:
             self.assertTrue(util.file_is_link(entry))
@@ -480,20 +479,16 @@ ul  >  li  :not([hidden])  {
             except FileNotFoundError:
                 pass
 
+    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
+        'requires administrator or Developer Mode on Windows')
     def test_file_info_symlink(self):
         entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
 
         # target file
-        try:
-            os.symlink(
-                os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
-                entry,
-                )
-        except OSError:
-            if platform.system() == 'Windows':
-                self.skipTest('requires administrator or Developer Mode on Windows')
-            else:
-                raise
+        os.symlink(
+            os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+            entry,
+            )
 
         try:
             self.assertEqual(
@@ -507,16 +502,10 @@ ul  >  li  :not([hidden])  {
                 pass
 
         # target directory
-        try:
-            os.symlink(
-                os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
-                entry,
-                )
-        except OSError:
-            if platform.system() == 'Windows':
-                self.skipTest('requires administrator or Developer Mode on Windows')
-            else:
-                raise
+        os.symlink(
+            os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+            entry,
+            )
 
         try:
             self.assertEqual(
@@ -530,16 +519,10 @@ ul  >  li  :not([hidden])  {
                 pass
 
         # target non-exist
-        try:
-            os.symlink(
-                os.path.join(root_dir, 'test_util', 'file_info', 'nonexist'),
-                entry,
-                )
-        except OSError:
-            if platform.system() == 'Windows':
-                self.skipTest('requires administrator or Developer Mode on Windows')
-            else:
-                raise
+        os.symlink(
+            os.path.join(root_dir, 'test_util', 'file_info', 'nonexist'),
+            entry,
+            )
 
         try:
             self.assertEqual(
