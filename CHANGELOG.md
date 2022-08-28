@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.6.1] - 2022-08-28
+* Updated classifiers and some documentation for the package.
+* Fixed some packaging issues that may cause obsolete files be included.
+* Some filename and coding style changes to meet the general conventions.
+
 ## [1.6.0] - 2022-03-19
 * No more allow a theme name to contain invalid filename characters.
 * Fixed an issue that some control chars in a filename are not correctly handled.
