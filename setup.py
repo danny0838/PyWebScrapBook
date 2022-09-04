@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import sys
-from setuptools import setup, find_packages
 from inspect import cleandoc
+
+from setuptools import find_packages, setup
+
 import webscrapbook
 
 with open('README.md', encoding='utf-8') as f:
@@ -33,7 +34,7 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Science/Research',
-        ],
+    ],
     python_requires='~=3.7',
     install_requires=[
         'flask >= 1.1',
@@ -41,10 +42,20 @@ setup(
         'jinja2 >= 2.10.1',
         'lxml >= 4.0',
         'commonmark >= 0.8',
-        ],
+    ],
     extras_require={
         'adhoc_ssl': ['cryptography'],
-        },
+        'dev': [
+            'flake8 >= 4.0',
+            'pep8-naming >= 0.13.2',
+            'flake8-comprehensions >= 3.7',
+            'flake8-string-format >= 0.3',
+            'flake8-quotes >= 3.0',
+            'flake8-bugbear >= 22.0',
+            'flake8-isort >= 4.2',
+            'isort >= 5.5',
+        ],
+    },
     packages=find_packages(exclude=['tests']),
     package_data={
         'webscrapbook': [
@@ -52,13 +63,13 @@ setup(
             'themes/default/static/*.*',
             'themes/default/templates/*.*',
             'themes/default/locales/*/*.py',
-            ],
-        },
+        ],
+    },
     entry_points={
         'console_scripts': [
             'webscrapbook = webscrapbook.cli:main',
             'wsb = webscrapbook.cli:main',
             'wsbview = webscrapbook.cli:view',
-            ],
-        },
-    )
+        ],
+    },
+)

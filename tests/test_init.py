@@ -1,11 +1,13 @@
-from unittest import mock
-import unittest
-import os
 import io
+import os
+import unittest
 from collections import OrderedDict
+from unittest import mock
+
 import webscrapbook
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
+
 
 def setUpModule():
     # mock out user config
@@ -13,19 +15,21 @@ def setUpModule():
     mockings = [
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(root_dir, 'test_config', 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config')),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
 
+
 class TestClassConfig(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
+    def setUpClass(cls):
+        cls.maxDiff = None
 
     def test_load(self):
         conf = webscrapbook.Config()
@@ -43,7 +47,7 @@ class TestClassConfig(unittest.TestCase):
             ('allowed_x_host', 0),
             ('allowed_x_port', 0),
             ('allowed_x_prefix', 0),
-            ]))
+        ]))
         self.assertDictEqual(conf['server'], OrderedDict([
             ('port', 9999),
             ('host', 'localhost'),
@@ -52,13 +56,13 @@ class TestClassConfig(unittest.TestCase):
             ('ssl_cert', './wsb/wsb.crt'),
             ('ssl_pw', ''),
             ('browse', True),
-            ]))
+        ]))
         self.assertDictEqual(conf['browser'], OrderedDict([
             ('command', ''),
             ('cache_prefix', 'wsb.'),
             ('cache_expire', 123456),
             ('use_jar', False),
-            ]))
+        ]))
         self.assertDictEqual(conf['book'], OrderedDict([
             ('', OrderedDict([
                 ('name', 'mybook'),
@@ -67,7 +71,7 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', 'tree'),
                 ('index', 'tree/map.html'),
                 ('no_tree', False),
-                ])),
+            ])),
             ('book2', OrderedDict([
                 ('name', 'mybook2'),
                 ('top_dir', ''),
@@ -75,7 +79,7 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', '.wsb/tree'),
                 ('index', '.wsb/tree/map.html'),
                 ('no_tree', True),
-                ])),
+            ])),
             ('book3', OrderedDict([
                 ('name', 'mybook3'),
                 ('top_dir', 'sb3'),
@@ -83,14 +87,14 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', 'tree'),
                 ('index', 'tree/map.html'),
                 ('no_tree', True),
-                ])),
-            ]))
+            ])),
+        ]))
         self.assertDictEqual(conf['auth'], OrderedDict([
             ('user1', OrderedDict([
                 ('user', 'myuser1'),
                 ('permission', 'all'),
-                ])),
-            ]))
+            ])),
+        ]))
 
     def test_load_repeated(self):
         conf = webscrapbook.Config()
@@ -111,7 +115,7 @@ class TestClassConfig(unittest.TestCase):
             ('allowed_x_host', 0),
             ('allowed_x_port', 0),
             ('allowed_x_prefix', 0),
-            ]))
+        ]))
         with self.assertRaises(KeyError):
             conf['book']['book2']
         with self.assertRaises(KeyError):
@@ -251,7 +255,7 @@ no_tree = on
 user = myuser1
 permission = all
 
-""")
+""")  # noqa: W291
         finally:
             os.chdir(_cwd)
 
@@ -276,7 +280,7 @@ permission = all
                     ('allowed_x_host', 0),
                     ('allowed_x_port', 0),
                     ('allowed_x_prefix', 0),
-                    ])),
+                ])),
                 ('server', OrderedDict([
                     ('port', 9999),
                     ('host', 'localhost'),
@@ -285,13 +289,13 @@ permission = all
                     ('ssl_cert', './wsb/wsb.crt'),
                     ('ssl_pw', ''),
                     ('browse', True),
-                    ])),
+                ])),
                 ('browser', OrderedDict([
                     ('command', ''),
                     ('cache_prefix', 'wsb.'),
                     ('cache_expire', 123456),
                     ('use_jar', False),
-                    ])),
+                ])),
                 ('book', OrderedDict([
                     ('', OrderedDict([
                         ('name', 'mybook'),
@@ -300,7 +304,7 @@ permission = all
                         ('tree_dir', 'tree'),
                         ('index', 'tree/map.html'),
                         ('no_tree', False),
-                        ])),
+                    ])),
                     ('book2', OrderedDict([
                         ('name', 'mybook2'),
                         ('top_dir', ''),
@@ -308,7 +312,7 @@ permission = all
                         ('tree_dir', '.wsb/tree'),
                         ('index', '.wsb/tree/map.html'),
                         ('no_tree', True),
-                        ])),
+                    ])),
                     ('book3', OrderedDict([
                         ('name', 'mybook3'),
                         ('top_dir', 'sb3'),
@@ -316,17 +320,18 @@ permission = all
                         ('tree_dir', 'tree'),
                         ('index', 'tree/map.html'),
                         ('no_tree', True),
-                        ])),
                     ])),
+                ])),
                 ('auth', OrderedDict([
                     ('user1', OrderedDict([
                         ('user', 'myuser1'),
                         ('permission', 'all'),
-                        ])),
                     ])),
-                ]))
+                ])),
+            ]))
         finally:
             os.chdir(_cwd)
+
 
 if __name__ == '__main__':
     unittest.main()

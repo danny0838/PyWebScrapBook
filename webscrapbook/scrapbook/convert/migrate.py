@@ -1,20 +1,17 @@
+import json
 import os
+import re
 import shutil
 import tempfile
-import traceback
-import re
 import time
-import io
-import json
+import traceback
 from datetime import datetime
 from urllib.parse import urlsplit
-from urllib.request import url2pathname
 
 from ... import util
 from ...util import Info
-from ...util.html import Markup, MarkupTag, HtmlRewriter
+from ...util.html import HtmlRewriter, Markup, MarkupTag
 from ..host import Host
-
 
 HTML_FILE_FILTER = re.compile(r'^.+\.x?html$', re.I)
 
@@ -143,10 +140,10 @@ function () {
 
 class Converter:
     def __init__(self, input, output, book_ids=None, *,
-            convert_legacy=False,
-            convert_v1=False,
-            use_native_tags=False,
-            ):
+                 convert_legacy=False,
+                 convert_v1=False,
+                 use_native_tags=False,
+                 ):
         self.input = input
         self.output = output
         self.book_ids = book_ids
@@ -225,7 +222,7 @@ class ConvertDataFilesLegacy:
                     book.save_note_file(index_file, content)
             else:
                 index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
-                for root, dirs, files in os.walk(index_dir):
+                for root, _dirs, files in os.walk(index_dir):
                     for file in files:
                         if HTML_FILE_FILTER.search(file):
                             file = os.path.join(root, file)
@@ -235,7 +232,7 @@ class ConvertDataFilesLegacy:
                                     file,
                                     use_native_tags=self.use_native_tags,
                                     host=self.book.host,
-                                    )
+                                )
                                 conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
@@ -252,7 +249,7 @@ class ConvertHtmlFileLegacy(HtmlRewriter):
         'scrapbook-sticky-header': 'sticky-header',
         'scrapbook-sticky-footer': 'sticky-footer',
         'scrapbook-block-comment': 'block-comment',
-        }
+    }
     LEGACY_FREENOTE_STYLE_POSITION_REGEX = re.compile(r'position:\s*(\w+);', re.I)
     LEGACY_POS_STYLE_REGEX = re.compile(r'(?:left|top|width|height):\s*[\d.]+px;', re.I)
     LEGACY_COMBINE_CSS = """\
@@ -290,7 +287,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         'chrome://scrapbook/skin/treenote.png': 'postit.png',
         'chrome://scrapbook/skin/treenotex.png': 'note.png',
         'chrome://scrapbook/skin/treeitem.png': 'item.png',
-        }
+    }
 
     def __init__(self, file, *, use_native_tags=False, host=None):
         super().__init__(file)
@@ -305,7 +302,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
         super().run()
 
     def rewrite(self, markups):
-        for i, markup in enumerate(markups):
+        for markup in markups:
             if markup.type == 'starttag':
                 # record map of data-sb-id to markup
                 id = markup.getattr('data-sb-id')
@@ -336,9 +333,9 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
             if markup.type == 'starttag':
                 # pass-through special context tags
                 if markup.tag in ('template', 'svg', 'math'):
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
-                    for i in range(i, iend + 1):
-                        rv.append(markups[i])
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
+                    for j in range(i, iend + 1):
+                        rv.append(markups[j])
                     i = iend + 1
                     continue
 
@@ -360,19 +357,19 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                             tag='style',
                             attrs=[
                                 ('data-scrapbook-elem', 'custom-css'),
-                                ],
-                            ))
+                            ],
+                        ))
                         rv.append(Markup(
                             is_xhtml=self.is_xhtml,
                             type='data',
                             data=util.compress_code(self.LEGACY_COMBINE_CSS),
                             is_cdata=True,
-                            ))
+                        ))
                         rv.append(MarkupTag(
                             is_xhtml=self.is_xhtml,
                             type='endtag',
                             tag='style',
-                            ))
+                        ))
 
                         i += 1
                         self.changed = True
@@ -396,7 +393,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                             type='starttag',
                             tag=markup.tag,
                             attrs=markup.attrs,
-                            ))
+                        ))
 
                         i += 1
                         self.changed = True
@@ -411,7 +408,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         'data-scrapbook-id': None,
                         'data-scrapbook-elem': 'linemarker',
                         'class': [],
-                        }
+                    }
 
                     # id
                     id = markup.getattr('data-sb-id')
@@ -446,12 +443,14 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
                     attrs['class'] = ' '.join(attrs['class'])
                     attrs = [(a, v) for a, v in attrs.items() if v]
-                    rv.append(MarkupTag(
-                        is_xhtml=self.is_xhtml,
-                        type='starttag',
-                        tag=tag,
-                        attrs=attrs,
-                        ))
+                    rv.append(
+                        MarkupTag(
+                            is_xhtml=self.is_xhtml,
+                            type='starttag',
+                            tag=tag,
+                            attrs=attrs,
+                        )
+                    )
 
                     _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
@@ -459,7 +458,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
-                        ))
+                    ))
 
                     i = _i + 1
                     self.changed = True
@@ -470,7 +469,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     attrs = {
                         'data-scrapbook-elem': 'sticky',
                         'class': ['styled'],
-                        }
+                    }
 
                     # CSS
                     # @TODO: implement CSS parser for better error proof
@@ -491,7 +490,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
-                        ))
+                    ))
 
                     _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
@@ -499,7 +498,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
-                        ))
+                    ))
 
                     i = _i + 1
                     self.changed = True
@@ -507,13 +506,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     continue
 
                 elif type == 'sticky':
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
 
                     tag = 'div' if self.use_native_tags else 'scrapbook-sticky'
                     attrs = {
                         'data-scrapbook-elem': 'sticky',
                         'class': ['styled', 'plaintext'],
-                        }
+                    }
                     if 'scrapbook-sticky-relative' in markup.classes:
                         attrs['class'].append('relative')
 
@@ -529,11 +528,11 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     textarea_i = self.find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
                     if textarea_i is not None:
                         # unsaved sticky: take textarea content
-                        textarea_iend = self.find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
+                        textarea_iend = self.find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)  # noqa: B023
                         text = ''.join(str(d) for d in markups[textarea_i + 1:textarea_iend])
                     else:
                         last_child_i = i
-                        for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                        for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):  # noqa: B023
                             last_child_i = j
                         text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
@@ -544,19 +543,19 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
-                        ))
+                    ))
                     if text:
                         rv.append(Markup(
                             is_xhtml=self.is_xhtml,
                             type='data',
                             data=text,
                             convert_charrefs=False,
-                            ))
+                        ))
                     rv.append(MarkupTag(
                         is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
-                        ))
+                    ))
 
                     i = iend + 1
                     self.changed = True
@@ -564,13 +563,13 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     continue
 
                 elif type == 'block-comment':
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
 
                     tag = 'div' if self.use_native_tags else 'scrapbook-sticky'
                     attrs = {
                         'data-scrapbook-elem': 'sticky',
                         'class': ['plaintext', 'relative'],
-                        }
+                    }
 
                     # CSS
                     css = markup.getattr('style')
@@ -585,7 +584,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                     textarea_i = self.find(markups, lambda x: x.tag == 'textarea', i + 1, markup.endtag)
                     if textarea_i is not None:
                         # unsaved block-comment: take textarea content
-                        textarea_iend = self.find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)
+                        textarea_iend = self.find(markups, lambda x: x == markups[textarea_i].endtag, textarea_i + 1, markup.endtag)  # noqa: B023
                         text = ''.join(str(d) for d in markups[textarea_i + 1:textarea_iend])
                     else:
                         text = ''.join(str(d) for d in markups[i + 1:iend] if d.type == 'data')
@@ -597,19 +596,19 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
-                        ))
+                    ))
                     if text:
                         rv.append(Markup(
                             is_xhtml=self.is_xhtml,
                             type='data',
                             data=text,
                             convert_charrefs=False,
-                            ))
+                        ))
                     rv.append(MarkupTag(
                         is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
-                        ))
+                    ))
 
                     i = iend + 1
                     self.changed = True
@@ -630,7 +629,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
                         # convert id attribute
                         elif attr == 'data-sb-id':
-                            markup.attrs[j] = ('data-scrapbook-id',  self._convert_legacy_scrapbook_elem_id(value))
+                            markup.attrs[j] = ('data-scrapbook-id', self._convert_legacy_scrapbook_elem_id(value))
                             markup_changed = True
 
                         # convert data-sb-orig-<attr>
@@ -650,7 +649,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
                             tag=markup.tag,
                             attrs=markup.attrs,
                             is_self_end=markup.is_self_end,
-                            ))
+                        ))
 
                         i += 1
                         self.changed = True
@@ -702,7 +701,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
             self.file,
             path_is_dir=False,
             start_is_dir=False,
-            )
+        )
 
         return new_src
 
@@ -727,7 +726,7 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
 
             if markup.type == 'starttag':
                 if markup.getattr('data-scrapbook-elem') in {'annotation-loader', 'annotation-css'}:
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
                     i = iend + 1
                     continue
 
@@ -746,19 +745,19 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
             tag='style',
             attrs=[
                 ('data-scrapbook-elem', 'annotation-css'),
-                ],
-            ))
+            ],
+        ))
         markups.append(Markup(
             is_xhtml=self.is_xhtml,
             type='data',
             data=util.compress_code(ANNOTATION_CSS),
             is_cdata=True,
-            ))
+        ))
         markups.append(MarkupTag(
             is_xhtml=self.is_xhtml,
             type='endtag',
             tag='style',
-            ))
+        ))
 
         script = util.compress_code(ANNOTATION_JS)
         if self.host:
@@ -771,19 +770,19 @@ cite.scrapbook-header a.notex { color: rgb(80,0,32); }
             tag='script',
             attrs=[
                 ('data-scrapbook-elem', 'annotation-loader'),
-                ],
-            ))
+            ],
+        ))
         markups.append(Markup(
             is_xhtml=self.is_xhtml,
             type='data',
             data=script,
             is_cdata=True,
-            ))
+        ))
         markups.append(MarkupTag(
             is_xhtml=self.is_xhtml,
             type='endtag',
             tag='script',
-            ))
+        ))
 
         pos = None
         for i in reversed(range(0, len(rv))):
@@ -827,7 +826,7 @@ class ConvertDataFilesV1:
             # folder
             if index.endswith('/index.html'):
                 index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
-                for root, dirs, files in os.walk(index_dir):
+                for root, _dirs, files in os.walk(index_dir):
                     for file in files:
                         if HTML_FILE_FILTER.search(file):
                             file = os.path.join(root, file)
@@ -848,7 +847,7 @@ class ConvertDataFilesV1:
                     util.zip_extract(index_file, tempzipdir)
 
                     changed = False
-                    for root, dirs, files in os.walk(tempzipdir):
+                    for root, _dirs, files in os.walk(tempzipdir):
                         for file in files:
                             if HTML_FILE_FILTER.search(file):
                                 file = os.path.join(root, file)
@@ -912,9 +911,9 @@ class ConvertHtmlFileV1(HtmlRewriter):
             if markup.type == 'starttag':
                 # pass-through special context tags
                 if markup.tag in ('template', 'svg', 'math'):
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
-                    for i in range(i, iend + 1):
-                        rv.append(markups[i])
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
+                    for j in range(i, iend + 1):
+                        rv.append(markups[j])
                     i = iend + 1
                     continue
 
@@ -930,10 +929,10 @@ class ConvertHtmlFileV1(HtmlRewriter):
                 # handle old WebScrapBook loaders
                 if markup.tag == 'script':
                     if markup.getattr('data-scrapbook-elem') in {
-                            'canvas-loader',  # WebScrapBook < 0.69
-                            'shadowroot-loader',  # WebScrapBook < 0.69
-                            }:
-                        iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                        'canvas-loader',  # WebScrapBook < 0.69
+                        'shadowroot-loader',  # WebScrapBook < 0.69
+                    }:
+                        iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
 
                         i = iend + 1
                         self.changed = True
@@ -969,7 +968,7 @@ class ConvertHtmlFileV1(HtmlRewriter):
 
             if markup.type == 'starttag':
                 if markup.getattr('data-scrapbook-elem') in {'basic-loader', 'annotation-loader', 'annotation-css'}:
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
                     i = iend + 1
                     continue
 
@@ -989,19 +988,19 @@ class ConvertHtmlFileV1(HtmlRewriter):
                 tag='script',
                 attrs=[
                     ('data-scrapbook-elem', 'basic-loader'),
-                    ],
-                ))
+                ],
+            ))
             markups.append(Markup(
                 is_xhtml=self.is_xhtml,
                 type='data',
                 data=script,
                 is_cdata=True,
-                ))
+            ))
             markups.append(MarkupTag(
                 is_xhtml=self.is_xhtml,
                 type='endtag',
                 tag='script',
-                ))
+            ))
 
             pos = None
             for i in reversed(range(0, len(rv))):
@@ -1028,19 +1027,19 @@ class ConvertHtmlFileV1(HtmlRewriter):
                 tag='style',
                 attrs=[
                     ('data-scrapbook-elem', 'annotation-css'),
-                    ],
-                ))
+                ],
+            ))
             markups.append(Markup(
                 is_xhtml=self.is_xhtml,
                 type='data',
                 data=util.compress_code(ANNOTATION_CSS),
                 is_cdata=True,
-                ))
+            ))
             markups.append(MarkupTag(
                 is_xhtml=self.is_xhtml,
                 type='endtag',
                 tag='style',
-                ))
+            ))
 
             script = util.compress_code(ANNOTATION_JS)
             if self.host:
@@ -1053,19 +1052,19 @@ class ConvertHtmlFileV1(HtmlRewriter):
                 tag='script',
                 attrs=[
                     ('data-scrapbook-elem', 'annotation-loader'),
-                    ],
-                ))
+                ],
+            ))
             markups.append(Markup(
                 is_xhtml=self.is_xhtml,
                 type='data',
                 data=script,
                 is_cdata=True,
-                ))
+            ))
             markups.append(MarkupTag(
                 is_xhtml=self.is_xhtml,
                 type='endtag',
                 tag='script',
-                ))
+            ))
 
             pos = None
             for i in reversed(range(0, len(rv))):
@@ -1112,10 +1111,10 @@ def run(input, output, book_ids=None, *,
 
     try:
         conv = Converter(input, output, book_ids=book_ids,
-            convert_legacy=convert_legacy,
-            convert_v1=convert_v1,
-            use_native_tags=use_native_tags,
-            )
+                         convert_legacy=convert_legacy,
+                         convert_v1=convert_v1,
+                         use_native_tags=use_native_tags,
+                         )
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

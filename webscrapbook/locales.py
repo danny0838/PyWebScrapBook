@@ -7,11 +7,11 @@ Usage:
 
 @TODO: Consider using official gettext for i18n.
 """
-import os
-import locale
 import hashlib
-from . import util
+import locale
+import os
 
+from . import util
 
 DEFAULT_LANG = 'en'
 
@@ -24,14 +24,14 @@ BIDI = {
         'reversed_dir': 'rtl',
         'start_edge': 'left',
         'end_edge': 'right',
-        },
+    },
     'rtl': {
         'dir': 'rtl',
         'reversed_dir': 'ltr',
         'start_edge': 'right',
         'end_edge': 'left',
-        },
-    }
+    },
+}
 
 
 class I18N:

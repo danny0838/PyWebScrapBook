@@ -1,19 +1,24 @@
-from unittest import mock
-import unittest
+import glob
 import os
 import shutil
+import unittest
 import zipfile
-import glob
-from datetime import datetime, timezone
 from base64 import b64decode
+from datetime import datetime, timezone
+from unittest import mock
 
 from webscrapbook import WSB_DIR
 from webscrapbook.scrapbook.host import Host
-from webscrapbook.scrapbook.indexer import (Indexer, FavIconCacher,
-    SingleHtmlConverter, UnSingleHtmlConverter)
+from webscrapbook.scrapbook.indexer import (
+    FavIconCacher,
+    Indexer,
+    SingleHtmlConverter,
+    UnSingleHtmlConverter,
+)
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_indexer')
+
 
 def setUpModule():
     # mock out user config
@@ -22,14 +27,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class Test(unittest.TestCase):
     @classmethod
@@ -52,6 +59,7 @@ class Test(unittest.TestCase):
             os.remove(self.test_root)
         except FileNotFoundError:
             pass
+
 
 class TestIndexer(Test):
     def test_normal(self):
@@ -79,7 +87,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -92,8 +100,8 @@ page content
                 'icon': 'favicon.png',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_id(self):
         """Test if id is provided."""
@@ -121,7 +129,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -134,8 +142,8 @@ page content
                 'icon': 'favicon.png',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_id_used(self):
         """Skip if id is provided but used."""
@@ -169,15 +177,15 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
             'myid': {
                 'title': 'dummy',
                 'type': 'folder',
-                },
-            })
+            },
+        })
 
     def test_item_id_special(self):
         """Skip if id is special."""
@@ -203,7 +211,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {})
@@ -231,7 +239,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -244,8 +252,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_id_filename02(self):
         """Test if base filename corresponds to standard ID format."""
@@ -270,7 +278,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -283,8 +291,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_id_filename03(self):
         """Generate new ID if filename corresponds to standard ID format but used."""
@@ -324,7 +332,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         new_id = list(book.meta.keys())[-1]
@@ -334,7 +342,7 @@ page content
             '20200101000000000': {
                 'title': 'dummy',
                 'type': 'folder',
-                },
+            },
             new_id: {
                 'index': '20200101000000000/index.html',
                 'title': 'MyTitle 中文',
@@ -344,8 +352,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_id_filename04(self):
         """Generate new ID if filename not corresponds to standard ID format."""
@@ -370,7 +378,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         new_id = list(book.meta.keys())[-1]
@@ -386,8 +394,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_title01(self):
         """Test title with descendant tags."""
@@ -409,7 +417,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -422,8 +430,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/mypage.html',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_title02(self):
         """Infer from source URL."""
@@ -444,7 +452,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -457,8 +465,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/mypage.html',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_title03(self):
         """Infer from source URL if title is empty."""
@@ -480,7 +488,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -493,8 +501,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/mypage.html',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_title04(self):
         """Infer from source URL if title is blank."""
@@ -516,7 +524,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -529,8 +537,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/mypage.html',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_title05(self):
         """Keep empty if nothing to infer."""
@@ -550,7 +558,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -563,8 +571,8 @@ page content
                 'icon': '',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_title06(self):
         """Keep empty for separator."""
@@ -587,7 +595,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -600,8 +608,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_item_icon(self):
         """Check if favicon in an archive page is correctly cached."""
@@ -622,12 +630,14 @@ page content
 </body>
 </html>
 """)
-            zh.writestr('favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+            zh.writestr(
+                'favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -640,8 +650,8 @@ page content
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_ie_meta01(self):
         """handle_ie_meta=True"""
@@ -666,7 +676,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_ie_meta=True)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -679,8 +689,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/?a=123#456',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_ie_meta02(self):
         """handle_ie_meta=False"""
@@ -705,7 +715,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_ie_meta=False)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -718,8 +728,8 @@ page content
                 'icon': '',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_singlefile_meta01(self):
         """handle_singlefile_meta=True"""
@@ -738,13 +748,13 @@ page content
 page content
 </body>
 </html>
-""")
+""")  # noqa: W291
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_singlefile_meta=True)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -757,8 +767,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/?a=123#456',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_singlefile_meta02(self):
         """handle_singlefile_meta=False"""
@@ -777,13 +787,13 @@ page content
 page content
 </body>
 </html>
-""")
+""")  # noqa: W291
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_singlefile_meta=False)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -796,8 +806,8 @@ page content
                 'icon': '',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_savepagewe_meta01(self):
         """handle_savepagewe_meta=True"""
@@ -825,7 +835,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_savepagewe_meta=True)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -838,8 +848,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/?a=123#456',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_savepagewe_meta02(self):
         """handle_savepagewe_meta=False"""
@@ -867,7 +877,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_savepagewe_meta=False)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -880,8 +890,8 @@ page content
                 'icon': '',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_maoxian_meta01(self):
         """handle_maoxian_meta=True"""
@@ -906,7 +916,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_maoxian_meta=True)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -919,8 +929,8 @@ page content
                 'icon': '',
                 'source': 'http://example.com/?a=123#456',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_param_handle_maoxian_meta02(self):
         """handle_maoxian_meta=False"""
@@ -945,7 +955,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book, handle_maoxian_meta=False)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         self.assertDictEqual(book.meta, {
@@ -958,8 +968,8 @@ page content
                 'icon': '',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
 
     def test_other_file(self):
         """Test for a normal file."""
@@ -972,7 +982,7 @@ page content
 
         book = Host(self.test_root).books['']
         generator = Indexer(book)
-        for info in generator.run([test_index]):
+        for _info in generator.run([test_index]):
             pass
 
         item_id, = book.meta.keys()
@@ -986,8 +996,9 @@ page content
                 'icon': '',
                 'source': '',
                 'comment': '',
-                },
-            })
+            },
+        })
+
 
 class TestFavIconCacher(Test):
     def test_cache_absolute_url01(self):
@@ -1009,7 +1020,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1019,8 +1030,8 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
+            },
+        })
 
     def test_cache_absolute_url02(self):
         """Cache absolute URL off.
@@ -1039,7 +1050,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_url=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1049,8 +1060,8 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
-                },
-            })
+            },
+        })
 
     def test_cache_absolute_url03(self):
         """Test Image with MIME = application/octet-stream
@@ -1069,7 +1080,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1079,8 +1090,8 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd',
-                },
-            })
+            },
+        })
 
     def test_cache_absolute_url04(self):
         """Test Image with an invalid MIME should not be cached
@@ -1099,7 +1110,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1109,8 +1120,8 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': 'data:text/plain;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
-                },
-            })
+            },
+        })
 
     def test_cache_archive01(self):
         """Cache in-ZIP path
@@ -1132,17 +1143,21 @@ scrapbook.meta({
 
         with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000001.htz'), 'w') as zh:
             zh.writestr('index.html', 'dummy')
-            zh.writestr('favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+            zh.writestr(
+                'favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
         with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000002.maff'), 'w') as zh:
             zh.writestr('20200101000000000/index.html', 'dummy')
-            zh.writestr('20200101000000000/favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+            zh.writestr(
+                '20200101000000000/favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_archive=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1150,13 +1165,13 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000001.htz',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'index': '20200101000000002.maff',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
+            },
+        })
 
     def test_cache_archive02(self):
         """Cache in-ZIP path off
@@ -1178,17 +1193,21 @@ scrapbook.meta({
 
         with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000001.htz'), 'w') as zh:
             zh.writestr('index.html', 'dummy')
-            zh.writestr('favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+            zh.writestr(
+                'favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
         with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000002.maff'), 'w') as zh:
             zh.writestr('20200101000000000/index.html', 'dummy')
-            zh.writestr('20200101000000000/favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+            zh.writestr(
+                '20200101000000000/favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_archive=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1196,13 +1215,13 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000001.htz',
                 'icon': 'favicon.bmp',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'index': '20200101000000002.maff',
                 'icon': 'favicon.bmp',
-                },
-            })
+            },
+        })
 
     def test_cache_file01(self):
         """Cache relative path
@@ -1226,7 +1245,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_file=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1234,8 +1253,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000/index.html',
                 'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
+            },
+        })
 
     def test_cache_file02(self):
         """Cache relative path off
@@ -1259,7 +1278,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_file=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1267,8 +1286,9 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000/index.html',
                 'icon': 'favicon.bmp',
-                },
-            })
+            },
+        })
+
 
 class TestSingleHtmlConverter(Test):
     def test_rewrite_basic(self):
@@ -1349,7 +1369,7 @@ class TestSingleHtmlConverter(Test):
             'applet.jar',
             'a.html',
             'area.html',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1380,7 +1400,7 @@ class TestSingleHtmlConverter(Test):
 <body>
 <div style="#div { background: url(&quot;data:image/bmp;base64,YXR0cl9zdHlsZS5ibXA=&quot;); }"></div>
 </body>
-"""
+"""  # noqa: E501
 
         test_index = os.path.join(self.test_root, 'index.html')
         with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
@@ -1405,7 +1425,7 @@ class TestSingleHtmlConverter(Test):
             'link/img.bmp',
             'style.bmp',
             'attr_style.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1418,7 +1438,7 @@ class TestSingleHtmlConverter(Test):
         """Test recursive rewriting for frame
         """
         input = """<frame src="frame/frame.html">"""
-        expected = """<frame src="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2CZnJhbWUvaW1nLmJtcA%3D%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A">"""
+        expected = """<frame src="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2CZnJhbWUvaW1nLmJtcA%3D%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A">"""  # noqa: E501
 
         test_index = os.path.join(self.test_root, 'index.html')
         with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
@@ -1435,7 +1455,7 @@ class TestSingleHtmlConverter(Test):
 
         resources = [
             'frame/img.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1469,7 +1489,7 @@ class TestSingleHtmlConverter(Test):
 
         resources = [
             'iframe/img.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1503,7 +1523,7 @@ class TestSingleHtmlConverter(Test):
         resources = [
             'iframe/src.html',
             'iframe/img.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1516,7 +1536,7 @@ class TestSingleHtmlConverter(Test):
         """Test recursive rewriting for object
         """
         input = """<object data="object/object.html"></object>"""
-        expected = """<object data="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2Cb2JqZWN0L2ltZy5ibXA%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A"></object>"""
+        expected = """<object data="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2Cb2JqZWN0L2ltZy5ibXA%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A"></object>"""  # noqa: E501
 
         test_index = os.path.join(self.test_root, 'index.html')
         with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
@@ -1533,7 +1553,7 @@ class TestSingleHtmlConverter(Test):
 
         resources = [
             'object/img.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1569,7 +1589,7 @@ class TestSingleHtmlConverter(Test):
         resources = [
             'div2.bmp',
             'div3.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1597,7 +1617,7 @@ class TestSingleHtmlConverter(Test):
         resources = [
             'div2.bmp',
             'div3.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1634,7 +1654,7 @@ class TestSingleHtmlConverter(Test):
 
         resources = [
             'resources/img.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1716,7 +1736,7 @@ class TestSingleHtmlConverter(Test):
             'ax.bmp',
             'image.bmp',
             'imagex.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1768,7 +1788,7 @@ class TestSingleHtmlConverter(Test):
             'ax.bmp',
             'image.bmp',
             'imagex.bmp',
-            ]
+        ]
         for resource in resources:
             with open(os.path.normpath(os.path.join(self.test_root, resource)), 'wb') as fh:
                 fh.write(resource.encode('UTF-8'))
@@ -1776,6 +1796,7 @@ class TestSingleHtmlConverter(Test):
         conv = SingleHtmlConverter(test_index)
         rewritten = conv.run()
         self.assertEqual(rewritten, expected)
+
 
 class TestUnSingleHtmlConverter(Test):
     def test_rewrite_basic(self):
@@ -1828,7 +1849,7 @@ class TestUnSingleHtmlConverter(Test):
 <applet code="04ce553b2fa0778130a19c8b942eecb184e6d758.class" archive="31a55a9fa0d9b16b5910f1e223fb027c19f00abb.jar">
 <a href="25e7e8960b03ecb19189f36b8ef611389397c95c.html"></a>
 <area href="b9fcd0fe2499bdd4b8a4d193e1f09ec4b3676db3.html"></area>
-"""
+"""  # noqa: E501
 
         test_index = os.path.join(self.test_root, 'index.html')
         with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
@@ -1861,7 +1882,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, '31a55a9fa0d9b16b5910f1e223fb027c19f00abb.jar'),
             os.path.join(self.test_root, '25e7e8960b03ecb19189f36b8ef611389397c95c.html'),
             os.path.join(self.test_root, 'b9fcd0fe2499bdd4b8a4d193e1f09ec4b3676db3.html'),
-            })
+        })
 
     def test_rewrite_css(self):
         """Test recursive rewriting for CSS
@@ -1875,7 +1896,7 @@ class TestUnSingleHtmlConverter(Test):
 <body>
 <div style="#div { background: url(&quot;data:image/bmp;base64,YXR0cl9zdHlsZS5ibXA=&quot;); }"></div>
 </body>
-"""
+"""  # noqa: E501
         expected = """\
 <head>
 <meta charset="UTF-8">
@@ -1916,12 +1937,12 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, 'c120be27e3204138e1cd4586d24b28cf39b1fc9b.woff'),
             os.path.join(self.test_root, 'bd0e8f24d36976c181bd17d1c9f6da74bb4e368f.bmp'),
             os.path.join(self.test_root, '3f701cd5ed48448cc6a2eefd001ce8cea17d5031.bmp'),
-            })
+        })
 
     def test_rewrite_frame(self):
         """Test recursive rewriting for frame
         """
-        input = """<frame src="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2CZnJhbWUvaW1nLmJtcA%3D%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A">"""
+        input = """<frame src="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2CZnJhbWUvaW1nLmJtcA%3D%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A">"""  # noqa: E501
         expected = """<frame src="46f5e95733b31bc905de15e6bd80c903e6b2096f.html">"""
         expected_html1 = """\
 <img src="3e751297f65228db45665d2589b00482a7c5a8b9.bmp">
@@ -1945,7 +1966,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '46f5e95733b31bc905de15e6bd80c903e6b2096f.html'),
             os.path.join(self.test_root, '3e751297f65228db45665d2589b00482a7c5a8b9.bmp'),
-            })
+        })
 
     def test_rewrite_iframe_src(self):
         """Test recursive rewriting for iframe (src)
@@ -1969,7 +1990,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '7db93a89332a48e75c089d989ae159643507e322.html'),
             os.path.join(self.test_root, '3e751297f65228db45665d2589b00482a7c5a8b9.bmp'),
-            })
+        })
 
     def test_rewrite_iframe_srcdoc(self):
         """Test recursive rewriting for iframe (srcdoc)
@@ -2003,12 +2024,12 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '924243d4c3b4637e7e2e5c06c23821f57b3b8d18.html'),
             os.path.join(self.test_root, 'd9d80b91e142919d0d38021d1d6d1fe99e312937.bmp'),
-            })
+        })
 
     def test_rewrite_object(self):
         """Test recursive rewriting for object
         """
-        input = """<object data="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2Cb2JqZWN0L2ltZy5ibXA%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A"></object>"""
+        input = """<object data="data:text/html,%3Cimg%20src%3D%22data%3Aimage/bmp%3Bbase64%2Cb2JqZWN0L2ltZy5ibXA%3D%22%3E%0A%3Cframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%0A%3Ciframe%20src%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/iframe%3E%0A%3Cobject%20data%3D%22urn%3Ascrapbook%3Aconvert%3Acircular%3Aurl%3A../index.html%22%3E%3C/object%3E%0A"></object>"""  # noqa: E501
         expected = """<object data="5ef62168ce3226f71e06187764b98e93827b7a1b.html"></object>"""
         expected_html1 = """\
 <img src="95d08126f2ba74a8ad580df901dbe6960b4d0e37.bmp">
@@ -2032,7 +2053,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '5ef62168ce3226f71e06187764b98e93827b7a1b.html'),
             os.path.join(self.test_root, '95d08126f2ba74a8ad580df901dbe6960b4d0e37.bmp'),
-            })
+        })
 
     def test_rewrite_shadowdom(self):
         """Test recursive rewriting for shadow DOM attribute
@@ -2067,7 +2088,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'e41c1a658ec99284dce1fa1231c473860e8534a4.bmp'),
             os.path.join(self.test_root, 'a498468482a6c5bed10bfa03020e42fe4f9bd2f3.bmp'),
-            })
+        })
 
     def test_rewrite_meta(self):
         """Test handling of meta refresh
@@ -2096,7 +2117,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'fdd362b3a207d77938171f188e32aeb39d04aa26.html'),
-            })
+        })
 
     def test_rewrite_svg(self):
         """Test handling of embedded SVG
@@ -2149,7 +2170,7 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, '1104016c2d6f8ec4990888943e4cba557cc13216.bmp'),
             os.path.join(self.test_root, '4202d0fdd043f27d5c2e190ac3101fe78d376164.bmp'),
             os.path.join(self.test_root, 'c3eb10541390f68d3da1700b70f0c7a795e2b265.bmp'),
-            })
+        })
 
     def test_rewrite_svg_file(self):
         """Test handling of SVG file
@@ -2200,7 +2221,8 @@ class TestUnSingleHtmlConverter(Test):
             os.path.join(self.test_root, '1104016c2d6f8ec4990888943e4cba557cc13216.bmp'),
             os.path.join(self.test_root, '4202d0fdd043f27d5c2e190ac3101fe78d376164.bmp'),
             os.path.join(self.test_root, 'c3eb10541390f68d3da1700b70f0c7a795e2b265.bmp'),
-            })
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

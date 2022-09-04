@@ -1,21 +1,23 @@
 # @FIXME: Some cases have an unclosed file issue. Although adding
 #     buffered=True temporarily suppresses it, a further investigation
 #     for a possible leak of the source code is pending.
-from unittest import mock
-import unittest
-import sys
 import os
 import shutil
+import unittest
 from base64 import b64encode
 from functools import partial
+from unittest import mock
+
 from flask import request
-from webscrapbook import WSB_DIR, WSB_CONFIG
+
+from webscrapbook import WSB_CONFIG, WSB_DIR
 from webscrapbook import app as wsbapp
 from webscrapbook.app import make_app
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_config')
 server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
+
 
 def setUpModule():
     # create temp folders
@@ -27,9 +29,10 @@ def setUpModule():
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(server_root, 'wsb')),
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(server_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # purge WSB_DIR
@@ -42,9 +45,11 @@ def tearDownModule():
     for mocking in mockings:
         mocking.stop()
 
+
 def token(get):
     """Wrapper to quickly retrieve a token."""
     return get('/', query_string={'a': 'token'}).data.decode('UTF-8')
+
 
 class TestApp(unittest.TestCase):
     def test_name(self):
@@ -98,12 +103,12 @@ permission = all
 theme = default
 """)
 
-        app = make_app(server_root)
+        make_app(server_root)
         self.assertListEqual([os.path.normcase(i) for i in mock_loader.call_args[0][0]], [
             os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')),
-            os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb',  'themes', 'default', 'templates'))),
-            os.path.normcase(os.path.abspath(os.path.join(__file__, '..', '..', 'webscrapbook',  'themes', 'default', 'templates'))),
-            ])
+            os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb', 'themes', 'default', 'templates'))),
+            os.path.normcase(os.path.abspath(os.path.join(__file__, '..', '..', 'webscrapbook', 'themes', 'default', 'templates'))),
+        ])
 
     def test_root(self):
         with open(server_config, 'w', encoding='UTF-8') as f:
@@ -137,7 +142,7 @@ root = subdir
                 'a': 'lock',
                 'f': 'json',
                 'name': 'test',
-                })
+            })
             self.assertTrue(os.path.lexists(os.path.join(server_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')))
 
     def test_x_prefix(self):
@@ -152,7 +157,7 @@ allowed_x_prefix = 0
         with app.test_client() as c:
             get = partial(c.get, headers={
                 'X-Forwarded-Prefix': '/scrap 書',
-                })
+            })
 
             # /
             r = get('/')
@@ -194,7 +199,7 @@ allowed_x_prefix = 1
         with app.test_client() as c:
             get = partial(c.get, headers={
                 'X-Forwarded-Prefix': '/scrap 書'.encode('UTF-8'),
-                })
+            })
 
             # /
             r = get('/')
@@ -242,7 +247,7 @@ allowed_x_port = 0
                 'X-Forwarded-Proto': 'https',
                 'X-Forwarded-Host': 'example.com',
                 'X-Forwarded-Port': '8000',
-                })
+            })
 
             r = get('/subdir')
             self.assertEqual(r.status_code, 302)
@@ -264,7 +269,7 @@ allowed_x_port = 1
                 'X-Forwarded-Proto': 'https',
                 'X-Forwarded-Host': 'example.com',
                 'X-Forwarded-Port': '8000',
-                })
+            })
 
             r = get('/subdir')
             self.assertEqual(r.status_code, 302)
@@ -274,7 +279,7 @@ allowed_x_port = 1
             get = partial(c.get, headers={
                 'X-Forwarded-Proto': 'https',
                 'X-Forwarded-Host': 'example.com:8888',
-                })
+            })
 
             r = get('/subdir')
             self.assertEqual(r.status_code, 302)
@@ -285,7 +290,7 @@ allowed_x_port = 1
                 'X-Forwarded-Proto': 'https',
                 'X-Forwarded-Host': 'example.com:8888',
                 'X-Forwarded-Port': '8000',
-                })
+            })
 
             r = get('/subdir')
             self.assertEqual(r.status_code, 302)
@@ -306,7 +311,7 @@ allowed_x_for = 0
             # single value
             get = partial(c.get, headers={
                 'X-Forwarded-For': '192.168.0.100',
-                })
+            })
 
             r = get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(request.remote_addr, '127.0.0.1')
@@ -316,7 +321,7 @@ allowed_x_for = 0
             # multiple values
             get = partial(c.get, headers={
                 'X-Forwarded-For': '203.0.113.195, 70.41.3.18, 150.172.238.178',
-                })
+            })
 
             r = get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(request.remote_addr, '127.0.0.1')
@@ -335,7 +340,7 @@ allowed_x_for = 1
             # single value
             get = partial(c.get, headers={
                 'X-Forwarded-For': '192.168.0.100',
-                })
+            })
 
             r = get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(request.remote_addr, '192.168.0.100')
@@ -345,7 +350,7 @@ allowed_x_for = 1
             # multiple values
             get = partial(c.get, headers={
                 'X-Forwarded-For': '203.0.113.195, 70.41.3.18, 150.172.238.178',
-                })
+            })
 
             r = get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(request.remote_addr, '150.172.238.178')
@@ -364,7 +369,7 @@ allowed_x_for = 2
             # single value
             get = partial(c.get, headers={
                 'X-Forwarded-For': '192.168.0.100',
-                })
+            })
 
             r = get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(request.remote_addr, '127.0.0.1')
@@ -374,7 +379,7 @@ allowed_x_for = 2
             # multiple values
             get = partial(c.get, headers={
                 'X-Forwarded-For': '203.0.113.195, 70.41.3.18, 150.172.238.178',
-                })
+            })
 
             r = get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(request.remote_addr, '70.41.3.18')
@@ -578,7 +583,7 @@ permission = all
                     'token': token(post),
                     'a': 'save',
                     'text': 'ABC 你好'.encode('UTF-8').decode('ISO-8859-1'),
-                    })
+                })
                 self.assertEqual(r.status_code, 204)
                 self.simple_auth_check(r, False)
             finally:
@@ -588,6 +593,7 @@ permission = all
                     os.remove(os.path.join(server_root, 'temp'))
                 except FileNotFoundError:
                     pass
+
 
 if __name__ == '__main__':
     unittest.main()

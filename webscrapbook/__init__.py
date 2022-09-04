@@ -1,12 +1,12 @@
 """A backend toolkit for management of WebScrapBook collection.
 """
-import sys
-import os
-from configparser import ConfigParser
-from collections import OrderedDict
-from copy import deepcopy
 import mimetypes
+import os
 import re
+import sys
+from collections import OrderedDict
+from configparser import ConfigParser
+from copy import deepcopy
 
 __all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
 
@@ -89,7 +89,7 @@ class Config():
             'allowed_x_host': '0',
             'allowed_x_port': '0',
             'allowed_x_prefix': '0',
-            },
+        },
         'server': {
             'port': '8080',
             'host': 'localhost',
@@ -98,13 +98,13 @@ class Config():
             'ssl_cert': '',
             'ssl_pw': '',
             'browse': 'false',
-            },
+        },
         'browser': {
             'command': '',
             'cache_prefix': 'webscrapbook.',
             'cache_expire': '259200',
             'use_jar': 'false',
-            },
+        },
         'book ""': {
             'name': 'scrapbook',
             'top_dir': '',
@@ -112,8 +112,8 @@ class Config():
             'tree_dir': '.wsb/tree',
             'index': '.wsb/tree/map.html',
             'no_tree': 'false',
-            },
-        }
+        },
+    }
     TYPES = {
         'app': {
             'allowed_x_for': 'getint',
@@ -121,41 +121,38 @@ class Config():
             'allowed_x_host': 'getint',
             'allowed_x_port': 'getint',
             'allowed_x_prefix': 'getint',
-            },
+        },
         'server': {
             'port': 'getint',
             'ssl_on': 'getboolean',
             'browse': 'getboolean',
-            },
+        },
         'browser': {
             'cache_expire': 'getint',
             'use_jar': 'getboolean',
-            },
+        },
         'book': {
             None: {
                 'no_tree': 'getboolean',
-                },
             },
-        }
+        },
+    }
     SUBSECTED = ['book', 'auth']
 
     def __init__(self):
         self._conf = None
         self._data = None
 
-
     def __getitem__(self, key):
-        if self._conf is None: self.load()  # lazy load
+        if self._conf is None: self.load()  # lazy load  # noqa: E701
         return self._data[key]
 
-
     def __iter__(self):
-        if self._conf is None: self.load()  # lazy load
+        if self._conf is None: self.load()  # lazy load  # noqa: E701
         return iter(self._data)
 
-
     def getname(self, name):
-        if self._conf is None: self.load()  # lazy load
+        if self._conf is None: self.load()  # lazy load  # noqa: E701
         parts = name.split('.')
         if len(parts) == 3:
             sec, subsec, key = parts
@@ -171,18 +168,15 @@ class Config():
                 pass
         return None
 
-
     def dump(self, fh):
-        if self._conf is None: self.load()  # lazy load
+        if self._conf is None: self.load()  # lazy load  # noqa: E701
         self._conf.write(fh)
-
 
     def dump_object(self):
         """Dump configs as an object, with type casting.
         """
-        if self._conf is None: self.load()  # lazy load
+        if self._conf is None: self.load()  # lazy load  # noqa: E701
         return deepcopy(self._data)
-
 
     def load(self, root='.'):
         """Loads config files related to the given root directory.
@@ -252,5 +246,6 @@ class Config():
                     sectionobj[key] = getattr(conf[section], self.TYPES[section][key])(key)
                 except KeyError:
                     sectionobj[key] = conf[section][key]
+
 
 config = Config()

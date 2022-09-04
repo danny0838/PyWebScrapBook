@@ -1,29 +1,27 @@
 import os
 import shutil
-import traceback
 import time
-from datetime import datetime, timezone, timedelta
+import traceback
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
-from ... import WSB_DIR
-from ... import util
+from ... import WSB_DIR, util
 from ...util import Info
 from ..host import Host
 from ..indexer import Indexer
-
 
 DEFAULT_DATA_FOLDER_SUFFIXES = ['.files', '_files']
 
 
 class Converter:
     def __init__(self, input, output, *,
-            data_folder_suffixes=None,
-            preserve_filename=True,
-            handle_ie_meta=True,
-            handle_singlefile_meta=True,
-            handle_savepagewe_meta=True,
-            handle_maoxian_meta=True,
-            ):
+                 data_folder_suffixes=None,
+                 preserve_filename=True,
+                 handle_ie_meta=True,
+                 handle_singlefile_meta=True,
+                 handle_savepagewe_meta=True,
+                 handle_maoxian_meta=True,
+                 ):
         self.input = os.path.abspath(input)
         self.output = os.path.abspath(output)
         self.data_folder_suffixes = (
@@ -66,7 +64,8 @@ class Converter:
             # create folder item
             basename = os.path.basename(data_dir)
             basename, ext = os.path.splitext(basename)
-            if ext.lower() == '.htd': ext = ''
+            if ext.lower() == '.htd':
+                ext = ''
 
             id = self._generate_unique_id()
             meta = self.book.DEFAULT_META.copy()
@@ -75,7 +74,7 @@ class Converter:
                 'title': basename + ext,
                 'create': id,
                 'modify': id,
-                })
+            })
             for key in list(meta):
                 if meta[key] is None:
                     del meta[key]
@@ -136,15 +135,17 @@ class Converter:
         basename = os.path.basename(entry)
         _, ext = os.path.splitext(entry)
         ext = ext.lower()
-        if ext == '.htd': ext = ''
+        if ext == '.htd':
+            ext = ''
 
         # generate a unique ID
         id = self._generate_unique_id(ext)
 
         # copy data files
         supporting_folder = self._get_supporting_folder(entry)
-        if (supporting_folder or
-                (self.preserve_filename and os.path.isfile(entry) and not util.is_archive(entry))):
+        if (supporting_folder or (
+            self.preserve_filename and os.path.isfile(entry) and not util.is_archive(entry)
+        )):
             dst_dir = os.path.join(self.book.data_dir, id)
             os.makedirs(dst_dir, exist_ok=True)
 
@@ -174,12 +175,13 @@ class Converter:
                         yield Info('error', f'Failed to copy data folder "{entry}": {exc.strerror}', exc=exc)
 
                 # generate meta
-                indexer = Indexer(self.book,
+                indexer = Indexer(
+                    self.book,
                     handle_ie_meta=self.handle_ie_meta,
                     handle_singlefile_meta=self.handle_singlefile_meta,
                     handle_savepagewe_meta=self.handle_savepagewe_meta,
                     handle_maoxian_meta=self.handle_maoxian_meta,
-                    )
+                )
                 indexed = yield from indexer.run([index_file])
 
                 if os.path.normcase(basename) != os.path.normcase('index.html'):
@@ -193,12 +195,13 @@ class Converter:
                 os.utime(index_file, (st.st_atime, st.st_mtime))
 
                 # generate meta
-                indexer = Indexer(self.book,
+                indexer = Indexer(
+                    self.book,
                     handle_ie_meta=self.handle_ie_meta,
                     handle_singlefile_meta=self.handle_singlefile_meta,
                     handle_savepagewe_meta=self.handle_savepagewe_meta,
                     handle_maoxian_meta=self.handle_maoxian_meta,
-                    )
+                )
                 indexed = yield from indexer.run([index_file])
 
         else:
@@ -216,12 +219,13 @@ class Converter:
             index_file = os.path.join(dst, 'index.html') if os.path.isdir(entry) else dst
 
             # generate meta
-            indexer = Indexer(self.book,
+            indexer = Indexer(
+                self.book,
                 handle_ie_meta=self.handle_ie_meta,
                 handle_singlefile_meta=self.handle_singlefile_meta,
                 handle_savepagewe_meta=self.handle_savepagewe_meta,
                 handle_maoxian_meta=self.handle_maoxian_meta,
-                )
+            )
             indexed = yield from indexer.run([index_file])
 
         for id in indexed:
@@ -282,14 +286,15 @@ def run(input, output, *,
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output,
+        conv = Converter(
+            input, output,
             data_folder_suffixes=data_folder_suffixes,
             preserve_filename=not no_preserve_filename,
             handle_ie_meta=not ignore_ie_meta,
             handle_singlefile_meta=not ignore_singlefile_meta,
             handle_savepagewe_meta=not ignore_savepagewe_meta,
             handle_maoxian_meta=not ignore_maoxian_meta,
-            )
+        )
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

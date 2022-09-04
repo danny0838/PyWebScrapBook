@@ -1,16 +1,17 @@
-from unittest import mock
-import unittest
 import os
-import shutil
 import re
+import shutil
 import time
-from webscrapbook import WSB_DIR, Config
-from webscrapbook import util
+import unittest
+from unittest import mock
+
+from webscrapbook import WSB_DIR, Config, util
 from webscrapbook.scrapbook import host as wsb_host
 from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_host')
+
 
 def setUpModule():
     # mock out user config
@@ -19,14 +20,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestBase(unittest.TestCase):
     @classmethod
@@ -58,6 +61,7 @@ class TestBase(unittest.TestCase):
         except FileNotFoundError:
             pass
 
+
 class TestHost(TestBase):
     @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init01(self):
@@ -86,22 +90,22 @@ name = mybook2
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom'))),
-            ])
+        ])
         self.assertEqual([os.path.normcase(f) for f in host.statics], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom', 'static')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'static')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'static'))),
-            ])
+        ])
         self.assertEqual([os.path.normcase(f) for f in host.templates], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
-            ])
+        ])
         self.assertEqual(host.locks, os.path.join(self.test_root, WSB_DIR, 'locks'))
         self.assertEqual({i: host.books[i].name for i in host.books}, {
             '': 'mybook',
             'id2': 'mybook2',
-            })
+        })
 
     @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init02(self):
@@ -132,56 +136,57 @@ name = mybook2
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom'))),
-            ])
+        ])
         self.assertEqual([os.path.normcase(f) for f in host.statics], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom', 'static')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'static')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'static'))),
-            ])
+        ])
         self.assertEqual([os.path.normcase(f) for f in host.templates], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
-            ])
+        ])
         self.assertEqual(host.locks, os.path.join(other_root, WSB_DIR, 'locks'))
         self.assertEqual({i: host.books[i].name for i in host.books}, {
             '': 'scrapbook',
             'id2': 'mybook2',
-            })
+        })
 
     @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init03(self):
         """Validate theme name to avoid a potential bad path."""
         for theme, theme_fixed in [
-                ('', '_'),
-                ('.', '_'),
-                ('..', '_'),
-                ('foo/bar', 'foo_bar'),
-                ('foo\\bar', 'foo_bar'),
-                ]:
+            ('', '_'),
+            ('.', '_'),
+            ('..', '_'),
+            ('foo/bar', 'foo_bar'),
+            ('foo\\bar', 'foo_bar'),
+        ]:
             with self.subTest(theme=theme):
                 with open(self.test_config, 'w', encoding='UTF-8') as f:
-                    f.write(f"[app]\ntheme = {theme}")
+                    f.write(f'[app]\ntheme = {theme}')
                 host = Host(self.test_root)
                 self.assertEqual([os.path.normcase(f) for f in host.themes], [
                     os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', theme_fixed)),
                     os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', theme_fixed)),
                     os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', theme_fixed))),
-                    ])
+                ])
 
     def test_get_static_file01(self):
         """Lookup static file from built-in themes"""
         host = Host(self.test_root)
-        self.assertEqual(os.path.normcase(host.get_static_file('index.css')),
-            os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'default', 'static', 'index.css')))
-            )
+        self.assertEqual(
+            os.path.normcase(host.get_static_file('index.css')),
+            os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'default', 'static', 'index.css'))),
+        )
 
     @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_get_static_file02(self):
         """Lookup static file from user themes"""
         other_static = os.path.join(self.test_root, 'wsb', 'themes', 'default', 'static', 'test.txt')
         os.makedirs(os.path.dirname(other_static))
-        with open(other_static, 'w') as fh:
+        with open(other_static, 'w'):
             pass
 
         host = Host(self.test_root)
@@ -191,7 +196,7 @@ name = mybook2
         """Lookup static file from local themes"""
         other_static = os.path.join(self.test_root, WSB_DIR, 'themes', 'default', 'static', 'test.txt')
         os.makedirs(os.path.dirname(other_static))
-        with open(other_static, 'w') as fh:
+        with open(other_static, 'w'):
             pass
 
         host = Host(self.test_root)
@@ -207,10 +212,14 @@ name = mybook2
     def test_get_lock02(self, mock_filelock):
         """With parameters"""
         host = Host(self.test_root)
-        host.get_lock('test',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
-        mock_filelock.assert_called_once_with(host, 'test',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+        host.get_lock(
+            'test',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True,
+        )
+        mock_filelock.assert_called_once_with(
+            host, 'test',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True,
+        )
 
     def test_backup01(self):
         """A common case."""
@@ -341,14 +350,14 @@ name = mybook2
         self.assertRegex(
             host._backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
-            )
+        )
 
         ts = util.datetime_to_id()
         host.init_backup(ts)
         self.assertEqual(
             host._backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts),
-            )
+        )
 
         host.init_backup(False)
         self.assertIsNone(host._backup_dir)
@@ -361,28 +370,14 @@ name = mybook2
         self.assertRegex(
             host._backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo-bar',
-            )
+        )
 
         ts = util.datetime_to_id()
         host.init_backup(ts, note='foo:bar:中文?')
         self.assertEqual(
             host._backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts + '-foo_bar_中文_'),
-            )
-
-    def test_auto_backup01(self):
-        """A common case."""
-        test_file = os.path.join(self.test_root, 'tree', 'meta.js')
-        os.makedirs(os.path.dirname(test_file))
-        with open(test_file, 'w', encoding='UTF-8') as fh:
-            fh.write('abc')
-
-        host = Host(self.test_root)
-        host.init_backup()
-        host.backup(test_file)
-
-        with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), 'abc')
+        )
 
     def test_auto_backup01(self):
         """A common case."""
@@ -398,7 +393,7 @@ name = mybook2
         with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
 
-    def test_backup02(self):
+    def test_auto_backup02(self):
         """A common directory case."""
         test_dir = os.path.join(self.test_root, 'tree')
         os.makedirs(test_dir)
@@ -416,18 +411,18 @@ name = mybook2
         with open(os.path.join(host._backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'def')
 
-    def test_backup03(self):
+    def test_auto_backup03(self):
         """Pass if _backup_dir not set."""
         test_file = os.path.join(self.test_wsbdir, 'icon', 'test.txt')
         os.makedirs(os.path.dirname(test_file))
         with open(test_file, 'w', encoding='UTF-8') as fh:
             fh.write('abc')
-        test_stat = os.stat(test_file)
 
         host = Host(self.test_root)
         host.auto_backup(test_file)
 
         self.assertListEqual(os.listdir(self.test_wsbdir), ['icon'])
+
 
 class TestFileLock(TestBase):
     def test_init01(self):
@@ -450,8 +445,7 @@ class TestFileLock(TestBase):
         lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
         host = Host(self.test_root)
-        lock = wsb_host.FileLock(host, 'test',
-            timeout=2, stale=120)
+        lock = wsb_host.FileLock(host, 'test', timeout=2, stale=120)
         self.assertEqual(lock.host, host)
         self.assertEqual(lock.name, 'test')
         self.assertEqual(lock.timeout, 2)
@@ -487,8 +481,6 @@ class TestFileLock(TestBase):
 
     def test_persist03(self):
         """Lock file missing (or inaccessible)."""
-        lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
-
         host = Host(self.test_root)
 
         with self.assertRaises(wsb_host.LockPersistOSError):
@@ -509,7 +501,7 @@ class TestFileLock(TestBase):
         lock = Host(self.test_root).get_lock('test', timeout=0)
 
         os.makedirs(os.path.dirname(lock.file))
-        with open(lock.file, 'w') as fh:
+        with open(lock.file, 'w'):
             pass
 
         with self.assertRaises(wsb_host.LockTimeoutError):
@@ -520,7 +512,7 @@ class TestFileLock(TestBase):
         lock = Host(self.test_root).get_lock('test')
 
         os.makedirs(os.path.dirname(lock.file))
-        with open(lock.file, 'w') as fh:
+        with open(lock.file, 'w'):
             pass
 
         with self.assertRaises(wsb_host.LockTimeoutError):
@@ -544,7 +536,7 @@ class TestFileLock(TestBase):
         """Unable to generate upper directory"""
         lock = Host(self.test_root).get_lock('test')
 
-        with open(os.path.join(self.test_root, WSB_DIR, 'locks'), 'wb') as fh:
+        with open(os.path.join(self.test_root, WSB_DIR, 'locks'), 'wb'):
             pass
 
         with self.assertRaises(wsb_host.LockGenerateError):
@@ -645,7 +637,8 @@ class TestFileLock(TestBase):
                 try:
                     self.assertGreater(os.stat(lock_file).st_mtime, mtime)
                 except AssertionError as exc:
-                    if time.time() - start > 0.5: raise exc
+                    if time.time() - start > 0.5:
+                        raise exc
                 else:
                     break
         finally:
@@ -656,7 +649,7 @@ class TestFileLock(TestBase):
         lock_file = os.path.join(self.test_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
         lock = Host(self.test_root).get_lock('test', stale=0.01)
 
-        with lock.acquire() as lh:
+        with lock.acquire():
             mtime = os.stat(lock_file).st_mtime
 
             # poll up to 0.5 seconds in case thread delay due to busyness
@@ -666,9 +659,11 @@ class TestFileLock(TestBase):
                 try:
                     self.assertGreater(os.stat(lock_file).st_mtime, mtime)
                 except AssertionError as exc:
-                    if time.time() - start > 0.5: raise exc
+                    if time.time() - start > 0.5:
+                        raise exc
                 else:
                     break
+
 
 if __name__ == '__main__':
     unittest.main()

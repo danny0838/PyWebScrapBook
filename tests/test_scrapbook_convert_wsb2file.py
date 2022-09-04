@@ -1,19 +1,15 @@
-from unittest import mock
-import unittest
+import glob
 import os
 import shutil
-import glob
-import time
-
-from lxml import etree
+import unittest
+from unittest import mock
 
 from webscrapbook import WSB_DIR
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook.convert import wsb2file
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+
 
 def setUpModule():
     # mock out user config
@@ -22,14 +18,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestRun(unittest.TestCase):
     @classmethod
@@ -139,7 +137,7 @@ scrapbook.toc({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write('single file content')
 
-        for info in wsb2file.run(self.test_input, self.test_output):
+        for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -153,7 +151,7 @@ scrapbook.toc({
             os.path.join(self.test_output, '6-Folder item'),
             os.path.join(self.test_output, '7-Separator item.-'),
             os.path.join(self.test_output, '8-----.-'),
-            })
+        })
         with open(os.path.join(self.test_output, '1-Page item - folder.htd', 'index.html'), 'r', encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
         with open(os.path.join(self.test_output, '2-Page item - htz.htz'), 'rb') as fh:
@@ -163,10 +161,12 @@ scrapbook.toc({
         with open(os.path.join(self.test_output, '4-Page item - single html.html'), 'r', encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'single file content')
         with open(os.path.join(self.test_output, '5-Bookmark item.htm'), 'r', encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(),
+            self.assertEqual(
+                fh.read(),
                 '<!DOCTYPE html>'
                 '<meta charset="UTF-8">'
-                '<meta http-equiv="refresh" content="0; url=http://example.com/mypath?a=123&amp;b=456">')
+                '<meta http-equiv="refresh" content="0; url=http://example.com/mypath?a=123&amp;b=456">',
+            )
         self.assertTrue(os.path.isdir(os.path.join(self.test_output, '6-Folder item')))
         with open(os.path.join(self.test_output, '7-Separator item.-'), 'rb') as fh:
             self.assertEqual(fh.read(), b'')
@@ -247,7 +247,7 @@ scrapbook.toc({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write('single file content')
 
-        for info in wsb2file.run(self.test_input, self.test_output, prefix=False):
+        for _info in wsb2file.run(self.test_input, self.test_output, prefix=False):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -259,7 +259,7 @@ scrapbook.toc({
             os.path.join(self.test_output, 'Page item - single html.html'),
             os.path.join(self.test_output, 'Bookmark item.htm'),
             os.path.join(self.test_output, 'Folder item'),
-            })
+        })
         with open(os.path.join(self.test_output, 'Page item - folder.htd', 'index.html'), 'r', encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
         with open(os.path.join(self.test_output, 'Page item - htz.htz'), 'rb') as fh:
@@ -269,10 +269,12 @@ scrapbook.toc({
         with open(os.path.join(self.test_output, 'Page item - single html.html'), 'r', encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'single file content')
         with open(os.path.join(self.test_output, 'Bookmark item.htm'), 'r', encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(),
+            self.assertEqual(
+                fh.read(),
                 '<!DOCTYPE html>'
                 '<meta charset="UTF-8">'
-                '<meta http-equiv="refresh" content="0; url=http://example.com/mypath?a=123&amp;b=456">')
+                '<meta http-equiv="refresh" content="0; url=http://example.com/mypath?a=123&amp;b=456">',
+            )
         self.assertTrue(os.path.isdir(os.path.join(self.test_output, 'Folder item')))
 
     def test_path01(self):
@@ -333,7 +335,7 @@ scrapbook.toc({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write('page content')
 
-        for info in wsb2file.run(self.test_input, self.test_output):
+        for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -346,7 +348,7 @@ scrapbook.toc({
             os.path.join(self.test_output, '2-Folder2', '1-Folder2 sub.htd', 'index.html'),
             os.path.join(self.test_output, '2-Folder2.htd'),
             os.path.join(self.test_output, '2-Folder2.htd', 'index.html'),
-            })
+        })
 
     def test_path02(self):
         """Check hierarchical filename. (prefix=False)
@@ -406,7 +408,7 @@ scrapbook.toc({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write('page content')
 
-        for info in wsb2file.run(self.test_input, self.test_output, prefix=False):
+        for _info in wsb2file.run(self.test_input, self.test_output, prefix=False):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -419,7 +421,7 @@ scrapbook.toc({
             os.path.join(self.test_output, 'Folder2', 'Folder2 sub.htd', 'index.html'),
             os.path.join(self.test_output, 'Folder2.htd'),
             os.path.join(self.test_output, 'Folder2.htd', 'index.html'),
-            })
+        })
 
     def test_filename(self):
         """Check file extension handling.
@@ -456,7 +458,7 @@ scrapbook.toc({
         with open(index_file, 'wb') as fh:
             fh.write(b'dummy')
 
-        for info in wsb2file.run(self.test_input, self.test_output):
+        for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -464,7 +466,7 @@ scrapbook.toc({
             os.path.join(self.test_output, '1-File1'),
             os.path.join(self.test_output, '1-File1', '1-Bookmark1.htm'),
             os.path.join(self.test_output, '1-File1._'),
-            })
+        })
 
     def test_numbering(self):
         """Check filename prefix is correctly zero-padded. (prefix=True)"""
@@ -529,7 +531,7 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb2file.run(self.test_input, self.test_output):
+        for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -544,7 +546,7 @@ scrapbook.toc({
             os.path.join(self.test_output, '08-Folder8'),
             os.path.join(self.test_output, '09-Folder9'),
             os.path.join(self.test_output, '10-Folder10'),
-            })
+        })
 
     def test_deduplicate(self):
         """Check duplicated title handling. (prefix=False)
@@ -619,7 +621,7 @@ scrapbook.toc({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write('single file content')
 
-        for info in wsb2file.run(self.test_input, self.test_output, prefix=False):
+        for _info in wsb2file.run(self.test_input, self.test_output, prefix=False):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -631,7 +633,7 @@ scrapbook.toc({
             os.path.join(self.test_output, 'myitem(3).html'),
             os.path.join(self.test_output, 'myitem(4).htm'),
             os.path.join(self.test_output, 'myitem(5)'),
-            })
+        })
 
     def test_recursive(self):
         """Check if recursive item is correctly handled."""
@@ -661,7 +663,7 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb2file.run(self.test_input, self.test_output):
+        for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -669,7 +671,8 @@ scrapbook.toc({
             os.path.join(self.test_output, '1-Folder1'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder2'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder2', '1-Folder1'),
-            })
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

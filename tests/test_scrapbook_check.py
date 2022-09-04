@@ -1,18 +1,18 @@
-from unittest import mock
-import unittest
 import os
 import shutil
+import unittest
 import zipfile
-from datetime import datetime, timezone
 from base64 import b64decode
+from datetime import datetime, timezone
+from unittest import mock
 
-from webscrapbook import WSB_DIR
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
+from webscrapbook import WSB_DIR, util
 from webscrapbook.scrapbook.check import BookChecker
+from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_check')
+
 
 def setUpModule():
     # mock out user config
@@ -21,14 +21,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestBookChecker(unittest.TestCase):
     @classmethod
@@ -81,7 +83,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -93,14 +95,14 @@ scrapbook.toc({
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_invalid_id(self):
         """Resolve item with invalid ID"""
@@ -131,7 +133,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_invalid_id=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {})
@@ -165,7 +167,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {})
@@ -173,7 +175,6 @@ scrapbook.toc({
 
     def test_resolve_missing_index_file(self):
         """Resolve item with missing index file"""
-        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
 scrapbook.meta({
@@ -197,7 +198,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_index_file=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {})
@@ -232,7 +233,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -244,14 +245,14 @@ scrapbook.toc({
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_create02(self):
         """Resolve item with missing create (infer from ID)"""
@@ -281,7 +282,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -293,14 +294,14 @@ scrapbook.toc({
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_create03(self):
         """Resolve item with empty create (infer from ctime)"""
@@ -332,7 +333,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertAlmostEqual(util.id_to_datetime(book.meta['foobar']['create']).timestamp(), ts, delta=3)
@@ -344,14 +345,14 @@ scrapbook.toc({
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'foobar',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_create04(self):
         """Resolve item with empty create (infer from modify)"""
@@ -375,7 +376,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -384,14 +385,14 @@ scrapbook.toc({
                 'type': 'folder',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'foobar',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_create05(self):
         """Resolve item with empty create (no change)"""
@@ -414,7 +415,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -422,14 +423,14 @@ scrapbook.toc({
                 'title': 'MyTitle中文',
                 'type': 'folder',
                 'create': '',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'foobar',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_modify01(self):
         """Resolve item with empty modify (infer from mtime)"""
@@ -462,7 +463,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -474,14 +475,14 @@ scrapbook.toc({
                 'modify': '20200102030405067',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_modify02(self):
         """Resolve item with missing modify (infer from mtime)"""
@@ -513,7 +514,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -525,14 +526,14 @@ scrapbook.toc({
                 'modify': '20200102030405067',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_modify03(self):
         """Resolve item with empty modify (infer from create)"""
@@ -556,7 +557,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -565,14 +566,14 @@ scrapbook.toc({
                 'type': 'folder',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_missing_modify04(self):
         """Resolve item with empty modify (infer from none)"""
@@ -596,7 +597,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_missing_date=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -605,14 +606,14 @@ scrapbook.toc({
                 'type': 'folder',
                 'create': '',
                 'modify': '',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'foobar',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_older_mtime(self):
         """Resolve item with modify older than mtime of index file"""
@@ -645,7 +646,7 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_older_mtime=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -657,14 +658,14 @@ scrapbook.toc({
                 'modify': '20200102030405067',
                 'source': 'http://example.com',
                 'icon': 'favicon.ico'
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 '20200101000000000',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_toc_invalid01(self):
         """Remove invalid items from TOC."""
@@ -705,29 +706,29 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_toc_invalid=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
             'item1': {
                 'title': 'MyTitle中文',
                 'type': 'folder',
-                },
+            },
             'item2': {
                 'title': 'MyTitle2',
                 'type': 'separator',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'item1',
-                ],
+            ],
             'item1': [
                 'item2',
-                ],
+            ],
             'recycle': [],
-            })
+        })
 
     def test_resolve_toc_invalid02(self):
         """Don't error if toc[id] has been removed when checking its ref IDs."""
@@ -748,15 +749,14 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_toc_invalid=True, resolve_missing_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
-        self.assertDictEqual(book.meta, {
-            })
+        self.assertDictEqual(book.meta, {})
 
         self.assertDictEqual(book.toc, {
             'root': [],
-            })
+        })
 
     def test_resolve_toc_unreachable(self):
         """Resolve unreachable items."""
@@ -780,26 +780,26 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_toc_unreachable=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
             'item1': {
                 'title': 'MyTitle中文',
                 'type': 'folder',
-                },
+            },
             'item2': {
                 'title': 'MyTitle2',
                 'type': 'separator',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'item1',
                 'item2',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_toc_empty_subtree(self):
         """Resolve empty TOC item lists."""
@@ -828,26 +828,26 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_toc_empty_subtree=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
             'item1': {
                 'title': 'MyTitle中文',
                 'type': 'folder',
-                },
+            },
             'item2': {
                 'title': 'MyTitle2',
                 'type': 'separator',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'item1',
                 'item2',
-                ],
-            })
+            ],
+        })
 
     def test_resolve_unindexed_files(self):
         """Check for unindexed files.
@@ -869,14 +869,16 @@ scrapbook.toc({
 page content
 </body>
 </html>""")
-            zh.writestr('favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+            zh.writestr(
+                'favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_unindexed_files=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -889,10 +891,12 @@ page content
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                 'source': 'http://example.com',
                 'comment': '',
-                },
-            })
-        self.assertEqual(os.listdir(os.path.join(self.test_tree, 'favicon')),
-            ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'])
+            },
+        })
+        self.assertEqual(
+            os.listdir(os.path.join(self.test_tree, 'favicon')),
+            ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'],
+        )
 
     def test_resolve_absolute_icon01(self):
         """Check favicon with absolute URL."""
@@ -911,7 +915,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_absolute_icon=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -919,10 +923,12 @@ scrapbook.meta({
                 'index': '20200101000000000.html',
                 'type': '',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
-        self.assertEqual(os.listdir(os.path.join(self.test_tree, 'favicon')),
-            ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'])
+            },
+        })
+        self.assertEqual(
+            os.listdir(os.path.join(self.test_tree, 'favicon')),
+            ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'],
+        )
 
     def test_resolve_absolute_icon02(self):
         """Keep original value for bad data URL."""
@@ -941,7 +947,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_absolute_icon=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -949,8 +955,8 @@ scrapbook.meta({
                 'index': '20200101000000000.html',
                 'type': '',
                 'icon': 'data:',
-                },
-            })
+            },
+        })
         self.assertFalse(os.path.exists(os.path.join(self.test_tree, 'favicon')))
 
     def test_resolve_absolute_icon03(self):
@@ -970,7 +976,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_absolute_icon=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -978,8 +984,8 @@ scrapbook.meta({
                 'index': '20200101000000000.html',
                 'type': '',
                 'icon': 'data:image/bmp;base64,Qk08AAA-------',
-                },
-            })
+            },
+        })
         self.assertFalse(os.path.exists(os.path.join(self.test_tree, 'favicon')))
 
     def test_resolve_absolute_icon04(self):
@@ -999,7 +1005,7 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_absolute_icon=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
@@ -1007,8 +1013,8 @@ scrapbook.meta({
                 'index': '20200101000000000.html',
                 'type': '',
                 'icon': 'blob:http%3A//example.com/c94d498c-7818-49b3-8e79-d3959938ba0a',
-                },
-            })
+            },
+        })
         self.assertFalse(os.path.exists(os.path.join(self.test_tree, 'favicon')))
 
     def test_resolve_unused_icon(self):
@@ -1037,22 +1043,24 @@ scrapbook.meta({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_unused_icon=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
-        self.assertEqual(os.listdir(os.path.join(self.test_tree, 'favicon')),
-            ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'])
+        self.assertEqual(
+            os.listdir(os.path.join(self.test_tree, 'favicon')),
+            ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'],
+        )
         self.assertDictEqual(book.meta, {
             '20200101000000000': {
                 'index': '20200101000000000.htz',
                 'type': '',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                },
-            })
+            },
+        })
 
     def test_resolve_all(self):
         """A test case for resolve_all.
-        
+
         - Resolve empty TOC item lists after other resolves.
         """
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
@@ -1085,26 +1093,27 @@ scrapbook.toc({
 
         book = Host(self.test_root).books['']
         generator = BookChecker(book, resolve_all=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertDictEqual(book.meta, {
             'item1': {
                 'title': 'MyTitle中文',
                 'type': 'folder',
-                },
+            },
             'item2': {
                 'title': 'MyTitle2',
                 'type': 'separator',
-                },
-            })
+            },
+        })
 
         self.assertDictEqual(book.toc, {
             'root': [
                 'item1',
                 'item2',
-                ],
-            })
+            ],
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

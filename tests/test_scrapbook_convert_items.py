@@ -1,21 +1,19 @@
-from unittest import mock
-import unittest
+import glob
 import os
 import shutil
+import unittest
 import zipfile
-import time
-import re
-import glob
 from base64 import b64decode
 from email.utils import format_datetime
+from unittest import mock
 
-from webscrapbook import WSB_DIR
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
+from webscrapbook import WSB_DIR, util
 from webscrapbook.scrapbook.convert import items as conv_items
+from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+
 
 def setUpModule():
     # mock out user config
@@ -24,14 +22,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestRun(unittest.TestCase):
     @classmethod
@@ -92,13 +92,13 @@ scrapbook.meta({
                     with open(index_file, 'w', encoding='UTF-8') as fh:
                         fh.write("""dummy""")
 
-                    for info in conv_items.run(self.test_input, self.test_output, format='htz', types=[type]):
+                    for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=[type]):
                         pass
 
                     self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
                         os.path.join(self.test_output, ''),
                         os.path.join(self.test_output, '20200101000000000.htz'),
-                        })
+                    })
                 finally:
                     self.tearDown()
 
@@ -118,14 +118,14 @@ scrapbook.meta({
                     with open(index_file, 'w', encoding='UTF-8') as fh:
                         fh.write("""dummy""")
 
-                    for info in conv_items.run(self.test_input, self.test_output, format='htz', types=[]):
+                    for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=[]):
                         pass
 
                     self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
                         os.path.join(self.test_output, ''),
                         os.path.join(self.test_output, '20200101000000000'),
                         os.path.join(self.test_output, '20200101000000000', 'index.html'),
-                        })
+                    })
                 finally:
                     self.tearDown()
 
@@ -207,7 +207,7 @@ my page content
         """
         self._test_param_format_sample()
 
-        for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -227,34 +227,34 @@ my page content
             os.path.join(self.test_output, '20200101000000005'),
             os.path.join(self.test_output, '20200101000000005', 'index.html'),
             os.path.join(self.test_output, '20200101000000005', '20200101000000005.txt'),
-            })
+        })
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000001', 'index.html')).st_mtime,
-            )
+        )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
                 util.zip_timestamp(zh.getinfo('index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000002', 'index.html')).st_mtime,
-                )
+            )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
                 util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000003', 'index.html')).st_mtime,
-                )
+            )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000004', 'index.html')).st_mtime,
-            )
+        )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000005', 'index.html')).st_mtime,
-            )
+        )
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -263,28 +263,28 @@ my page content
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000001/index.html',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000002/index.html',
-                },
+            },
             '20200101000000003': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000003/index.html',
-                },
+            },
             '20200101000000004': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000004/index.html',
-                },
+            },
             '20200101000000005': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000005/index.html',
-                },
-            })
+            },
+        })
 
     def test_param_format_folder02(self):
         """Check if icon path is correctly handled for htz => folder.
@@ -308,19 +308,19 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -329,8 +329,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000/index.html',
                 'icon': '../.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_folder03(self):
         """Check if icon path is correctly handled for maff => folder.
@@ -355,19 +355,19 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -376,8 +376,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000/index.html',
                 'icon': '../.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_folder04(self):
         """Check if icon path is correctly handled for single_file => folder.
@@ -401,19 +401,19 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -422,8 +422,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000/index.html',
                 'icon': '../.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_htz01(self):
         """Test format "htz"
@@ -432,7 +432,7 @@ scrapbook.meta({
         """
         self._test_param_format_sample()
 
-        for info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -442,7 +442,7 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000003.htz'),
             os.path.join(self.test_output, '20200101000000004.htz'),
             os.path.join(self.test_output, '20200101000000005.htz'),
-            })
+        })
 
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000001.htz')) as zh:
             self.assertEqual(set(zh.namelist()), {'index.html', 'resource.bmp'})
@@ -459,28 +459,28 @@ scrapbook.meta({
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000001.htz')).st_mtime,
-            )
+        )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000002.htz')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000002.htz')).st_mtime,
-            )
+        )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
                 util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000003.htz')).st_mtime,
-                )
+            )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000004.htz')).st_mtime,
-            )
+        )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000005.htz')).st_mtime,
-            )
+        )
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -489,28 +489,28 @@ scrapbook.meta({
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000001.htz',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000002.htz',
-                },
+            },
             '20200101000000003': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000003.htz',
-                },
+            },
             '20200101000000004': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000004.htz',
-                },
+            },
             '20200101000000005': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000005.htz',
-                },
-            })
+            },
+        })
 
     def test_param_format_htz02(self):
         """Check if icon path is correctly handled for folder => htz.
@@ -532,18 +532,18 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.htz'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -552,8 +552,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.htz',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_htz03(self):
         """Check if icon path is correctly handled for maff => htz.
@@ -578,18 +578,18 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.htz'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -598,8 +598,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.htz',
                 'icon': '.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_htz04(self):
         """Check if icon path is correctly handled for single_file => htz.
@@ -623,18 +623,18 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -643,8 +643,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.html',
                 'icon': '.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_maff01(self):
         """Test format "maff"
@@ -653,7 +653,7 @@ scrapbook.meta({
         """
         self._test_param_format_sample()
 
-        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -663,7 +663,7 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000003.maff'),
             os.path.join(self.test_output, '20200101000000004.maff'),
             os.path.join(self.test_output, '20200101000000005.maff'),
-            })
+        })
 
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000001.maff')) as zh:
             self.assertEqual(set(zh.namelist()), {
@@ -671,13 +671,13 @@ scrapbook.meta({
                 '20200101000000001/index.html',
                 '20200101000000001/index.rdf',
                 '20200101000000001/resource.bmp',
-                })
+            })
             with zh.open('20200101000000001/index.rdf') as fh:
                 dt = util.id_to_datetime('20200101000000000').astimezone()
                 self.assertEqual(
                     util.parse_maff_index_rdf(fh),
                     ('', '', format_datetime(dt), 'index.html', 'UTF-8'),
-                    )
+                )
 
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000002.maff')) as zh:
             self.assertEqual(set(zh.namelist()), {
@@ -685,13 +685,13 @@ scrapbook.meta({
                 '20200101000000002/index.html',
                 '20200101000000002/index.rdf',
                 '20200101000000002/resource.bmp',
-                })
+            })
             with zh.open('20200101000000002/index.rdf') as fh:
                 dt = util.id_to_datetime('20200101000000000').astimezone()
                 self.assertEqual(
                     util.parse_maff_index_rdf(fh),
                     ('', '', format_datetime(dt), 'index.html', 'UTF-8'),
-                    )
+                )
 
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000004.maff')) as zh:
             self.assertEqual(set(zh.namelist()), {
@@ -699,13 +699,13 @@ scrapbook.meta({
                 '20200101000000004/index.html',
                 '20200101000000004/index.rdf',
                 '20200101000000004/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                })
+            })
             with zh.open('20200101000000004/index.rdf') as fh:
                 dt = util.id_to_datetime('20200101000000000').astimezone()
                 self.assertEqual(
                     util.parse_maff_index_rdf(fh),
                     ('', '', format_datetime(dt), 'index.html', 'UTF-8'),
-                    )
+                )
 
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000005.maff')) as zh:
             self.assertEqual(set(zh.namelist()), {
@@ -713,39 +713,39 @@ scrapbook.meta({
                 '20200101000000005/index.html',
                 '20200101000000005/index.rdf',
                 '20200101000000005/20200101000000005.txt',
-                })
+            })
             with zh.open('20200101000000005/index.rdf') as fh:
                 dt = util.id_to_datetime('20200101000000000').astimezone()
                 self.assertEqual(
                     util.parse_maff_index_rdf(fh),
                     ('', '', format_datetime(dt), 'index.html', 'UTF-8'),
-                    )
+                )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000001.maff')).st_mtime,
-            )
+        )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
                 util.zip_timestamp(zh.getinfo('index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000002.maff')).st_mtime,
-                )
+            )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000003.maff')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000003.maff')).st_mtime,
-            )
+        )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000004.maff')).st_mtime,
-            )
+        )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000005.maff')).st_mtime,
-            )
+        )
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -754,28 +754,28 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000001.maff',
                 'create': '20200101000000000',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'index': '20200101000000002.maff',
                 'create': '20200101000000000',
-                },
+            },
             '20200101000000003': {
                 'type': '',
                 'index': '20200101000000003.maff',
                 'create': '20200101000000000',
-                },
+            },
             '20200101000000004': {
                 'type': '',
                 'index': '20200101000000004.maff',
                 'create': '20200101000000000',
-                },
+            },
             '20200101000000005': {
                 'type': '',
                 'index': '20200101000000005.maff',
                 'create': '20200101000000000',
-                },
-            })
+            },
+        })
 
     def test_param_format_maff02(self):
         """Fail if index.rdf already exists
@@ -818,7 +818,7 @@ scrapbook.meta({
             zh.writestr('20200101000000003/index.rdf', """dummy""")
             zh.writestr('20200101000000003/resource.txt', """dummy""")
 
-        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -829,7 +829,7 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000001', 'resource.txt'),
             os.path.join(self.test_output, '20200101000000002.htz'),
             os.path.join(self.test_output, '20200101000000003.maff'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -837,16 +837,16 @@ scrapbook.meta({
             '20200101000000001': {
                 'type': '',
                 'index': '20200101000000001/index.html',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'index': '20200101000000002.htz',
-                },
+            },
             '20200101000000003': {
                 'type': '',
                 'index': '20200101000000003.maff',
-                },
-            })
+            },
+        })
 
     def test_param_format_maff03(self):
         """Check if icon path is correctly handled for folder => maff.
@@ -868,18 +868,18 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -888,8 +888,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.maff',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_maff04(self):
         """Check if icon path is correctly handled for htz => maff.
@@ -913,18 +913,18 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -933,8 +933,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.maff',
                 'icon': '.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_maff05(self):
         """Check if icon path is correctly handled for single_file => maff.
@@ -958,18 +958,18 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -978,15 +978,15 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.maff',
                 'icon': '.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file01(self):
         """Test format "single_file"
         """
         self._test_param_format_sample()
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -996,21 +996,21 @@ scrapbook.meta({
             os.path.join(self.test_output, '20200101000000003.html'),
             os.path.join(self.test_output, '20200101000000004.html'),
             os.path.join(self.test_output, '20200101000000005.txt'),
-            })
+        })
 
-        with open( os.path.join(self.test_output, '20200101000000001.html'), encoding='UTF-8') as fh:
+        with open(os.path.join(self.test_output, '20200101000000001.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """\
 <img src="data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA">
 my page content
 """)
 
-        with open( os.path.join(self.test_output, '20200101000000002.html'), encoding='UTF-8') as fh:
+        with open(os.path.join(self.test_output, '20200101000000002.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """\
 <img src="data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA">
 my page content
 """)
 
-        with open( os.path.join(self.test_output, '20200101000000003.html'), encoding='UTF-8') as fh:
+        with open(os.path.join(self.test_output, '20200101000000003.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """\
 <img src="data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA">
 my page content
@@ -1019,29 +1019,29 @@ my page content
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000001.html')).st_mtime,
-            )
+        )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
                 util.zip_timestamp(zh.getinfo('index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000002.html')).st_mtime,
-                )
+            )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
                 util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000003.html')).st_mtime,
-                )
+            )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000004.html')).st_mtime,
-            )
+        )
 
         self.assertEqual(
             os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
             os.stat(os.path.join(self.test_output, '20200101000000005.txt')).st_mtime,
-            )
+        )
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -1050,28 +1050,28 @@ my page content
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000001.html',
-                },
+            },
             '20200101000000002': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000002.html',
-                },
+            },
             '20200101000000003': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000003.html',
-                },
+            },
             '20200101000000004': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000004.html',
-                },
+            },
             '20200101000000005': {
                 'type': '',
                 'create': '20200101000000000',
                 'index': '20200101000000005.txt',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file02(self):
         """Check if icon path is correctly handled for folder => single_file.
@@ -1093,18 +1093,18 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -1113,8 +1113,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.html',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file03(self):
         """Check if icon path is correctly handled for htz => single_file.
@@ -1138,18 +1138,18 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -1158,8 +1158,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.html',
                 'icon': '.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file04(self):
         """Check if icon path is correctly handled for maff => single_file.
@@ -1184,18 +1184,18 @@ scrapbook.meta({
         with open(os.path.join(favicon_dir, 'favicon.ico'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
-            })
+        })
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
@@ -1204,8 +1204,8 @@ scrapbook.meta({
                 'type': '',
                 'index': '20200101000000000.html',
                 'icon': '.wsb/tree/favicon/favicon.ico',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file05(self):
         """Check if meta refresh is resolved recursively.
@@ -1231,13 +1231,13 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'refresh2.html'), 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         with open(os.path.join(self.test_output, '20200101000000000.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """page content""")
@@ -1248,8 +1248,8 @@ scrapbook.meta({
             '20200101000000000': {
                 'type': '',
                 'index': '20200101000000000.html',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file06(self):
         """Check if meta refresh target is non-HTML, and SVG rewriting.
@@ -1281,13 +1281,13 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'image.bmp'), 'wb') as fh:
             fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.svg'),
-            })
+        })
 
         with open(os.path.join(self.test_output, '20200101000000000.svg'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """\
@@ -1304,8 +1304,8 @@ scrapbook.meta({
             '20200101000000000': {
                 'type': '',
                 'index': '20200101000000000.svg',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file07(self):
         """Check that a deleyed meta refresh should not be resolved.
@@ -1325,13 +1325,13 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write("""<meta http-equiv="refresh" content="1; url=./target.html">""")
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         with open(os.path.join(self.test_output, '20200101000000000.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """<meta http-equiv="refresh" content="1; url=urn:scrapbook:convert:skip:url:./target.html">""")
@@ -1342,8 +1342,8 @@ scrapbook.meta({
             '20200101000000000': {
                 'type': '',
                 'index': '20200101000000000.html',
-                },
-            })
+            },
+        })
 
     def test_param_format_single_file08(self):
         """Check that a meta refresh to an absolute URL should not be resolved.
@@ -1363,13 +1363,13 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write("""<meta http-equiv="refresh" content="0; url=http://example.com">""")
 
-        for info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
+        for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
-            })
+        })
 
         with open(os.path.join(self.test_output, '20200101000000000.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), """<meta http-equiv="refresh" content="0; url=http://example.com">""")
@@ -1380,8 +1380,9 @@ scrapbook.meta({
             '20200101000000000': {
                 'type': '',
                 'index': '20200101000000000.html',
-                },
-            })
+            },
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

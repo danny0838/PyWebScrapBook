@@ -1,19 +1,23 @@
 """Command line interface of WebScrapBook toolkit.
 """
-import sys
+import argparse
 import os
 import shutil
-import argparse
-from getpass import getpass
+import sys
 import traceback
+from getpass import getpass
 from inspect import getdoc
 from time import time_ns
 
-# this package
-from . import __version__
-from . import *
-from . import server
-from . import util
+from . import (
+    WSB_CONFIG,
+    WSB_DIR,
+    WSB_USER_CONFIG,
+    __version__,
+    config,
+    server,
+    util,
+)
 
 
 def log(*args):
@@ -75,7 +79,7 @@ def cmd_config(args):
             try:
                 fcopy(fsrc, fdst)
             except OSError:
-                die(f"Unable to generate {fdst}.")
+                die(f'Unable to generate {fdst}.')
 
         if args['edit']:
             try:
@@ -92,7 +96,7 @@ def cmd_config(args):
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except OSError:
-                    die(f"Unable to generate {fdst}.")
+                    die(f'Unable to generate {fdst}.')
 
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'app.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'app.py'))
@@ -102,7 +106,7 @@ def cmd_config(args):
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except OSError:
-                    die(f"Unable to generate {fdst}.")
+                    die(f'Unable to generate {fdst}.')
 
     elif args['user']:
         fdst = WSB_USER_CONFIG
@@ -112,7 +116,7 @@ def cmd_config(args):
             try:
                 fcopy(fsrc, fdst)
             except OSError:
-                die(f"Unable to generate {fdst}.")
+                die(f'Unable to generate {fdst}.')
 
         if args['edit']:
             try:
@@ -121,10 +125,10 @@ def cmd_config(args):
                 pass
 
     elif args['edit']:
-        die("Use --edit in combine with --book or --user.")
+        die('Use --edit in combine with --book or --user.')
 
     elif args['all']:
-        die("Use --all in combine with --book.")
+        die('Use --all in combine with --book.')
 
     elif args['name']:
         config.load(args['root'])
@@ -238,13 +242,13 @@ def cmd_convert(args):
         output = os.path.realpath(output)
 
         if os.path.normcase(output) == os.path.normcase(input):
-            die(f'''Unable to output to the input directory''')
+            die("""Unable to output to the input directory""")
 
         if os.path.normcase(output).startswith(os.path.normcase(os.path.join(input, ''))):
-            die(f'''Unable to output to a descendant of the input directory''')
+            die("""Unable to output to a descendant of the input directory""")
 
         if os.path.normcase(input).startswith(os.path.normcase(os.path.join(output, ''))):
-            die(f'''Unable to output to an ancestor of the input directory''')
+            die("""Unable to output to an ancestor of the input directory""")
 
         if not os.path.lexists(output):
             pass
@@ -300,10 +304,10 @@ def view_archive_files(files):
     Set default application of MAFF/HTZ archive files to this command to open
     them in the browser directly.
     """
-    import tempfile
-    import zipfile
     import mimetypes
+    import tempfile
     import webbrowser
+    import zipfile
     from urllib.request import pathname2url
 
     cache_prefix = config['browser']['cache_prefix']
@@ -316,14 +320,14 @@ def view_archive_files(files):
 
     for file in dict.fromkeys(os.path.normcase(os.path.abspath(file)) for file in files):
         mime, _ = mimetypes.guess_type(file)
-        if mime not in ("application/html+zip", "application/x-maff"):
+        if mime not in ('application/html+zip', 'application/x-maff'):
             continue
 
         if use_jar:
             base_url = 'jar:file:' + pathname2url(file) + '!/'
-            if mime == "application/html+zip":
+            if mime == 'application/html+zip':
                 urls.append(base_url + 'index.html')
-            elif mime == "application/x-maff":
+            elif mime == 'application/x-maff':
                 urls.extend(base_url + f.indexfilename for f in util.get_maff_pages(file))
             continue
 
@@ -349,9 +353,9 @@ def view_archive_files(files):
 
         # get URL of every index page
         base_url = 'file:' + pathname2url(dest_dir) + '/'
-        if mime == "application/html+zip":
+        if mime == 'application/html+zip':
             urls.append(base_url + 'index.html')
-        elif mime == "application/x-maff":
+        elif mime == 'application/x-maff':
             urls.extend(base_url + f.indexfilename for f in util.get_maff_pages(file))
 
     # open pages in the browser
@@ -383,7 +387,8 @@ def view():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(view_archive_files))
-    parser.add_argument('files', nargs='+',
+    parser.add_argument(
+        'files', nargs='+',
         help="""files to view.""")
     args = vars(parser.parse_args())
     view_archive_files(args['files'])
@@ -398,164 +403,223 @@ def parse_args(argv=None):
         prog = None
 
     parser = argparse.ArgumentParser(prog=prog, description=__doc__)
-    parser.add_argument('--version', action='version', version=f'{__package__} {__version__}',
+    parser.add_argument(
+        '--version', action='version', version=f'{__package__} {__version__}',
         help="""show version information and exit""")
-    parser.add_argument('--root', default=".",
+    parser.add_argument(
+        '--root', default='.',
         help="""root directory to manipulate (default: current working directory)""")
-    subparsers = parser.add_subparsers(metavar='COMMAND',
+    subparsers = parser.add_subparsers(
+        metavar='COMMAND',
         help="""the sub-command to run. Get usage help with e.g. %(prog)s config -h""")
 
     # subcommand: serve
-    parser_serve = subparsers.add_parser('serve', aliases=['s'],
+    parser_serve = subparsers.add_parser(
+        'serve', aliases=['s'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_serve),
         help="""serve the root directory""")
-    parser_serve.add_argument('--browse', default=None, action='store_true',
+    parser_serve.add_argument(
+        '--browse', default=None, action='store_true',
         help="""launch the browser to visit the served directory""")
-    parser_serve.add_argument('--no-browse', dest='browse', action='store_false',
+    parser_serve.add_argument(
+        '--no-browse', dest='browse', action='store_false',
         help="""do not launch the browser""")
     parser_serve.set_defaults(func=cmd_serve)
 
     # subcommand: config
-    parser_config = subparsers.add_parser('config', aliases=['c'],
+    parser_config = subparsers.add_parser(
+        'config', aliases=['c'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_config),
         help="""show, generate, or edit the config""")
     parser_config.set_defaults(func=cmd_config)
-    parser_config.add_argument('name', nargs='?',
+    parser_config.add_argument(
+        'name', nargs='?',
         help="""show value of the given config name (in the form of <section>[.<subsection>].<key>)""")
-    parser_config.add_argument('-b', '--book', default=False, action='store_true',
+    parser_config.add_argument(
+        '-b', '--book', default=False, action='store_true',
         help="""generate book (host) config file""")
-    parser_config.add_argument('-u', '--user', default=False, action='store_true',
+    parser_config.add_argument(
+        '-u', '--user', default=False, action='store_true',
         help="""generate user config file""")
-    parser_config.add_argument('-a', '--all', default=False, action='store_true',
+    parser_config.add_argument(
+        '-a', '--all', default=False, action='store_true',
         help="""generate more assistant files (with --book)""")
-    parser_config.add_argument('-e', '--edit', default=False, action='store_true',
+    parser_config.add_argument(
+        '-e', '--edit', default=False, action='store_true',
         help="""edit the config file (with --book or --user)""")
 
     # subcommand: encrypt
-    parser_encrypt = subparsers.add_parser('encrypt', aliases=['e'],
+    parser_encrypt = subparsers.add_parser(
+        'encrypt', aliases=['e'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_encrypt),
         help="""generate an encrypted password""")
     parser_encrypt.set_defaults(func=cmd_encrypt)
-    parser_encrypt.add_argument('-p', '--password', nargs='?', default=None, action='store',
+    parser_encrypt.add_argument(
+        '-p', '--password', nargs='?', default=None, action='store',
         help="""the password to encrypt. Skip to provide via an interactive prompt.""")
-    parser_encrypt.add_argument('-m', '--method', default='sha1', action='store',
+    parser_encrypt.add_argument(
+        '-m', '--method', default='sha1', action='store',
         help="""the encrypt method to use, which is one of: plain, md5, sha1,
 sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
 (default: %(default)s)""")
-    parser_encrypt.add_argument('-s', '--salt', default='', action='store',
+    parser_encrypt.add_argument(
+        '-s', '--salt', default='', action='store',
         help="""the salt to add during encryption.""")
 
     # subcommand: cache
-    parser_cache = subparsers.add_parser('cache', aliases=['a'],
+    parser_cache = subparsers.add_parser(
+        'cache', aliases=['a'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_cache),
         help="""update fulltext cache and/or static site pages""")
     parser_cache.set_defaults(func=cmd_cache)
-    parser_cache.add_argument('book_ids', metavar='book', nargs='*', action='store',
+    parser_cache.add_argument(
+        'book_ids', metavar='book', nargs='*', action='store',
         help="""the book ID(s) to generate cache. (default: all books)""")
-    parser_cache.add_argument('--item', dest='item_ids',
+    parser_cache.add_argument(
+        '--item', dest='item_ids',
         metavar='ID', action='store', default=None, nargs='+',
         help="""the items ID(s) to generate cache (default: all)""")
-    parser_cache.add_argument('--fulltext', default=True, action='store_true',
+    parser_cache.add_argument(
+        '--fulltext', default=True, action='store_true',
         help="""generate fulltext cache. (default)""")
-    parser_cache.add_argument('--no-fulltext', dest='fulltext', action='store_false',
+    parser_cache.add_argument(
+        '--no-fulltext', dest='fulltext', action='store_false',
         help="""inverse of --fulltext""")
-    parser_cache.add_argument('--inclusive-frames', default=True, action='store_true',
+    parser_cache.add_argument(
+        '--inclusive-frames', default=True, action='store_true',
         help="""cache frame content as part of the main page (default). It's
 recommended to recreate fulltext cache when changing this option to prevent
 inconsistency.""")
-    parser_cache.add_argument('--no-inclusive-frames', dest='inclusive_frames', action='store_false',
+    parser_cache.add_argument(
+        '--no-inclusive-frames', dest='inclusive_frames', action='store_false',
         help="""inverse of --inclusive-frames""")
-    parser_cache.add_argument('--recreate', dest='recreate', default=False, action='store_true',
+    parser_cache.add_argument(
+        '--recreate', dest='recreate', default=False, action='store_true',
         help="""ignore current fulltext cache and generate again""")
-    parser_cache.add_argument('--no-recreate', dest='recreate', action='store_false',
+    parser_cache.add_argument(
+        '--no-recreate', dest='recreate', action='store_false',
         help="""inverse of --recreate (default)""")
-    parser_cache.add_argument('--static-site', default=False, action='store_true',
+    parser_cache.add_argument(
+        '--static-site', default=False, action='store_true',
         help="""generate static site pages""")
-    parser_cache.add_argument('--no-static-site', dest='static_site', action='store_false',
+    parser_cache.add_argument(
+        '--no-static-site', dest='static_site', action='store_false',
         help="""inverse of --static-site (default)""")
-    parser_cache.add_argument('--static-index', default=False, action='store_true',
+    parser_cache.add_argument(
+        '--static-index', default=False, action='store_true',
         help="""generate static index.html page""")
-    parser_cache.add_argument('--no-static-index', dest='static_index', action='store_false',
+    parser_cache.add_argument(
+        '--no-static-index', dest='static_index', action='store_false',
         help="""inverse of --static-index (default)""")
-    parser_cache.add_argument('--rss-root', metavar='ROOT_URL', action='store',
+    parser_cache.add_argument(
+        '--rss-root', metavar='ROOT_URL', action='store',
         help="""generate an RSS feed file for the book, using the specified root URL
         (usually corresponds to webscrapbook app root)""")
-    parser_cache.add_argument('--rss-item-count', default=50, type=int, action='store',
+    parser_cache.add_argument(
+        '--rss-item-count', default=50, type=int, action='store',
         help="""number of items the RSS feed should include (default: %(default)s)""")
-    parser_cache.add_argument('--locale', action='store',
+    parser_cache.add_argument(
+        '--locale', action='store',
         help="""locale for the generated pages (default: system locale)""")
-    parser_cache.add_argument('--backup', dest='no_backup', default=True, action='store_false',
+    parser_cache.add_argument(
+        '--backup', dest='no_backup', default=True, action='store_false',
         help="""backup changed files""")
-    parser_cache.add_argument('--no-backup', action='store_true',
+    parser_cache.add_argument(
+        '--no-backup', action='store_true',
         help="""do not backup changed files (default)""")
-    parser_cache.add_argument('--debug', default=False, action='store_true',
+    parser_cache.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: check
-    parser_check = subparsers.add_parser('check', aliases=['k'],
+    parser_check = subparsers.add_parser(
+        'check', aliases=['k'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_check),
         help="""check and fix scrapbook data""")
     parser_check.set_defaults(func=cmd_check)
-    parser_check.add_argument('book_ids', metavar='book', nargs='*', action='store',
+    parser_check.add_argument(
+        'book_ids', metavar='book', nargs='*', action='store',
         help="""the book ID(s) to check. (default: all books)""")
 
-    parser_check.add_argument('-r', '--resolve', dest='resolve_all', default=False, action='store_true',
+    parser_check.add_argument(
+        '-r', '--resolve', dest='resolve_all', default=False, action='store_true',
         help="""resolve all found issues (implies all --resolve-*)""")
-    parser_check.add_argument('--resolve-invalid-id', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-invalid-id', default=False, action='store_true',
         help="""remove items with invalid ID from metadata entries""")
-    parser_check.add_argument('--resolve-missing-index', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-missing-index', default=False, action='store_true',
         help="""remove items with missing index property from metadata entries""")
-    parser_check.add_argument('--resolve-missing-index-file', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-missing-index-file', default=False, action='store_true',
         help="""remove items with missing index file from metadata entries""")
-    parser_check.add_argument('--resolve-missing-date', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-missing-date', default=False, action='store_true',
         help="""attempt to generate "create" and "modify" properties for items missing any of them""")
-    parser_check.add_argument('--resolve-older-mtime', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-older-mtime', default=False, action='store_true',
         help="""update "modify" property if it's older than last modified time of the index file""")
-    parser_check.add_argument('--resolve-toc-unreachable', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-toc-unreachable', default=False, action='store_true',
         help="""append items unreachable from TOC to the root tree""")
-    parser_check.add_argument('--resolve-toc-invalid', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-toc-invalid', default=False, action='store_true',
         help="""remove invalid items from TOC""")
-    parser_check.add_argument('--resolve-toc-empty-subtree', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-toc-empty-subtree', default=False, action='store_true',
         help="""remove items with empty subtree from TOC""")
-    parser_check.add_argument('--resolve-unindexed-files', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-unindexed-files', default=False, action='store_true',
         help="""attempt to import unindexed files to metadata and TOC""")
-    parser_check.add_argument('--resolve-absolute-icon', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-absolute-icon', default=False, action='store_true',
         help="""cache "icon" property with absolute URL to local favicon directory""")
-    parser_check.add_argument('--resolve-unused-icon', default=False, action='store_true',
+    parser_check.add_argument(
+        '--resolve-unused-icon', default=False, action='store_true',
         help="""remove unused favicon caches""")
 
-    parser_check.add_argument('--no-backup', default=False, action='store_true',
+    parser_check.add_argument(
+        '--no-backup', default=False, action='store_true',
         help="""do not backup changed files""")
-    parser_check.add_argument('--debug', default=False, action='store_true',
+    parser_check.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: export
-    parser_export = subparsers.add_parser('export', aliases=['x'],
+    parser_export = subparsers.add_parser(
+        'export', aliases=['x'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_export),
         help="""export data items into archive files (*.wsba)""")
     parser_export.set_defaults(func=cmd_export)
-    parser_export.add_argument('output', action='store',
+    parser_export.add_argument(
+        'output', action='store',
         help="""the output directory""")
-    parser_export.add_argument('--book', dest='book_id', metavar='ID', default='', action='store',
+    parser_export.add_argument(
+        '--book', dest='book_id', metavar='ID', default='', action='store',
         help="""the book ID to export. (default: "")""")
-    parser_export.add_argument('--item', dest='item_ids',
+    parser_export.add_argument(
+        '--item', dest='item_ids',
         metavar='ID', action='store', default=None, nargs='+',
         help="""the items ID(s) to export (default: all)""")
-    parser_export.add_argument('-r', '--recursive', default=False, action='store_true',
+    parser_export.add_argument(
+        '-r', '--recursive', default=False, action='store_true',
         help="""recursively include descendant items of the provided item ID(s)""")
-    parser_export.add_argument('-s', '--singleton', default=False, action='store_true',
+    parser_export.add_argument(
+        '-s', '--singleton', default=False, action='store_true',
         help="""export only the first occurrence for an item referenced many times""")
-    parser_export.add_argument('--debug', default=False, action='store_true',
+    parser_export.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: import
-    parser_import = subparsers.add_parser('import', aliases=['i'],
+    parser_import = subparsers.add_parser(
+        'import', aliases=['i'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_import),
         help="""import data items from archive files (*.wsba)""",
@@ -591,45 +655,57 @@ All SUBPATTERNs can be prepended with "UTC_" for UTC time instead of local
 time. For example, "%CREATE:UTC_DATE%".
 """)
     parser_import.set_defaults(func=cmd_import)
-    parser_import.add_argument('files', metavar='file', action='store', nargs='+',
+    parser_import.add_argument(
+        'files', metavar='file', action='store', nargs='+',
         help="""the file(s) to import in order. If a directory is provided, all
 child files are imported in unicode filename order.""")
-    parser_import.add_argument('--book', dest='book_id', metavar='ID', default='', action='store',
+    parser_import.add_argument(
+        '--book', dest='book_id', metavar='ID', default='', action='store',
         help="""the book ID to import into. (default: "")""")
-    parser_import.add_argument('--target', dest='target_id', metavar='ID',
+    parser_import.add_argument(
+        '--target', dest='target_id', metavar='ID',
         default='root', action='store',
         help="""the target item ID to insert the imported items under (default: "%(default)s")""")
-    parser_import.add_argument('--target-index', metavar='INDEX',
+    parser_import.add_argument(
+        '--target-index', metavar='INDEX',
         type=int, action='store',
         help="""the index number (starting from 0) the imported items will be
 inserted at (default: last)""")
-    parser_import.add_argument('--rebuild-folders', default=False, action='store_true',
+    parser_import.add_argument(
+        '--rebuild-folders', default=False, action='store_true',
         help="""insert imported items under the original parent, and
 auto-generate parent folders if not found. (ignores --target and
 --target-index)""")
-    parser_import.add_argument('--resolve-id-used', metavar='MODE',
+    parser_import.add_argument(
+        '--resolve-id-used', metavar='MODE',
         default='skip', action='store',
         choices={'skip', 'replace', 'new'},
         help="""what to do if an importing item ID already exists (default: "%(default)s")""")
-    parser_import.add_argument('--filename', dest='target_filename', metavar='PATTERN',
+    parser_import.add_argument(
+        '--filename', dest='target_filename', metavar='PATTERN',
         default='%ID%', action='store',
         help="""formatter of the imported filename (default: "%(default)s")""")
-    parser_import.add_argument('--prune', default=False, action='store_true',
+    parser_import.add_argument(
+        '--prune', default=False, action='store_true',
         help="""delete the archive file after successfully imported""")
-    parser_import.add_argument('--debug', default=False, action='store_true',
+    parser_import.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: convert
-    parser_convert = subparsers.add_parser('convert', aliases=['v'],
+    parser_convert = subparsers.add_parser(
+        'convert', aliases=['v'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_convert),
         help="""convert scrapbook data between different formats""")
     parser_convert.set_defaults(func=cmd_convert)
-    parser_convert_sub = parser_convert.add_subparsers(dest='mode', metavar='MODE',
+    parser_convert_sub = parser_convert.add_subparsers(
+        dest='mode', metavar='MODE',
         help="""the conversion mode. Get usage help with e.g. %(prog)s sb2wsb -h""")
 
     # -- migrate
-    parser_convert_migrate = parser_convert_sub.add_parser('migrate',
+    parser_convert_migrate = parser_convert_sub.add_parser(
+        'migrate',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Migrate a scrapbook to be compatible with the latest WebScrapBook version.
@@ -642,40 +718,52 @@ migrate from older WebScrapBook to the latest.
 - Convert the index file of "postit" items for canonical wrapper and styling.
 """,
         help="""migrate to latest WebScrapBook""")
-    parser_convert_migrate.add_argument('input', action='store',
+    parser_convert_migrate.add_argument(
+        'input', action='store',
         help="""the input directory""")
-    parser_convert_migrate.add_argument('output', action='store', nargs='?',
+    parser_convert_migrate.add_argument(
+        'output', action='store', nargs='?',
         help="""the output directory (default: in-place)""")
-    parser_convert_migrate.add_argument('--book', dest='book_ids', metavar='ID',
+    parser_convert_migrate.add_argument(
+        '--book', dest='book_ids', metavar='ID',
         nargs='+', action='store',
         help="""ID of the book(s) to convert (default: all books)""")
-    parser_convert_migrate.add_argument('--convert-legacy', default=True,
+    parser_convert_migrate.add_argument(
+        '--convert-legacy', default=True,
         action='store_true',
         help="""convert data files from legacy ScrapBook (default)""")
-    parser_convert_migrate.add_argument('--no-convert-legacy', dest='convert_legacy', 
+    parser_convert_migrate.add_argument(
+        '--no-convert-legacy', dest='convert_legacy',
         action='store_false',
         help="""inverse of --convert-legacy""")
-    parser_convert_migrate.add_argument('--convert-v1', default=True,
+    parser_convert_migrate.add_argument(
+        '--convert-v1', default=True,
         action='store_true',
         help="""convert data to latest WebScrapBook 1.* (default)""")
-    parser_convert_migrate.add_argument('--no-convert-v1', dest='convert_v1', 
+    parser_convert_migrate.add_argument(
+        '--no-convert-v1', dest='convert_v1',
         action='store_false',
         help="""inverse of --convert-convert-v1""")
-    parser_convert_migrate.add_argument('--use-native-tags', default=False,
+    parser_convert_migrate.add_argument(
+        '--use-native-tags', default=False,
         action='store_true',
         help="""use native HTML tags for converted legacy ScrapBook annotations for better
 compatibility with very old browsers (e.g. IE < 9), with the cost of increased possibility
 to conflict with the web page stylesheets""")
-    parser_convert_migrate.add_argument('--no-use-native-tags', dest='use_native_tags', 
+    parser_convert_migrate.add_argument(
+        '--no-use-native-tags', dest='use_native_tags',
         action='store_false',
         help="""inverse of --use-native-tags (default)""")
-    parser_convert_migrate.add_argument('--force', default=False, action='store_true',
+    parser_convert_migrate.add_argument(
+        '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_migrate.add_argument('--debug', default=False, action='store_true',
+    parser_convert_migrate.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # -- items
-    parser_convert_items = parser_convert_sub.add_parser('items',
+    parser_convert_items = parser_convert_sub.add_parser(
+        'items',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""Convert items in the scrapbook.""",
         help="""convert items in the scrapbook""",
@@ -701,30 +789,39 @@ Available TYPEs:
   "postit"   a postit
   "combine"  a combined page generated by legacy ScrapBook
 """)
-    parser_convert_items.add_argument('input', action='store',
+    parser_convert_items.add_argument(
+        'input', action='store',
         help="""the input directory""")
-    parser_convert_items.add_argument('output', action='store', nargs='?',
+    parser_convert_items.add_argument(
+        'output', action='store', nargs='?',
         help="""the output directory (default: in-place)""")
-    parser_convert_items.add_argument('--book', dest='book_ids', metavar='ID',
+    parser_convert_items.add_argument(
+        '--book', dest='book_ids', metavar='ID',
         nargs='+', action='store',
         help="""ID of the book(s) to convert (default: all books)""")
-    parser_convert_items.add_argument('--item', dest='item_ids', metavar='ID',
+    parser_convert_items.add_argument(
+        '--item', dest='item_ids', metavar='ID',
         nargs='+', action='store',
         help="""ID of the item(s) to convert (default: all items)""")
-    parser_convert_items.add_argument('--format', metavar='FORMAT', action='store',
+    parser_convert_items.add_argument(
+        '--format', metavar='FORMAT', action='store',
         choices=['folder', 'htz', 'maff', 'single_file'],
         help="""file format to convert item(s) to (default: no conversion)""")
-    parser_convert_items.add_argument('--type', dest='types', metavar='TYPE', action='store', nargs='+',
+    parser_convert_items.add_argument(
+        '--type', dest='types', metavar='TYPE', action='store', nargs='+',
         default=[''],
         choices=['', 'site', 'image', 'file', 'combine', 'note', 'postit', 'bookmark', 'folder', 'separator'],
         help="""item type(s) to convert (default: "")""")
-    parser_convert_items.add_argument('--force', default=False, action='store_true',
+    parser_convert_items.add_argument(
+        '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_items.add_argument('--debug', default=False, action='store_true',
+    parser_convert_items.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # -- sb2wsb
-    parser_convert_sb2wsb = parser_convert_sub.add_parser('sb2wsb',
+    parser_convert_sb2wsb = parser_convert_sub.add_parser(
+        'sb2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Convert a scrapbook from legacy ScrapBook to WebScrapBook.
@@ -737,22 +834,29 @@ Known supported legacy scrapbook implementations:
 - ScrapBook Plus (legacy Firefox Add-on)
 - ScrapBee (Firefox Quantum Add-on)""",
         help="""convert from legacy ScrapBook to WebScrapBook""")
-    parser_convert_sb2wsb.add_argument('input', action='store',
+    parser_convert_sb2wsb.add_argument(
+        'input', action='store',
         help="""the input directory""")
-    parser_convert_sb2wsb.add_argument('output', action='store',
+    parser_convert_sb2wsb.add_argument(
+        'output', action='store',
         help="""the output directory""")
-    parser_convert_sb2wsb.add_argument('--no-data-files', default=False, action='store_true',
+    parser_convert_sb2wsb.add_argument(
+        '--no-data-files', default=False, action='store_true',
         help="""do not convert data files (set this if there's something wrong
 with the conversion, and run "wsb convert migrate" afterwards for advanced options)""")
-    parser_convert_sb2wsb.add_argument('--no-backup', default=False, action='store_true',
+    parser_convert_sb2wsb.add_argument(
+        '--no-backup', default=False, action='store_true',
         help="""do not backup unneeded legacy scrapbook files""")
-    parser_convert_sb2wsb.add_argument('--force', default=False, action='store_true',
+    parser_convert_sb2wsb.add_argument(
+        '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_sb2wsb.add_argument('--debug', default=False, action='store_true',
+    parser_convert_sb2wsb.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # -- wsb2sb
-    parser_convert_wsb2sb = parser_convert_sub.add_parser('wsb2sb',
+    parser_convert_wsb2sb = parser_convert_sub.add_parser(
+        'wsb2sb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Convert a scrapbook from WebScrapBook to legacy ScrapBook.
@@ -771,23 +875,30 @@ such as:
 * file with special or non-ASCII chars in filename
 * container item whose type property is not "folder" """,
         help="""convert from WebScrapBook to legacy ScrapBook""")
-    parser_convert_wsb2sb.add_argument('input', action='store',
+    parser_convert_wsb2sb.add_argument(
+        'input', action='store',
         help="""the input directory""")
-    parser_convert_wsb2sb.add_argument('output', action='store',
+    parser_convert_wsb2sb.add_argument(
+        'output', action='store',
         help="""the output directory""")
-    parser_convert_wsb2sb.add_argument('--book', dest='book_id', metavar='ID',
+    parser_convert_wsb2sb.add_argument(
+        '--book', dest='book_id', metavar='ID',
         default='', action='store',
         help="""ID of the book to convert (default: "")""")
-    parser_convert_wsb2sb.add_argument('--no-data-files', default=False, action='store_true',
+    parser_convert_wsb2sb.add_argument(
+        '--no-data-files', default=False, action='store_true',
         help="""do not convert data files (set this if there's something wrong
 for the conversion)""")
-    parser_convert_wsb2sb.add_argument('--force', default=False, action='store_true',
+    parser_convert_wsb2sb.add_argument(
+        '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_wsb2sb.add_argument('--debug', default=False, action='store_true',
+    parser_convert_wsb2sb.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # -- file2wsb
-    parser_convert_file2wsb = parser_convert_sub.add_parser('file2wsb',
+    parser_convert_file2wsb = parser_convert_sub.add_parser(
+        'file2wsb',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Convert hierarchical files to a WebScrapBook scrapbook.
@@ -799,32 +910,43 @@ saving, are translated into item metadata as much as possible. This is a lossy
 conversion—the folder structure are changed and interlinkings may be broken.
 """,
         help="""convert from hierarchical files to WebScrapBook""")
-    parser_convert_file2wsb.add_argument('input', action='store',
+    parser_convert_file2wsb.add_argument(
+        'input', action='store',
         help="""the input directory""")
-    parser_convert_file2wsb.add_argument('output', action='store',
+    parser_convert_file2wsb.add_argument(
+        'output', action='store',
         help="""the output directory""")
-    parser_convert_file2wsb.add_argument('--data-folder-suffix', dest='data_folder_suffixes',
+    parser_convert_file2wsb.add_argument(
+        '--data-folder-suffix', dest='data_folder_suffixes',
         metavar='SUFFIX', default=None, action='store', nargs='*',
         help="""suffixes of the associated support folder (default: .files _files)""")
-    parser_convert_file2wsb.add_argument('--no-preserve-filename', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--no-preserve-filename', default=False, action='store_true',
         help="""allow the converter to rename source files to reduce
 folders and redirections in the output""")
-    parser_convert_file2wsb.add_argument('--ignore-ie-meta', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--ignore-ie-meta', default=False, action='store_true',
         help="""ignore metadata generated by built-in save of Internet
 Explorer or a Chromium-based browser""")
-    parser_convert_file2wsb.add_argument('--ignore-singlefile-meta', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--ignore-singlefile-meta', default=False, action='store_true',
         help="""ignore metadata generated by SingleFile browser extension""")
-    parser_convert_file2wsb.add_argument('--ignore-savepagewe-meta', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--ignore-savepagewe-meta', default=False, action='store_true',
         help="""ignore metadata generated by Save Page WE browser extension""")
-    parser_convert_file2wsb.add_argument('--ignore-maoxian-meta', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--ignore-maoxian-meta', default=False, action='store_true',
         help="""ignore metadata generated by MaoXian web clipper browser extension""")
-    parser_convert_file2wsb.add_argument('--force', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_file2wsb.add_argument('--debug', default=False, action='store_true',
+    parser_convert_file2wsb.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # -- wsb2file
-    parser_convert_wsb2file = parser_convert_sub.add_parser('wsb2file',
+    parser_convert_wsb2file = parser_convert_sub.add_parser(
+        'wsb2file',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Convert a WebScrapBook scrapbook to hierarchical files.
@@ -840,22 +962,29 @@ conversion—item metadata are not preserved and interlinkings may be broken.
 * A separator titled `MySep` will become the empty file `MySep.-`.
 """,
         help="""convert from WebScrapBook to hierarchical files""")
-    parser_convert_wsb2file.add_argument('input', action='store',
+    parser_convert_wsb2file.add_argument(
+        'input', action='store',
         help="""the input directory""")
-    parser_convert_wsb2file.add_argument('output', action='store',
+    parser_convert_wsb2file.add_argument(
+        'output', action='store',
         help="""the output directory""")
-    parser_convert_wsb2file.add_argument('--book', dest='book_id', metavar='ID',
+    parser_convert_wsb2file.add_argument(
+        '--book', dest='book_id', metavar='ID',
         default='', action='store',
         help="""ID of the book to convert (default: "")""")
-    parser_convert_wsb2file.add_argument('--no-prefix', dest='prefix', default=True, action='store_false',
+    parser_convert_wsb2file.add_argument(
+        '--no-prefix', dest='prefix', default=True, action='store_false',
         help="""don't prefix output files with position number.""")
-    parser_convert_wsb2file.add_argument('--force', default=False, action='store_true',
+    parser_convert_wsb2file.add_argument(
+        '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
-    parser_convert_wsb2file.add_argument('--debug', default=False, action='store_true',
+    parser_convert_wsb2file.add_argument(
+        '--debug', default=False, action='store_true',
         help="""include debug output""")
 
     # subcommand: help
-    parser_help = subparsers.add_parser('help',
+    parser_help = subparsers.add_parser(
+        'help',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_help),
         help="""show detailed information about certain topics""",
@@ -865,17 +994,20 @@ Available TOPICs:
   "mimetypes"
 """)
     parser_help.set_defaults(func=cmd_help)
-    parser_help.add_argument('topic', metavar='TOPIC', default=None, action='store',
+    parser_help.add_argument(
+        'topic', metavar='TOPIC', default=None, action='store',
         choices=['config', 'mimetypes'],
         help="""the topic for details""")
 
     # subcommand: view
-    parser_view = subparsers.add_parser('view',
+    parser_view = subparsers.add_parser(
+        'view',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(cmd_view),
         help="""view archive file in the browser""")
     parser_view.set_defaults(func=cmd_view)
-    parser_view.add_argument('files', nargs='+',
+    parser_view.add_argument(
+        'files', nargs='+',
         help="""files to view""")
 
     return parser.parse_args(argv)

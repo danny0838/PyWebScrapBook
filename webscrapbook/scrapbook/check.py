@@ -1,22 +1,24 @@
 """Generator of integrity check for scrapbook data.
 """
+import copy
 import os
+import time
 import traceback
 import zipfile
-import time
-import copy
-from urllib.parse import urlsplit, unquote
-from datetime import datetime
 from contextlib import nullcontext
+from datetime import datetime
+from urllib.parse import unquote, urlsplit
 
-from .. import WSB_DIR
-from .host import Host
-from .book import TreeFileError, Book
-from .indexer import Indexer, FavIconCacher
-from .indexer import generate_item_create, generate_item_modify
-from .. import util
+from .. import WSB_DIR, util
 from ..util import Info
-
+from .book import Book, TreeFileError
+from .host import Host
+from .indexer import (
+    FavIconCacher,
+    Indexer,
+    generate_item_create,
+    generate_item_modify,
+)
 
 # threshold (in seconds) to report file mtime newer than item modify property
 # more than a normal page capture delay
@@ -36,7 +38,7 @@ class BookChecker:
         'resolve_unindexed_files',
         'resolve_absolute_icon',
         'resolve_unused_icon',
-        }
+    }
 
     def __init__(self, book, resolve_all=False, **kwargs):
         self.book = book
@@ -95,11 +97,14 @@ class BookChecker:
             yield Info('info', 'Saving changed TOC files...')
             self.book.save_toc_files()
 
-        yield Info('info', f'Totally {self.cnt_items} items, {self.cnt_dirs} folders, '
-            f'{self.cnt_files} files, {util.format_filesize(self.cnt_bytes)}.')
+        yield Info('info',
+                   f'Totally {self.cnt_items} items, {self.cnt_dirs} folders, '
+                   f'{self.cnt_files} files, {util.format_filesize(self.cnt_bytes)}.')
 
         if self.resolve and (self.cnt_errors + self.cnt_warns > 0):
-            yield Info('info', f'Found {self.cnt_errors} errors, {self.cnt_warns} warnings. (Resolved {self.cnt_resolves})')
+            yield Info('info',
+                       f'Found {self.cnt_errors} errors, {self.cnt_warns} warnings. '
+                       f'(Resolved {self.cnt_resolves})')
         else:
             yield Info('info', f'Found {self.cnt_errors} errors, {self.cnt_warns} warnings.')
 
@@ -107,16 +112,23 @@ class BookChecker:
         try:
             self.book.load_meta_files()
         except TreeFileError as exc:
-            raise RuntimeError(f'Malformed meta file '
-                f'"{self.book.get_subpath(exc.filename)}": {exc}') from exc
+            raise RuntimeError(
+                f'Malformed meta file '
+                f'"{self.book.get_subpath(exc.filename)}": {exc}'
+            ) from exc
         except OSError as exc:
-            raise RuntimeError(f'Failed to load meta file "{self.book.get_subpath(exc.filename)}": {exc.strerror}') from exc
+            raise RuntimeError(
+                f'Failed to load meta file '
+                f'"{self.book.get_subpath(exc.filename)}": {exc.strerror}'
+            ) from exc
 
         try:
             self.book.load_toc_files()
         except TreeFileError as exc:
-            raise RuntimeError(f'Malformed TOC file '
-                f'"{self.book.get_subpath(exc.filename)}": {exc}') from exc
+            raise RuntimeError(
+                f'Malformed TOC file '
+                f'"{self.book.get_subpath(exc.filename)}": {exc}'
+            ) from exc
         except OSError as exc:
             raise RuntimeError(f'Failed to load TOC file "{self.book.get_subpath(exc.filename)}": {exc.strerror}') from exc
 
@@ -340,7 +352,7 @@ class BookChecker:
     def _check_toc_empty_subtree(self):
         # Calculate this after other TOC related issues are resolved,
         # as they might produce more empty lists.
-        yield Info('debug', f'Checking empty lists in TOC...')
+        yield Info('debug', 'Checking empty lists in TOC...')
 
         items_empty_toc = {}
 
@@ -596,7 +608,7 @@ class BookChecker:
         generator = FavIconCacher(self.book)
         cached = yield from generator.run(ids)
 
-        for id, file in cached.items():
+        for _id, file in cached.items():
             self.used_favicons.add(os.path.normcase(file))
             self.cnt_resolves += 1
 

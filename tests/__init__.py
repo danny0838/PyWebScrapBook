@@ -14,4 +14,5 @@ def _():
     else:
         return None
 
+
 SYMLINK_SUPPORTED = _()

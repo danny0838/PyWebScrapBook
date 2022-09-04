@@ -5,11 +5,10 @@ import shutil
 import stat
 import time
 from collections import UserDict
-from threading import Thread
 from secrets import token_urlsafe
-from .. import WSB_USER_DIR, WSB_DIR
-from .. import Config
-from .. import util
+from threading import Thread
+
+from .. import WSB_DIR, WSB_USER_DIR, Config, util
 from ..locales import I18N
 from .book import Book
 
@@ -94,7 +93,7 @@ class FileLock:
     """Controller of file lock.
     """
     def __init__(self, host, name, *,
-            timeout=5, stale=60, persist=False):
+                 timeout=5, stale=60, persist=False):
         self.host = host
         self.name = name
         self.timeout = timeout
@@ -107,11 +106,15 @@ class FileLock:
                 with open(self.file, encoding='UTF-8') as fh:
                     assert fh.read() == persist
             except OSError as exc:
-                raise LockPersistOSError(f'unable to access lock file for "{name}"',
-                    name=self.name, file=self.file, id=persist) from exc
+                raise LockPersistOSError(
+                    f'unable to access lock file for "{name}"',
+                    name=self.name, file=self.file, id=persist
+                ) from exc
             except AssertionError as exc:
-                raise LockPersistUnmatchError(f'unable to persist lock "{name}" with given ID',
-                    name=self.name, file=self.file, id=persist) from exc
+                raise LockPersistUnmatchError(
+                    f'unable to persist lock "{name}" with given ID',
+                    name=self.name, file=self.file, id=persist
+                ) from exc
 
             self.id = persist
             self._lock = True
@@ -166,8 +169,10 @@ class FileLock:
         except FileExistsError:
             pass
         except OSError as exc:
-            raise LockGenerateError(f'unable to create lock "{name}"',
-                name=self.name, file=self.file) from exc
+            raise LockGenerateError(
+                f'unable to create lock "{self.name}"',
+                name=self.name, file=self.file
+            ) from exc
 
         while True:
             try:
@@ -182,21 +187,27 @@ class FileLock:
                     continue
                 except OSError as exc:
                     # error out if self.file cannot be stated
-                    raise LockGenerateError(f'unable to create lock "{self.name}"',
-                        name=self.name, file=self.file) from exc
+                    raise LockGenerateError(
+                        f'unable to create lock "{self.name}"',
+                        name=self.name, file=self.file
+                    ) from exc
 
                 # error out if self.file is not a regular file in POSIX
                 # (Windows raises PermissionError rather than FileExistsError
                 # in such case)
                 if not stat.S_ISREG(st.st_mode):
-                    raise LockGenerateError(f'unable to create lock "{self.name}"',
-                        name=self.name, file=self.file) from exc
+                    raise LockGenerateError(
+                        f'unable to create lock "{self.name}"',
+                        name=self.name, file=self.file
+                    ) from exc
 
                 t = time.time()
 
                 if t >= timeout_time:
-                    raise LockTimeoutError(f'timeout when acquiring lock "{self.name}"',
-                        name=self.name, file=self.file)
+                    raise LockTimeoutError(
+                        f'timeout when acquiring lock "{self.name}"',
+                        name=self.name, file=self.file
+                    )
 
                 stale_time = st.st_mtime + self.stale
 
@@ -214,8 +225,10 @@ class FileLock:
 
                 time.sleep(poll_interval)
             except OSError as exc:
-                raise LockGenerateError(f'unable to create lock "{self.name}"',
-                    name=self.name, file=self.file) from exc
+                raise LockGenerateError(
+                    f'unable to create lock "{self.name}"',
+                    name=self.name, file=self.file
+                ) from exc
             else:
                 break
 
@@ -226,33 +239,45 @@ class FileLock:
         """Extend duration of the lock.
         """
         if not self._lock:
-            raise LockExtendNotAcquiredError(f'lock "{self.name}" has not been acquired',
-                name=self.name, file=self.file)
+            raise LockExtendNotAcquiredError(
+                f'lock "{self.name}" has not been acquired',
+                name=self.name, file=self.file
+            )
 
         try:
             os.utime(self.file)
         except FileNotFoundError as exc:
-            raise LockExtendNotFoundError(f'file for lock "{self.name}" does not exist',
-                name=self.name, file=self.file) from exc
+            raise LockExtendNotFoundError(
+                f'file for lock "{self.name}" does not exist',
+                name=self.name, file=self.file
+            ) from exc
         except OSError as exc:
-            raise LockExtendError(f'unable to extend lock "{self.name}"',
-                name=self.name, file=self.file) from exc
+            raise LockExtendError(
+                f'unable to extend lock "{self.name}"',
+                name=self.name, file=self.file
+            ) from exc
 
     def release(self):
         """Release the lock.
         """
         if not self._lock:
-            raise LockReleaseNotAcquiredError(f'lock "{self.name}" has not been acquired',
-                name=self.name, file=self.file)
+            raise LockReleaseNotAcquiredError(
+                f'lock "{self.name}" has not been acquired',
+                name=self.name, file=self.file
+            )
 
         try:
             os.remove(self.file)
         except FileNotFoundError as exc:
-            raise LockReleaseNotFoundError(f'file for lock "{self.name}" does not exist',
-                name=self.name, file=self.file) from exc
+            raise LockReleaseNotFoundError(
+                f'file for lock "{self.name}" does not exist',
+                name=self.name, file=self.file
+            ) from exc
         except OSError as exc:
-            raise LockReleaseError(f'unable to release lock "{self.name}"',
-                name=self.name, file=self.file) from exc
+            raise LockReleaseError(
+                f'unable to release lock "{self.name}"',
+                name=self.name, file=self.file
+            ) from exc
         else:
             self._lock = False
 
@@ -332,7 +357,7 @@ class Host:
             os.path.join(root, WSB_DIR, 'themes', theme),
             os.path.join(WSB_USER_DIR, 'themes', theme),
             os.path.normpath(os.path.join(__file__, '..', '..', 'themes', theme)),
-            ]
+        ]
         self.statics = [os.path.join(t, 'static') for t in self.themes]
         self.templates = [os.path.join(t, 'templates') for t in self.themes]
         self.locales = [os.path.join(t, 'locales') for t in self.themes]

@@ -1,14 +1,14 @@
+import json
 import os
+import time
 import traceback
 import zipfile
-import time
-import json
-from datetime import datetime, timezone, timedelta
 from contextlib import nullcontext
+from datetime import datetime, timedelta, timezone
 
-from .host import Host
 from .. import util
 from ..util import Info
+from .host import Host
 
 
 class Exporter():
@@ -35,7 +35,7 @@ class Exporter():
         self.map_id_to_eid = {}
 
         if item_ids:
-            id_pool = set(id for id in item_ids if id in book.meta and id not in self.recycle)
+            id_pool = {id for id in item_ids if id in book.meta and id not in self.recycle}
 
             # add descendant id if recursive mode
             if recursive:
@@ -44,7 +44,7 @@ class Exporter():
                         id_pool.add(desc_id)
                         yield Info('debug', f'Included descendant item of "{id}": "{desc_id}"')
         else:
-            id_pool = set(id for id in book.meta if id not in self.recycle)
+            id_pool = {id for id in book.meta if id not in self.recycle}
 
         id_chain = ['root']
         for id in self._iter_child_items('root', id_chain):
@@ -118,7 +118,7 @@ class Exporter():
             'timestamp': ets,
             'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
             'path': parents,
-            }
+        }
         with zipfile.ZipFile(dst, 'w') as zh:
             zh.writestr('meta.json', json.dumps(meta_data, ensure_ascii=False, indent=2))
             zh.writestr('export.json', json.dumps(export_data, ensure_ascii=False, indent=2))

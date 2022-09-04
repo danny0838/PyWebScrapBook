@@ -1,22 +1,21 @@
-from unittest import mock
-import unittest
+import collections
 import os
 import shutil
-import io
-import zipfile
 import time
-import functools
-import collections
+import unittest
+import zipfile
 from datetime import datetime, timezone
+from unittest import mock
 
 from lxml import etree
 
 from webscrapbook import WSB_DIR
-from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook import cache as wsb_cache
+from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_cache')
+
 
 def setUpModule():
     # mock out user config
@@ -25,14 +24,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestCache(unittest.TestCase):
     @classmethod
@@ -51,31 +52,32 @@ class TestCache(unittest.TestCase):
         except FileNotFoundError:
             pass
 
+
 class TestFuncGenerate(TestCache):
     @mock.patch('webscrapbook.scrapbook.cache.Host')
     def test_param_root(self, mock_host):
-        for info in wsb_cache.generate(self.test_root):
+        for _info in wsb_cache.generate(self.test_root):
             pass
 
         mock_host.assert_called_once_with(self.test_root, None)
 
     @mock.patch('webscrapbook.scrapbook.cache.Host')
     def test_param_config(self, mock_host):
-        for info in wsb_cache.generate(self.test_root, config={}):
+        for _info in wsb_cache.generate(self.test_root, config={}):
             pass
 
         mock_host.assert_called_once_with(self.test_root, {})
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_param_no_lock01(self, mock_func):
-        for info in wsb_cache.generate(self.test_root, no_lock=False):
+        for _info in wsb_cache.generate(self.test_root, no_lock=False):
             pass
 
         mock_func.assert_called_once_with()
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_param_no_lock02(self, mock_func):
-        for info in wsb_cache.generate(self.test_root, no_lock=True):
+        for _info in wsb_cache.generate(self.test_root, no_lock=True):
             pass
 
         mock_func.assert_not_called()
@@ -95,7 +97,7 @@ class TestFuncGenerate(TestCache):
 [book "id5"]
 """)
 
-        for info in wsb_cache.generate(self.test_root, book_ids=['', 'id1', 'id2', 'id3', 'id4']):
+        for _info in wsb_cache.generate(self.test_root, book_ids=['', 'id1', 'id2', 'id3', 'id4']):
             pass
 
         self.assertListEqual(mock_book.call_args_list, [
@@ -103,7 +105,7 @@ class TestFuncGenerate(TestCache):
             mock.call(mock.ANY, 'id1'),
             mock.call(mock.ANY, 'id2'),
             mock.call(mock.ANY, 'id4'),
-            ])
+        ])
 
     @mock.patch('webscrapbook.scrapbook.host.Book')
     def test_param_book_ids02(self, mock_book):
@@ -120,7 +122,7 @@ class TestFuncGenerate(TestCache):
 [book "id5"]
 """)
 
-        for info in wsb_cache.generate(self.test_root):
+        for _info in wsb_cache.generate(self.test_root):
             pass
 
         self.assertListEqual(mock_book.call_args_list, [
@@ -129,7 +131,7 @@ class TestFuncGenerate(TestCache):
             mock.call(mock.ANY, 'id2'),
             mock.call(mock.ANY, 'id4'),
             mock.call(mock.ANY, 'id5'),
-            ])
+        ])
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_no_tree(self, mock_lock):
@@ -141,7 +143,7 @@ class TestFuncGenerate(TestCache):
 no_tree = true
 """)
 
-        for info in wsb_cache.generate(self.test_root):
+        for _info in wsb_cache.generate(self.test_root):
             pass
 
         mock_lock.assert_not_called()
@@ -149,7 +151,7 @@ no_tree = true
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
     def test_param_fulltext01(self, mock_cls):
         """Check fulltext=True"""
-        for info in wsb_cache.generate(self.test_root, fulltext=True):
+        for _info in wsb_cache.generate(self.test_root, fulltext=True):
             pass
 
         mock_cls.assert_called_once()
@@ -157,56 +159,56 @@ no_tree = true
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
     def test_param_fulltext02(self, mock_cls):
         """Check fulltext=False"""
-        for info in wsb_cache.generate(self.test_root, fulltext=False):
+        for _info in wsb_cache.generate(self.test_root, fulltext=False):
             pass
 
         mock_cls.assert_not_called()
 
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
     def test_param_inclusive_frames01(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, inclusive_frames=True):
+        for _info in wsb_cache.generate(self.test_root, inclusive_frames=True):
             pass
 
         self.assertTrue(mock_cls.call_args[1]['inclusive_frames'])
 
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
     def test_param_inclusive_frames02(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, inclusive_frames=False):
+        for _info in wsb_cache.generate(self.test_root, inclusive_frames=False):
             pass
 
         self.assertFalse(mock_cls.call_args[1]['inclusive_frames'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_static_site01(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=True):
+        for _info in wsb_cache.generate(self.test_root, static_site=True):
             pass
 
         mock_cls.assert_called_once()
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_static_site02(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=False):
+        for _info in wsb_cache.generate(self.test_root, static_site=False):
             pass
 
         mock_cls.assert_not_called()
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_static_index01(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=True, static_index=True):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, static_index=True):
             pass
 
         self.assertTrue(mock_cls.call_args[1]['static_index'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_static_index02(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=True, static_index=False):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, static_index=False):
             pass
 
         self.assertFalse(mock_cls.call_args[1]['static_index'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_locale(self, mock_cls):
-        for info in wsb_cache.generate(self.test_root, static_site=True, locale='zh_TW'):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, locale='zh_TW'):
             pass
 
         self.assertEqual(mock_cls.call_args[1]['locale'], 'zh_TW')
@@ -214,7 +216,7 @@ no_tree = true
     @mock.patch('webscrapbook.scrapbook.cache.RssFeedGenerator')
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_rss_root01(self, mock_ssg, mock_rss):
-        for info in wsb_cache.generate(self.test_root, static_site=True, rss_root='http://example.com:8000/wsb/'):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, rss_root='http://example.com:8000/wsb/'):
             pass
 
         self.assertTrue(mock_ssg.call_args[1]['rss'])
@@ -223,7 +225,7 @@ no_tree = true
     @mock.patch('webscrapbook.scrapbook.cache.RssFeedGenerator')
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_rss_root02(self, mock_ssg, mock_rss):
-        for info in wsb_cache.generate(self.test_root, static_site=True, rss_root=None):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, rss_root=None):
             pass
 
         self.assertFalse(mock_ssg.call_args[1]['rss'])
@@ -232,17 +234,18 @@ no_tree = true
     @mock.patch('webscrapbook.scrapbook.host.Host.get_subpath', lambda *_: '')
     @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
     def test_no_backup01(self, mock_func):
-        for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
             pass
 
         self.assertEqual(mock_func.call_args_list, [mock.call(note='cache'), mock.call(False)])
 
     @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
     def test_no_backup02(self, mock_func):
-        for info in wsb_cache.generate(self.test_root, static_site=True, no_backup=True):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, no_backup=True):
             pass
 
         mock_func.assert_not_called()
+
 
 class TestFulltextCacheGenerator(TestCache):
     @classmethod
@@ -357,7 +360,7 @@ scrapbook.fulltext({
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(mock_func.call_args_list, [
@@ -367,7 +370,7 @@ scrapbook.fulltext({
             mock.call('20200101000000004'),
             mock.call('20200101000000005'),
             mock.call('20200101000000006'),
-            ])
+        ])
 
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator._cache_item')
     def test_id_pool02(self, mock_func):
@@ -391,20 +394,20 @@ scrapbook.fulltext({
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run([
+        for _info in generator.run([
                 '20200101000000000',
                 '20200101000000001',
                 '20200101000000002',
                 '20200101000000005',
                 '20200101000000007',
-                ]):
+        ]):
             pass
 
         self.assertEqual(mock_func.call_args_list, [
             mock.call('20200101000000001'),
             mock.call('20200101000000002'),
             mock.call('20200101000000005'),
-            ])
+        ])
 
     def test_recreate(self):
         """Check if current cache is ignored"""
@@ -466,16 +469,16 @@ Page content 2.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book, recreate=True)
-        for info in generator.run(["20200101000000001"]):
+        for _info in generator.run(['20200101000000001']):
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000001': {
                 'index.html': {
                     'content': 'Page content 1.'
-                    }
-                },
-            })
+                }
+            },
+        })
 
     def test_update01(self):
         """Update if no cache"""
@@ -491,16 +494,16 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update02(self):
         """Update if index file not in cache"""
@@ -520,16 +523,16 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update03(self):
         """Update if cache index is None"""
@@ -550,16 +553,16 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update04(self):
         """Update if index file newer than cache"""
@@ -586,16 +589,16 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update05(self):
         """Don't include if index file older than cache"""
@@ -622,16 +625,16 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'dummy'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update06(self):
         """Remove if id not in meta"""
@@ -655,7 +658,7 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {})
@@ -687,7 +690,7 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {})
@@ -724,7 +727,7 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {})
@@ -762,7 +765,7 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {})
@@ -782,7 +785,7 @@ scrapbook.fulltext({
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {})
@@ -826,19 +829,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link'
-                    },
+                },
                 'linked.html': {
                     'content': 'Linked page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update12(self):
         """Update subfile if mtime newer than cache
@@ -882,19 +885,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'dummy'
-                    },
+                },
                 'linked.html': {
                     'content': 'Linked page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update13(self):
         """Don't update subfile if mtime older than cache
@@ -938,19 +941,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'dummy'
-                    },
+                },
                 'linked.html': {
                     'content': 'dummy2'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update14(self):
         """Remove subfile if no more exist
@@ -958,7 +961,6 @@ Linked page content.
         - Even if index file not updating.
         """
         self.create_meta()
-        linked_file = os.path.join(self.test_dir, 'linked.html')
         with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
             f.write("""\
 scrapbook.fulltext({
@@ -984,16 +986,16 @@ Page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'dummy'
-                    }
                 }
-            })
+            }
+        })
 
     def test_update15(self):
         """Update subfiles if archive newer than cache
@@ -1059,25 +1061,25 @@ Linked page content 3.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Page content. link1 link2 link3 link4'
-                    },
+                },
                 'linked_added.html': {
                     'content': 'Linked page content 1.'
-                    },
+                },
                 'linked_exist.html': {
                     'content': 'Linked page content 2.'
-                    },
+                },
                 'linked_old.html': {
                     'content': 'dummy3'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update16(self):
         """Don't update any subfiles if archive older than cache
@@ -1143,25 +1145,25 @@ Linked page content 3.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'dummy'
-                    },
+                },
                 'linked_exist.html': {
                     'content': 'dummy2'
-                    },
+                },
                 'linked_old.html': {
                     'content': 'dummy3'
-                    },
+                },
                 'linked_nonexist.html': {
                     'content': 'dummy4'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update17(self):
         """Treat as no file exists if archive corrupted
@@ -1196,12 +1198,12 @@ scrapbook.fulltext({
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {}
-            })
+        })
 
     def test_update18(self):
         """Update all indexes for a MAFF if archive newer than cache
@@ -1274,28 +1276,28 @@ Linked page content 3.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 '20200101000000000/index.html': {
                     'content': 'Page content. link1 link2 link3 link4'
-                    },
+                },
                 '20200101000000000/linked_added.html': {
                     'content': 'Linked page content 1.'
-                    },
+                },
                 '20200101000000000/linked_exist.html': {
                     'content': 'Linked page content 2.'
-                    },
+                },
                 '20200101000000000/linked_old.html': {
                     'content': 'dummy3'
-                    },
+                },
                 '20200101000000001/index.html': {
                     'content': 'Page content 2.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update19(self):
         """Don't update any subfile for a MAFF if archive older than cache
@@ -1368,25 +1370,25 @@ Linked page content 3.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 '20200101000000000/index.html': {
                     'content': 'dummy'
-                    },
+                },
                 '20200101000000000/linked_exist.html': {
                     'content': 'dummy2'
-                    },
+                },
                 '20200101000000000/linked_old.html': {
                     'content': 'dummy3'
-                    },
+                },
                 '20200101000000000/linked_nonexist.html': {
                     'content': 'dummy4'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update20(self):
         """Treat as no file exists if MAFF archive corrupted
@@ -1411,7 +1413,7 @@ scrapbook.fulltext({
  }
 })""")
         archive_file = os.path.join(self.test_root, '20200101000000000.maff')
-        with open(archive_file, 'w') as zh:
+        with open(archive_file, 'w'):
             pass
 
         t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
@@ -1421,12 +1423,12 @@ scrapbook.fulltext({
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {}
-            })
+        })
 
     def test_update21(self):
         """Inline a frame with higher priority than cache as another page."""
@@ -1451,16 +1453,16 @@ Iframe page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link Iframe page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update22(self):
         """Inline a frame unless it's already cached as another page."""
@@ -1494,19 +1496,19 @@ Iframe page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link1 link2'
-                    },
+                },
                 'linked.html': {
                     'content': 'Linked page content. Iframe page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_update23(self):
         """Inline a frame unless it's already cached as another page."""
@@ -1540,22 +1542,22 @@ Iframe page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link1 link2'
-                    },
+                },
                 'linked.html': {
                     'content': 'Linked page content.'
-                    },
+                },
                 'iframe.html': {
                     'content': 'Iframe page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_path01(self):
         """Don't include a path beyond directory of index
@@ -1582,16 +1584,16 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_path02(self):
         """Include sibling files of single HTML.
@@ -1618,19 +1620,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 '20200101000000000.html': {
                     'content': 'link'
-                    },
+                },
                 '20200101000000001.html': {
                     'content': 'Linked page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_path03(self):
         """Don't include external paths or self
@@ -1651,16 +1653,16 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link1 link2 link3 link4 link5'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_path04(self):
         """Test for a path with special chars
@@ -1674,7 +1676,7 @@ Linked page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as f:  # noqa: P103
             f.write("""<!DOCTYPE html>
 <html>
 <body>
@@ -1685,19 +1687,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link'
-                    },
-                'ABC中文!#$%&+,;=@[]^`{}.html': {
+                },
+                'ABC中文!#$%&+,;=@[]^`{}.html': {  # noqa: P103
                     'content': 'Linked page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_path05(self):
         """Test for a meta refresh path with special chars
@@ -1709,7 +1711,7 @@ Linked page content.
 <meta http-equiv="refresh" content="0;url=ABC%E4%B8%AD%E6%96%87!%23%24%25%26%2B%2C%3B%3D%40%5B%5D%5E%60%7B%7D.html?id=1#123">
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as f:  # noqa: P103
             f.write("""<!DOCTYPE html>
 <html>
 <body>
@@ -1720,19 +1722,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
-                'ABC中文!#$%&+,;=@[]^`{}.html': {
+                },
+                'ABC中文!#$%&+,;=@[]^`{}.html': {  # noqa: P103
                     'content': 'Linked page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_path06(self):
         """Don't include links inside a data URL page
@@ -1757,16 +1759,16 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'frame link'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset01(self):
         """Detect charset from BOM. (UTF-16-LE)"""
@@ -1787,16 +1789,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'English 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset02(self):
         """Detect charset from BOM. (UTF-16-BE)"""
@@ -1817,16 +1819,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'English 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset03(self):
         """Get charset from meta[charset] if no BOM."""
@@ -1846,16 +1848,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'English 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset04(self):
         """Get charset from meta[http-equiv="content-type"] if no BOM."""
@@ -1875,16 +1877,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'English 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset05(self):
         """Get charset from item charset if no BOM or meta."""
@@ -1901,16 +1903,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'English 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset06(self):
         """Fallback to UTF-8 if no BOM, meta, or item charset."""
@@ -1927,16 +1929,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'English 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_charset07(self):
         """Fix certain charsets of the web page."""
@@ -1955,16 +1957,16 @@ English
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': '碁銹裏墻恒粧嫺'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_elems(self):
         """Text in certain HTML tags should not be cached."""
@@ -2006,30 +2008,31 @@ before math <math><mtext>math text</mtext></math> after math
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': (
-                    """before paragraph paragraph text after paragraph """
-                    """before template after template """
-                    """before iframe after iframe """
-                    """before object after object """
-                    """before applet after applet """
-                    """before audio after audio """
-                    """before video after video """
-                    """before canvas after canvas """
-                    """before noframes after noframes """
-                    """before noscript after noscript """
-                    """before noembed after noembed """
-                    """before textarea after textarea """
-                    """before svg after svg """
-                    """before math after math"""
-                    )},
-                }
-            })
+                        """before paragraph paragraph text after paragraph """
+                        """before template after template """
+                        """before iframe after iframe """
+                        """before object after object """
+                        """before applet after applet """
+                        """before audio after audio """
+                        """before video after video """
+                        """before canvas after canvas """
+                        """before noframes after noframes """
+                        """before noscript after noscript """
+                        """before noembed after noembed """
+                        """before textarea after textarea """
+                        """before svg after svg """
+                        """before math after math"""
+                    ),
+                },
+            }
+        })
 
     def test_xhtml_elems(self):
         """Text in certain HTML tags should not be cached."""
@@ -2076,33 +2079,34 @@ before math <math><mtext>math text</mtext></math> after math
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'index.xhtml': {
                     'content': (
-                    """before paragraph paragraph text after paragraph """
-                    """before template after template """
-                    """before iframe after iframe """
-                    """before object after object """
-                    """before applet after applet """
-                    """before audio after audio """
-                    """before video after video """
-                    """before canvas after canvas """
-                    """before noframes after noframes """
-                    """before noscript after noscript """
-                    """before noembed after noembed """
-                    """before textarea after textarea """
-                    """before svg after svg """
-                    """before math after math"""
-                    )},
-                }
-            })
+                        """before paragraph paragraph text after paragraph """
+                        """before template after template """
+                        """before iframe after iframe """
+                        """before object after object """
+                        """before applet after applet """
+                        """before audio after audio """
+                        """before video after video """
+                        """before canvas after canvas """
+                        """before noframes after noframes """
+                        """before noscript after noscript """
+                        """before noembed after noembed """
+                        """before textarea after textarea """
+                        """before svg after svg """
+                        """before math after math"""
+                    ),
+                },
+            }
+        })
 
     def test_xhtml_malformed(self):
         """lxml seems to work for malformed XHTML"""
@@ -2128,19 +2132,19 @@ second line <br>
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'index.xhtml': {
                     'content': 'first line second line paragraph'
-                    },
                 },
-            })
+            },
+        })
 
     def test_html_iframe01(self):
         """Include iframe content in index page"""
@@ -2164,16 +2168,16 @@ Iframe page content. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Iframe page content. 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_iframe02(self):
         """Treat iframe content as another page if specified"""
@@ -2197,19 +2201,19 @@ Iframe page content. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book, inclusive_frames=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'iframe.html': {
                     'content': 'Iframe page content. 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_iframe_datauri01(self):
         """Include data URL content"""
@@ -2225,16 +2229,16 @@ Iframe page content. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_iframe_datauri02(self):
         """Include data URL content, regardless of inclusion mode"""
@@ -2250,16 +2254,16 @@ Iframe page content. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_iframe_srcdoc01(self):
         """Include srcdoc content"""
@@ -2284,19 +2288,19 @@ Linked page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'XYZ987 中文'
-                    },
+                },
                 'linked.html': {
                     'content': 'Linked page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_frame01(self):
         """Include frame content in index page"""
@@ -2329,16 +2333,16 @@ Frame page content 1.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Frame page content 1. 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_frame02(self):
         """Treat frame content as another page if specified"""
@@ -2371,22 +2375,22 @@ Frame page content 1.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book, inclusive_frames=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'frame1.html': {
                     'content': 'Frame page content 1.'
-                    },
+                },
                 'frame2.html': {
                     'content': '中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_frame_datauri01(self):
         """Include data URL content"""
@@ -2403,16 +2407,16 @@ Frame page content 1.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文 ABC123中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_frame_datauri02(self):
         """Include data URL content, regardless of inclusion mode"""
@@ -2429,16 +2433,16 @@ Frame page content 1.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文 ABC123中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_refresh01(self):
         """Don't cache content for a page with an instant meta refresh"""
@@ -2483,25 +2487,25 @@ Refreshed page content 3. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'refreshed1.html': {
                     'content': 'Refreshed page content 1. 中文'
-                    },
+                },
                 'refreshed2.html': {
                     'content': 'Refreshed page content 2. 中文'
-                    },
+                },
                 'refreshed3.html': {
                     'content': 'Refreshed page content 3. 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_refresh02(self):
         """Cache content for a page without an instant meta refresh"""
@@ -2546,25 +2550,25 @@ Refreshed page content 3. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'Main page content.'
-                    },
+                },
                 'refreshed1.html': {
                     'content': 'Refreshed page content 1. 中文'
-                    },
+                },
                 'refreshed2.html': {
                     'content': 'Refreshed page content 2. 中文'
-                    },
+                },
                 'refreshed3.html': {
                     'content': 'Refreshed page content 3. 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_refresh_datauri01(self):
         """Include all refresh target data URL pages, regardless of refresh time"""
@@ -2584,16 +2588,16 @@ Main page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文 ABC123中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_refresh_datauri02(self):
         """Include all refresh target data URL pages, regardless of refresh time"""
@@ -2613,16 +2617,16 @@ Main page content.
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文 ABC123中文 Main page content.'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_link(self):
         """Cache linked pages"""
@@ -2655,22 +2659,22 @@ Linked page content 2. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link 中文'
-                    },
+                },
                 'linked.html': {
                     'content': 'Linked page content. 中文'
-                    },
+                },
                 'linked2.html': {
                     'content': 'Linked page content 2. 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_html_link_datauri(self):
         """Include linked data URL pages"""
@@ -2687,16 +2691,16 @@ Linked page content 2. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'ABC123中文 link 中文 ABC123中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_text_charset01(self):
         """Detect charset from BOM. (UTF-16-LE)"""
@@ -2712,19 +2716,19 @@ Linked page content 2. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'file.txt': {
                     'content': '中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_text_charset02(self):
         """Detect charset from BOM. (UTF-16-BE)"""
@@ -2740,19 +2744,19 @@ Linked page content 2. 中文
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'file.txt': {
                     'content': '中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_text_charset03(self):
         """Use item charset if no BOM."""
@@ -2770,19 +2774,19 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'file.txt': {
                     'content': 'Text file content 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_text_charset04(self):
         """Fallback to UTF-8 if no BOM or item charset."""
@@ -2800,19 +2804,19 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'file.txt': {
                     'content': 'Text file content 中文'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_text_charset05(self):
         """Certain charsets of the web page need fix."""
@@ -2827,19 +2831,19 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'file.txt': {
                     'content': '碁銹裏墻恒粧嫺'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_text_charset06(self):
         """Wrong encoding produces gibberish, but won't fail out."""
@@ -2854,19 +2858,19 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
+                },
                 'file.txt': {
                     'content': 'Text file content 銝剜��'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_binary(self):
         """Don't include binary in cache"""
@@ -2881,16 +2885,16 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': ''
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_datauri_html(self):
         """Cache HTML files."""
@@ -2907,16 +2911,16 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'test link1 test link2'
-                    },
-                }
-            })
+                },
+            }
+        })
 
     def test_datauri_text(self):
         """Cache text files only."""
@@ -2937,7 +2941,7 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
@@ -2950,9 +2954,10 @@ Text file content
                         'link4 '
                         'link5 '
                         'link6'
-                    )},
-                }
-            })
+                    ),
+                },
+            }
+        })
 
     def test_datauri_malformed(self):
         """Skip caching data of a malformed data URL."""
@@ -2968,16 +2973,17 @@ Text file content
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
                 'index.html': {
                     'content': 'link'
-                    },
-                }
-            })
+                },
+            }
+        })
+
 
 class TestStaticSiteGenerator(TestCache):
     @classmethod
@@ -3017,11 +3023,11 @@ class TestStaticSiteGenerator(TestCache):
             'map.html',
             'frame.html',
             'search.html',
-            ]
+        ]
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         orig_stats = {}
@@ -3034,7 +3040,7 @@ class TestStaticSiteGenerator(TestCache):
         # generate again, all existed files should be unchanged
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         for path in check_files:
@@ -3061,19 +3067,19 @@ class TestStaticSiteGenerator(TestCache):
             'map.html',
             'frame.html',
             'search.html',
-            ]
+        ]
 
         os.makedirs(os.path.join(self.test_tree, 'icon'))
         orig_stats = {}
         for path in check_files:
-            file = os.path.normpath(os.path.join(self.test_tree, path))            
+            file = os.path.normpath(os.path.join(self.test_tree, path))
             with open(file, 'wb'):
                 pass
             orig_stats[file] = os.stat(file)
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         for path in check_files:
@@ -3095,7 +3101,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
 """)
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
@@ -3115,7 +3121,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         """Check if params are passed correctly."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
@@ -3127,7 +3133,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         """Check if params are passed correctly."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         for i, call in enumerate(mock_func.call_args_list):
@@ -3142,7 +3148,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         """rss should be passed."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, rss=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
@@ -3153,7 +3159,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         """rss should be passed."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, rss=False)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
@@ -3163,7 +3169,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         """locale should be passed."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True, locale='ar')
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         self.assertEqual(generator.template_env.globals['i18n'].lang, 'ar')
@@ -3189,7 +3195,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3219,7 +3225,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3249,7 +3255,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3279,7 +3285,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3308,7 +3314,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3337,7 +3343,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3366,7 +3372,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3394,7 +3400,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3423,7 +3429,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3453,7 +3459,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3483,7 +3489,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3513,7 +3519,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3542,7 +3548,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3571,7 +3577,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3599,7 +3605,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3627,7 +3633,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3655,7 +3661,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3683,7 +3689,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3711,7 +3717,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3739,7 +3745,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3767,7 +3773,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3777,7 +3783,7 @@ scrapbook.toc({
         self.assertEqual(
             etree.tostring(div, encoding='unicode', with_tail=False),
             '<div><a><img src="icon/item.png" alt="" loading="lazy"/>20200101000000000</a></div>',
-            )
+        )
 
     def test_static_index_title02(self):
         """Item with title."""
@@ -3799,7 +3805,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3809,7 +3815,7 @@ scrapbook.toc({
         self.assertEqual(
             etree.tostring(div, encoding='unicode', with_tail=False),
             '<div><a><img src="icon/item.png" alt="" loading="lazy"/>My title 中文</a></div>',
-            )
+        )
 
     def test_static_index_title03(self):
         """Separator without title."""
@@ -3830,7 +3836,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3840,7 +3846,7 @@ scrapbook.toc({
         self.assertEqual(
             etree.tostring(div, encoding='unicode', with_tail=False),
             '<div><fieldset><legend>\xA0\xA0</legend></fieldset></div>',
-            )
+        )
 
     def test_static_index_title04(self):
         """Separator with title."""
@@ -3862,7 +3868,7 @@ scrapbook.toc({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
@@ -3872,7 +3878,8 @@ scrapbook.toc({
         self.assertEqual(
             etree.tostring(div, encoding='unicode', with_tail=False),
             '<div><fieldset><legend>\xA0My sep 中文\xA0</legend></fieldset></div>',
-            )
+        )
+
 
 class TestRssFeedGenerator(TestCache):
     @classmethod
@@ -3881,7 +3888,7 @@ class TestRssFeedGenerator(TestCache):
         cls.test_root = os.path.join(test_root, 'general')
         cls.test_config = os.path.join(cls.test_root, WSB_DIR, 'config.ini')
         cls.test_tree = os.path.join(cls.test_root, WSB_DIR, 'tree')
-    
+
     def setUp(self):
         """Generate general temp test folder
         """
@@ -3938,190 +3945,216 @@ scrapbook.meta({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'
+        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
 
         self.assertEqual(
             tree.find(f'/{NS}id').text,
             'urn:webscrapbook:example.com/wsb',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib), {
-            'rel': 'self',
-            'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
-            })
+            dict(tree.find(f'/{NS}link[1]').attrib),
+            {
+                'rel': 'self',
+                'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
+            }
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib), {
-            'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            })
+            dict(tree.find(f'/{NS}link[2]').attrib),
+            {
+                'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}updated').text,
             '2020-01-01T00:05:00Z',
-            )
+        )
         self.assertEqual(len(tree.findall(f'/{NS}entry')), 5)
 
         # entry 1
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}id').text,
             'urn:webscrapbook:example.com/wsb:20200101000500000',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[1]/{NS}link').attrib), {
-            'href': 'http://example.com',
-            })
+            dict(tree.find(f'/{NS}entry[1]/{NS}link').attrib),
+            {
+                'href': 'http://example.com',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[1]/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}entry[1]/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}title').text,
             'Title 中文 5',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}published').text,
             '2020-01-01T00:00:05Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}updated').text,
             '2020-01-01T00:05:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}author/{NS}name').text,
             'Anonymous',
-            )
+        )
 
         # entry 2
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}id').text,
             'urn:webscrapbook:example.com/wsb:20200101000400000',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[2]/{NS}link').attrib), {
-            'href': 'http://example.com/wsb/20200101000400000.html',
-            })
+            dict(tree.find(f'/{NS}entry[2]/{NS}link').attrib),
+            {
+                'href': 'http://example.com/wsb/20200101000400000.html',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[2]/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}entry[2]/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}title').text,
             'Title 中文 4',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}published').text,
             '2020-01-01T00:00:04Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}updated').text,
             '2020-01-01T00:04:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}author/{NS}name').text,
             'Anonymous',
-            )
+        )
 
         # entry 3
         self.assertEqual(
             tree.find(f'/{NS}entry[3]/{NS}id').text,
             'urn:webscrapbook:example.com/wsb:20200101000300000',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[3]/{NS}link').attrib), {
-            'href': 'http://example.com/wsb/20200101000300000.maff',
-            })
+            dict(tree.find(f'/{NS}entry[3]/{NS}link').attrib),
+            {
+                'href': 'http://example.com/wsb/20200101000300000.maff',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[3]/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}entry[3]/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[3]/{NS}title').text,
             'Title 中文 3',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[3]/{NS}published').text,
             '2020-01-01T00:00:03Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[3]/{NS}updated').text,
             '2020-01-01T00:03:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[3]/{NS}author/{NS}name').text,
             'Anonymous',
-            )
+        )
 
         # entry 4
         self.assertEqual(
             tree.find(f'/{NS}entry[4]/{NS}id').text,
             'urn:webscrapbook:example.com/wsb:20200101000200000',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[4]/{NS}link').attrib), {
-            'href': 'http://example.com/wsb/20200101000200000.htz',
-            })
+            dict(tree.find(f'/{NS}entry[4]/{NS}link').attrib),
+            {
+                'href': 'http://example.com/wsb/20200101000200000.htz',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[4]/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}entry[4]/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[4]/{NS}title').text,
             'Title 中文 2',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[4]/{NS}published').text,
             '2020-01-01T00:00:02Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[4]/{NS}updated').text,
             '2020-01-01T00:02:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[4]/{NS}author/{NS}name').text,
             'Anonymous',
-            )
+        )
 
         # entry 5
         self.assertEqual(
             tree.find(f'/{NS}entry[5]/{NS}id').text,
             'urn:webscrapbook:example.com/wsb:20200101000100000',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[5]/{NS}link').attrib), {
-            'href': 'http://example.com/wsb/20200101000100000/index.html',
-            })
+            dict(tree.find(f'/{NS}entry[5]/{NS}link').attrib),
+            {
+                'href': 'http://example.com/wsb/20200101000100000/index.html',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}entry[5]/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}entry[5]/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[5]/{NS}title').text,
             'Title 中文 1',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[5]/{NS}published').text,
             '2020-01-01T00:00:01Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[5]/{NS}updated').text,
             '2020-01-01T00:01:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[5]/{NS}author/{NS}name').text,
             'Anonymous',
-            )
+        )
 
     def test_param_item_count(self):
         """Check item_count param."""
@@ -4167,13 +4200,13 @@ scrapbook.meta({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb', item_count=3)
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'
+        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
 
         self.assertEqual(len(tree.findall(f'/{NS}entry')), 3)
 
@@ -4216,43 +4249,49 @@ scrapbook.meta({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'
+        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
         now = datetime.now(timezone.utc)
 
         self.assertEqual(
             tree.find(f'/{NS}id').text,
             'urn:webscrapbook:example.com/wsb',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib), {
-            'rel': 'self',
-            'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
-            })
+            dict(tree.find(f'/{NS}link[1]').attrib),
+            {
+                'rel': 'self',
+                'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib), {
-            'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            })
+            dict(tree.find(f'/{NS}link[2]').attrib),
+            {
+                'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
-            )
-            
+        )
+
         ts = datetime.strptime(tree.find(f'/{NS}updated').text, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         self.assertAlmostEqual(
             ts.timestamp(),
             now.timestamp(),
             delta=3,
-            )
+        )
 
         self.assertIsNone(tree.find(f'/{NS}entry'))
 
@@ -4272,50 +4311,55 @@ scrapbook.meta({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'
-        now = datetime.now(timezone.utc)
+        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
 
         self.assertEqual(
             tree.find(f'/{NS}id').text,
             'urn:webscrapbook:example.com/wsb',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib), {
-            'rel': 'self',
-            'href': 'http://example.com/wsb/.wsb/tree/feed.atom'
-            })
+            dict(tree.find(f'/{NS}link[1]').attrib),
+            {
+                'rel': 'self',
+                'href': 'http://example.com/wsb/.wsb/tree/feed.atom'
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib), {
-            'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            })
+            dict(tree.find(f'/{NS}link[2]').attrib),
+            {
+                'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}updated').text,
             '2020-01-01T00:01:00Z',
-            )
+        )
 
         # entry 1
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}published').text,
             '1970-01-01T00:00:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}updated').text,
             '2020-01-01T00:01:00Z',
-            )
+        )
 
     def test_item_modify(self):
         """Item missing modify property infers from create and epoch=0"""
@@ -4337,60 +4381,66 @@ scrapbook.meta({
         book = Host(self.test_root).books['']
 
         generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
-        for info in generator.run():
+        for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'
-        now = datetime.now(timezone.utc)
+        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
 
         self.assertEqual(
             tree.find(f'/{NS}id').text,
             'urn:webscrapbook:example.com/wsb',
-            )
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib), {
-            'rel': 'self',
-            'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
-            })
+            dict(tree.find(f'/{NS}link[1]').attrib),
+            {
+                'rel': 'self',
+                'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib), {
-            'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            })
+            dict(tree.find(f'/{NS}link[2]').attrib),
+            {
+                'href': 'http://example.com/wsb/.wsb/tree/map.html',
+            },
+        )
         self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib), {
-            'type': 'text',
-            })
+            dict(tree.find(f'/{NS}title').attrib),
+            {
+                'type': 'text',
+            },
+        )
         self.assertEqual(
             tree.find(f'/{NS}title').text,
             'scrapbook',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}updated').text,
             '2020-01-01T00:01:00Z',
-            )
+        )
 
         # entry 1
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}published').text,
             '2020-01-01T00:01:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[1]/{NS}updated').text,
             '2020-01-01T00:01:00Z',
-            )
+        )
 
         # entry 2
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}published').text,
             '1970-01-01T00:00:00Z',
-            )
+        )
         self.assertEqual(
             tree.find(f'/{NS}entry[2]/{NS}updated').text,
             '1970-01-01T00:00:00Z',
-            )
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,24 +1,22 @@
 import os
-import shutil
-import traceback
 import re
+import shutil
 import time
+import traceback
 from datetime import datetime
 from urllib.parse import unquote
 from urllib.request import pathname2url
 
 from lxml import etree
 
-from ... import WSB_DIR, WSB_CONFIG
-from ... import util
+from ... import WSB_CONFIG, WSB_DIR, util
 from ...util import Info
-from ..host import Host
 from ..book import Book
-
+from ..host import Host
 
 RDF = '{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
 NS1 = '{http://amb.vis.ne.jp/mozilla/scrapbook-rdf#}'
-NS2 = '{scrapbee@163.com}' # ScrapBee
+NS2 = '{scrapbee@163.com}'  # ScrapBee
 NC = '{http://home.netscape.com/NC-rdf#}'
 RES_PROTOCOL_BASE = 'resource://scrapbook/'
 MOZ_ICON_BASE = 'moz-icon://'
@@ -28,9 +26,9 @@ REGEX_RDF_ID = re.compile(r'urn:scrapbook:item(\d{14,23})')
 REGEX_RDF_SEQ_ID = re.compile(r'urn:scrapbook:(?:item(\d{14,23})|(root))')
 
 LEGACY_TYPE_MAP = {
-    "note": "postit",
-    "notex": "note",
-    }
+    'note': 'postit',
+    'notex': 'note',
+}
 
 PRUNE_FILES = {
     'backup',
@@ -46,7 +44,7 @@ PRUNE_FILES = {
     'sitemap.xsl',
     'note_template.html',
     'notex_template.html',
-    }
+}
 
 
 class LegacyBook:
@@ -78,10 +76,11 @@ class LegacyBook:
             raise RuntimeError(f'Malformed "scrapbook.rdf": {exc.args[0]}') from exc
 
     def _parse_rdf(self, fh):
-        for event, elem in etree.iterparse(fh, events=('end',),
-                remove_comments=True, encoding='UTF-8',
-                tag=(f'{RDF}Description', f'{NC}BookmarkSeparator', f'{RDF}Seq'),
-                ):
+        for _event, elem in etree.iterparse(
+            fh, events=('end',),
+            remove_comments=True, encoding='UTF-8',
+            tag=(f'{RDF}Description', f'{NC}BookmarkSeparator', f'{RDF}Seq'),
+        ):
             yield Info('debug', f'Inspecting element: {elem.tag} ({elem.attrib.get(f"{RDF}about")})')
             if elem.tag in {f'{RDF}Description', f'{NC}BookmarkSeparator'}:
                 rid = elem.attrib[f'{RDF}about']

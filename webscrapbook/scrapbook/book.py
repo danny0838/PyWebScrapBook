@@ -1,10 +1,10 @@
 """Scrapbook book handler.
 """
-import os
-import zipfile
-import re
 import json
-from urllib.parse import urlsplit, unquote
+import os
+import re
+import zipfile
+from urllib.parse import unquote, urlsplit
 
 from .. import util
 
@@ -68,23 +68,23 @@ class Book:
         'source': None,
         'icon': None,
         'comment': None,
-        }
+    }
     SPECIAL_ITEM_ID = {
         'root',
         'hidden',
         'recycle',
-        }
+    }
     ITEM_TYPES_WITH_OPTIONAL_INDEX = {
         'folder',
         'separator',
         'bookmark',
-        }
+    }
     ITEM_INDEX_ALLOWED_EXT = {
         '.html',
         '.htz',
         '.maff',
         '.htm',
-        }
+    }
     ITEM_NOTE_FORMATTER = """\
 <!DOCTYPE html><html><head>\
 <meta charset="UTF-8">\
@@ -158,7 +158,7 @@ class Book:
         m = self.REGEX_TREE_FILE_WRAPPER.search(text)
 
         if not m:
-            raise TreeFileMalformedWrappingError(f'Malformed tree file wrapping', filename=file)
+            raise TreeFileMalformedWrappingError('Malformed tree file wrapping', filename=file)
 
         try:
             return json.loads(m.group(1))
@@ -401,7 +401,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
     def save_note_file(self, file, content):
         data = util.format_string(self.ITEM_NOTE_FORMATTER, {
             'NOTE_CONTENT': content,
-            })
+        })
         # enforce LF to prevent bad parsing for legacy ScrapBook
         with open(file, 'w', encoding='UTF-8', newline='\n') as fh:
             fh.write(data)

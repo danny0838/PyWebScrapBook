@@ -1,10 +1,10 @@
-import os
-import shutil
-import zipfile
-import traceback
-import time
 import copy
 import html
+import os
+import shutil
+import time
+import traceback
+import zipfile
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from urllib.parse import quote
@@ -212,8 +212,10 @@ class Converter:
 
                 rdf_content = self._generate_index_rdf(book, id)
                 with zipfile.ZipFile(fdst, 'a') as zh:
-                    zh.writestr(f'{subpath}/index.rdf', rdf_content,
-                            **util.zip_compression_params(mimetype='application/rdf+xml'))
+                    zh.writestr(
+                        f'{subpath}/index.rdf', rdf_content,
+                        **util.zip_compression_params(mimetype='application/rdf+xml')
+                    )
 
                 shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
 

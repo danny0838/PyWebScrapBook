@@ -1,18 +1,20 @@
-from unittest import mock
-import unittest
-import sys
+import io
 import os
 import shutil
-import io
-import zipfile
 import time
+import unittest
+import zipfile
+from unittest import mock
+
 from flask import current_app, request
+
 import webscrapbook
-from webscrapbook import WSB_DIR, WSB_CONFIG
+from webscrapbook import WSB_DIR
 from webscrapbook import app as wsbapp
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_app_helpers')
+
 
 def setUpModule():
     # mock out user config
@@ -20,14 +22,16 @@ def setUpModule():
     mockings = [
         mock.patch('webscrapbook.WSB_USER_DIR', server_root, 'wsb'),
         mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestFunctions(unittest.TestCase):
     def test_is_local_access(self):
@@ -35,39 +39,51 @@ class TestFunctions(unittest.TestCase):
         app = wsbapp.make_app(root)
 
         # host is localhost
-        with app.test_request_context('/',
-                base_url='http://127.0.0.1',
-                environ_base={'REMOTE_ADDR': '192.168.0.100'}):
+        with app.test_request_context(
+            '/',
+            base_url='http://127.0.0.1',
+            environ_base={'REMOTE_ADDR': '192.168.0.100'},
+        ):
             self.assertTrue(wsbapp.is_local_access())
 
         # host (with port) is localhost
-        with app.test_request_context('/',
-                base_url='http://127.0.0.1:8000',
-                environ_base={'REMOTE_ADDR': '192.168.0.100'}):
+        with app.test_request_context(
+            '/',
+            base_url='http://127.0.0.1:8000',
+            environ_base={'REMOTE_ADDR': '192.168.0.100'},
+        ):
             self.assertTrue(wsbapp.is_local_access())
 
         # remote is localhost
-        with app.test_request_context('/',
-                base_url='http://192.168.0.1',
-                environ_base={'REMOTE_ADDR': '127.0.0.1'}):
+        with app.test_request_context(
+            '/',
+            base_url='http://192.168.0.1',
+            environ_base={'REMOTE_ADDR': '127.0.0.1'},
+        ):
             self.assertTrue(wsbapp.is_local_access())
 
         # host = remote
-        with app.test_request_context('/',
-                base_url='http://example.com',
-                environ_base={'REMOTE_ADDR': 'example.com'}):
+        with app.test_request_context(
+            '/',
+            base_url='http://example.com',
+            environ_base={'REMOTE_ADDR': 'example.com'},
+        ):
             self.assertTrue(wsbapp.is_local_access())
 
         # host (with port) = remote
-        with app.test_request_context('/',
-                base_url='http://example.com:8000',
-                environ_base={'REMOTE_ADDR': 'example.com'}):
+        with app.test_request_context(
+            '/',
+            base_url='http://example.com:8000',
+            environ_base={'REMOTE_ADDR': 'example.com'},
+        ):
             self.assertTrue(wsbapp.is_local_access())
 
         # otherwise non-local
-        with app.test_request_context('/',
-                base_url='http://example.com',
-                environ_base={'REMOTE_ADDR': '192.168.0.100'}):
+        with app.test_request_context(
+            '/',
+            base_url='http://example.com',
+            environ_base={'REMOTE_ADDR': '192.168.0.100'},
+        ):
             self.assertFalse(wsbapp.is_local_access())
 
     def test_get_archive_path1(self):
@@ -77,7 +93,7 @@ class TestFunctions(unittest.TestCase):
         with app.app_context():
             tempfile = os.path.join(root, 'entry.zip')
             try:
-                with zipfile.ZipFile(tempfile, 'w') as zip:
+                with zipfile.ZipFile(tempfile, 'w'):
                     pass
 
                 self.assertEqual(wsbapp.get_archive_path('/entry.zip'), ['/entry.zip'])
@@ -104,9 +120,9 @@ class TestFunctions(unittest.TestCase):
             # entry.zip!/entry1.zip!/ > entry.zip!/entry1.zip
             try:
                 os.makedirs(os.path.join(root, 'entry.zip!', 'entry1.zip!'), exist_ok=True)
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
                     pass
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -127,11 +143,11 @@ class TestFunctions(unittest.TestCase):
             # entry.zip!/entry1.zip! > entry.zip!/entry1.zip
             try:
                 os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
-                with open(os.path.join(root, 'entry.zip!', 'entry1.zip!'), 'w') as f:
+                with open(os.path.join(root, 'entry.zip!', 'entry1.zip!'), 'w'):
                     pass
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
                     pass
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -152,9 +168,9 @@ class TestFunctions(unittest.TestCase):
             # entry.zip!/entry1.zip > entry.zip!/
             try:
                 os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
                     pass
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -175,7 +191,7 @@ class TestFunctions(unittest.TestCase):
             # entry.zip!/ > entry.zip
             try:
                 os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -195,9 +211,9 @@ class TestFunctions(unittest.TestCase):
 
             # entry.zip! > entry.zip
             try:
-                with open(os.path.join(root, 'entry.zip!'), 'w') as f:
+                with open(os.path.join(root, 'entry.zip!'), 'w'):
                     pass
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -217,7 +233,7 @@ class TestFunctions(unittest.TestCase):
 
             # entry.zip
             try:
-                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+                with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -237,7 +253,7 @@ class TestFunctions(unittest.TestCase):
 
             # other
             try:
-                with open(os.path.join(root, 'entry.zip'), 'w') as f:
+                with open(os.path.join(root, 'entry.zip'), 'w'):
                     pass
 
                 self.assertEqual(
@@ -274,7 +290,7 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip!/entry2.zip!/', '')
 
                     buf2 = io.BytesIO()
-                    with zipfile.ZipFile(buf2, 'w') as zip2:
+                    with zipfile.ZipFile(buf2, 'w'):
                         pass
                     zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
 
@@ -305,7 +321,7 @@ class TestFunctions(unittest.TestCase):
                     zip.writestr('entry1.zip!/entry2.zip!/.gitkeep', '')
 
                     buf2 = io.BytesIO()
-                    with zipfile.ZipFile(buf2, 'w') as zip2:
+                    with zipfile.ZipFile(buf2, 'w'):
                         pass
                     zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
 
@@ -334,7 +350,7 @@ class TestFunctions(unittest.TestCase):
             try:
                 with zipfile.ZipFile(tempfile, 'w') as zip:
                     buf2 = io.BytesIO()
-                    with zipfile.ZipFile(buf2, 'w') as zip2:
+                    with zipfile.ZipFile(buf2, 'w'):
                         pass
                     zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
 
@@ -553,7 +569,7 @@ class TestFunctions(unittest.TestCase):
             tempfile = os.path.join(tempdir, 'entry.zip')
             try:
                 os.makedirs(tempdir, exist_ok=True)
-                with zipfile.ZipFile(tempfile, 'w') as zip:
+                with zipfile.ZipFile(tempfile, 'w'):
                     pass
 
                 self.assertEqual(
@@ -772,7 +788,7 @@ class TestFunctions(unittest.TestCase):
             ('path', '/path/', '/', False),
             ('to', '/path/to/', '/', False),
             ('directory', '/path/to/directory/', '/', True)
-            ])
+        ])
 
         # conflicting directory/file
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/fake.ext!/'])), [
@@ -780,7 +796,7 @@ class TestFunctions(unittest.TestCase):
             ('path', '/path/', '/', False),
             ('to', '/path/to/', '/', False),
             ('fake.ext!', '/path/to/fake.ext!/', '/', True),
-            ])
+        ])
 
         # sub-archive path(s)
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', ''])), [
@@ -788,7 +804,7 @@ class TestFunctions(unittest.TestCase):
             ('path', '/path/', '/', False),
             ('to', '/path/to/', '/', False),
             ('archive.ext', '/path/to/archive.ext!/', '!/', True),
-            ])
+        ])
 
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'subdir'])), [
             ('.', '/', '/', False),
@@ -796,7 +812,7 @@ class TestFunctions(unittest.TestCase):
             ('to', '/path/to/', '/', False),
             ('archive.ext', '/path/to/archive.ext!/', '!/', False),
             ('subdir', '/path/to/archive.ext!/subdir/', '/', True),
-            ])
+        ])
 
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'nested1.zip', ''])), [
             ('.', '/', '/', False),
@@ -804,7 +820,7 @@ class TestFunctions(unittest.TestCase):
             ('to', '/path/to/', '/', False),
             ('archive.ext', '/path/to/archive.ext!/', '!/', False),
             ('nested1.zip', '/path/to/archive.ext!/nested1.zip!/', '!/', True),
-            ])
+        ])
 
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'nested1.zip', 'subdir'])), [
             ('.', '/', '/', False),
@@ -813,7 +829,7 @@ class TestFunctions(unittest.TestCase):
             ('archive.ext', '/path/to/archive.ext!/', '!/', False),
             ('nested1.zip', '/path/to/archive.ext!/nested1.zip!/', '!/', False),
             ('subdir', '/path/to/archive.ext!/nested1.zip!/subdir/', '/', True),
-            ])
+        ])
 
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/archive.ext', 'subdir/nested1.zip', ''])), [
             ('.', '/', '/', False),
@@ -822,7 +838,7 @@ class TestFunctions(unittest.TestCase):
             ('archive.ext', '/path/to/archive.ext!/', '!/', False),
             ('subdir', '/path/to/archive.ext!/subdir/', '/', False),
             ('nested1.zip', '/path/to/archive.ext!/subdir/nested1.zip!/', '!/', True),
-            ])
+        ])
 
         # base
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'], base='/wsb')), [
@@ -830,7 +846,7 @@ class TestFunctions(unittest.TestCase):
             ('path', '/wsb/path/', '/', False),
             ('to', '/wsb/path/to/', '/', False),
             ('directory', '/wsb/path/to/directory/', '/', True),
-            ])
+        ])
 
         # base (with slash)
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'], base='/wsb/')), [
@@ -838,7 +854,7 @@ class TestFunctions(unittest.TestCase):
             ('path', '/wsb/path/', '/', False),
             ('to', '/wsb/path/to/', '/', False),
             ('directory', '/wsb/path/to/directory/', '/', True),
-            ])
+        ])
 
         # topname
         self.assertEqual(list(wsbapp.get_breadcrumbs(['/path/to/directory/'], topname='MyWsb')), [
@@ -846,7 +862,7 @@ class TestFunctions(unittest.TestCase):
             ('path', '/path/', '/', False),
             ('to', '/path/to/', '/', False),
             ('directory', '/path/to/directory/', '/', True)
-            ])
+        ])
 
     @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
     def test_get_permission1(self, mock_encrypt):
@@ -884,7 +900,10 @@ class TestFunctions(unittest.TestCase):
             self.assertEqual(wsbapp.get_permission({'username': 'user4', 'password': 'salt4'}, auth_config), '')
             mock_encrypt.assert_called_with('salt4', 'salt4', 'sha256')
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user4', 'password': '49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53'}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission(
+                {'username': 'user4', 'password': '49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53'},
+                auth_config,
+            ), '')
             mock_encrypt.assert_called_with('49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53', 'salt4', 'sha256')
 
             # util.encrypt should NOT be called for an unmatched user
@@ -975,38 +994,40 @@ class TestFunctions(unittest.TestCase):
         with app.app_context():
             self.assertEqual(current_app.config['WEBSCRAPBOOK_HOST'].config['app']['name'], 'mywsb2')
 
+
 class TestRequest(unittest.TestCase):
     def test_action(self):
         root = os.path.join(root_dir, 'test_app_helpers', 'general')
         app = wsbapp.make_app(root)
         with app.test_client() as c:
-            r = c.get('/index.html')
+            c.get('/index.html')
             self.assertEqual(request.action, 'view')
 
-            r = c.get('/index.html', query_string={'action': 'source'})
+            c.get('/index.html', query_string={'action': 'source'})
             self.assertEqual(request.action, 'source')
 
-            r = c.get('/index.html', query_string={'a': 'source'})
+            c.get('/index.html', query_string={'a': 'source'})
             self.assertEqual(request.action, 'source')
 
-            r = c.get('/index.html', query_string={'a': 'source', 'action': 'static'})
+            c.get('/index.html', query_string={'a': 'source', 'action': 'static'})
             self.assertEqual(request.action, 'static')
 
     def test_format(self):
         root = os.path.join(root_dir, 'test_app_helpers', 'general')
         app = wsbapp.make_app(root)
         with app.test_client() as c:
-            r = c.get('/index.html')
+            c.get('/index.html')
             self.assertEqual(request.format, None)
 
-            r = c.get('/index.html', query_string={'format': 'json'})
+            c.get('/index.html', query_string={'format': 'json'})
             self.assertEqual(request.format, 'json')
 
-            r = c.get('/index.html', query_string={'f': 'json'})
+            c.get('/index.html', query_string={'f': 'json'})
             self.assertEqual(request.format, 'json')
 
-            r = c.get('/index.html', query_string={'f': 'json', 'format': 'sse'})
+            c.get('/index.html', query_string={'f': 'json', 'format': 'sse'})
             self.assertEqual(request.format, 'sse')
+
 
 class TestHandlers(unittest.TestCase):
     def test_handle_error(self):
@@ -1022,8 +1043,8 @@ class TestHandlers(unittest.TestCase):
                 'error': {
                     'status': 404,
                     'message': 'Directory does not exist.'
-                    }
-                })
+                }
+            })
 
         # other
         with app.test_client() as c:
@@ -1031,7 +1052,6 @@ class TestHandlers(unittest.TestCase):
             self.assertEqual(r.status_code, 404)
             html = r.data.decode('UTF-8')
             self.assertIn('<h1>Not Found</h1>', html)
-
 
 
 class TestWebHost(unittest.TestCase):
@@ -1233,6 +1253,7 @@ class TestWebHost(unittest.TestCase):
         handler.token_check_delete_expire(now)
         mock_delete.assert_not_called()
         self.assertEqual(handler.token_last_purge, now - 900)
+
 
 if __name__ == '__main__':
     unittest.main()

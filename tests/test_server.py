@@ -1,14 +1,13 @@
-from unittest import mock
-import unittest
-import sys
 import os
-import webscrapbook
-from webscrapbook import WSB_DIR, WSB_CONFIG
-from webscrapbook import server
+import unittest
+from unittest import mock
+
+from webscrapbook import WSB_CONFIG, WSB_DIR, server
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 server_root = os.path.join(root_dir, 'test_server')
 server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
+
 
 def setUpModule():
     # create temp folders
@@ -19,9 +18,10 @@ def setUpModule():
     mockings = [
         mock.patch('webscrapbook.WSB_USER_DIR', server_root, 'wsb'),
         mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # purge WSB_DIR
@@ -33,6 +33,7 @@ def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestConfigServer(unittest.TestCase):
     @mock.patch('webscrapbook.server.make_server')
@@ -173,7 +174,8 @@ browse = false
         self.assertEqual(mock_make_server.call_args[1]['ssl_context'], (
             os.path.join(server_root, WSB_DIR, 'test.pem'),
             os.path.join(server_root, WSB_DIR, 'test.key'),
-            ))
+        ))
+
 
 class TestConfigBrowser(unittest.TestCase):
     @mock.patch('webbrowser.get')
@@ -226,25 +228,6 @@ command = "C:\Program Files\Mozilla Firefox\firefox.exe" %s &
 
         server.serve(server_root)
         mock_browser.assert_called_once_with(r'"C:\Program Files\Mozilla Firefox\firefox.exe" %s &')
-
-    @mock.patch('webbrowser.get')
-    @mock.patch('webscrapbook.server.make_server')
-    def test_url_host1(self, mock_make_server, mock_browser):
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
-host = 127.0.0.1
-port = 7357
-browse = true
-
-[app]
-base =
-
-[browser]
-index =
-""")
-
-        server.serve(server_root)
-        self.assertEqual(mock_make_server.mock_calls[5][0][1], 'Launching browser at http://127.0.0.1:7357 ...')
 
     @mock.patch('webbrowser.get')
     @mock.patch('webscrapbook.server.make_server')
@@ -486,6 +469,7 @@ index = index.html
 
         server.serve(server_root)
         self.assertEqual(mock_make_server.mock_calls[5][1][1], 'Launching browser at http://127.0.0.1:7357/index.html ...')
+
 
 if __name__ == '__main__':
     unittest.main()

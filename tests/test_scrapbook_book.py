@@ -1,20 +1,17 @@
-from unittest import mock
-import unittest
 import os
 import shutil
-import io
-import re
+import unittest
 import zipfile
-import time
-import functools
-from webscrapbook import WSB_DIR, Config
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
+from unittest import mock
+
+from webscrapbook import WSB_DIR
 from webscrapbook.scrapbook import book as wsb_book
 from webscrapbook.scrapbook.book import Book
+from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_book')
+
 
 def setUpModule():
     # mock out user config
@@ -23,14 +20,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestBook(unittest.TestCase):
     @classmethod
@@ -78,7 +77,7 @@ no_tree = false
         with open(self.test_config, 'w', encoding='UTF-8') as f:
             f.write("""[book ""]
 name = scrapbook
-top_dir = 
+top_dir =
 data_dir = data
 tree_dir = tree
 index = tree/map.html
@@ -162,11 +161,11 @@ no_tree = false
     def test_iter_tree_files01(self):
         self.create_general_config()
         os.makedirs(os.path.join(self.test_root, 'tree'))
-        with open(os.path.join(self.test_root, 'tree', 'meta.js'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_root, 'tree', 'meta.js'), 'w', encoding='UTF-8'):
             pass
-        with open(os.path.join(self.test_root, 'tree', 'meta1.js'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_root, 'tree', 'meta1.js'), 'w', encoding='UTF-8'):
             pass
-        with open(os.path.join(self.test_root, 'tree', 'meta2.js'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_root, 'tree', 'meta2.js'), 'w', encoding='UTF-8'):
             pass
 
         book = Book(Host(self.test_root))
@@ -174,24 +173,24 @@ no_tree = false
             os.path.join(self.test_root, 'tree', 'meta.js'),
             os.path.join(self.test_root, 'tree', 'meta1.js'),
             os.path.join(self.test_root, 'tree', 'meta2.js'),
-            ])
+        ])
 
     def test_iter_tree_files02(self):
         """Break since nonexisting index"""
         self.create_general_config()
         os.makedirs(os.path.join(self.test_root, 'tree'))
-        with open(os.path.join(self.test_root, 'tree', 'meta.js'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_root, 'tree', 'meta.js'), 'w', encoding='UTF-8'):
             pass
-        with open(os.path.join(self.test_root, 'tree', 'meta1.js'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_root, 'tree', 'meta1.js'), 'w', encoding='UTF-8'):
             pass
-        with open(os.path.join(self.test_root, 'tree', 'meta3.js'), 'w', encoding='UTF-8') as f:
+        with open(os.path.join(self.test_root, 'tree', 'meta3.js'), 'w', encoding='UTF-8'):
             pass
 
         book = Book(Host(self.test_root))
         self.assertEqual(list(book.iter_tree_files('meta')), [
             os.path.join(self.test_root, 'tree', 'meta.js'),
             os.path.join(self.test_root, 'tree', 'meta1.js'),
-            ])
+        ])
 
     def test_iter_tree_files03(self):
         """Works when directory not exist"""
@@ -201,21 +200,21 @@ no_tree = false
     @mock.patch('webscrapbook.scrapbook.book.Book.iter_tree_files')
     def test_iter_meta_files(self, mock_func):
         book = Book(Host(self.test_root))
-        for i in book.iter_meta_files():
+        for _ in book.iter_meta_files():
             pass
         mock_func.assert_called_once_with('meta')
 
     @mock.patch('webscrapbook.scrapbook.book.Book.iter_tree_files')
     def test_iter_toc_files(self, mock_func):
         book = Book(Host(self.test_root))
-        for i in book.iter_toc_files():
+        for _ in book.iter_toc_files():
             pass
         mock_func.assert_called_once_with('toc')
 
     @mock.patch('webscrapbook.scrapbook.book.Book.iter_tree_files')
     def test_iter_fulltext_files(self, mock_func):
         book = Book(Host(self.test_root))
-        for i in book.iter_fulltext_files():
+        for _ in book.iter_fulltext_files():
             pass
         mock_func.assert_called_once_with('fulltext')
 
@@ -245,8 +244,8 @@ scrapbook.meta({
                     'type': '',
                     'create': '20200101000000000',
                     'modify': '20200101000000000',
-                    },
-                })
+                },
+            })
 
     def test_load_tree_file02(self):
         """Test malformed wrapping"""
@@ -402,14 +401,14 @@ scrapbook.meta({
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'comment': 'comment',
-                },
+            },
             '20200101000000001': {
                 'index': '20200101000000001/index.html',
                 'title': 'Dummy1rev',
                 'type': '',
                 'create': '20200101000000001',
                 'modify': '20200101000000011',
-                },
+            },
             '20200101000000003': {
                 'index': '20200101000000003/index.html',
                 'title': 'Dummy3',
@@ -417,8 +416,8 @@ scrapbook.meta({
                 'create': '20200101000000003',
                 'modify': '20200101000000003',
                 'comment': 'comment3',
-                },
-            })
+            },
+        })
 
     def test_load_tree_files02(self):
         """Works when directory not exist"""
@@ -491,7 +490,7 @@ scrapbook.meta({
         book.meta = {
             '20200101000000000': {'title': 'Dummy 1 中文'},
             '20200101000000001': {'title': 'Dummy 2 中文'},
-            }
+        }
 
         book.save_meta_files()
 
@@ -517,7 +516,7 @@ scrapbook.meta({
             '20200101000000001': {'title': 'Dummy 2 中文'},
             '20200101000000002': {'title': 'Dummy 3 中文'},
             '20200101000000003': {'title': 'Dummy 4 中文'},
-            }
+        }
 
         book.save_meta_files()
 
@@ -562,7 +561,7 @@ scrapbook.meta({
         book.meta = {
             '20200101000000000': {'title': 'Dummy 1 中文'},
             '20200101000000001': {'title': 'Dummy 2 中文'},
-            }
+        }
 
         book.save_meta_files()
 
@@ -590,7 +589,7 @@ scrapbook.meta({
         book.meta = {
             '20200101\u2028000000000': {'title\u20281': 'Dummy 1\u2028中文'},
             '20200101\u2029000000001': {'title\u20292': 'Dummy 2\u2029中文'},
-            }
+        }
 
         book.save_meta_files()
 
@@ -615,11 +614,11 @@ scrapbook.meta({
                 '20200101000000000',
                 '20200101000000001',
                 '20200101000000002',
-                ],
+            ],
             '20200101000000000': [
                 '20200101000000003'
-                ]
-            }
+            ]
+        }
 
         book.save_toc_files()
 
@@ -649,18 +648,18 @@ scrapbook.toc({
                 '20200101000000002',
                 '20200101000000003',
                 '20200101000000004',
-                ],
+            ],
             '20200101000000001': [
                 '20200101000000011'
-                ],
+            ],
             '20200101000000002': [
                 '20200101000000021'
-                ],
+            ],
             '20200101000000003': [
                 '20200101000000031',
                 '20200101000000032'
-                ],
-            }
+            ],
+        }
 
         book.save_toc_files()
 
@@ -718,11 +717,11 @@ scrapbook.toc({
                 '20200101000000000',
                 '20200101000000001',
                 '20200101000000002',
-                ],
+            ],
             '20200101000000000': [
                 '20200101000000003'
-                ]
-            }
+            ]
+        }
 
         book.save_toc_files()
 
@@ -753,11 +752,11 @@ scrapbook.toc({
             'root': [
                 '20200101\u2028000000000',
                 '20200101\u2029000000001',
-                ],
+            ],
             '20200101\u2028000000000': [
                 '20200101\u2029000000003'
-                ]
-            }
+            ]
+        }
 
         book.save_toc_files()
 
@@ -779,17 +778,17 @@ scrapbook.toc({
         self.create_general_config()
         book = Book(Host(self.test_root))
         book.fulltext = {
-            "20200101000000000": {
+            '20200101000000000': {
                 'index.html': {
                     'content': 'dummy text 1 中文',
-                    }
-                },
-            "20200101000000001": {
+                }
+            },
+            '20200101000000001': {
                 'index.html': {
                     'content': 'dummy text 2 中文',
-                    }
-                },
-            }
+                }
+            },
+        }
 
         book.save_fulltext_files()
 
@@ -815,25 +814,25 @@ scrapbook.fulltext({
         self.create_general_config()
         book = Book(Host(self.test_root))
         book.fulltext = {
-            "20200101000000000": {
+            '20200101000000000': {
                 'index.html': {
                     'content': 'dummy text 1 中文',
-                    },
+                },
                 'frame.html': {
                     'content': 'frame page content',
-                    },
                 },
-            "20200101000000001": {
+            },
+            '20200101000000001': {
                 'index.html': {
                     'content': 'dummy text 2 中文',
-                    },
                 },
-            "20200101000000002": {
+            },
+            '20200101000000002': {
                 'index.html': {
                     'content': 'dummy text 3 中文',
-                    },
                 },
-            }
+            },
+        }
 
         book.save_fulltext_files()
 
@@ -893,20 +892,20 @@ scrapbook.fulltext({
 
         book = Book(Host(self.test_root))
         book.fulltext = {
-            "20200101000000000": {
+            '20200101000000000': {
                 'index.html': {
                     'content': 'dummy text 1 中文',
-                    },
+                },
                 'frame.html': {
                     'content': 'frame page content',
-                    },
                 },
-            "20200101000000001": {
+            },
+            '20200101000000001': {
                 'index.html': {
                     'content': 'dummy text 2 中文',
-                    },
                 },
-            }
+            },
+        }
 
         book.save_fulltext_files()
 
@@ -946,17 +945,17 @@ scrapbook.fulltext({
         self.create_general_config()
         book = Book(Host(self.test_root))
         book.fulltext = {
-            "20200101\u2028000000000": {
+            '20200101\u2028000000000': {
                 'index.html': {
                     'content': 'dummy text 1 中文',
-                    }
                 },
-            "20200101\u2029000000001": {
+            },
+            '20200101\u2029000000001': {
                 'index.html': {
                     'content': 'dummy text 2 中文',
-                    }
                 },
-            }
+            },
+        }
 
         book.save_fulltext_files()
 
@@ -1003,10 +1002,14 @@ scrapbook.fulltext({
         self.create_general_config()
         host = Host(self.test_root)
         book = Book(host)
-        book.get_lock('test',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
-        mock_filelock.assert_called_once_with(host, 'book--test',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+        book.get_lock(
+            'test',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True,
+        )
+        mock_filelock.assert_called_once_with(
+            host, 'book--test',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True,
+        )
 
     @mock.patch('webscrapbook.scrapbook.book.Book.get_lock')
     def test_get_tree_lock01(self, mock_get_lock):
@@ -1022,9 +1025,13 @@ scrapbook.fulltext({
         self.create_general_config()
         host = Host(self.test_root)
         book = Book(host)
-        book.get_tree_lock(timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
-        mock_get_lock.assert_called_once_with('tree',
-            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True)
+        book.get_tree_lock(
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True,
+        )
+        mock_get_lock.assert_called_once_with(
+            'tree',
+            timeout=10, stale=120, poll_interval=0.3, assume_acquired=True,
+        )
 
     def test_get_index_paths01(self):
         self.create_general_config()
@@ -1061,7 +1068,7 @@ scrapbook.fulltext({
         self.create_general_config()
         os.makedirs(os.path.join(self.test_root, 'data'))
         archive_file = os.path.join(self.test_root, 'data', '20200101000000000.maff')
-        with zipfile.ZipFile(archive_file, 'w') as zh:
+        with zipfile.ZipFile(archive_file, 'w'):
             pass
         book = Book(Host(self.test_root))
 
@@ -1074,84 +1081,93 @@ scrapbook.fulltext({
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': 'http://example.com',
-            }))
+        }))
 
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
-            }))
+        }))
 
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': '//example.com',
-            }))
+        }))
 
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': '/favicon.ico',
-            }))
+        }))
 
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': '',
-            }))
+        }))
 
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': '?id=123',
-            }))
+        }))
 
         self.assertIsNone(book.get_icon_file({
             'index': '20200101000000000/index.html',
             'icon': '#test',
-            }))
+        }))
 
-        self.assertEqual(book.get_icon_file({
-            'icon': 'favicon.ico?id=123#test',
+        self.assertEqual(
+            book.get_icon_file({
+                'icon': 'favicon.ico?id=123#test',
             }),
             os.path.join(book.data_dir, 'favicon.ico'),
-            )
+        )
 
-        self.assertEqual(book.get_icon_file({
-            'icon': '%E4%B8%AD%E6%96%87%231.ico?id=123#test',
+        self.assertEqual(
+            book.get_icon_file({
+                'icon': '%E4%B8%AD%E6%96%87%231.ico?id=123#test',
             }),
             os.path.join(book.data_dir, '中文#1.ico'),
-            )
+        )
 
-        self.assertEqual(book.get_icon_file({
-            'index': '20200101000000000/index.html',
-            'icon': 'favicon.ico?id=123#test',
+        self.assertEqual(
+            book.get_icon_file({
+                'index': '20200101000000000/index.html',
+                'icon': 'favicon.ico?id=123#test',
             }),
             os.path.join(book.data_dir, '20200101000000000', 'favicon.ico'),
-            )
+        )
 
-        self.assertEqual(book.get_icon_file({
-            'index': '20200101000000000.html',
-            'icon': 'favicon.ico?id=123#test',
+        self.assertEqual(
+            book.get_icon_file({
+                'index': '20200101000000000.html',
+                'icon': 'favicon.ico?id=123#test',
             }),
             os.path.join(book.data_dir, 'favicon.ico'),
-            )
+        )
 
-        self.assertEqual(book.get_icon_file({
-            'index': '20200101000000000.maff',
-            'icon': 'favicon.ico?id=123#test',
+        self.assertEqual(
+            book.get_icon_file({
+                'index': '20200101000000000.maff',
+                'icon': 'favicon.ico?id=123#test',
             }),
             os.path.join(book.data_dir, 'favicon.ico'),
-            )
+        )
 
-        self.assertEqual(book.get_icon_file({
-            'index': '20200101000000000.maff',
-            'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp?id=123#test',
+        self.assertEqual(
+            book.get_icon_file({
+                'index': '20200101000000000.maff',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp?id=123#test',
             }),
             os.path.join(book.tree_dir, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'),
-            )
+        )
 
     def test_load_note_file01(self):
         """Test for common note file wrapper."""
         test_file = os.path.join(self.test_root, 'index.html')
         with open(test_file, 'w', encoding='UTF-8') as f:
             f.write("""\
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><style>pre{white-space: pre-wrap; overflow-wrap: break-word;}</style></head><body><pre>
+<!DOCTYPE html><html><head><meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre{white-space: pre-wrap; overflow-wrap: break-word;}</style>\
+</head><body><pre>
 Note content
 2nd line
 3rd line
@@ -1306,7 +1322,7 @@ scrapbook.fulltext({
         book.save_meta_files()
         book.save_toc_files()
         book.save_fulltext_files()
-        
+
         with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), meta0)
         with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'meta1.js'), encoding='UTF-8') as fh:
@@ -1319,6 +1335,7 @@ scrapbook.fulltext({
             self.assertEqual(fh.read(), fulltext0)
         with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), fulltext1)
+
 
 if __name__ == '__main__':
     unittest.main()

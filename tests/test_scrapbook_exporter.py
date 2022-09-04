@@ -1,18 +1,18 @@
-from unittest import mock
-import unittest
+import json
 import os
 import shutil
+import unittest
 import zipfile
-import json
-from datetime import datetime, timezone
 from base64 import b64decode, b64encode
+from datetime import datetime, timezone
+from unittest import mock
 
-from webscrapbook import WSB_DIR
-from webscrapbook import util
+from webscrapbook import WSB_DIR, util
 from webscrapbook.scrapbook import exporter as wsb_exporter
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_exporter')
+
 
 def setUpModule():
     # mock out user config
@@ -21,14 +21,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestExporter(unittest.TestCase):
     @classmethod
@@ -87,7 +89,7 @@ scrapbook.toc({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write('ABC123')
 
-        for info in wsb_exporter.run(self.test_input, self.test_output):
+        for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -101,7 +103,7 @@ scrapbook.toc({
                 export_info = json.load(fh)
             with zh.open('data/20200101000000000/index.html') as fh:
                 index_data = fh.read().decode('UTF-8')
-                
+
         self.assertEqual(data, {
             'id': '20200101000000000',
             'type': 'folder',
@@ -111,7 +113,7 @@ scrapbook.toc({
             'modify': '20200103000000000',
             'source': 'http://example.com',
             'icon': 'favicon.bmp',
-            })
+        })
 
         self.assertEqual(export_info['version'], 1)
         self.assertAlmostEqual(util.id_to_datetime(export_info['id']).timestamp(), datetime.now(timezone.utc).timestamp(), delta=3)
@@ -152,7 +154,7 @@ scrapbook.toc({
         with open(favicon_file, 'wb') as fh:
             fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for info in wsb_exporter.run(self.test_input, self.test_output):
+        for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -180,7 +182,7 @@ scrapbook.toc({
             'modify': '20200103000000000',
             'source': 'http://example.com',
             'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-            })
+        })
 
         self.assertEqual(export_info['version'], 1)
         self.assertAlmostEqual(util.id_to_datetime(export_info['id']).timestamp(), datetime.now(timezone.utc).timestamp(), delta=3)
@@ -239,7 +241,7 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb_exporter.run(self.test_input, self.test_output):
+        for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -254,45 +256,45 @@ scrapbook.toc({
                     export_infos.append(json.load(fh))
 
         self.assertEqual(len(files), 4)
-        self.assertEqual(len(set(e['id'] for e in export_infos)), 4)
+        self.assertEqual(len({e['id'] for e in export_infos}), 4)
 
         # files are exported in depth-first order
         self.assertEqual(metas[0], {
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[0]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[1], {
             'id': '20200101000000002',
             'type': 'folder',
             'title': 'item2',
-            })
+        })
         self.assertEqual(export_infos[1]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000000', 'title': 'item0'},
-            ])
+        ])
 
         self.assertEqual(metas[2], {
             'id': '20200101000000001',
             'type': 'folder',
             'title': 'item1',
-            })
+        })
         self.assertEqual(export_infos[2]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[3], {
             'id': '20200101000000003',
             'type': 'folder',
             'title': 'item3',
-            })
+        })
         self.assertEqual(export_infos[3]['path'], [
             {'id': 'hidden', 'title': ''},
-            ])
+        ])
 
     def test_toc02(self):
         """Export only those specified by item_ids
@@ -351,8 +353,10 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb_exporter.run(self.test_input, self.test_output,
-                item_ids=['20200101000000000', '20200101000000003', '20200101000000005']):
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            item_ids=['20200101000000000', '20200101000000003', '20200101000000005'],
+        ):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -373,19 +377,19 @@ scrapbook.toc({
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[0]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[1], {
             'id': '20200101000000003',
             'type': 'folder',
             'title': 'item3',
-            })
+        })
         self.assertEqual(export_infos[1]['path'], [
             {'id': 'hidden', 'title': ''},
-            ])
+        ])
 
     def test_toc03(self):
         """Export descendants if recursive"""
@@ -424,8 +428,10 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb_exporter.run(self.test_input, self.test_output,
-                item_ids=['20200101000000000'], recursive=True):
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            item_ids=['20200101000000000'], recursive=True,
+        ):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -446,31 +452,31 @@ scrapbook.toc({
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[0]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[1], {
             'id': '20200101000000002',
             'type': 'folder',
             'title': 'item2',
-            })
+        })
         self.assertEqual(export_infos[1]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000000', 'title': 'item0'},
-            ])
+        ])
 
         self.assertEqual(metas[2], {
             'id': '20200101000000003',
             'type': 'folder',
             'title': 'item3',
-            })
+        })
         self.assertEqual(export_infos[2]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000000', 'title': 'item0'},
             {'id': '20200101000000002', 'title': 'item2'},
-            ])
+        ])
 
     def test_toc04(self):
         """Export all occurrences
@@ -517,7 +523,7 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb_exporter.run(self.test_input, self.test_output):
+        for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -538,70 +544,70 @@ scrapbook.toc({
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[0]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[1], {
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[1]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
         self.assertEqual(export_infos[1]['id'], export_infos[0]['id'])
 
         self.assertEqual(metas[2], {
             'id': '20200101000000001',
             'type': 'folder',
             'title': 'item1',
-            })
+        })
         self.assertEqual(export_infos[2]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[3], {
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[3]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000001', 'title': 'item1'},
-            ])
+        ])
         self.assertEqual(export_infos[3]['id'], export_infos[0]['id'])
 
         self.assertEqual(metas[4], {
             'id': '20200101000000002',
             'type': 'folder',
             'title': 'item2',
-            })
+        })
         self.assertEqual(export_infos[4]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[5], {
             'id': '20200101000000003',
             'type': 'folder',
             'title': 'item3',
-            })
+        })
         self.assertEqual(export_infos[5]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000002', 'title': 'item2'},
-            ])
+        ])
 
         self.assertEqual(metas[6], {
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[6]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000002', 'title': 'item2'},
             {'id': '20200101000000003', 'title': 'item3'},
-            ])
+        ])
         self.assertEqual(export_infos[6]['id'], export_infos[0]['id'])
 
     def test_toc05(self):
@@ -646,7 +652,7 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb_exporter.run(self.test_input, self.test_output, singleton=True):
+        for _info in wsb_exporter.run(self.test_input, self.test_output, singleton=True):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -667,38 +673,38 @@ scrapbook.toc({
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[0]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[1], {
             'id': '20200101000000001',
             'type': 'folder',
             'title': 'item1',
-            })
+        })
         self.assertEqual(export_infos[1]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[2], {
             'id': '20200101000000002',
             'type': 'folder',
             'title': 'item2',
-            })
+        })
         self.assertEqual(export_infos[2]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[3], {
             'id': '20200101000000003',
             'type': 'folder',
             'title': 'item3',
-            })
+        })
         self.assertEqual(export_infos[3]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000002', 'title': 'item2'},
-            ])
+        ])
 
     def test_toc06(self):
         """Export circular item but no children"""
@@ -728,7 +734,7 @@ scrapbook.toc({
   ]
 })""")
 
-        for info in wsb_exporter.run(self.test_input, self.test_output):
+        for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
         with os.scandir(self.test_output) as entries:
@@ -749,32 +755,33 @@ scrapbook.toc({
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[0]['path'], [
             {'id': 'root', 'title': ''},
-            ])
+        ])
 
         self.assertEqual(metas[1], {
             'id': '20200101000000001',
             'type': 'folder',
             'title': 'item1',
-            })
+        })
         self.assertEqual(export_infos[1]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000000', 'title': 'item0'},
-            ])
+        ])
 
         self.assertEqual(metas[2], {
             'id': '20200101000000000',
             'type': 'folder',
             'title': 'item0',
-            })
+        })
         self.assertEqual(export_infos[2]['path'], [
             {'id': 'root', 'title': ''},
             {'id': '20200101000000000', 'title': 'item0'},
             {'id': '20200101000000001', 'title': 'item1'},
-            ])
+        ])
         self.assertEqual(export_infos[2]['id'], export_infos[0]['id'])
+
 
 if __name__ == '__main__':
     unittest.main()

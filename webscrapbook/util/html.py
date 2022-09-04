@@ -1,14 +1,13 @@
 """HTML Parser
 """
+import codecs
 import html
 import html.parser
 import re
-import codecs
-from urllib.parse import urlsplit, urljoin
+from urllib.parse import urljoin
 from urllib.request import pathname2url
 
 from . import util
-
 
 REGEX_ASCII_WHITESPACES = re.compile(r'[ \t\n\r\f]+')
 
@@ -33,7 +32,7 @@ class Markup:
         'data': ['data', 'is_cdata', 'convert_charrefs'],
         'entityref': ['name'],
         'charref': ['name'],
-        }
+    }
 
     def __init__(self, **kwargs):
         # general
@@ -124,7 +123,7 @@ class Markup:
         return self.__repr__()
 
     def _rewrite_attrs(self, attr):
-        return attr.replace('\xA0', '&nbsp;').replace("&#x27;", "'")
+        return attr.replace('\xA0', '&nbsp;').replace('&#x27;', "'")
 
 
 class MarkupTag(Markup):
@@ -136,7 +135,7 @@ class MarkupTag(Markup):
             pass
         classes_text = self.getattr('class')
         rv = [] if classes_text is None else REGEX_ASCII_WHITESPACES.split(classes_text)
-        setattr(self, '_classes', rv)
+        self._classes = rv
         return rv
 
     def getattr(self, attr, default=None):
@@ -170,7 +169,7 @@ class HTMLParser(html.parser.HTMLParser):
         self.__last_added_decl_markup = None
         endpos = super().parse_html_declaration(i)
         if self.__last_added_decl_markup is not None:
-            setattr(self.__last_added_decl_markup, 'src', self.rawdata[i:endpos])
+            self.__last_added_decl_markup.src = self.rawdata[i:endpos]
         return endpos
 
     def parse_endtag(self, i):
@@ -179,7 +178,7 @@ class HTMLParser(html.parser.HTMLParser):
         self.__last_added_endtag_markup = None
         endpos = super().parse_endtag(i)
         if self.__last_added_endtag_markup is not None:
-            setattr(self.__last_added_endtag_markup, 'src', self.rawdata[i:endpos])
+            self.__last_added_endtag_markup.src = self.rawdata[i:endpos]
         return endpos
 
     def handle_pi(self, data):
@@ -187,21 +186,21 @@ class HTMLParser(html.parser.HTMLParser):
             is_xhtml=self._is_xhtml,
             type='pi',
             data=data,
-            ))
+        ))
 
     def handle_decl(self, decl):
         self._process(Markup(
             is_xhtml=self._is_xhtml,
             type='decl',
             data=decl,
-            ))
+        ))
 
     def handle_comment(self, data):
         markup = Markup(
             is_xhtml=self._is_xhtml,
             type='comment',
             data=data,
-            )
+        )
         self.__last_added_decl_markup = markup
         self._process(markup)
 
@@ -212,7 +211,7 @@ class HTMLParser(html.parser.HTMLParser):
             tag=tag,
             attrs=attrs,
             src=self.get_starttag_text(),
-            ))
+        ))
 
     def handle_startendtag(self, tag, attrs):
         self._process(MarkupTag(
@@ -222,14 +221,14 @@ class HTMLParser(html.parser.HTMLParser):
             attrs=attrs,
             src=self.get_starttag_text(),
             is_self_end=True,
-            ))
+        ))
 
     def handle_endtag(self, tag):
         markup = MarkupTag(
             is_xhtml=self._is_xhtml,
             type='endtag',
             tag=tag,
-            )
+        )
         self.__last_added_endtag_markup = markup
         self._process(markup)
 
@@ -240,21 +239,21 @@ class HTMLParser(html.parser.HTMLParser):
             data=data,
             convert_charrefs=self.convert_charrefs,
             is_cdata=bool(self.cdata_elem),
-            ))
+        ))
 
     def handle_entityref(self, name):
         self._process(Markup(
             is_xhtml=self._is_xhtml,
             type='entityref',
             name=name,
-            ))
+        ))
 
     def handle_charref(self, name):
         self._process(Markup(
             is_xhtml=self._is_xhtml,
             type='charref',
             name=name,
-            ))
+        ))
 
     def unknown_decl(self, data):
         markup = Markup(
@@ -262,24 +261,24 @@ class HTMLParser(html.parser.HTMLParser):
             type='decl',
             data=data,
             is_unknown=True,
-            )
+        )
         self.__last_added_decl_markup = markup
         self._process(markup)
 
     def close(self):
         super().close()
 
-        for i in reversed(range(0, len(self._stack))):
+        for _ in reversed(range(0, len(self._stack))):
             starttag = self._stack.pop()
 
             # create a hidden starttag for the unmatched starting tag
             endtag = MarkupTag(
                 type='endtag',
                 tag=starttag.tag,
-                starttag= starttag,
+                starttag=starttag,
                 hidden=True,
-                )
-            setattr(starttag, 'endtag', endtag)
+            )
+            starttag.endtag = endtag
             self._rv.append(endtag)
 
     def _process(self, markup):
@@ -323,19 +322,19 @@ class HTMLParser(html.parser.HTMLParser):
                 tag=markup.tag,
                 starttag=markup,
                 hidden=True,
-                )
-            setattr(markup, 'endtag', endtag)
+            )
+            markup.endtag = endtag
             self._rv.append(endtag)
             return
 
         self._stack.append(markup)
 
     def _process_token_endtag(self, markup):
-        for i in reversed(range(0, len(self._stack))):
+        for _ in reversed(range(0, len(self._stack))):
             starttag = self._stack.pop()
             if starttag.tag == markup.tag:
-                setattr(starttag, 'endtag', markup)
-                setattr(markup, 'starttag', starttag)
+                starttag.endtag = markup
+                markup.starttag = starttag
                 break
 
             # create a hidden endtag for the implicitly closed tag
@@ -343,10 +342,10 @@ class HTMLParser(html.parser.HTMLParser):
                 is_xhtml=self._is_xhtml,
                 type='endtag',
                 tag=starttag.tag,
-                starttag= starttag,
+                starttag=starttag,
                 hidden=True,
-                )
-            setattr(starttag, 'endtag', endtag)
+            )
+            starttag.endtag = endtag
             self._rv.append(endtag)
         else:
             # create a hidden starttag for the unmatched ending tag
@@ -357,8 +356,8 @@ class HTMLParser(html.parser.HTMLParser):
                 attrs=[],
                 endtag=markup,
                 hidden=True,
-                )
-            setattr(markup, 'starttag', starttag)
+            )
+            markup.starttag = starttag
             self._rv.append(starttag)
 
         self._rv.append(markup)
@@ -373,7 +372,7 @@ class HTMLParser(html.parser.HTMLParser):
         self._rv.append(markup)
 
     def _ignore_markup(self, markup):
-        setattr(markup, 'ignored', True)
+        markup.ignored = True
         self._rv.append(markup)
 
     def _in_html_foreign_element(self):
@@ -387,9 +386,9 @@ class HtmlRewriter:
     """The base class that handles HTML rewriting for a specific path.
     """
     def __init__(self, file=None, *,
-            doc_url=None, base_url=None, url_chain=set(),
-            is_xhtml=None, encoding=None,
-            parser=HTMLParser):
+                 doc_url=None, base_url=None, url_chain=set(),  # noqa: B006
+                 is_xhtml=None, encoding=None,
+                 parser=HTMLParser):
         """Initialize the class and bind associated information.
 
         Args:

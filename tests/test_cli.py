@@ -1,20 +1,19 @@
-from unittest import mock
-import unittest
-import sys
-import os
-import shutil
 import io
-import zipfile
+import os
 import re
+import shutil
+import sys
+import unittest
+import zipfile
+from unittest import mock
 from urllib.request import pathname2url
-from tempfile import gettempdir
-from webscrapbook import WSB_DIR, WSB_CONFIG
-from webscrapbook import Config
-from webscrapbook import cli
+
+from webscrapbook import WSB_DIR, cli
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_dir = os.path.join(root_dir, 'test_cli')
 resource_dir = os.path.join(root_dir, '..', 'webscrapbook', 'resources')
+
 
 class TestServe(unittest.TestCase):
     @mock.patch('sys.stdout', io.StringIO)
@@ -23,9 +22,10 @@ class TestServe(unittest.TestCase):
         cli.cmd_serve({
             'root': test_dir,
             'browse': False,
-            })
+        })
 
         mock_serve.assert_called_once_with(root=test_dir, browse=False)
+
 
 class TestConfig(unittest.TestCase):
     def tearDown(self):
@@ -45,7 +45,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': False,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini')) as f1:
             with open(os.path.join(resource_dir, 'config.ini')) as f2:
@@ -67,7 +67,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': False,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini')) as f1:
             self.assertTrue(f1.read(), 'dummy')
@@ -84,7 +84,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': True,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini')) as f1:
             with open(os.path.join(resource_dir, 'config.ini')) as f2:
@@ -108,7 +108,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': True,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini')) as f1:
             self.assertTrue(f1.read(), 'foo')
@@ -126,7 +126,7 @@ class TestConfig(unittest.TestCase):
             'all': True,
             'edit': False,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini')) as f1:
             with open(os.path.join(resource_dir, 'config.ini')) as f2:
@@ -160,7 +160,7 @@ class TestConfig(unittest.TestCase):
             'all': True,
             'edit': False,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'config.ini')) as f1:
             self.assertTrue(f1.read(), 'dummy1')
@@ -183,7 +183,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': False,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'userconfig.ini')) as f1:
             with open(os.path.join(resource_dir, 'config.ini')) as f2:
@@ -205,7 +205,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': False,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'userconfig.ini')) as f1:
             self.assertTrue(f1.read(), 'dummy')
@@ -223,7 +223,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': True,
             'name': None,
-            })
+        })
 
         with open(os.path.join(test_dir, WSB_DIR, 'userconfig.ini')) as f1:
             with open(os.path.join(resource_dir, 'config.ini')) as f2:
@@ -248,7 +248,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': True,
             'name': None,
-            })
+        })
 
         mock_launch.assert_called_once_with(os.path.join(test_dir, WSB_DIR, 'userconfig.ini'))
 
@@ -264,7 +264,7 @@ class TestConfig(unittest.TestCase):
                 'all': False,
                 'edit': True,
                 'name': None,
-                })
+            })
 
         mock_die.assert_called_once_with('Use --edit in combine with --book or --user.')
 
@@ -278,7 +278,7 @@ class TestConfig(unittest.TestCase):
                 'all': True,
                 'edit': False,
                 'name': None,
-                })
+            })
 
         mock_die.assert_called_once_with('Use --all in combine with --book.')
 
@@ -292,7 +292,7 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': False,
             'name': 'app.name',
-            })
+        })
 
         mock_getname.assert_called_once_with('app.name')
         self.assertEqual(mock_stdout.getvalue(), 'dummy\n')
@@ -308,7 +308,7 @@ class TestConfig(unittest.TestCase):
                 'all': False,
                 'edit': False,
                 'name': 'unknown.config',
-                })
+            })
 
         mock_getname.assert_called_once_with('unknown.config')
         mock_die.assert_called_once_with('Config entry "unknown.config" does not exist')
@@ -322,9 +322,10 @@ class TestConfig(unittest.TestCase):
             'all': False,
             'edit': False,
             'name': None,
-            })
+        })
 
         mock_dump.assert_called_once_with(sys.stdout)
+
 
 class TestEncrypt(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
@@ -334,10 +335,11 @@ class TestEncrypt(unittest.TestCase):
             'password': '1234',
             'salt': 'mysalt',
             'method': 'sha256',
-            })
+        })
 
         mock_encrypt.assert_called_once_with('1234', salt='mysalt', method='sha256')
         self.assertEqual(mock_stdout.getvalue(), 'dummy_hash\n')
+
 
 class TestCache(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.cache.generate', autospec=True)
@@ -354,7 +356,7 @@ class TestCache(unittest.TestCase):
             'locale': 'zh_TW',
             'no_backup': True,
             'debug': True,
-            })
+        })
 
         mock_func.assert_called_once_with(
             root=test_dir,
@@ -367,7 +369,8 @@ class TestCache(unittest.TestCase):
             rss_root='http://example.com:8000/wsb/',
             locale='zh_TW',
             no_backup=True,
-            )
+        )
+
 
 class TestCheck(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.check.run', autospec=True)
@@ -389,7 +392,7 @@ class TestCheck(unittest.TestCase):
             'resolve_unused_icon': True,
             'no_backup': True,
             'debug': True,
-            })
+        })
 
         mock_func.assert_called_once_with(
             root=test_dir,
@@ -407,7 +410,8 @@ class TestCheck(unittest.TestCase):
             resolve_absolute_icon=True,
             resolve_unused_icon=True,
             no_backup=True,
-            )
+        )
+
 
 class TestExport(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.exporter.run', autospec=True)
@@ -420,7 +424,7 @@ class TestExport(unittest.TestCase):
             'recursive': True,
             'singleton': True,
             'debug': True,
-            })
+        })
 
         mock_func.assert_called_once_with(
             root=test_dir,
@@ -429,7 +433,8 @@ class TestExport(unittest.TestCase):
             item_ids=['item1', 'item2'],
             recursive=True,
             singleton=True,
-            )
+        )
+
 
 class TestImport(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.importer.run', autospec=True)
@@ -445,7 +450,7 @@ class TestImport(unittest.TestCase):
             'resolve_id_used': 'new',
             'prune': True,
             'debug': True,
-            })
+        })
 
         mock_func.assert_called_once_with(
             root=test_dir,
@@ -457,7 +462,8 @@ class TestImport(unittest.TestCase):
             rebuild_folders=True,
             resolve_id_used='new',
             prune=True,
-            )
+        )
+
 
 class TestConvert(unittest.TestCase):
     @mock.patch('webscrapbook.scrapbook.convert.sb2wsb.run', autospec=True)
@@ -470,13 +476,13 @@ class TestConvert(unittest.TestCase):
             'no_backup': True,
             'force': True,
             'debug': True,
-            })
+        })
 
         mock_func.assert_called_once_with(
             input=test_dir,
             output=os.path.join(root_dir, 'test_cli_output'),
             no_backup=True,
-            )
+        )
 
     @mock.patch('webscrapbook.scrapbook.convert.wsb2sb.run', autospec=True)
     def test_wsb2sb(self, mock_func):
@@ -488,23 +494,25 @@ class TestConvert(unittest.TestCase):
             'book_id': 'id1',
             'force': True,
             'debug': True,
-            })
+        })
 
         mock_func.assert_called_once_with(
             input=test_dir,
             output=os.path.join(root_dir, 'test_cli_output'),
             book_id='id1',
-            )
+        )
+
 
 class TestHelp(unittest.TestCase):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
     def test_call(self, mock_stdout):
         cli.cmd_help({
             'topic': 'config',
-            })
+        })
 
         with open(os.path.join(resource_dir, 'config.md')) as f:
             self.assertEqual(mock_stdout.getvalue(), f.read() + '\n')
+
 
 class TestView(unittest.TestCase):
     @mock.patch('webscrapbook.cli.view_archive_files', autospec=True)
@@ -512,9 +520,10 @@ class TestView(unittest.TestCase):
         cli.cmd_view({
             'root': 'config',
             'files': [test_dir],
-            })
+        })
 
         mock_view.assert_called_once_with([test_dir])
+
 
 class TestHelpers(unittest.TestCase):
     def tearDown(self):
@@ -548,94 +557,95 @@ class TestHelpers(unittest.TestCase):
 
         # test jar, no temp dir should be generated
         with mock.patch('webscrapbook.cli.config', {
-                'browser': {
-                    'command': '',
-                    'cache_prefix': 'webscrapbook.',
-                    'cache_expire': 1000,
-                    'use_jar': True,
-                    }
-                }):
+            'browser': {
+                'command': '',
+                'cache_prefix': 'webscrapbook.',
+                'cache_expire': 1000,
+                'use_jar': True,
+            }
+        }):
             cli.view_archive_files([testfile1, testfile2, testfile3, testfile4])
 
         self.assertEqual(len(mock_browser.mock_calls), 5)
         self.assertEqual(mock_browser.mock_calls[1][1][0],
-            fr'jar:file:{pathname2url(os.path.normcase(testfile1))}!/index.html')
+                         fr'jar:file:{pathname2url(os.path.normcase(testfile1))}!/index.html')
         self.assertEqual(mock_browser.mock_calls[2][1][0],
-            fr'jar:file:{pathname2url(os.path.normcase(testfile2))}!/123456/index.html')
+                         fr'jar:file:{pathname2url(os.path.normcase(testfile2))}!/123456/index.html')
         self.assertEqual(mock_browser.mock_calls[3][1][0],
-            fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/abc/index.html')
+                         fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/abc/index.html')
         self.assertEqual(mock_browser.mock_calls[4][1][0],
-            fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/def/index.html')
+                         fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/def/index.html')
         self.assertEqual(len(os.listdir(testtemp)), 0)
 
         # test simple view
         mock_browser.reset_mock()
         with mock.patch('webscrapbook.cli.config', {
-                'browser': {
-                    'command': '',
-                    'cache_prefix': 'webscrapbook.',
-                    'cache_expire': 1000,
-                    'use_jar': False,
-                    }
-                }):
+            'browser': {
+                'command': '',
+                'cache_prefix': 'webscrapbook.',
+                'cache_expire': 1000,
+                'use_jar': False,
+            }
+        }):
             cli.view_archive_files([testfile1, testfile2, testfile3, testfile4])
 
         mock_browser.assert_called_once_with(None)
         self.assertEqual(len(mock_browser.mock_calls), 5)
         self.assertRegex(mock_browser.mock_calls[1][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
         self.assertRegex(mock_browser.mock_calls[2][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
         self.assertRegex(mock_browser.mock_calls[3][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
         self.assertRegex(mock_browser.mock_calls[4][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
         self.assertEqual(len(os.listdir(testtemp)), 3)
 
         # test browser command
         # test if cache is used for same archive
         mock_browser.reset_mock()
         with mock.patch('webscrapbook.cli.config', {
-                'browser': {
-                    'command': '/path/to/firefox',
-                    'cache_prefix': 'webscrapbook.',
-                    'cache_expire': 1000,
-                    'use_jar': False,
-                    }
-                }):
+            'browser': {
+                'command': '/path/to/firefox',
+                'cache_prefix': 'webscrapbook.',
+                'cache_expire': 1000,
+                'use_jar': False,
+            }
+        }):
             cli.view_archive_files([testfile1, testfile2, testfile3, testfile4])
 
         mock_browser.assert_called_once_with('/path/to/firefox')
         self.assertEqual(len(mock_browser.mock_calls), 5)
         self.assertRegex(mock_browser.mock_calls[1][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
         self.assertRegex(mock_browser.mock_calls[2][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
         self.assertRegex(mock_browser.mock_calls[3][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
         self.assertRegex(mock_browser.mock_calls[4][1][0],
-            fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
+                         fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
         self.assertEqual(len(os.listdir(testtemp)), 3)
 
         # test auto clearance of stale caches
         mock_browser.reset_mock()
         with mock.patch('webscrapbook.cli.config', {
-                'browser': {
-                    'command': '',
-                    'cache_prefix': 'webscrapbook.',
-                    'cache_expire': -1,
-                    'use_jar': False,
-                    }
-                }):
+            'browser': {
+                'command': '',
+                'cache_prefix': 'webscrapbook.',
+                'cache_expire': -1,
+                'use_jar': False,
+            }
+        }):
             with mock.patch('shutil.rmtree') as mock_rmtree:
                 cli.view_archive_files([])
                 self.assertEqual(len(mock_rmtree.call_args_list), 3)
                 self.assertRegex(mock_rmtree.call_args_list[0][0][0].path,
-                    fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
+                                 fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
                 self.assertRegex(mock_rmtree.call_args_list[1][0][0].path,
-                    fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
+                                 fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
                 self.assertRegex(mock_rmtree.call_args_list[2][0][0].path,
-                    fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
+                                 fr'^{re.escape(testtempprefix)}[0-9a-z]*_[0-9a-z_]*$')
+
 
 if __name__ == '__main__':
     unittest.main()

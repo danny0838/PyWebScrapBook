@@ -1,16 +1,17 @@
-from unittest import mock
-import unittest
 import os
 import shutil
 import time
-from webscrapbook import WSB_DIR
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
+import unittest
+from unittest import mock
+
+from webscrapbook import WSB_DIR, util
 from webscrapbook.scrapbook.book import Book
 from webscrapbook.scrapbook.convert import sb2wsb
+from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+
 
 def setUpModule():
     # mock out user config
@@ -19,14 +20,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestRun(unittest.TestCase):
     @classmethod
@@ -84,7 +87,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -101,7 +104,7 @@ class TestRun(unittest.TestCase):
             'comment': 'dummy comment\n2nd line',
             'charset': 'UTF-8',
             'locked': True,
-            })
+        })
 
     def test_meta_basic02(self):
         """A typical item sample of legacy ScrapBook."""
@@ -122,7 +125,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -137,7 +140,7 @@ class TestRun(unittest.TestCase):
             'source': 'http://example.com/foo',
             'icon': 'favicon.ico',
             'comment': 'dummy comment\n2nd line',
-            })
+        })
 
     def test_meta_basic03(self):
         """Default value for missing keys.
@@ -156,7 +159,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -167,7 +170,7 @@ class TestRun(unittest.TestCase):
             'type': '',
             'create': util.datetime_to_id(util.id_to_datetime_legacy('20200102030405')),
             'modify': util.datetime_to_id(util.id_to_datetime_legacy('20200102030405')),
-            })
+        })
 
     def test_meta_basic04(self):
         """Should work correctly for another NS name
@@ -190,7 +193,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -205,7 +208,7 @@ class TestRun(unittest.TestCase):
             'comment': 'comment',
             'icon': 'favicon.ico',
             'source': 'http://example.com',
-            })
+        })
 
     def test_meta_type01(self):
         """Translate types."""
@@ -228,7 +231,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -266,7 +269,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -283,7 +286,7 @@ class TestRun(unittest.TestCase):
             pass
         t = time.mktime((2020, 1, 3, 0, 0, 0, 0, 0, -1))
         os.utime(index_file, (t, t))
-        
+
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 <?xml version="1.0"?>
@@ -298,14 +301,16 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
 
-        self.assertEqual(book.meta['20200102030405']['modify'],
-            util.datetime_to_id(util.id_to_datetime_legacy('20200102030407')))
+        self.assertEqual(
+            book.meta['20200102030405']['modify'],
+            util.datetime_to_id(util.id_to_datetime_legacy('20200102030407')),
+        )
 
     def test_meta_modify02(self):
         """Take mtime of index.html if modify not defined."""
@@ -315,7 +320,7 @@ class TestRun(unittest.TestCase):
             pass
         t = time.mktime((2020, 1, 3, 0, 0, 0, 0, 0, -1))
         os.utime(index_file, (t, t))
-        
+
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 <?xml version="1.0"?>
@@ -329,14 +334,16 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
 
-        self.assertEqual(book.meta['20200102030405']['modify'],
-            util.datetime_to_id(util.id_to_datetime_legacy('20200103000000')))
+        self.assertEqual(
+            book.meta['20200102030405']['modify'],
+            util.datetime_to_id(util.id_to_datetime_legacy('20200103000000')),
+        )
 
     def test_meta_modify03(self):
         """Take create if modify not defined and no index.html."""
@@ -353,14 +360,16 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
 
-        self.assertEqual(book.meta['20200102030405']['modify'],
-            util.datetime_to_id(util.id_to_datetime_legacy('20200102030406')))
+        self.assertEqual(
+            book.meta['20200102030405']['modify'],
+            util.datetime_to_id(util.id_to_datetime_legacy('20200102030406')),
+        )
 
     def test_meta_icon01(self):
         """Resolve resource://scrapbook/data/<self-id>/..."""
@@ -375,7 +384,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -396,7 +405,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -417,7 +426,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -438,7 +447,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -460,7 +469,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -482,7 +491,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -504,7 +513,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -541,7 +550,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -554,19 +563,19 @@ class TestRun(unittest.TestCase):
                 '20200101000002',
                 '20200101000003',
                 '20200101000004',
-                ],
+            ],
             '20200101000001': [
                 '20200101000005',
                 '20200101000006',
-                ],
+            ],
             '20200101000002': [
                 '20200101000007',
                 '20200101000008',
-                ],
+            ],
             '20200101000003': [
                 '20200101000009',
-                ],
-            })
+            ],
+        })
 
     def test_backup01(self):
         """Check legacy scrapbook files are backuped"""
@@ -584,7 +593,7 @@ class TestRun(unittest.TestCase):
             'sitemap.xsl',
             'note_template.html',
             'notex_template.html',
-            ]
+        ]
 
         for entry in check_entries:
             path = os.path.join(self.test_input, entry)
@@ -605,7 +614,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         with os.scandir(os.path.join(self.test_output, WSB_DIR, 'backup')) as dirs:
@@ -635,7 +644,7 @@ class TestRun(unittest.TestCase):
             'sitemap.xsl',
             'note_template.html',
             'notex_template.html',
-            ]
+        ]
 
         for entry in check_entries:
             path = os.path.join(self.test_input, entry)
@@ -656,7 +665,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output, no_backup=True):
+        for _info in sb2wsb.run(self.test_input, self.test_output, no_backup=True):
             pass
 
         self.assertFalse(os.path.exists(os.path.join(self.test_output, WSB_DIR, 'backup')))
@@ -672,7 +681,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output):
+        for _info in sb2wsb.run(self.test_input, self.test_output):
             pass
 
         mock_convert.assert_called_once()
@@ -692,10 +701,11 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for info in sb2wsb.run(self.test_input, self.test_output, no_data_files=True):
+        for _info in sb2wsb.run(self.test_input, self.test_output, no_data_files=True):
             pass
 
         mock_convert.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

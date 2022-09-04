@@ -4,13 +4,12 @@ import os
 import webbrowser
 from threading import Thread
 
-# dependency
 from werkzeug.serving import WSGIRequestHandler, make_server
 
-# this package
 from . import Config
 from .app import make_app
 from .util import is_nullhost
+
 
 def serve(root, browse=None):
     config = Config()
@@ -42,9 +41,9 @@ def serve(root, browse=None):
         threaded=True,
         processes=1,
         ssl_context=((ssl_cert, ssl_key) if ssl_cert and ssl_key
-                else 'adhoc' if ssl_on else None),
+                     else 'adhoc' if ssl_on else None),
         request_handler=RequestHandler,
-        )
+    )
 
     srv.log('info', 'WebScrapBook server starting up...')
     srv.log('info', f'Document Root: {os.path.abspath(root)}')
@@ -73,4 +72,4 @@ def serve(root, browse=None):
 
 
 class RequestHandler(WSGIRequestHandler):
-    protocol_version = "HTTP/1.1"
+    protocol_version = 'HTTP/1.1'

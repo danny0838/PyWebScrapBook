@@ -1,29 +1,28 @@
 import os
-import shutil
-import traceback
-import time
 import re
-from urllib.parse import urlsplit, quote
-from urllib.request import pathname2url, url2pathname
+import shutil
+import time
+import traceback
 from datetime import timedelta
-
-from ... import util
-from ...util import Info
-from ...util.html import Markup, MarkupTag, HtmlRewriter
-from ..host import Host
-from ..book import Book
+from urllib.parse import quote
+from urllib.request import pathname2url
 
 from lxml import etree
 
+from ... import util
+from ...util import Info
+from ...util.html import HtmlRewriter, Markup, MarkupTag
+from ..book import Book
+from ..host import Host
 
 RDF = '{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
 NS1 = '{http://amb.vis.ne.jp/mozilla/scrapbook-rdf#}'
 NC = '{http://home.netscape.com/NC-rdf#}'
 
 LEGACY_TYPE_MAP = {
-    "postit": "note",
-    "note": "notex",
-    }
+    'postit': 'note',
+    'note': 'notex',
+}
 
 HTML_FILE_FILTER = re.compile(r'^.+\.x?html$', re.I)
 REGEX_LINEFEED = re.compile(r'\r\n?|\n')
@@ -158,7 +157,7 @@ class Converter:
 
             node = etree.SubElement(root, f'{RDF}Seq')
             if id == 'root':
-                node.attrib[f'{RDF}about'] = f'urn:scrapbook:root'
+                node.attrib[f'{RDF}about'] = 'urn:scrapbook:root'
             else:
                 oid = self.id_to_oid[id]
                 node.attrib[f'{RDF}about'] = f'urn:scrapbook:item{oid}'
@@ -257,8 +256,8 @@ class Converter:
                     shutil.copy2(fsrc, fdst)
                     with open(os.path.join(self.output, 'data', oid, 'index.html'), 'w', encoding='UTF-8') as fh:
                         fh.write('<html><head><meta charset="UTF-8">'
-                            f'<meta http-equiv="refresh" content="0;URL=./{quote(basename)}">'
-                            '</head><body></body></html>')
+                                 f'<meta http-equiv="refresh" content="0;URL=./{quote(basename)}">'
+                                 '</head><body></body></html>')
             except OSError as exc:
                 yield Info('error', f'Failed to copy data for "{id}": {exc}', exc=exc)
 
@@ -278,7 +277,7 @@ class Converter:
             elif not self.no_data_files:
                 yield Info('debug', f'Converting data files for "{id}" (type={type})')
                 index_dir = os.path.join(self.output, 'data', oid)
-                for root, dirs, files in os.walk(index_dir):
+                for root, _dirs, files in os.walk(index_dir):
                     for file in files:
                         if HTML_FILE_FILTER.search(file):
                             file = os.path.join(root, file)
@@ -378,9 +377,9 @@ class ConvertHtmlFile(HtmlRewriter):
             if markup.type == 'starttag':
                 # pass-through special context tags
                 if markup.tag in ('template', 'svg', 'math'):
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
-                    for i in range(i, iend + 1):
-                        rv.append(markups[i])
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
+                    for j in range(i, iend + 1):
+                        rv.append(markups[j])
                     i = iend + 1
                     continue
 
@@ -398,7 +397,7 @@ class ConvertHtmlFile(HtmlRewriter):
                         'data-sb-id': id,
                         'data-sb-obj': 'inline' if title else 'linemarker',
                         'class': ['scrapbook-inline' if title else 'linemarker-marked-line'],
-                        }
+                    }
 
                     if style:
                         attrs['style'] = style
@@ -413,7 +412,7 @@ class ConvertHtmlFile(HtmlRewriter):
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
-                        ))
+                    ))
 
                     _rv, _i = self.convert(markups, i + 1, markup.endtag)
                     rv.extend(_rv)
@@ -421,7 +420,7 @@ class ConvertHtmlFile(HtmlRewriter):
                         is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
-                        ))
+                    ))
 
                     i = _i + 1
                     self.changed = True
@@ -436,7 +435,7 @@ class ConvertHtmlFile(HtmlRewriter):
                     attrs = {
                         'data-sb-obj': 'freenote',
                         'style': None,
-                        }
+                    }
 
                     # style
                     attrs['style'] = ' '.join([
@@ -453,7 +452,7 @@ class ConvertHtmlFile(HtmlRewriter):
                         'line-height: 1.2em;',
                         'word-wrap: break-word;',
                         f'position: {"static" if is_relative else "absolute"};',
-                        ])
+                    ])
 
                     style = markup.getattr('style')
                     if style:
@@ -465,13 +464,13 @@ class ConvertHtmlFile(HtmlRewriter):
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
-                        ))
+                    ))
 
                     if is_plaintext:
-                        iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                        iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
 
                         last_child_i = i
-                        for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                        for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):  # noqa: B023
                             last_child_i = j
                         text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
@@ -481,21 +480,21 @@ class ConvertHtmlFile(HtmlRewriter):
                                 type='data',
                                 data=line,
                                 convert_charrefs=False,
-                                ))
+                            ))
                             rv.append(MarkupTag(
                                 is_xhtml=self.is_xhtml,
                                 type='starttag',
                                 tag='br',
                                 attrs=[],
                                 is_self_end=self.is_xhtml,
-                                ))
+                            ))
                         rv.pop()  # pop an extra <br>
 
                         rv.append(MarkupTag(
                             is_xhtml=self.is_xhtml,
                             type='endtag',
                             tag=tag,
-                            ))
+                        ))
                         i = iend + 1
 
                     else:
@@ -505,7 +504,7 @@ class ConvertHtmlFile(HtmlRewriter):
                             is_xhtml=self.is_xhtml,
                             type='endtag',
                             tag=tag,
-                            ))
+                        ))
 
                         i = _i + 1
 
@@ -514,20 +513,20 @@ class ConvertHtmlFile(HtmlRewriter):
 
                 # block-comment
                 elif (type == 'sticky'
-                        and 'styled' not in markup.classes
-                        and 'relative' in markup.classes
-                        and 'plaintext' in markup.classes
-                        ):
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                      and 'styled' not in markup.classes
+                      and 'relative' in markup.classes
+                      and 'plaintext' in markup.classes
+                      ):
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
 
                     tag = 'div'
                     attrs = {
                         'class': ['scrapbook-block-comment'],
                         'style': markup.getattr('style'),
-                        }
+                    }
 
                     last_child_i = i
-                    for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):
+                    for j in self.iterfind(markups, lambda x: x.type == 'endtag' and x != markup.endtag, i + 1, markup.endtag):  # noqa: B023
                         last_child_i = j
                     text = ''.join(str(d) for d in markups[last_child_i + 1:iend] if d.type == 'data')
 
@@ -538,18 +537,18 @@ class ConvertHtmlFile(HtmlRewriter):
                         type='starttag',
                         tag=tag,
                         attrs=attrs,
-                        ))
+                    ))
                     rv.append(Markup(
                         is_xhtml=self.is_xhtml,
                         type='data',
                         data=text,
                         convert_charrefs=False,
-                        ))
+                    ))
                     rv.append(MarkupTag(
                         is_xhtml=self.is_xhtml,
                         type='endtag',
                         tag=tag,
-                        ))
+                    ))
 
                     i = iend + 1
                     self.changed = True
@@ -557,7 +556,7 @@ class ConvertHtmlFile(HtmlRewriter):
 
                 # remove WebScrapBook-specific elements
                 elif type in ('annotation-css', 'annotation-loader'):
-                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)
+                    iend = self.find(markups, lambda x: x == markup.endtag, i + 1, markup.endtag)  # noqa: B023
                     i = iend + 1
                     self.changed = True
                     continue
@@ -584,7 +583,7 @@ class ConvertHtmlFile(HtmlRewriter):
                             tag=markup.tag,
                             attrs=markup.attrs,
                             is_self_end=markup.is_self_end,
-                            ))
+                        ))
 
                         i += 1
                         self.changed = True

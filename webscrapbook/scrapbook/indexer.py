@@ -1,33 +1,31 @@
 """Generator to generate item metadata from files.
 """
-import os
-import shutil
-import zipfile
-import traceback
 import io
 import mimetypes
-import binascii
+import os
 import re
-from functools import partial
+import shutil
+import traceback
+import zipfile
 from base64 import b64encode
-from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote
-from urllib.request import urlopen, pathname2url, url2pathname
+from datetime import datetime, timedelta, timezone
+from functools import partial
 from urllib.error import URLError
-from datetime import datetime, timezone, timedelta
+from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
+from urllib.request import pathname2url, url2pathname, urlopen
 
 from lxml import etree
 
 from .. import util
 from ..util import Info
-from ..util.html import REGEX_ASCII_WHITESPACES, HtmlRewriter
 from ..util.css import CssRewriter
-
+from ..util.html import REGEX_ASCII_WHITESPACES, HtmlRewriter
 
 HTML_TITLE_EXCLUDE_PARENTS = {
     'xmp',
     'svg',
     'template',
-    }
+}
 
 REGEX_IE_DOC_COMMENT = re.compile(r'^\s*saved from url=\((\d+)\)(\S+)\s*')
 
@@ -49,7 +47,7 @@ COMMON_MIME_EXTENSION = {
     'video/mp4': '.mp4',
     'video/ogg': '.ogv',
     'application/ogg': '.ogx',
-    }
+}
 
 
 def generate_item_title(book, id):
@@ -146,11 +144,11 @@ class Indexer:
     """A class that generates item metadata for files.
     """
     def __init__(self, book, *,
-            handle_ie_meta=True,
-            handle_singlefile_meta=True,
-            handle_savepagewe_meta=True,
-            handle_maoxian_meta=True,
-            ):
+                 handle_ie_meta=True,
+                 handle_singlefile_meta=True,
+                 handle_savepagewe_meta=True,
+                 handle_maoxian_meta=True,
+                 ):
         self.book = book
         self.handle_ie_meta = handle_ie_meta
         self.handle_singlefile_meta = handle_singlefile_meta
@@ -246,7 +244,7 @@ class Indexer:
         self.book.meta[id] = meta
 
         # index
-        meta['index'] = index = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
+        meta['index'] = os.path.relpath(file, self.book.data_dir).replace('\\', '/')
 
         # type
         if not meta['type']:
@@ -259,8 +257,10 @@ class Indexer:
                 title_elem = next(iter_title_elems(tree), None)
                 if title_elem is not None:
                     try:
-                        title = ((title_elem.text or '') +
-                            ''.join(etree.tostring(e, encoding='unicode') for e in title_elem))
+                        title = (
+                            (title_elem.text or '')
+                            + ''.join(etree.tostring(e, encoding='unicode') for e in title_elem)
+                        )
                     except UnicodeDecodeError as exc:
                         yield Info('error', f'Failed to extract title for "{id}": {exc}', exc=exc)
             if not title or not title.strip():
@@ -333,7 +333,7 @@ class Indexer:
 
         source = m.group(1)
         date_str = m.group(2)
-        dt = datetime.strptime(date_str, "%a %b %d %Y %H:%M:%S GMT%z ")
+        dt = datetime.strptime(date_str, '%a %b %d %Y %H:%M:%S GMT%z ')
 
         meta['source'] = source
         meta['create'] = util.datetime_to_id(dt)
@@ -351,7 +351,7 @@ class Indexer:
         if node is not None:
             m = REGEX_JS_DATE.match(node.attrib['content'])
             if m:
-                dt = datetime.strptime(m.group(1), "%a %b %d %Y %H:%M:%S GMT%z ")
+                dt = datetime.strptime(m.group(1), '%a %b %d %Y %H:%M:%S GMT%z ')
                 meta['create'] = util.datetime_to_id(dt)
 
     def _handle_maoxian_meta(self, meta, root):
@@ -484,7 +484,7 @@ class FavIconCacher:
         except URLError as exc:
             yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unable to fetch favicon URL.', exc=exc)
             return None
-        except (ValueError, binascii.Error) as exc:
+        except ValueError as exc:
             yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unsupported or malformatted URL: {exc}', exc=exc)
             return None
 
@@ -499,7 +499,7 @@ class FavIconCacher:
             cache_file,
             os.path.join(self.book.data_dir, os.path.dirname(index)),
             path_is_dir=False,
-            )
+        )
         return cache_file
 
     def _get_archive_favicon(self, id, index, url, subpath):
@@ -766,7 +766,7 @@ class SingleHtmlConverter(HtmlRewriter):
     def remove_attr(self, markup, target_attr):
         attrs = []
 
-        for i, attr_value in enumerate(markup.attrs):
+        for attr_value in markup.attrs:
             attr, value = attr_value
             if attr == target_attr:
                 markup.src = None
@@ -866,24 +866,20 @@ class SingleHtmlConverter(HtmlRewriter):
         return m.group(1) + replacement + m.group(3)
 
     def rewrite_style_text(self, text):
-        try:
-            conv = self.css_converter(ref_url=self.base_url, url_chain=self.url_chain)
-            return conv.rewrite(text,
-                rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
-                rewrite_font_face_url=conv.rewrite_url,
-                rewrite_background_url=conv.rewrite_url,
-                )
-        except OSError:
-            return f'urn:scrapbook:convert:error:url:{url}'
+        conv = self.css_converter(ref_url=self.base_url, url_chain=self.url_chain)
+        return conv.rewrite(
+            text,
+            rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
+            rewrite_font_face_url=conv.rewrite_url,
+            rewrite_background_url=conv.rewrite_url,
+        )
 
     def rewrite_style_attr(self, text):
-        try:
-            conv = self.css_converter(ref_url=self.base_url, url_chain=self.url_chain)
-            return conv.rewrite(text,
-                rewrite_background_url=conv.rewrite_url,
-                )
-        except OSError:
-            return f'urn:scrapbook:convert:error:url:{url}'
+        conv = self.css_converter(ref_url=self.base_url, url_chain=self.url_chain)
+        return conv.rewrite(
+            text,
+            rewrite_background_url=conv.rewrite_url,
+        )
 
     def rewrite_meta_refresh_content(self, text):
         time, url, context = util.parse_meta_refresh_content(text)
@@ -938,7 +934,7 @@ class SingleHtmlCssConverter(CssRewriter):
             rewrite_import_url=partial(self.rewrite_url, rewrite_css=True),
             rewrite_font_face_url=self.rewrite_url,
             rewrite_background_url=self.rewrite_url,
-            )
+        )
 
     def rewrite_url(self, url, rewrite_css=False):
         udst = urljoin(self.ref_url, url)
@@ -1013,11 +1009,12 @@ class UnSingleHtmlConverter(SingleHtmlConverter):
             try:
                 conv = self.css_converter()
                 text = conv.load(bytes_io)
-                text = conv.rewrite(text,
+                text = conv.rewrite(
+                    text,
                     rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
                     rewrite_font_face_url=conv.rewrite_url,
                     rewrite_background_url=conv.rewrite_url,
-                    )
+                )
                 bytes_ = text.encode(conv.encoding)
                 bytes_io = io.BytesIO(bytes_)
             except Exception:
@@ -1112,11 +1109,12 @@ class UnSingleHtmlCssConverter(SingleHtmlCssConverter):
             try:
                 conv = self.css_converter()
                 text = conv.load(bytes_io)
-                text = conv.rewrite(text,
+                text = conv.rewrite(
+                    text,
                     rewrite_import_url=partial(conv.rewrite_url, rewrite_css=True),
                     rewrite_font_face_url=conv.rewrite_url,
                     rewrite_background_url=conv.rewrite_url,
-                    )
+                )
                 bytes_ = text.encode(conv.encoding)
                 bytes_io = io.BytesIO(bytes_)
             except Exception:

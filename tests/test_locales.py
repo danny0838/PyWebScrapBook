@@ -1,6 +1,6 @@
-from unittest import mock
-import unittest
 import os
+import unittest
+
 from webscrapbook.locales import I18N
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
@@ -8,7 +8,8 @@ test_root = os.path.join(root_dir, 'test_locales')
 test_dirs = [
     os.path.join(test_root, 'test_general', 'host'),
     os.path.join(test_root, 'test_general', 'user'),
-    ]
+]
+
 
 class TestI18N(unittest.TestCase):
     @classmethod
@@ -25,7 +26,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         i18n = I18N(test_dirs, 'zh-CN', 'messages')
         self.assertEqual([t.__file__ for t in i18n.translators], [
@@ -35,7 +36,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         i18n = I18N(test_dirs, 'zh_cn', 'messages')
         self.assertEqual([t.__file__ for t in i18n.translators], [
@@ -45,7 +46,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         i18n = I18N(test_dirs, 'zh-cn', 'messages')
         self.assertEqual([t.__file__ for t in i18n.translators], [
@@ -55,7 +56,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         # zh_tw => zh => en
         i18n = I18N(test_dirs, 'zh_TW', 'messages')
@@ -64,7 +65,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         # no domain => defaults to 'messages'
         i18n = I18N(test_dirs, 'zh_TW')
@@ -73,21 +74,21 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         # en
         i18n = I18N(test_dirs, 'en')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
         # unknown lang should fallback to default
         i18n = I18N(test_dirs, 'wtf')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-            ])
+        ])
 
     def test_call(self):
         i18n = I18N(test_dirs, 'zh_CN')
@@ -123,6 +124,7 @@ class TestI18N(unittest.TestCase):
         self.assertEqual(i18n('@@bidi_reversed_dir'), 'ltr')
         self.assertEqual(i18n('@@bidi_start_edge'), 'right')
         self.assertEqual(i18n('@@bidi_end_edge'), 'left')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,18 +1,16 @@
-from unittest import mock
-import unittest
+import glob
 import os
 import shutil
+import unittest
 import zipfile
-import time
-import re
-import glob
+from unittest import mock
+
 from webscrapbook import WSB_DIR
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook.convert import migrate
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+
 
 def setUpModule():
     # mock out user config
@@ -21,14 +19,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class Test(unittest.TestCase):
     @classmethod
@@ -67,6 +67,7 @@ class Test(unittest.TestCase):
         except FileNotFoundError:
             pass
 
+
 class TestConvertDataFilesLegacy(Test):
     def test_data_postit(self):
         """Convert postit."""
@@ -87,7 +88,7 @@ scrapbook.meta({
 postit page content < & > &lt; &amp; &gt;
 </pre></body></html>""")
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -111,16 +112,16 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">Lorem ipsum dolor sit </span><b><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">amet</span></b><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">, consectetur adipiscing elit.</span></body></html>"""
+        input = """<html><body><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">Lorem ipsum dolor sit </span><b><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">amet</span></b><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">, consectetur adipiscing elit.</span></body></html>"""  # noqa: E501
 
-        expected = """<html><body><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="first" style="background-color: yellow;">Lorem ipsum dolor sit </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background-color: yellow;">amet</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="last" style="background-color: yellow;">, consectetur adipiscing elit.</scrapbook-linemarker></body></html>"""
+        expected = """<html><body><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="first" style="background-color: yellow;">Lorem ipsum dolor sit </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background-color: yellow;">amet</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="last" style="background-color: yellow;">, consectetur adipiscing elit.</scrapbook-linemarker></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -137,16 +138,16 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><span class="linemarker-marked-line" style="background-color: yellow;">Lorem ipsum dolor sit </span><b><span class="linemarker-marked-line" style="background-color: yellow;">amet</span></b><span class="linemarker-marked-line" style="background-color: yellow;">, consectetur adipiscing elit.</span></body></html>"""
+        input = """<html><body><span class="linemarker-marked-line" style="background-color: yellow;">Lorem ipsum dolor sit </span><b><span class="linemarker-marked-line" style="background-color: yellow;">amet</span></b><span class="linemarker-marked-line" style="background-color: yellow;">, consectetur adipiscing elit.</span></body></html>"""  # noqa: E501
 
-        expected = """<html><body><scrapbook-linemarker data-scrapbook-elem="linemarker" style="background-color: yellow;">Lorem ipsum dolor sit </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="background-color: yellow;">amet</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="background-color: yellow;">, consectetur adipiscing elit.</scrapbook-linemarker></body></html>"""
+        expected = """<html><body><scrapbook-linemarker data-scrapbook-elem="linemarker" style="background-color: yellow;">Lorem ipsum dolor sit </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="background-color: yellow;">amet</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="background-color: yellow;">, consectetur adipiscing elit.</scrapbook-linemarker></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -163,22 +164,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body>Lorem ipsum dolor <span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">sit amet, </span><b><span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">consectetur</span></b><span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation"> adipiscing elit</span>.</body></html>"""
+        input = """<html><body>Lorem ipsum dolor <span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">sit amet, </span><b><span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">consectetur</span></b><span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation"> adipiscing elit</span>.</body></html>"""  # noqa: E501
 
-        expected = """<html><body>Lorem ipsum dolor <scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="first" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">sit amet, </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">consectetur</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="last" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation"> adipiscing elit</scrapbook-linemarker>.<style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><body>Lorem ipsum dolor <scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="first" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">sit amet, </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">consectetur</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" class="last" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation"> adipiscing elit</scrapbook-linemarker>.<style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_inline02(self):
         """Convert legacy ScrapBook inline annotation."""
@@ -191,22 +192,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body>Lorem ipsum dolor <span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="test inline annotation">sit amet, </span><b><span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="123">consectetur</span></b><span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="123"> adipiscing elit</span>.</body></html>"""
+        input = """<html><body>Lorem ipsum dolor <span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="test inline annotation">sit amet, </span><b><span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="123">consectetur</span></b><span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="123"> adipiscing elit</span>.</body></html>"""  # noqa: E501
 
-        expected = """<html><body>Lorem ipsum dolor <scrapbook-linemarker data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF3333; cursor: help;" title="test inline annotation">sit amet, </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF3333; cursor: help;" title="123">consectetur</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF3333; cursor: help;" title="123"> adipiscing elit</scrapbook-linemarker>.<style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><body>Lorem ipsum dolor <scrapbook-linemarker data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF3333; cursor: help;" title="test inline annotation">sit amet, </scrapbook-linemarker><b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF3333; cursor: help;" title="123">consectetur</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF3333; cursor: help;" title="123"> adipiscing elit</scrapbook-linemarker>.<style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_freenote01(self):
         """Convert freenote (absolute)."""
@@ -219,22 +220,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 0px; border-width: 12px 1px 1px; border-style: solid; border-color: rgb(204, 204, 204); border-image: none; background: rgb(250, 255, 250) none repeat scroll 0% 0%; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; overflow-wrap: break-word; width: 337px; height: 179px; position: absolute; left: 144px; top: 481px;">Test freenote with <b>HTML</b> <u>markups</u>. <br><br>晱瓨扚醏碙螒劦一晹掁舁彾圢柂乜，凗兟兀衩臿趐匼犮屮肸慞垞毌呦。</div></body></html>"""
+        input = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 0px; border-width: 12px 1px 1px; border-style: solid; border-color: rgb(204, 204, 204); border-image: none; background: rgb(250, 255, 250) none repeat scroll 0% 0%; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; overflow-wrap: break-word; width: 337px; height: 179px; position: absolute; left: 144px; top: 481px;">Test freenote with <b>HTML</b> <u>markups</u>. <br><br>晱瓨扚醏碙螒劦一晹掁舁彾圢柂乜，凗兟兀衩臿趐匼犮屮肸慞垞毌呦。</div></body></html>"""  # noqa: E501
 
-        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="styled" style="width: 337px; height: 179px; left: 144px; top: 481px;">Test freenote with <b>HTML</b> <u>markups</u>. <br><br>晱瓨扚醏碙螒劦一晹掁舁彾圢柂乜，凗兟兀衩臿趐匼犮屮肸慞垞毌呦。</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="styled" style="width: 337px; height: 179px; left: 144px; top: 481px;">Test freenote with <b>HTML</b> <u>markups</u>. <br><br>晱瓨扚醏碙螒劦一晹掁舁彾圢柂乜，凗兟兀衩臿趐匼犮屮肸慞垞毌呦。</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_freenote02(self):
         """Convert freenote (relative)."""
@@ -247,22 +248,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 16px auto; border-width: 12px 1px 1px; border-style: solid; border-color: rgb(204, 204, 204); border-image: none; background: rgb(250, 255, 250) none repeat scroll 0% 0%; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; overflow-wrap: break-word; width: 233px; height: 89px; position: static;">This is a relative freenote.<br>Anchored between paragraphs.</div></body></html>"""
+        input = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 16px auto; border-width: 12px 1px 1px; border-style: solid; border-color: rgb(204, 204, 204); border-image: none; background: rgb(250, 255, 250) none repeat scroll 0% 0%; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; overflow-wrap: break-word; width: 233px; height: 89px; position: static;">This is a relative freenote.<br>Anchored between paragraphs.</div></body></html>"""  # noqa: E501
 
-        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="styled relative" style="width: 233px; height: 89px;">This is a relative freenote.<br>Anchored between paragraphs.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="styled relative" style="width: 233px; height: 89px;">This is a relative freenote.<br>Anchored between paragraphs.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_sticky01(self):
         """Convert legacy ScrapBook sticky (absolute)."""
@@ -276,23 +277,23 @@ scrapbook.meta({
 })""")
 
         input = """<html><head><link media="all" href="chrome://scrapbook/skin/annotation.css" type="text/css" id="scrapbook-sticky-css" rel="stylesheet"></head><body><div style="left: 376px; top: 107px; position: absolute; width: 240px; height: 79px;" class="scrapbook-sticky"><div class="scrapbook-sticky-header"></div>Sample sticky annotation.
-Second line.</div></body></html>"""
+Second line.</div></body></html>"""  # noqa: E501
 
         expected = """<html><head></head><body><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext" style="left: 376px; top: 107px; width: 240px; height: 79px;">Sample sticky annotation.
-Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_sticky02(self):
         """Convert legacy ScrapBook sticky (relative)."""
@@ -306,23 +307,23 @@ scrapbook.meta({
 })""")
 
         input = """<html><head><link media="all" href="chrome://scrapbook/skin/annotation.css" type="text/css" id="scrapbook-sticky-css" rel="stylesheet"></head><body><div style="width: 511px; height: 70px;" class="scrapbook-sticky scrapbook-sticky-relative"><div class="scrapbook-sticky-header"></div>Relative sticky.
-Second line.</div></body></html>"""
+Second line.</div></body></html>"""  # noqa: E501
 
         expected = """<html><head></head><body><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext relative" style="width: 511px; height: 70px;">Relative sticky.
-Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_sticky03(self):
         """Convert improperly saved legacy ScrapBook sticky (absolute)."""
@@ -335,22 +336,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><head><div style="left: 303px; top: 212px; position: absolute; width: 250px; height: 100px;" class="scrapbook-sticky"><div class="scrapbook-sticky-header"></div><textarea style="height: 74px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""
+        input = """<html><head><div style="left: 303px; top: 212px; position: absolute; width: 250px; height: 100px;" class="scrapbook-sticky"><div class="scrapbook-sticky-header"></div><textarea style="height: 74px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""  # noqa: E501
 
-        expected = """<html><head><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext" style="left: 303px; top: 212px; width: 250px; height: 100px;"></scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><head><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext" style="left: 303px; top: 212px; width: 250px; height: 100px;"></scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_sticky04(self):
         """Convert improperly saved legacy ScrapBook sticky (relative)."""
@@ -363,22 +364,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><head><div style="width: 640px; height: 92px;" class="scrapbook-sticky scrapbook-sticky-relative"><div class="scrapbook-sticky-header"></div><textarea style="height: 66px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""
+        input = """<html><head><div style="width: 640px; height: 92px;" class="scrapbook-sticky scrapbook-sticky-relative"><div class="scrapbook-sticky-header"></div><textarea style="height: 66px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""  # noqa: E501
 
-        expected = """<html><head><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext relative" style="width: 640px; height: 92px;"></scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><head><scrapbook-sticky data-scrapbook-elem="sticky" class="styled plaintext relative" style="width: 640px; height: 92px;"></scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_block_comment01(self):
         """Convert legacy ScrapBook block comment."""
@@ -391,22 +392,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</div></body></html>"""
+        input = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</div></body></html>"""  # noqa: E501
 
-        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="plaintext relative" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important; white-space: pre-wrap;">This is a sample of a very legacy block comment.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="plaintext relative" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important; white-space: pre-wrap;">This is a sample of a very legacy block comment.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_block_comment02(self):
         """Convert legacy ScrapBook block comment.
@@ -422,22 +423,22 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; WHITE-SPACE:PRE-WRAP !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</div></body></html>"""
+        input = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; WHITE-SPACE:PRE-WRAP !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</div></body></html>"""  # noqa: E501
 
-        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="plaintext relative" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; WHITE-SPACE:PRE-WRAP !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""
+        expected = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="plaintext relative" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; WHITE-SPACE:PRE-WRAP !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output[:len(expected)], expected)
-            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')
+            self.assertRegex(output, r'<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>')  # noqa: E501
 
     def test_data_annotations_other01(self):
         """Convert other legacy ScrapBook elements.
@@ -475,14 +476,14 @@ Donec nec lacus<span data-scrapbook-elem="annotation">(my legacy <em>inline</em>
 <a data-scrapbook-elem="link-url" href="http://example.com">Suspendisse eget interdum quam</a>, eu semper <span data-scrapbook-id="20200101000000000">ipsum</span>.
 </body>
 </html>
-"""
+"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -534,7 +535,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -565,8 +566,8 @@ scrapbook.meta({
 
 <!--Page1-->
 <cite class="scrapbook-header">
-	<img src="chrome://scrapbook/skin/treeitem.png" height="16" width="16">
-	<a href="http://example.com">Page1</a>
+\t<img src="chrome://scrapbook/skin/treeitem.png" height="16" width="16">
+\t<a href="http://example.com">Page1</a>
 </cite>
 <div id="item20200101000000">
 <div id="item20200101000000html">
@@ -578,8 +579,8 @@ Page1 content
 
 <!--Page2-->
 <cite class="scrapbook-header">
-	<img src="chrome://scrapbook/skin/treeitem.png" height="16" width="16">
-	<a href="http://example.com">Page1</a>
+\t<img src="chrome://scrapbook/skin/treeitem.png" height="16" width="16">
+\t<a href="http://example.com">Page1</a>
 </cite>
 <div id="item20200101000000">
 <div id="item20200101000000html">
@@ -591,8 +592,8 @@ Page2 content
 
 <!--Page3-->
 <cite class="scrapbook-header">
-	<img src="chrome://scrapbook/skin/treenotex.png" height="16" width="16">
-	<a href="http://example.com">Page3</a>
+\t<img src="chrome://scrapbook/skin/treenotex.png" height="16" width="16">
+\t<a href="http://example.com">Page3</a>
 </cite>
 <div id="item20200102000000">
 <div id="item20200102000000html">
@@ -652,7 +653,7 @@ Page3 content
 </div>
 </div>
 </div>
-"""
+"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -662,7 +663,7 @@ Page3 content
         with open(os.path.join(self.test_input, '20200101000000000', 'treenotex.png'), 'wb'):
             pass
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
@@ -672,7 +673,7 @@ Page3 content
             os.path.join(self.test_output, '20200101000000000', 'treeitem.png'),
             os.path.join(self.test_output, '20200101000000000', 'treenotex.png'),
             os.path.join(self.test_output, '20200101000000000', 'treenotex-1.png'),
-            })
+        })
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output, expected)
@@ -724,7 +725,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -755,14 +756,14 @@ scrapbook.meta({
 <scrapbook-sticky data-scrapbook-elem="sticky" class="styled" style="width: 250px; height: 100px; left: 313px; top: 135px;">abc</scrapbook-sticky>
 
 
-<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+<style data-scrapbook-elem="annotation-css">(?:[^<]*(?:<(?!/style>)[^<]*)*)</style><script data-scrapbook-elem="annotation-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -796,7 +797,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -860,12 +861,13 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertEqual(output, expected)
+
 
 class TestConvertDataFilesV1(Test):
     def test_skip_postit(self):
@@ -887,14 +889,14 @@ scrapbook.meta({
 <style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
 </head><body><pre>
 postit page content
-</pre><div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+</pre><div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -928,7 +930,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -956,7 +958,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -984,7 +986,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -1003,7 +1005,7 @@ scrapbook.meta({
   }
 })""")
 
-        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
         expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
 &lt;div&gt;Sub-content.&lt;/div&gt;
@@ -1017,7 +1019,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -1081,7 +1083,7 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000', 'index.html'), encoding='UTF-8') as fh:
@@ -1100,7 +1102,7 @@ scrapbook.meta({
   }
 })""")
 
-        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
         expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
 &lt;div&gt;Sub-content.&lt;/div&gt;
@@ -1114,7 +1116,7 @@ scrapbook.meta({
         with zipfile.ZipFile(index_file, 'w') as zh:
             zh.writestr('index.html', input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.htz')
@@ -1143,7 +1145,7 @@ scrapbook.meta({
 
         input_mtime = os.stat(index_file).st_mtime_ns
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.htz')
@@ -1167,7 +1169,7 @@ scrapbook.meta({
   }
 })""")
 
-        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
         expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
 &lt;div&gt;Sub-content.&lt;/div&gt;
@@ -1182,7 +1184,7 @@ scrapbook.meta({
             zh.writestr('20200101000000000/index.html', input)
             zh.writestr('20200101000000000/index.rdf', """dummy""")
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.maff')
@@ -1212,7 +1214,7 @@ scrapbook.meta({
 
         input_mtime = os.stat(index_file).st_mtime_ns
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         index_file = os.path.join(self.test_output, '20200101000000000.maff')
@@ -1236,7 +1238,7 @@ scrapbook.meta({
   }
 })""")
 
-        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""
+        input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
         expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="
 &lt;div&gt;Sub-content.&lt;/div&gt;
@@ -1250,12 +1252,13 @@ scrapbook.meta({
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write(input)
 
-        for info in migrate.run(self.test_input, self.test_output, convert_v1=True):
+        for _info in migrate.run(self.test_input, self.test_output, convert_v1=True):
             pass
 
         with open(os.path.join(self.test_output, '20200101000000000.html'), encoding='UTF-8') as fh:
             output = fh.read()
             self.assertRegex(output, expected_regex)
+
 
 if __name__ == '__main__':
     unittest.main()

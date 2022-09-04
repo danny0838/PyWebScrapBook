@@ -1,28 +1,28 @@
 """Generator of fulltext cache and/or static site pages.
 """
-import os
-import traceback
-import shutil
-import io
-import zipfile
-import mimetypes
-import time
-import re
-import html
 import copy
-import itertools
 import functools
-from collections import namedtuple, UserDict
-from urllib.parse import urlsplit, urljoin, quote, unquote
-from datetime import datetime, timezone
+import html
+import io
+import itertools
+import mimetypes
+import os
+import re
+import shutil
+import time
+import traceback
+import zipfile
+from collections import UserDict, namedtuple
 from contextlib import nullcontext
+from datetime import datetime, timezone
+from urllib.parse import quote, unquote, urljoin, urlsplit
 
 import jinja2
 from lxml import etree
 
-from .host import Host
 from .. import util
 from ..util import Info
+from .host import Host
 
 
 class MutatingDict(UserDict):
@@ -46,9 +46,11 @@ class MutatingDict(UserDict):
         return NotImplemented
 
 
-StaticIndexItem = namedtuple('StaticIndexItem',
+StaticIndexItem = namedtuple(
+    'StaticIndexItem',
     ('event', 'level', 'id', 'type', 'marked', 'title', 'url', 'icon', 'source', 'comment'),
     defaults=(None, None, None, None, None, None, None, None))
+
 
 class StaticSiteGenerator():
     """Main class for static site pages generation.
@@ -66,7 +68,7 @@ class StaticSiteGenerator():
         'icon/file.png': 'file.png',
         'icon/note.png': 'note.png',
         'icon/postit.png': 'postit.png',
-        }
+    }
     ITEM_TYPE_ICON = {
         '': 'icon/item.png',
         'folder': 'icon/fclose.png',
@@ -74,11 +76,11 @@ class StaticSiteGenerator():
         'image': 'icon/file.png',
         'note': 'icon/note.png',  # ScrapBook X notex
         'postit': 'icon/postit.png',  # ScrapBook X note
-        }
+    }
 
     def __init__(self, book, *, locale=None,
-            static_index=False, rss=False,
-            ):
+                 static_index=False, rss=False,
+                 ):
         self.host = book.host
         self.book = book
         self.static_index = static_index
@@ -89,12 +91,12 @@ class StaticSiteGenerator():
         self.template_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.host.templates),
             autoescape=jinja2.select_autoescape(['html']),
-            )
+        )
         self.template_env.globals.update({
             'format_string': util.format_string,
             'i18n': self.host.get_i18n(locale),
             'bookname': book.name,
-            })
+        })
 
         book.load_meta_files()
         book.load_toc_files()
@@ -107,31 +109,34 @@ class StaticSiteGenerator():
             yield from self._generate_resource_file(src, dst)
 
         # generate static site pages
-        index_kwargs = dict(
-            rss=self.rss,
-            data_dir = util.get_relative_url(self.book.data_dir, self.book.tree_dir),
-            default_icons = self.ITEM_TYPE_ICON,
-            meta_cnt=max(sum(1 for _ in self.book.iter_meta_files()), 1),
-            toc_cnt=max(sum(1 for _ in self.book.iter_toc_files()), 1),
-            )
+        index_kwargs = {
+            'rss': self.rss,
+            'data_dir': util.get_relative_url(self.book.data_dir, self.book.tree_dir),
+            'default_icons': self.ITEM_TYPE_ICON,
+            'meta_cnt': max(sum(1 for _ in self.book.iter_meta_files()), 1),
+            'toc_cnt': max(sum(1 for _ in self.book.iter_toc_files()), 1),
+        }
 
         if self.static_index:
-            yield from self._generate_page('index.html', 'static_index.html', filename='index',
+            yield from self._generate_page(
+                'index.html', 'static_index.html', filename='index',
                 static_index=self._generate_static_index(), **index_kwargs,
-                )
-
-        yield from self._generate_page('map.html', 'static_map.html', filename='map',
-            static_index=None, **index_kwargs,
             )
+
+        yield from self._generate_page(
+            'map.html', 'static_map.html', filename='map',
+            static_index=None, **index_kwargs,
+        )
 
         yield from self._generate_page('frame.html', 'static_frame.html')
 
-        yield from self._generate_page('search.html', 'static_search.html',
+        yield from self._generate_page(
+            'search.html', 'static_search.html',
             path=util.get_relative_url(self.book.top_dir, self.book.tree_dir),
             data_dir=util.get_relative_url(self.book.data_dir, self.book.top_dir),
             tree_dir=util.get_relative_url(self.book.tree_dir, self.book.top_dir),
             index=self.host.config['book'][self.book.id]['index'],
-            )
+        )
 
     def _generate_resource_file(self, src, dst):
         yield Info('debug', f'Checking resource file "{dst}"')
@@ -314,7 +319,7 @@ class RssFeedGenerator():
                 'id': id,
                 'modify': meta.get('modify', meta.get('create', '')),
                 'item': meta,
-                })
+            })
         entries = sorted(entries, key=lambda d: d['modify'])
         entries = list(reversed(entries))[:self.item_count]
 
@@ -395,6 +400,7 @@ class RssFeedGenerator():
 
 FulltextCacheItem = namedtuple('FulltextCacheItem', ('id', 'meta', 'index', 'indexfile', 'files_to_update'))
 
+
 class FulltextCacheGenerator():
     """Main class for fulltext cache generation.
     """
@@ -410,7 +416,7 @@ class FulltextCacheGenerator():
         'textarea',
         # 'parsererror',
         'svg', 'math',
-        }
+    }
 
     def __init__(self, book, *, inclusive_frames=True, recreate=False):
         self.book = book
@@ -456,11 +462,11 @@ class FulltextCacheGenerator():
         # update fulltext files
         if book.fulltext != book_fulltext_orig:
             # changed => save new files
-            yield Info('info', f'Saving fulltext files...')
+            yield Info('info', 'Saving fulltext files...')
             book.save_fulltext_files()
         else:
             # no change => touch files to prevent falsely detected as outdated
-            yield Info('info', f'Touching fulltext files...')
+            yield Info('info', 'Touching fulltext files...')
             for file in book.iter_fulltext_files():
                 os.utime(file)
 
@@ -589,7 +595,7 @@ class FulltextCacheGenerator():
             if fulltext is not None:
                 book.fulltext[id][path] = {
                     'content': fulltext,
-                    }
+                }
             else:
                 try:
                     del book.fulltext[id][path]
@@ -773,7 +779,8 @@ class FulltextCacheGenerator():
         # (no space between inline nodes, line break between block nodes, etc.)
         fh.seek(0)
         exclusion_stack = []
-        for event, elem in etree.iterparse(fh, html=True, events=('start', 'end'),
+        for event, elem in etree.iterparse(
+                fh, html=True, events=('start', 'end'),
                 remove_comments=True, encoding=charset):
             if event == 'start':
                 # skip if we are in an excluded element
@@ -895,10 +902,10 @@ class FulltextCacheGenerator():
 
 
 def generate(root, book_ids=None, item_ids=None, *,
-        config=None, no_lock=False, no_backup=False,
-        fulltext=True, inclusive_frames=True, recreate=False,
-        static_site=False, static_index=False, locale=None,
-        rss_root=None, rss_item_count=50):
+             config=None, no_lock=False, no_backup=False,
+             fulltext=True, inclusive_frames=True, recreate=False,
+             static_site=False, static_index=False, locale=None,
+             rss_root=None, rss_item_count=50):
     start = time.time()
 
     host = Host(root, config)
@@ -931,7 +938,7 @@ def generate(root, book_ids=None, item_ids=None, *,
                             book,
                             inclusive_frames=inclusive_frames,
                             recreate=recreate,
-                            )
+                        )
                         yield from generator.run(item_ids)
 
                     if static_site:
@@ -939,7 +946,7 @@ def generate(root, book_ids=None, item_ids=None, *,
                             book,
                             static_index=static_index,
                             locale=locale, rss=bool(rss_root),
-                            )
+                        )
                         yield from generator.run()
 
                     if rss_root:
@@ -947,7 +954,7 @@ def generate(root, book_ids=None, item_ids=None, *,
                             book,
                             rss_root=rss_root,
                             item_count=rss_item_count,
-                            )
+                        )
                         yield from generator.run()
 
             except Exception as exc:

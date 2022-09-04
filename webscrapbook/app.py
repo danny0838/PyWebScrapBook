@@ -1,48 +1,51 @@
 """The WGSI application.
 """
-import os
-import traceback
-import shutil
-import io
-import mimetypes
-import re
-import zipfile
-import time
-import json
 import functools
-from urllib.parse import urlsplit, urlunsplit, urljoin, quote, unquote
-from zlib import adler32
-from contextlib import contextmanager
+import io
+import json
+import mimetypes
+import os
+import re
+import shutil
+import time
+import traceback
+import zipfile
+from contextlib import contextmanager, nullcontext
 from secrets import token_urlsafe
-from contextlib import nullcontext
+from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
+from zlib import adler32
 
-# dependency
+import commonmark
 import flask
-from flask import request, Response, redirect, abort, render_template
-from flask import current_app
-from werkzeug.local import LocalProxy
-from werkzeug.middleware.proxy_fix import ProxyFix
+import jinja2
+from flask import (
+    Response,
+    abort,
+    current_app,
+    redirect,
+    render_template,
+    request,
+)
 from werkzeug.datastructures import WWWAuthenticate
 from werkzeug.exceptions import HTTPException
-from werkzeug.http import is_resource_modified
-from werkzeug.http import http_date
-from werkzeug.http import parse_options_header, dump_options_header
+from werkzeug.http import (
+    dump_options_header,
+    http_date,
+    is_resource_modified,
+    parse_options_header,
+)
+from werkzeug.local import LocalProxy
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import cached_property
-import jinja2
-import commonmark
 
-# this package
-from . import *
-from . import __version__
-from . import Config
-from . import util
-from .scrapbook import host as wsb_host
+from . import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION, __version__, util
 from .scrapbook import cache as wsb_cache
 from .scrapbook import check as wsb_check
+from .scrapbook import host as wsb_host
 
 # see: https://url.spec.whatwg.org/#percent-encoded-bytes
 quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
-quote_path.__doc__ = "Escape reserved chars for the path part of a URL."
+quote_path.__doc__ = 'Escape reserved chars for the path part of a URL.'
 
 bp = flask.Blueprint('default', __name__)
 host = LocalProxy(lambda: current_app.config['WEBSCRAPBOOK_HOST'])
@@ -88,18 +91,18 @@ def zip_static_file(zip, subpath, mimetype=None):
     lm = util.zip_timestamp(info)
     last_modified = http_date(lm)
 
-    etag = "%s-%s-%s" % (
+    etag = '%s-%s-%s' % (
         lm,
         info.file_size,
-        adler32(info.filename.encode("utf-8")) & 0xFFFFFFFF,
-        )
+        adler32(info.filename.encode('utf-8')) & 0xFFFFFFFF,
+    )
 
     headers = {
         'Accept-Ranges': 'bytes',
         'Cache-Control': 'no-cache',
         'Last-Modified': last_modified,
         'ETag': etag,
-        }
+    }
     if host.config['app']['content_security_policy'] == 'strict':
         headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
@@ -129,7 +132,7 @@ def http_response(body='', status=None, headers=None, format=None):
         body = {
             'success': True,
             'data': body,
-            }
+        }
 
         body = json.dumps(body, ensure_ascii=False)
 
@@ -140,14 +143,14 @@ def http_response(body='', status=None, headers=None, format=None):
         def wrapper(gen):
             try:
                 for data in gen:
-                    yield "data: " + data + "\n\n"
+                    yield 'data: ' + data + '\n\n'
             except Exception:
                 traceback.print_exc()
                 err = {'error': {'message': 'Internal Server Error'}}
-                yield "data: " + json.dumps(err, ensure_ascii=False) + "\n\n"
+                yield 'data: ' + json.dumps(err, ensure_ascii=False) + '\n\n'
 
-            yield "event: complete" + "\n"
-            yield "data: " + "\n\n"
+            yield 'event: complete' + '\n'
+            yield 'data: ' + '\n\n'
 
         body = wrapper(body)
 
@@ -180,6 +183,7 @@ def _get_archive_path_tidy(path, striproot=False):
         new_comps.append(comp)
     return ('/' if has_initial_slash and not striproot else '') + '/'.join(new_comps)
 
+
 def _get_archive_path_add_subpath(paths, zh, subpath):
     for m in reversed(list(re.finditer(r'!/', subpath, flags=re.I))):
         archivepath = _get_archive_path_tidy(subpath[:m.start(0)], True)
@@ -205,6 +209,7 @@ def _get_archive_path_add_subpath(paths, zh, subpath):
                 return
 
     paths.append(_get_archive_path_tidy(subpath, True))
+
 
 def get_archive_path(filepath):
     """Parse archive file path and the sub-archive path.
@@ -251,6 +256,7 @@ def _open_archive_path_filter(path, filters):
         if path.startswith(filter + ('/' if filter else '')):
             return True
     return False
+
 
 @contextmanager
 def open_archive_path(localpaths, mode='r', filters=None):
@@ -320,9 +326,9 @@ def open_archive_path(localpaths, mode='r', filters=None):
                             continue
 
                         zip.writestr(info, zip0.read(info),
-                                compress_type=info.compress_type,
-                                compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                )
+                                     compress_type=info.compress_type,
+                                     compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                     )
 
                 if filters and not any(f == '' for f in filters) and not filtered:
                     raise KeyError('paths to filter do not exist')
@@ -345,9 +351,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
             buffer.seek(0)
             with open(localpaths[0], 'r+b') as fw, buffer as fr:
                 fw.truncate()
-                while True:
-                    chunk = fr.read(8192)
-                    if not chunk: break
+                for chunk in iter(functools.partial(fr.read, 8192), b''):
                     fw.write(chunk)
     finally:
         for f in reversed(stack):
@@ -430,7 +434,7 @@ def verify_authorization(perm, action):
             'token', 'lock', 'unlock',
             'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
             'backup', 'unbackup', 'cache', 'check',
-            }
+        }
 
     if perm == 'view':
         return action in {'view', 'info', 'source', 'download', 'static'}
@@ -454,7 +458,7 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
             quote_path(unquote(parts.path)) + '/',
             parts.query,
             parts.fragment,
-            ))
+        ))
         return redirect(new_url)
 
     # prepare index
@@ -462,11 +466,11 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
         # support 304 if zip not modified
         stats = os.stat(localpaths[0])
         last_modified = http_date(stats.st_mtime)
-        etag = "%s-%s-%s" % (
+        etag = '%s-%s-%s' % (
             stats.st_mtime,
             stats.st_size,
-            adler32(localpaths[0].encode("utf-8")) & 0xFFFFFFFF,
-            )
+            adler32(localpaths[0].encode('utf-8')) & 0xFFFFFFFF,
+        )
 
         if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
             return http_response(status=304, format=format)
@@ -475,7 +479,7 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
             'Cache-Control': 'no-cache',
             'Last-Modified': last_modified,
             'ETag': etag,
-            }
+        }
 
         with nullcontext(zip) if zip else open_archive_path(localpaths) as zip:
             subentries = util.zip_listdir(zip, localpaths[-1])
@@ -486,7 +490,7 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
         headers = {
             'Cache-Control': 'no-store',
             'Last-Modified': http_date(stats.st_mtime),
-            }
+        }
 
         subentries = util.listdir(localpaths[0])
 
@@ -498,7 +502,7 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
                     'type': entry.type,
                     'size': entry.size,
                     'last_modified': entry.last_modified,
-                    }
+                }
 
                 yield json.dumps(data, ensure_ascii=False)
 
@@ -508,21 +512,21 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
         data = []
         for entry in subentries:
             data.append({
-                    'name': entry.name,
-                    'type': entry.type,
-                    'size': entry.size,
-                    'last_modified': entry.last_modified,
-                    })
+                'name': entry.name,
+                'type': entry.type,
+                'size': entry.size,
+                'last_modified': entry.last_modified,
+            })
         return http_response(data, headers=headers, format=format)
 
     body = render_template('index.html',
-            sitename=host.name,
-            is_local=is_local_access(),
-            base=request.script_root,
-            path=request.path,
-            pathparts=request.paths,
-            subentries=subentries,
-            )
+                           sitename=host.name,
+                           is_local=is_local_access(),
+                           base=request.script_root,
+                           path=request.path,
+                           pathparts=request.paths,
+                           subentries=subentries,
+                           )
     return http_response(body, headers=headers)
 
 
@@ -536,15 +540,15 @@ def handle_archive_viewing(localpaths, mimetype):
         """List available web pages in a MAFF file.
         """
         return render_template('maff_index.html',
-                sitename=host.name,
-                is_local=is_local_access(),
-                base=request.script_root,
-                path=request.path,
-                pages=pages,
-                )
+                               sitename=host.name,
+                               is_local=is_local_access(),
+                               base=request.script_root,
+                               path=request.path,
+                               pages=pages,
+                               )
 
-    if mimetype == "application/html+zip":
-        subpath = "index.html"
+    if mimetype == 'application/html+zip':
+        subpath = 'index.html'
     else:
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zip:
@@ -570,7 +574,7 @@ def handle_archive_viewing(localpaths, mimetype):
         quote_path(unquote(parts.path)) + '!/' + quote_path(subpath),
         parts.query,
         parts.fragment,
-        ))
+    ))
     return redirect(new_url)
 
 
@@ -596,19 +600,19 @@ def handle_markdown_output(localpaths, zip=None):
             lm = util.zip_timestamp(info)
             last_modified = http_date(lm)
 
-            etag = "%s-%s-%s" % (
+            etag = '%s-%s-%s' % (
                 lm,
                 info.file_size,
-                adler32(info.filename.encode("utf-8")) & 0xFFFFFFFF,
-                )
+                adler32(info.filename.encode('utf-8')) & 0xFFFFFFFF,
+            )
         else:
             stats = os.stat(localpaths[0])
             last_modified = http_date(stats.st_mtime)
-            etag = "%s-%s-%s" % (
+            etag = '%s-%s-%s' % (
                 stats.st_mtime,
                 stats.st_size,
-                adler32(localpaths[0].encode("utf-8")) & 0xFFFFFFFF,
-                )
+                adler32(localpaths[0].encode('utf-8')) & 0xFFFFFFFF,
+            )
 
         if not is_resource_modified(request.environ, etag=etag, last_modified=last_modified):
             return http_response(status=304)
@@ -617,7 +621,7 @@ def handle_markdown_output(localpaths, zip=None):
             'Cache-Control': 'no-cache',
             'Last-Modified': last_modified,
             'ETag': etag,
-            }
+        }
         if host.config['app']['content_security_policy'] == 'strict':
             headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
@@ -630,13 +634,13 @@ def handle_markdown_output(localpaths, zip=None):
                 body = f.read()
 
     body = render_template('markdown.html',
-            sitename=host.name,
-            is_local=is_local_access(),
-            base=request.script_root,
-            path=request.path,
-            pathparts=request.paths,
-            content=commonmark.commonmark(body),
-            )
+                           sitename=host.name,
+                           is_local=is_local_access(),
+                           base=request.script_root,
+                           path=request.path,
+                           pathparts=request.paths,
+                           content=commonmark.commonmark(body),
+                           )
 
     return http_response(body, headers=headers)
 
@@ -736,7 +740,7 @@ def handle_action_writing(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if os.path.abspath(request.localpath) == host.chroot:
-            abort(403, "Unable to operate the root directory.")
+            abort(403, 'Unable to operate the root directory.')
 
         return func(*args, **kwargs)
 
@@ -753,10 +757,10 @@ def handle_action_renaming(func):
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zip:
                 if not util.zip_has(zip, localpaths[-1]):
-                    abort(404, "Source does not exist.")
+                    abort(404, 'Source does not exist.')
         else:
             if not os.path.lexists(localpaths[0]):
-                abort(404, "Source does not exist.")
+                abort(404, 'Source does not exist.')
 
         target = request.values.get('target')
 
@@ -798,7 +802,7 @@ def handle_action_renaming(func):
 
 def action_unknown():
     """Default handler for an undefined action"""
-    abort(400, "Action not supported.")
+    abort(400, 'Action not supported.')
 
 
 def action_view():
@@ -831,11 +835,11 @@ def action_view():
                 abort(404)
             else:
                 # view archive file
-                if mimetype in ("application/html+zip", "application/x-maff"):
+                if mimetype in ('application/html+zip', 'application/x-maff'):
                     return handle_archive_viewing(localpaths, mimetype)
 
                 # view markdown
-                if mimetype == "text/markdown":
+                if mimetype == 'text/markdown':
                     return handle_markdown_output(localpaths, zip)
 
                 # convert meta refresh to 302 redirect
@@ -853,7 +857,7 @@ def action_view():
                             quote_path(unquote(parts.path)),
                             parts.query,
                             parts.fragment,
-                            ))
+                        ))
                         return redirect(new_url)
 
                 # show static file for other cases
@@ -868,11 +872,11 @@ def action_view():
         # handle file
         elif os.path.isfile(localpath):
             # view archive file
-            if mimetype in ("application/html+zip", "application/x-maff"):
+            if mimetype in ('application/html+zip', 'application/x-maff'):
                 return handle_archive_viewing(localpaths, mimetype)
 
             # view markdown
-            if mimetype == "text/markdown":
+            if mimetype == 'text/markdown':
                 return handle_markdown_output(localpaths)
 
             # convert meta refresh to 302 redirect
@@ -889,7 +893,7 @@ def action_view():
                         quote_path(unquote(parts.path)),
                         parts.query,
                         parts.fragment,
-                        ))
+                    ))
                     return redirect(new_url)
 
             # show static file for other cases
@@ -912,7 +916,7 @@ def action_view():
 def action_source():
     """Show file content as plain text."""
     if request.format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
 
@@ -939,7 +943,7 @@ def action_download():
     @TODO: support streaming ZIP output to prevent memory exhaustion for a large directory
     """
     if request.format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
     filter = request.values.getlist('i')
@@ -1001,7 +1005,7 @@ def action_download():
 
     filename = quote_path(filename)
     response.headers.set('Content-Disposition',
-            f'''attachment; filename*=UTF-8''{filename}; filename="{filename}"''')
+                         f'''attachment; filename*=UTF-8''{filename}; filename="{filename}"''')
     return response
 
 
@@ -1010,7 +1014,7 @@ def action_info():
     format = request.format
 
     if not format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
     mimetype = request.localmimetype
@@ -1027,7 +1031,7 @@ def action_info():
         'size': info.size,
         'last_modified': info.last_modified,
         'mime': mimetype,
-        }
+    }
     return http_response(data, format=format)
 
 
@@ -1036,7 +1040,7 @@ def action_list():
     format = request.format
 
     if not format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
 
@@ -1044,12 +1048,12 @@ def action_list():
         try:
             return handle_directory_listing(localpaths, redirect_slash=False, format=format)
         except util.ZipDirNotFoundError:
-            abort(404, "Directory does not exist.")
+            abort(404, 'Directory does not exist.')
 
     if os.path.isdir(localpaths[0]):
         return handle_directory_listing(localpaths, redirect_slash=False, format=format)
 
-    abort(404, "Directory does not exist.")
+    abort(404, 'Directory does not exist.')
 
 
 def action_static():
@@ -1057,7 +1061,7 @@ def action_static():
     format = request.format
 
     if format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     filepath = request.path.strip('/')
     file = host.get_static_file(filepath)
@@ -1072,13 +1076,13 @@ def action_edit():
     format = request.format
 
     if format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
     localpath = localpaths[0]
 
     if os.path.lexists(localpath) and not os.path.isfile(localpath):
-        abort(400, "Found a non-file here.")
+        abort(400, 'Found a non-file here.')
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
@@ -1105,13 +1109,13 @@ def action_edit():
         body = body.decode(encoding)
 
     body = render_template('edit.html',
-            sitename=host.name,
-            is_local=is_local_access(),
-            base=request.script_root,
-            path=request.path,
-            body=body,
-            encoding=encoding,
-            )
+                           sitename=host.name,
+                           is_local=is_local_access(),
+                           base=request.script_root,
+                           path=request.path,
+                           body=body,
+                           encoding=encoding,
+                           )
 
     return http_response(body, format=format)
 
@@ -1121,16 +1125,16 @@ def action_editx():
     format = request.format
 
     if format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
     localpath = localpaths[0]
 
     if os.path.lexists(localpath) and not os.path.isfile(localpath):
-        abort(400, "Found a non-file here.")
+        abort(400, 'Found a non-file here.')
 
-    if not request.localmimetype in ("text/html", "application/xhtml+xml"):
-        abort(400, "This is not an HTML file.")
+    if request.localmimetype not in ('text/html', 'application/xhtml+xml'):
+        abort(400, 'This is not an HTML file.')
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zip:
@@ -1143,11 +1147,11 @@ def action_editx():
             abort(404)
 
     body = render_template('editx.html',
-            sitename=host.name,
-            is_local=is_local_access(),
-            base=request.script_root,
-            path=request.path,
-            )
+                           sitename=host.name,
+                           is_local=is_local_access(),
+                           base=request.script_root,
+                           path=request.path,
+                           )
 
     return http_response(body, format=format)
 
@@ -1157,12 +1161,12 @@ def action_exec():
     format = request.format
 
     if not is_local_access():
-        abort(400, "Command can only run on local device.")
+        abort(400, 'Command can only run on local device.')
 
     localpath = request.localpath
 
     if not os.path.lexists(localpath):
-        abort(404, "File does not exist.")
+        abort(404, 'File does not exist.')
 
     util.launch(localpath)
 
@@ -1177,12 +1181,12 @@ def action_browse():
     format = request.format
 
     if not is_local_access():
-        abort(400, "Command can only run on local device.")
+        abort(400, 'Command can only run on local device.')
 
     localpath = request.localpath
 
     if not os.path.lexists(localpath):
-        abort(404, "File does not exist.")
+        abort(404, 'File does not exist.')
 
     util.view_in_explorer(localpath)
 
@@ -1197,13 +1201,13 @@ def action_config():
     format = request.format
 
     if not format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     data = host.config.dump_object()
 
     # filter values for better security
-    data = {k:v for k, v in data.items() if k in ('app', 'book')}
-    data['app'] = {k:v for k, v in data['app'].items() if k in ('name', 'theme', 'locale')}
+    data = {k: v for k, v in data.items() if k in ('app', 'book')}
+    data['app'] = {k: v for k, v in data['app'].items() if k in ('name', 'theme', 'locale')}
 
     # expose backup_dir if it's web accessible
     if os.path.normcase(os.path.join(host.backup_dir, '')).startswith(os.path.normcase(os.path.join(host.chroot, ''))):
@@ -1243,7 +1247,7 @@ def action_lock():
     # verify name
     name = request.values.get('name')
     if name is None:
-        abort(400, "Lock name is not specified.")
+        abort(400, 'Lock name is not specified.')
 
     id = request.values.get('id')
 
@@ -1284,12 +1288,12 @@ def action_unlock():
     # verify name
     name = request.values.get('name')
     if name is None:
-        abort(400, "Lock name is not specified.")
+        abort(400, 'Lock name is not specified.')
 
     # verify ID
     id = request.values.get('id')
     if id is None:
-        abort(400, "Lock ID is not specified.")
+        abort(400, 'Lock ID is not specified.')
 
     try:
         lock = host.get_lock(name, persist=id)
@@ -1309,7 +1313,6 @@ def action_unlock():
 @handle_action_writing
 def action_mkdir():
     """Create a directory."""
-    format = request.format
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
@@ -1317,7 +1320,7 @@ def action_mkdir():
             zip = None
             with open_archive_path(localpaths) as zip0:
                 if util.zip_has(zip0, localpaths[-1], type='file'):
-                    abort(400, "Found a non-directory here.")
+                    abort(400, 'Found a non-directory here.')
 
                 # skip if the folder already exists
                 if util.zip_has(zip0, localpaths[-1], type='dir'):
@@ -1337,19 +1340,19 @@ def action_mkdir():
             raise
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to create a directory here.")
+            abort(500, 'Unable to create a directory here.')
 
     else:
         localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isdir(localpath):
-            abort(400, "Found a non-directory here.")
+            abort(400, 'Found a non-directory here.')
 
         try:
             os.makedirs(localpath, exist_ok=True)
         except OSError:
             traceback.print_exc()
-            abort(500, "Unable to create a directory here.")
+            abort(500, 'Unable to create a directory here.')
 
 
 @handle_action_advanced
@@ -1357,7 +1360,6 @@ def action_mkdir():
 @handle_action_writing
 def action_mkzip():
     """Create a zip file."""
-    format = request.format
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
@@ -1365,7 +1367,7 @@ def action_mkzip():
             zip = None
             with open_archive_path(localpaths) as zip0:
                 if util.zip_has(zip0, localpaths[-1], type='dir'):
-                    abort(400, "Found a non-file here.")
+                    abort(400, 'Found a non-file here.')
 
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
@@ -1385,26 +1387,26 @@ def action_mkzip():
             raise
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this ZIP file.")
+            abort(500, 'Unable to write to this ZIP file.')
 
     else:
         localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            abort(400, "Found a non-file here.")
+            abort(400, 'Found a non-file here.')
 
         try:
             os.makedirs(os.path.dirname(localpath), exist_ok=True)
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this path.")
+            abort(500, 'Unable to write to this path.')
 
         try:
             with zipfile.ZipFile(localpath, 'w'):
                 pass
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this file.")
+            abort(500, 'Unable to write to this file.')
 
 
 @handle_action_advanced
@@ -1412,7 +1414,6 @@ def action_mkzip():
 @handle_action_writing
 def action_save():
     """Write a file with provided text or uploaded stream."""
-    format = request.format
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
@@ -1420,7 +1421,7 @@ def action_save():
             zip = None
             with open_archive_path(localpaths) as zip0:
                 if util.zip_has(zip0, localpaths[-1], type='dir'):
-                    abort(400, "Found a non-file here.")
+                    abort(400, 'Found a non-file here.')
 
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
@@ -1436,9 +1437,7 @@ def action_save():
                 if file is not None:
                     with zip.open(info, 'w', force_zip64=True) as fh:
                         stream = file.stream
-                        while True:
-                            chunk = stream.read(8192)
-                            if not chunk: break
+                        for chunk in iter(functools.partial(stream.read, 8192), b''):
                             fh.write(chunk)
                 else:
                     bytes_ = request.values.get('text', '').encode('ISO-8859-1')
@@ -1447,19 +1446,19 @@ def action_save():
             raise
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this ZIP file.")
+            abort(500, 'Unable to write to this ZIP file.')
 
     else:
         localpath = localpaths[0]
 
         if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            abort(400, "Found a non-file here.")
+            abort(400, 'Found a non-file here.')
 
         try:
             os.makedirs(os.path.dirname(localpath), exist_ok=True)
         except OSError:
             traceback.print_exc()
-            abort(500, "Unable to write to this path.")
+            abort(500, 'Unable to write to this path.')
 
         try:
             file = request.files.get('upload')
@@ -1471,7 +1470,7 @@ def action_save():
                     f.write(bytes_)
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this file.")
+            abort(500, 'Unable to write to this file.')
 
 
 @handle_action_advanced
@@ -1479,7 +1478,6 @@ def action_save():
 @handle_action_writing
 def action_delete():
     """Delete a file or directory."""
-    format = request.format
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
@@ -1488,38 +1486,38 @@ def action_delete():
                 pass
         except KeyError:
             # fail since nothing is deleted
-            abort(404, "Entry does not exist in this ZIP file.")
+            abort(404, 'Entry does not exist in this ZIP file.')
         except Exception:
             traceback.print_exc()
-            abort(500, "Unable to write to this ZIP file.")
+            abort(500, 'Unable to write to this ZIP file.')
 
     else:
         localpath = localpaths[0]
 
         if not os.path.lexists(localpath):
-            abort(404, "File does not exist.")
+            abort(404, 'File does not exist.')
 
         if util.file_is_link(localpath):
             try:
                 os.remove(localpath)
             except OSError:
                 traceback.print_exc()
-                abort(500, "Unable to delete this link.")
+                abort(500, 'Unable to delete this link.')
         elif os.path.isfile(localpath):
             try:
                 os.remove(localpath)
             except OSError:
                 traceback.print_exc()
-                abort(500, "Unable to delete this file.")
+                abort(500, 'Unable to delete this file.')
         elif os.path.isdir(localpath):
             try:
                 shutil.rmtree(localpath)
             except OSError:
                 traceback.print_exc()
-                abort(500, "Unable to delete this directory.")
+                abort(500, 'Unable to delete this directory.')
         else:
             # this should not happen
-            abort(500, "Unable to handle this path.")
+            abort(500, 'Unable to handle this path.')
 
 
 @handle_action_advanced
@@ -1528,8 +1526,6 @@ def action_delete():
 @handle_action_renaming
 def action_move(sourcepaths, targetpaths):
     """Move a file or directory."""
-    format = request.format
-
     try:
         if len(sourcepaths) == 1:
             if len(targetpaths) == 1:
@@ -1537,7 +1533,7 @@ def action_move(sourcepaths, targetpaths):
                     os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                 except OSError:
                     traceback.print_exc()
-                    abort(500, "Unable to move to this path.")
+                    abort(500, 'Unable to move to this path.')
 
                 shutil.move(sourcepaths[0], targetpaths[0])
 
@@ -1547,13 +1543,13 @@ def action_move(sourcepaths, targetpaths):
                 # symlink/junction should rename the entry and cannot be
                 # implemented as copying-deleting. Forbid such operation to
                 # prevent a confusion.
-                abort(400, "Unable to move across a zip.")
+                abort(400, 'Unable to move across a zip.')
 
         elif len(sourcepaths) > 1:
             if len(targetpaths) == 1:
                 # Moving from zip to disk is like moving across disk, which
                 # makes little sense.
-                abort(400, "Unable to move across a zip.")
+                abort(400, 'Unable to move across a zip.')
 
             else:
                 with open_archive_path(sourcepaths) as zip:
@@ -1571,9 +1567,9 @@ def action_move(sourcepaths, targetpaths):
                             info = zip.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
                             zip2.writestr(info, zip.read(entry),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    )
+                                          compress_type=info.compress_type,
+                                          compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                          )
 
                 with open_archive_path(sourcepaths, 'w', entries) as zip:
                     pass
@@ -1591,12 +1587,10 @@ def action_move(sourcepaths, targetpaths):
 @handle_action_renaming
 def action_copy(sourcepaths, targetpaths):
     """Copy a file or directory."""
-    format = request.format
-
     # Copying a symlink/junction means copying the real file/directory.
     # It makes no sense if the symlink/junction is broken.
     if not os.path.exists(sourcepaths[0]):
-        abort(404, "Source does not exist.")
+        abort(404, 'Source does not exist.')
 
     try:
         if len(sourcepaths) == 1:
@@ -1605,7 +1599,7 @@ def action_copy(sourcepaths, targetpaths):
                     os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                 except OSError:
                     traceback.print_exc()
-                    abort(500, "Unable to copy to this path.")
+                    abort(500, 'Unable to copy to this path.')
 
                 try:
                     shutil.copytree(sourcepaths[0], targetpaths[0])
@@ -1632,7 +1626,7 @@ def action_copy(sourcepaths, targetpaths):
                     os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
                 except OSError:
                     traceback.print_exc()
-                    abort(500, "Unable to copy to this path.")
+                    abort(500, 'Unable to copy to this path.')
 
                 with open_archive_path(sourcepaths) as zh:
                     util.zip_extract(zh, targetpaths[0], sourcepaths[-1])
@@ -1652,9 +1646,9 @@ def action_copy(sourcepaths, targetpaths):
                             info = zip.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
                             zip2.writestr(info, zip.read(entry),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    )
+                                          compress_type=info.compress_type,
+                                          compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                          )
 
     except HTTPException:
         raise
@@ -1670,12 +1664,12 @@ def action_backup():
     format = request.format
 
     if not format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        abort(400, "Unable to backup inside a zip file.")
+        abort(400, 'Unable to backup inside a zip file.')
 
     ts = request.values.get('ts') or util.datetime_to_id()
     note = request.values.get('note')
@@ -1696,7 +1690,7 @@ def action_unbackup():
     format = request.format
 
     if not format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     ts = request.values.get('ts') or util.datetime_to_id()
     note = request.values.get('note')
@@ -1727,11 +1721,11 @@ def action_cache():
         'rss_root': request.values.get('rss_root'),
         'rss_item_count': request.values.get('rss_item_count', default=50, type=int),
         'locale': request.values.get('locale'),
-        }
+    }
 
     headers = {
         'Cache-Control': 'no-store',
-        }
+    }
     root = host.root
     config = host.config
 
@@ -1741,23 +1735,23 @@ def action_cache():
                 data = {
                     'type': info.type,
                     'msg': info.msg,
-                    }
+                }
 
                 yield json.dumps(data, ensure_ascii=False)
 
         return http_response(gen(), headers=headers, format=format)
 
     elif format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     def gen():
         yield from wsb_cache.generate(root, config=config, **kwargs)
 
     stream = stream_template('cli.html',
-        title=f'Indexing...',
-        messages=gen(),
-        debug=False,
-        )
+                             title='Indexing...',
+                             messages=gen(),
+                             debug=False,
+                             )
 
     return Response(stream, headers=headers)
 
@@ -1782,11 +1776,11 @@ def action_check():
         'resolve_unindexed_files': request.values.get('resolve_unindexed_files', default=False, type=bool),
         'resolve_absolute_icon': request.values.get('resolve_absolute_icon', default=False, type=bool),
         'resolve_unused_icon': request.values.get('resolve_unused_icon', default=False, type=bool),
-        }
+    }
 
     headers = {
         'Cache-Control': 'no-store',
-        }
+    }
     root = host.root
     config = host.config
 
@@ -1796,23 +1790,23 @@ def action_check():
                 data = {
                     'type': info.type,
                     'msg': info.msg,
-                    }
+                }
 
                 yield json.dumps(data, ensure_ascii=False)
 
         return http_response(gen(), headers=headers, format=format)
 
     elif format:
-        abort(400, "Action not supported.")
+        abort(400, 'Action not supported.')
 
     def gen():
         yield from wsb_check.run(root, config=config, **kwargs)
 
     stream = stream_template('cli.html',
-        title=f'Indexing...',
-        messages=gen(),
-        debug=False,
-        )
+                             title='Indexing...',
+                             messages=gen(),
+                             debug=False,
+                             )
 
     return Response(stream, headers=headers)
 
@@ -1866,9 +1860,9 @@ def handle_error(exc):
             'error': {
                 'status': exc.code,
                 'message': exc.description,
-                },
-            })
-        response.content_type = "application/json"
+            },
+        })
+        response.content_type = 'application/json'
         return response
 
     return exc
@@ -1960,7 +1954,7 @@ class WebHost(wsb_host.Host):
             self.token_delete_expire(now)
 
 
-def make_app(root=".", config=None):
+def make_app(root='.', config=None):
     _host = WebHost(root, config=config)
 
     # main app instance
@@ -1970,25 +1964,25 @@ def make_app(root=".", config=None):
     app.config['WEBSCRAPBOOK_HOST'] = _host
 
     xheaders = {
-            'x_for': _host.config['app']['allowed_x_for'],
-            'x_proto': _host.config['app']['allowed_x_proto'],
-            'x_host': _host.config['app']['allowed_x_host'],
-            'x_port': _host.config['app']['allowed_x_port'],
-            'x_prefix': _host.config['app']['allowed_x_prefix'],
-            }
+        'x_for': _host.config['app']['allowed_x_for'],
+        'x_proto': _host.config['app']['allowed_x_proto'],
+        'x_host': _host.config['app']['allowed_x_host'],
+        'x_port': _host.config['app']['allowed_x_port'],
+        'x_prefix': _host.config['app']['allowed_x_prefix'],
+    }
 
     if any(v for v in xheaders.values()):
         app.wsgi_app = ProxyFix(app.wsgi_app, **xheaders)
 
     app.jinja_loader = jinja2.FileSystemLoader(_host.templates)
     app.jinja_env.globals.update({
-            'os': os,
-            'time': time,
-            'get_breadcrumbs': get_breadcrumbs,
-            'format_filesize': util.format_filesize,
-            'quote_path': quote_path,
-            'static_url': static_url,
-            'i18n': _host.get_i18n(_host.config['app']['locale']),
-            })
+        'os': os,
+        'time': time,
+        'get_breadcrumbs': get_breadcrumbs,
+        'format_filesize': util.format_filesize,
+        'quote_path': quote_path,
+        'static_url': static_url,
+        'i18n': _host.get_i18n(_host.config['app']['locale']),
+    })
 
     return app

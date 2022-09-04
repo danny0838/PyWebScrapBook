@@ -1,34 +1,34 @@
-import os
-import traceback
-import shutil
-import zipfile
-import time
-import json
-import re
 import copy
+import json
+import os
+import re
+import shutil
+import time
+import traceback
 import uuid
-from datetime import datetime, timezone, timedelta
+import zipfile
 from contextlib import nullcontext
+from datetime import datetime, timedelta, timezone
 
-from .host import Host
-from .book import Book
 from .. import util
 from ..util import Info
-
+from .book import Book
+from .host import Host
 
 REGEX_TARGET_FILENAME_FORMATTER = re.compile(r'%([^%]*)%')
+
 
 class Importer():
     """Main class for importing.
     """
     def __init__(self, book, *,
-            target_id=None,
-            target_index=None,
-            target_filename=None,
-            rebuild_folders=False,
-            prune=False,
-            resolve_id_used='skip',  # skip, replace, new
-            ):
+                 target_id=None,
+                 target_index=None,
+                 target_filename=None,
+                 rebuild_folders=False,
+                 prune=False,
+                 resolve_id_used='skip',  # skip, replace, new
+                 ):
         self.book = book
         self.target_id = target_id or 'root'
         self.target_index = target_index
@@ -346,7 +346,7 @@ class Importer():
             i = -1
             parent_id = 'root'
 
-        for i in range(i + 1, len(export_path)):
+        for j in range(i + 1, len(export_path)):
             # generate a new unique id
             ts = datetime.now(timezone.utc)
             new_id = util.datetime_to_id(ts)
@@ -356,14 +356,14 @@ class Importer():
 
             yield Info('info', f'Generating folder "{new_id}" under "{parent_id}"...')
             new_meta = {
-                'title': export_path[i]['title'],
+                'title': export_path[j]['title'],
                 'type': 'folder',
                 'create': new_id,
                 'modify': new_id,
-                }
+            }
             self.book.meta[new_id] = new_meta
             self.book.toc.setdefault(parent_id, []).append(new_id)
-            self.map_id_to_new_id[export_path[i]['id']] = new_id
+            self.map_id_to_new_id[export_path[j]['id']] = new_id
             parent_id = new_id
 
         yield from self._insert_to_id(id, parent_id, allow_insert=False)

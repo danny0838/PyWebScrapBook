@@ -1,34 +1,31 @@
 """Miscellaneous utilities
 """
-import sys
-import os
-import importlib
-import stat
-import subprocess
-import collections
-from collections import namedtuple
-import shutil
-import io
-import zipfile
-import tempfile
-import math
-import re
-import hashlib
-import time
-import mimetypes
 import binascii
 import codecs
+import collections
+import hashlib
+import importlib
+import math
+import mimetypes
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+import zipfile
 from base64 import b64decode
-from urllib.parse import quote, unquote_to_bytes
-from urllib.parse import urlsplit, urljoin
-from urllib.request import pathname2url, url2pathname
-from ipaddress import IPv6Address, AddressValueError
-from datetime import datetime, timezone
+from collections import namedtuple
 from contextlib import nullcontext
+from datetime import datetime, timezone
+from ipaddress import AddressValueError, IPv6Address
+from urllib.parse import quote, unquote_to_bytes, urljoin, urlsplit
+from urllib.request import pathname2url, url2pathname
 
-from lxml import etree
 import lxml.html
-
+from lxml import etree
 
 #########################################################################
 # Common classes and objects handling
@@ -38,7 +35,7 @@ import lxml.html
 Info = namedtuple('Info', ('type', 'msg', 'data', 'exc'), defaults=(None, None))
 
 
-class frozendict(collections.abc.Mapping):
+class frozendict(collections.abc.Mapping):  # noqa: N801
     """Implementation of a frozen dict, which is hashable if all values
        are hashable.
     """
@@ -105,6 +102,7 @@ def import_module_file(ns, file):
 REGEX_ID_TO_DATETIME = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$')
 REGEX_ID_TO_DATETIME_LEGACY = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{0,9})$')
 
+
 def datetime_to_id(t=None):
     """Convert a datetime to webscrapbook ID.
 
@@ -118,7 +116,7 @@ def datetime_to_id(t=None):
         t = t.astimezone(timezone.utc)
 
     return (f'{t.year}{t.month:02}{t.day:02}{t.hour:02}{t.minute:02}'
-        f'{t.second:02}{int(t.microsecond * 0.001):03}')
+            f'{t.second:02}{int(t.microsecond * 0.001):03}')
 
 
 def id_to_datetime(id):
@@ -136,7 +134,7 @@ def id_to_datetime(id):
                 int(m.group(6)),
                 int(m.group(7)) * 1000,
                 timezone.utc,
-                )
+            )
         except ValueError:
             pass
     return None
@@ -177,7 +175,7 @@ def id_to_datetime_legacy(id):
                 int(m.group(5)),
                 int(m.group(6)),
                 int(ms),
-                )
+            )
         except ValueError:
             pass
     return None
@@ -211,7 +209,7 @@ def validate_filename(filename, force_ascii=False):
         fn = quote(fn, safe="""!_#$&'()*+,-./:;<=>?@[\\]^_`{|}~""")
 
     # prevent empty filename
-    fn = fn or "_"
+    fn = fn or '_'
 
     return fn
 
@@ -227,6 +225,7 @@ def crop(text, width=70, ellipsis='...'):
 
 
 REGEX_FORMAT_STRING = re.compile(r'%(\w*)%')
+
 
 def format_string(text, mapping):
     """A very simple implementation for string formatting with placeholders.
@@ -247,6 +246,7 @@ def format_string(text, mapping):
 
 
 REGEX_COMPRESS_CODE = re.compile(r'[^\S　]+')
+
 
 def compress_code(code):
     return REGEX_COMPRESS_CODE.sub(' ', code)
@@ -486,7 +486,7 @@ LABEL_ENCODING_MAPPING = {
     'iso-2022-kr': 'replacement',
     'replacement': 'replacement',
     'x-user-defined': 'x-user-defined',
-    }
+}
 
 # all lower-case
 CODECS_MAPPING = {
@@ -494,7 +494,8 @@ CODECS_MAPPING = {
     'x-mac-cyrillic': 'mac_cyrillic',
     'replacement': None,
     'x-user-defined': None,
-    }
+}
+
 
 def fix_codec(name):
     """Remap codec name
@@ -525,7 +526,8 @@ BOM_DETECTORS = [
     ('UTF-32-BE', codecs.BOM_UTF32_BE),
     ('UTF-16-LE', codecs.BOM_UTF16_LE),
     ('UTF-16-BE', codecs.BOM_UTF16_BE),
-    ]
+]
+
 
 def sniff_bom(fh):
     """Sniff a possibly existing BOM
@@ -604,29 +606,29 @@ FileInfo = namedtuple('FileInfo', ('name', 'type', 'size', 'last_modified'))
 def launch(path):
     """Launch a file or open a directory in the explorer.
     """
-    if sys.platform == "win32":
+    if sys.platform == 'win32':
         os.startfile(path)
-    elif sys.platform == "darwin":
-        subprocess.run(["open", path])
+    elif sys.platform == 'darwin':
+        subprocess.run(['open', path])
     else:
-        subprocess.run(["xdg-open", path])
+        subprocess.run(['xdg-open', path])
 
 
 def view_in_explorer(path):
     """Open the parent directory of a file or directory
        in the explorer.
     """
-    if sys.platform == "win32":
-        subprocess.run(["explorer", "/select,", path])
-    elif sys.platform == "darwin":
+    if sys.platform == 'win32':
+        subprocess.run(['explorer', '/select,', path])
+    elif sys.platform == 'darwin':
         try:
-            subprocess.run(["open", "-R", path])
+            subprocess.run(['open', '-R', path])
         except OSError:
             # fallback for older OS X
             launch(os.path.dirname(path))
     else:
         try:
-            subprocess.run(["nautilus", "--select", path])
+            subprocess.run(['nautilus', '--select', path])
         except OSError:
             # fallback if no nautilus
             launch(os.path.dirname(path))
@@ -683,7 +685,7 @@ def file_info(file, base=None):
     if base is None:
         name = os.path.basename(file)
     else:
-        name = file[len(base)+1:].replace('\\', '/')
+        name = file[len(base) + 1:].replace('\\', '/')
 
     try:
         statinfo = os.lstat(file)
@@ -720,7 +722,8 @@ def listdir(base, recursive=False):
         with os.scandir(base) as entries:
             for entry in entries:
                 info = file_info(entry.path)
-                if info.type is None: continue
+                if info.type is None:
+                    continue
                 yield info
 
     else:
@@ -728,12 +731,14 @@ def listdir(base, recursive=False):
             for dir in dirs:
                 file = os.path.join(root, dir)
                 info = file_info(file, base)
-                if info.type is None: continue
+                if info.type is None:
+                    continue
                 yield info
             for file in files:
                 file = os.path.join(root, file)
                 info = file_info(file, base)
-                if info.type is None: continue
+                if info.type is None:
+                    continue
                 yield info
 
 
@@ -747,15 +752,15 @@ def format_filesize(bytes, si=False):
 
     if si:
         thresh = 1000
-        units = ['B', 'kB','MB','GB','TB','PB','EB','ZB','YB']
+        units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
     else:
         thresh = 1024
-        units =  ['B', 'KB','MB','GB','TB','PB','EB','ZB','YB']
+        units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
     e = math.floor(math.log(max(1, bytes)) / math.log(thresh))
     e = min(e, len(units) - 1)
     n = bytes / thresh ** e
-    tpl = '{:.1f}\xA0{}' if (e >=1 and n < 10) else '{:.0f}\xA0{}'
+    tpl = '{:.1f}\xA0{}' if (e >= 1 and n < 10) else '{:.0f}\xA0{}'  # noqa: P103
     return tpl.format(n, units[e])
 
 
@@ -770,12 +775,13 @@ COMPRESSIBLE_TYPES = {
     'application/x-javascript',
 
     'application/json',
-    }
+}
 
 COMPRESSIBLE_SUFFIXES = {
     '+xml',
     '+json',
-    }
+}
+
 
 def is_compressible(mimetype):
     """Guess if the given mimetype is compressible."""
@@ -878,8 +884,8 @@ class ZipDirNotFoundError(Exception):
 def zip_fix_subpath(subpath):
     """Fix subpath to fit ZIP format specification.
     """
-    if os.sep != "/" and os.sep in subpath:
-        subpath = subpath.replace(os.sep, "/")
+    if os.sep != '/' and os.sep in subpath:
+        subpath = subpath.replace(os.sep, '/')
     return subpath
 
 
@@ -894,7 +900,7 @@ def zip_compression_params(mimetype=None, compress_type=None, compresslevel=None
     return {
         'compress_type': compress_type,
         'compresslevel': compresslevel,
-        }
+    }
 
 
 def zip_tuple_timestamp(zipinfodate):
@@ -964,7 +970,8 @@ def zip_listdir(zip, subpath, recursive=False):
     subpath = zip_fix_subpath(subpath)
 
     base = subpath.rstrip('/')
-    if base: base += '/'
+    if base:
+        base += '/'
     base_len = len(base)
     dir_exist = not base
     entries = {}
@@ -1047,7 +1054,7 @@ def zip_has(zip, subpath, type='any'):
     return False
 
 
-def zip_compress(zip, filename, subpath, filter=[]):
+def zip_compress(zip, filename, subpath, filter=None):
     """Compress src to be the subpath in the zip.
 
     Args:
@@ -1077,7 +1084,7 @@ def zip_compress(zip, filename, subpath, filter=[]):
                 except OSError as why:
                     errors.append((src, dst, str(why)))
 
-            filter = {os.path.normcase(os.path.join(filename, f)) for f in filter}
+            filter = {os.path.normcase(os.path.join(filename, f)) for f in (filter or [])}
             filter_d = {os.path.join(f, '') for f in filter}
 
             base_cut = len(os.path.join(filename, ''))
@@ -1189,14 +1196,14 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
 # HTTP manipulation
 #########################################################################
 
-HEADER_OWS = r"[\t ]*"
+HEADER_OWS = r'[\t ]*'
 HEADER_TOKEN = r"[!#$%&'*+.0-9A-Z^_`a-z|~-]+"
 HEADER_QUOTED_STRING = r'(?:"[^"]*(?:\.[^"]*)*")'
 
 
 ContentType = namedtuple('ContentType', ('type', 'parameters'))
 
-CONTENT_TYPE_REGEX = re.compile(fr"^{HEADER_TOKEN}/{HEADER_TOKEN}")
+CONTENT_TYPE_REGEX = re.compile(fr'^{HEADER_TOKEN}/{HEADER_TOKEN}')
 CONTENT_TYPE_REGEX_PARAMETER = re.compile(fr"""
     ^
     {HEADER_OWS}
@@ -1206,6 +1213,7 @@ CONTENT_TYPE_REGEX_PARAMETER = re.compile(fr"""
     =
     ([^\t ;"]*(?:{HEADER_QUOTED_STRING}[^\t ;"]*)*)
     """, re.X)
+
 
 def parse_content_type(string):
     """Parse content type header.
@@ -1247,8 +1255,10 @@ DataUri = namedtuple('DataUri', ('bytes', 'mime', 'parameters'))
 PARSE_DATAURI_REGEX_FIELDS = re.compile(r'^data:([^,]*?)(;base64)?,([^#]*)', re.I)
 PARSE_DATAURI_REGEX_KEY_VALUE = re.compile(r'^(.*?)=(.*?)$')
 
+
 class DataUriMalformedError(Exception):
     pass
+
 
 def parse_datauri(datauri):
     """Parse a Data URI
@@ -1299,7 +1309,7 @@ def _get_html_charset(fh, quickly=True):
     """Internal method to read a charset from meta charset.
     """
     try:
-        for event, elem in etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body')):
+        for _event, elem in etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body')):
             if elem.tag == 'meta':
                 charset = elem.attrib.get('charset')
                 if charset:
@@ -1329,6 +1339,7 @@ def _get_html_charset(fh, quickly=True):
         pass
 
     return None
+
 
 def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
     """Search for the correct charset to read an HTML file.
@@ -1378,7 +1389,7 @@ def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
     return default
 
 
-def load_html_tree(file, options={}):
+def load_html_tree(file, options=None):
     """Load HTML document tree.
 
     Args:
@@ -1400,7 +1411,7 @@ def load_html_tree(file, options={}):
         fh.seek(0)
 
         try:
-            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset, **options))
+            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset, **(options or {})))
         except etree.Error:
             return None
     finally:
@@ -1442,7 +1453,7 @@ META_REFRESH_CONTEXT_TAGS = {
     # 'svg', 'math',  # refresh works in the browser
     'xmp',
     # 'parsererror',  # doesn't appear in lxml for xhtml
-    }
+}
 
 # meta refresh in these tags should never work
 META_REFRESH_FORBID_TAGS = {
@@ -1450,7 +1461,7 @@ META_REFRESH_FORBID_TAGS = {
     'textarea',
     'template',
     'xmp',
-    }
+}
 
 
 class MetaRefreshError(Exception):
@@ -1461,7 +1472,7 @@ class MetaRefreshCircularError(MetaRefreshError):
     pass
 
 
-def parse_meta_refresh_content(string, contexts=[]):
+def parse_meta_refresh_content(string, contexts=None):
     """Parse a HTTP header like meta refresh content.
     """
     m = META_REFRESH_REGEX.search(string)
@@ -1475,10 +1486,10 @@ def parse_meta_refresh_content(string, contexts=[]):
 
     target = m.group('target')
     if target is not None:
-        for quote in ('"', "'"):
-            if target.startswith(quote):
+        for qchar in ('"', "'"):
+            if target.startswith(qchar):
                 try:
-                    pos = target.index(quote, 1)
+                    pos = target.index(qchar, 1)
                 except ValueError:
                     pos = None
                 target = target[1:pos]
@@ -1519,8 +1530,7 @@ def iter_meta_refresh(file, encoding=None):
                     contexts.append(elem.tag)
                     continue
 
-                if (elem.tag == 'meta' and
-                        elem.attrib.get('http-equiv', '').lower() == 'refresh'):
+                if (elem.tag == 'meta' and elem.attrib.get('http-equiv', '').lower() == 'refresh'):
                     yield parse_meta_refresh_content(elem.attrib.get('content', ''), contexts)
 
             elif event == 'end':
@@ -1608,6 +1618,7 @@ def get_meta_refreshed_file(file):
 
 MaffPageInfo = namedtuple('MaffPageInfo', ('title', 'originalurl', 'archivetime', 'indexfilename', 'charset'))
 
+
 def get_maff_pages(zip):
     """Get a list of pages (MaffPageInfo).
 
@@ -1621,7 +1632,8 @@ def get_maff_pages(zip):
         for entry in zh.namelist():
             topdir, sep, p = entry.partition('/')
             topdir = topdirs.setdefault(topdir + sep, [])
-            if p: topdir.append(entry)
+            if p:
+                topdir.append(entry)
 
         # get index files
         for topdir in topdirs:
@@ -1634,23 +1646,23 @@ def get_maff_pages(zip):
             else:
                 if meta.indexfilename is not None:
                     pages.append(MaffPageInfo(
-                            meta.title,
-                            meta.originalurl,
-                            meta.archivetime,
-                            topdir + meta.indexfilename,
-                            meta.charset,
-                            ))
+                        meta.title,
+                        meta.originalurl,
+                        meta.archivetime,
+                        topdir + meta.indexfilename,
+                        meta.charset,
+                    ))
                     continue
 
             for entry in topdirs[topdir]:
                 if entry.startswith(topdir + 'index.') and entry != topdir + 'index.rdf':
                     pages.append(MaffPageInfo(
-                            None,
-                            None,
-                            None,
-                            entry,
-                            None,
-                            ))
+                        None,
+                        None,
+                        None,
+                        entry,
+                        None,
+                    ))
 
     return pages
 
@@ -1666,21 +1678,21 @@ def parse_maff_index_rdf(fh):
             return None
 
     ns = {
-        'MAF': "http://maf.mozdev.org/metadata/rdf#",
-        'NC': "http://home.netscape.com/NC-rdf#",
-        'RDF': "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        }
+        'MAF': 'http://maf.mozdev.org/metadata/rdf#',
+        'NC': 'http://home.netscape.com/NC-rdf#',
+        'RDF': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    }
 
     text = fh.read().decode('UTF-8')
     root = etree.XML(text)
 
     return MaffPageInfo(
-            load_attr('title'),
-            load_attr('originalurl'),
-            load_attr('archivetime'),
-            load_attr('indexfilename'),
-            load_attr('charset'),
-            )
+        load_attr('title'),
+        load_attr('originalurl'),
+        load_attr('archivetime'),
+        load_attr('indexfilename'),
+        load_attr('charset'),
+    )
 
 
 #########################################################################
@@ -1731,5 +1743,6 @@ class Encrypt():
             fn = self.plain
 
         return fn(text, salt)
+
 
 encrypt = Encrypt().encrypt

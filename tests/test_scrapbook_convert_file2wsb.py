@@ -1,21 +1,17 @@
-from unittest import mock
-import unittest
+import glob
 import os
 import shutil
-import glob
+import unittest
 import zipfile
-import time
 from datetime import datetime, timezone
+from unittest import mock
 
-from lxml import etree
-
-from webscrapbook import WSB_DIR
-from webscrapbook import util
-from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook.convert import file2wsb
+from webscrapbook.scrapbook.host import Host
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+
 
 def setUpModule():
     # mock out user config
@@ -24,14 +20,16 @@ def setUpModule():
         mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
         mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
-        ]
+    ]
     for mocking in mockings:
         mocking.start()
+
 
 def tearDownModule():
     # stop mock
     for mocking in mockings:
         mocking.stop()
+
 
 class TestRun(unittest.TestCase):
     @classmethod
@@ -88,7 +86,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -102,13 +100,13 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_folder2: {
                 'title': 'folder2',
                 'type': 'folder',
                 'create': id_folder2,
                 'modify': id_folder2,
-                },
+            },
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
@@ -118,24 +116,24 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_folder2,
-                ],
+            ],
             id_folder2: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
-            })
+        })
 
     def test_path02(self):
         """Test hierarchical folders for *.html
@@ -159,7 +157,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -173,13 +171,13 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_folder2: {
                 'title': 'folder2',
                 'type': 'folder',
                 'create': id_folder2,
                 'modify': id_folder2,
-                },
+            },
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
@@ -189,25 +187,25 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_folder2,
-                ],
+            ],
             id_folder2: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
             os.path.join(self.test_output, id_item, 'mypage.html'),
-            })
+        })
 
     def test_path03(self):
         """Test hierarchical folders for *.html (no preserve filename)
@@ -231,7 +229,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+        for _info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -245,13 +243,13 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_folder2: {
                 'title': 'folder2',
                 'type': 'folder',
                 'create': id_folder2,
                 'modify': id_folder2,
-                },
+            },
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
@@ -261,23 +259,23 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_folder2,
-                ],
+            ],
             id_folder2: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.html'),
-            })
+        })
 
     def test_path04(self):
         """<input dir>/index.html should be indexed as single html page
@@ -300,7 +298,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -318,18 +316,18 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
-            })
+        })
 
     def test_path05(self):
         """<input dir>/index.html should be indexed as single html page (no preserve filename)
@@ -352,7 +350,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+        for _info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -370,17 +368,17 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.html'),
-            })
+        })
 
     def test_supporting_folder01(self):
         """Test for supporting folder *.files
@@ -408,7 +406,7 @@ page content
         with open(img_file, 'wb') as fh:
             fh.write(b'dummy')
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -426,13 +424,13 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
@@ -440,7 +438,7 @@ page content
             os.path.join(self.test_output, id_item, 'mypage.html'),
             os.path.join(self.test_output, id_item, 'mypage.files'),
             os.path.join(self.test_output, id_item, 'mypage.files', 'picture.bmp'),
-            })
+        })
 
     def test_supporting_folder02(self):
         """Test for supporting folder *_files
@@ -468,7 +466,7 @@ page content
         with open(img_file, 'wb') as fh:
             fh.write(b'dummy')
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -486,13 +484,13 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
@@ -500,7 +498,7 @@ page content
             os.path.join(self.test_output, id_item, 'mypage.html'),
             os.path.join(self.test_output, id_item, 'mypage_files'),
             os.path.join(self.test_output, id_item, 'mypage_files', 'picture.bmp'),
-            })
+        })
 
     def test_supporting_folder03(self):
         """Test for index.html + index.files
@@ -529,7 +527,7 @@ page content
         with open(img_file, 'wb') as fh:
             fh.write(b'dummy')
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -547,20 +545,20 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
             os.path.join(self.test_output, id_item, 'index.files'),
             os.path.join(self.test_output, id_item, 'index.files', 'picture.bmp'),
-            })
+        })
         with open(os.path.join(self.test_output, id_item, 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), content)
 
@@ -590,7 +588,7 @@ page content
         with open(img_file, 'wb') as fh:
             fh.write(b'dummy')
 
-        for info in file2wsb.run(self.test_input, self.test_output, data_folder_suffixes=['_archive']):
+        for _info in file2wsb.run(self.test_input, self.test_output, data_folder_suffixes=['_archive']):
             pass
 
         book = Host(self.test_output).books['']
@@ -608,13 +606,13 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
@@ -622,7 +620,7 @@ page content
             os.path.join(self.test_output, id_item, 'mypage.html'),
             os.path.join(self.test_output, id_item, 'mypage_archive'),
             os.path.join(self.test_output, id_item, 'mypage_archive', 'picture.bmp'),
-            })
+        })
 
     def test_supporting_folder05(self):
         """Test for custom supporting folder (data_folder_suffixes not set)
@@ -650,7 +648,7 @@ page content
         with open(img_file, 'wb') as fh:
             fh.write(b'dummy')
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -668,13 +666,13 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
+            },
             id_folder: {
                 'title': 'mypage_archive',
                 'type': 'folder',
                 'create': id_folder,
                 'modify': id_folder,
-                },
+            },
             id_item2: {
                 'title': 'picture.bmp',
                 'type': 'file',
@@ -684,17 +682,17 @@ page content
                 'source': '',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_item,
                 id_folder,
-                ],
+            ],
             id_folder: [
                 id_item2,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
@@ -703,7 +701,7 @@ page content
             os.path.join(self.test_output, id_item2),
             os.path.join(self.test_output, id_item2, 'index.html'),
             os.path.join(self.test_output, id_item2, 'picture.bmp'),
-            })
+        })
 
     def test_htz(self):
         """Test hierarchical folders for *.htz
@@ -727,7 +725,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -741,7 +739,7 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
@@ -751,20 +749,20 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.htz'),
-            })
+        })
 
     def test_maff(self):
         """Test hierarchical folders for *.maff
@@ -788,7 +786,7 @@ page content
 </html>
 """)
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -802,7 +800,7 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_item: {
                 'title': 'MyTitle 中文',
                 'type': '',
@@ -812,20 +810,20 @@ page content
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.maff'),
-            })
+        })
 
     def test_other01(self):
         """Test hierarchical folders for normal file
@@ -837,7 +835,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(index_file, (ts, ts))
 
-        for info in file2wsb.run(self.test_input, self.test_output):
+        for _info in file2wsb.run(self.test_input, self.test_output):
             pass
 
         book = Host(self.test_output).books['']
@@ -851,7 +849,7 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_item: {
                 'title': 'mypage.txt',
                 'type': 'file',
@@ -861,22 +859,22 @@ page content
                 'source': '',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
             os.path.join(self.test_output, id_item, 'mypage.txt'),
-            })
+        })
 
     def test_other02(self):
         """Test hierarchical folders for normal file (no preserve filename)
@@ -888,7 +886,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(index_file, (ts, ts))
 
-        for info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+        for _info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -902,7 +900,7 @@ page content
                 'type': 'folder',
                 'create': id_folder1,
                 'modify': id_folder1,
-                },
+            },
             id_item: {
                 'title': 'mypage.txt',
                 'type': 'file',
@@ -912,20 +910,20 @@ page content
                 'source': '',
                 'icon': '',
                 'comment': '',
-                },
-            })
+            },
+        })
         self.assertDictEqual(book.toc, {
             'root': [
                 id_folder1,
-                ],
+            ],
             id_folder1: [
                 id_item,
-                ],
-            })
+            ],
+        })
         self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.txt'),
-            })
+        })
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.Indexer', side_effect=SystemExit)
     def test_ignore_meta(self, mock_obj):
@@ -949,22 +947,25 @@ page content
 """)
 
         try:
-            for info in file2wsb.run(self.test_input, self.test_output,
-                    ignore_ie_meta=False,
-                    ignore_singlefile_meta=False,
-                    ignore_savepagewe_meta=False,
-                    ignore_maoxian_meta=False,
-                    ):
+            for _info in file2wsb.run(
+                self.test_input, self.test_output,
+                ignore_ie_meta=False,
+                ignore_singlefile_meta=False,
+                ignore_savepagewe_meta=False,
+                ignore_maoxian_meta=False,
+            ):
                 pass
         except SystemExit:
             pass
 
-        mock_obj.assert_called_with(mock.ANY,
+        mock_obj.assert_called_with(
+            mock.ANY,
             handle_ie_meta=True,
             handle_singlefile_meta=True,
             handle_savepagewe_meta=True,
             handle_maoxian_meta=True,
-            )
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,6 @@
 .gitattributes text
 .gitignore text
+*.cfg text
 *.py text
 *.wsgi text
 *.yaml text
