@@ -8,7 +8,7 @@ with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name=webscrapbook.__package_name__,
+    name='webscrapbook',
     version=webscrapbook.__version__,
     description=cleandoc(webscrapbook.__doc__),
     long_description=long_description,

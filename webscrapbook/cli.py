@@ -10,7 +10,7 @@ from inspect import getdoc
 from time import time_ns
 
 # this package
-from . import __package_name__, __version__
+from . import __version__
 from . import *
 from . import server
 from . import util
@@ -398,7 +398,7 @@ def parse_args(argv=None):
         prog = None
 
     parser = argparse.ArgumentParser(prog=prog, description=__doc__)
-    parser.add_argument('--version', action='version', version=f'{__package_name__} {__version__}',
+    parser.add_argument('--version', action='version', version=f'{__package__} {__version__}',
         help="""show version information and exit""")
     parser.add_argument('--root', default=".",
         help="""root directory to manipulate (default: current working directory)""")

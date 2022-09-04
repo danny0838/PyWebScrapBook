@@ -10,7 +10,6 @@ import re
 
 __all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
 
-__package_name__ = 'webscrapbook'
 __version__ = '1.6.1'
 __author__ = 'Danny Lin'
 __author_email__ = 'danny0838@gmail.com'
