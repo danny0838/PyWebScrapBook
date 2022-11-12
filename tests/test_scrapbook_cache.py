@@ -3056,6 +3056,7 @@ class TestStaticSiteGenerator(TestCache):
             file = os.path.normpath(os.path.join(self.test_tree, path))
             with open(file, 'wb'):
                 pass
+            os.utime(file, (0, 0))
             orig_stats[file] = os.stat(file)
 
         book = Host(self.test_root).books['']
