@@ -1,6 +1,6 @@
 import glob
 import os
-import shutil
+import tempfile
 import unittest
 import zipfile
 from base64 import b64decode
@@ -16,23 +16,30 @@ from webscrapbook.scrapbook.indexer import (
     UnSingleHtmlConverter,
 )
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-test_root = os.path.join(root_dir, 'test_scrapbook_indexer')
+from . import TEMP_DIR
 
 
 def setUpModule():
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='indexer-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(_tmpdir.name)
+
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
     ]
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
+
     # stop mock
     for mocking in mockings:
         mocking.stop()
@@ -42,23 +49,13 @@ class Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
-        cls.test_root = os.path.join(test_root, 'general')
-        cls.test_tree = os.path.join(cls.test_root, WSB_DIR, 'tree')
 
     def setUp(self):
         """Set up a general temp test folder
         """
+        self.test_root = tempfile.mkdtemp(dir=tmpdir)
+        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
         os.makedirs(self.test_tree)
-
-    def tearDown(self):
-        """Remove general temp test folder
-        """
-        try:
-            shutil.rmtree(self.test_root)
-        except NotADirectoryError:
-            os.remove(self.test_root)
-        except FileNotFoundError:
-            pass
 
 
 class TestIndexer(Test):

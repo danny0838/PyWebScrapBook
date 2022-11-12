@@ -6,15 +6,15 @@ from unittest import mock
 
 import webscrapbook
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
+from . import ROOT_DIR
 
 
 def setUpModule():
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(root_dir, 'test_config', 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(ROOT_DIR, 'test_config', 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(ROOT_DIR, 'test_config')),
     ]
     for mocking in mockings:
         mocking.start()
@@ -33,7 +33,7 @@ class TestClassConfig(unittest.TestCase):
 
     def test_load(self):
         conf = webscrapbook.Config()
-        conf.load(os.path.join(root_dir, 'test_config'))
+        conf.load(os.path.join(ROOT_DIR, 'test_config'))
         self.assertDictEqual(conf['app'], OrderedDict([
             ('name', 'mywsb'),
             ('theme', 'mytheme'),
@@ -98,10 +98,10 @@ class TestClassConfig(unittest.TestCase):
 
     def test_load_repeated(self):
         conf = webscrapbook.Config()
-        conf.load(os.path.join(root_dir, 'test_config'))
+        conf.load(os.path.join(ROOT_DIR, 'test_config'))
 
         # check if previous loaded config entries no more exist
-        conf.load(os.path.join(root_dir, 'test_config_load_repeated'))
+        conf.load(os.path.join(ROOT_DIR, 'test_config_load_repeated'))
         self.assertDictEqual(conf['app'], OrderedDict([
             ('name', 'mywsb2'),
             ('theme', 'default'),
@@ -123,12 +123,12 @@ class TestClassConfig(unittest.TestCase):
 
     @mock.patch('webscrapbook.WSB_CONFIG', 'localconfig.ini')
     @mock.patch('webscrapbook.WSB_DIR', '.wsbdir')
-    @mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(root_dir, 'test_config_load_constants', 'userconfig.ini'))
-    @mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(root_dir, 'test_config_load_constants', '.config', 'wsb'))
+    @mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(ROOT_DIR, 'test_config_load_constants', 'userconfig.ini'))
+    @mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(ROOT_DIR, 'test_config_load_constants', '.config', 'wsb'))
     def test_load_constants(self):
         # check if WSB_USER_DIR, WSB_USER_CONFIG, WSB_DIR, and WSB_CONFIG are honored
         conf = webscrapbook.Config()
-        conf.load(os.path.join(root_dir, 'test_config_load_constants'))
+        conf.load(os.path.join(ROOT_DIR, 'test_config_load_constants'))
         self.assertEqual(conf['app']['name'], 'myuserwsbx')
         self.assertEqual(conf['app']['theme'], 'mytheme')
         self.assertEqual(conf['server']['port'], 7777)
@@ -144,7 +144,7 @@ class TestClassConfig(unittest.TestCase):
     def test_getitem(self):
         # test lazy loading
         _cwd = os.getcwd()
-        os.chdir(os.path.join(root_dir, 'test_config'))
+        os.chdir(os.path.join(ROOT_DIR, 'test_config'))
 
         try:
             conf = webscrapbook.Config()
@@ -162,7 +162,7 @@ class TestClassConfig(unittest.TestCase):
     def test_iter(self):
         # test lazy loading
         _cwd = os.getcwd()
-        os.chdir(os.path.join(root_dir, 'test_config'))
+        os.chdir(os.path.join(ROOT_DIR, 'test_config'))
 
         try:
             conf = webscrapbook.Config()
@@ -173,7 +173,7 @@ class TestClassConfig(unittest.TestCase):
     def test_getname(self):
         # test lazy loading
         _cwd = os.getcwd()
-        os.chdir(os.path.join(root_dir, 'test_config'))
+        os.chdir(os.path.join(ROOT_DIR, 'test_config'))
 
         try:
             conf = webscrapbook.Config()
@@ -191,7 +191,7 @@ class TestClassConfig(unittest.TestCase):
     def test_dump(self):
         # test lazy loading
         _cwd = os.getcwd()
-        os.chdir(os.path.join(root_dir, 'test_config'))
+        os.chdir(os.path.join(ROOT_DIR, 'test_config'))
 
         try:
             conf = webscrapbook.Config()
@@ -262,7 +262,7 @@ permission = all
     def test_dump_object(self):
         # test lazy loading
         _cwd = os.getcwd()
-        os.chdir(os.path.join(root_dir, 'test_config'))
+        os.chdir(os.path.join(ROOT_DIR, 'test_config'))
 
         try:
             conf = webscrapbook.Config()

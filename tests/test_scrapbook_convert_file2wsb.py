@@ -1,6 +1,6 @@
 import glob
 import os
-import shutil
+import tempfile
 import unittest
 import zipfile
 from datetime import datetime, timezone
@@ -9,23 +9,30 @@ from unittest import mock
 from webscrapbook.scrapbook.convert import file2wsb
 from webscrapbook.scrapbook.host import Host
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+from . import TEMP_DIR
 
 
 def setUpModule():
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='file2wsb-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(_tmpdir.name)
+
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
     ]
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
+
     # stop mock
     for mocking in mockings:
         mocking.stop()
@@ -35,34 +42,19 @@ class TestRun(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
-        cls.test_input = os.path.join(test_root, 'input')
-        cls.test_output = os.path.join(test_root, 'output')
-        cls.test_output_tree = os.path.join(cls.test_output, 'tree')
-        cls.test_output_meta = os.path.join(cls.test_output_tree, 'meta.js')
-        cls.test_output_toc = os.path.join(cls.test_output_tree, 'toc.js')
 
     def setUp(self):
         """Set up a general temp test folder
         """
+        self.test_root = tempfile.mkdtemp(dir=tmpdir)
+        self.test_input = os.path.join(self.test_root, 'input')
+        self.test_output = os.path.join(self.test_root, 'output')
+        self.test_output_tree = os.path.join(self.test_output, 'tree')
+        self.test_output_meta = os.path.join(self.test_output_tree, 'meta.js')
+        self.test_output_toc = os.path.join(self.test_output_tree, 'toc.js')
+
         os.makedirs(self.test_input, exist_ok=True)
         os.makedirs(self.test_output, exist_ok=True)
-
-    def tearDown(self):
-        """Remove general temp test folder
-        """
-        try:
-            shutil.rmtree(self.test_input)
-        except NotADirectoryError:
-            os.remove(self.test_input)
-        except FileNotFoundError:
-            pass
-
-        try:
-            shutil.rmtree(self.test_output)
-        except NotADirectoryError:
-            os.remove(self.test_output)
-        except FileNotFoundError:
-            pass
 
     def test_path01(self):
         """Test hierarchical folders for */index.html

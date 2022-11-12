@@ -1,6 +1,12 @@
 import os
 import tempfile
 
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# The root directory for placing temp directories and files.
+# None for auto-detection from the local system.
+TEMP_DIR = None
+
 
 def _():
     if os.name == 'nt':

@@ -1,29 +1,36 @@
 import glob
 import os
-import shutil
+import tempfile
 import unittest
 from unittest import mock
 
 from webscrapbook import WSB_DIR
 from webscrapbook.scrapbook.convert import wsb2file
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-test_root = os.path.join(root_dir, 'test_scrapbook_convert')
+from . import TEMP_DIR
 
 
 def setUpModule():
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='wsb2file-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(_tmpdir.name)
+
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
     ]
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
+
     # stop mock
     for mocking in mockings:
         mocking.stop()
@@ -33,35 +40,20 @@ class TestRun(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
-        cls.test_input = os.path.join(test_root, 'input')
-        cls.test_input_config = os.path.join(cls.test_input, WSB_DIR, 'config.ini')
-        cls.test_input_tree = os.path.join(cls.test_input, WSB_DIR, 'tree')
-        cls.test_input_meta = os.path.join(cls.test_input_tree, 'meta.js')
-        cls.test_input_toc = os.path.join(cls.test_input_tree, 'toc.js')
-        cls.test_output = os.path.join(test_root, 'output')
 
     def setUp(self):
         """Set up a general temp test folder
         """
+        self.test_root = tempfile.mkdtemp(dir=tmpdir)
+        self.test_input = os.path.join(self.test_root, 'input')
+        self.test_input_config = os.path.join(self.test_input, WSB_DIR, 'config.ini')
+        self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
+        self.test_input_meta = os.path.join(self.test_input_tree, 'meta.js')
+        self.test_input_toc = os.path.join(self.test_input_tree, 'toc.js')
+        self.test_output = os.path.join(self.test_root, 'output')
+
         os.makedirs(self.test_input_tree, exist_ok=True)
         os.makedirs(self.test_output, exist_ok=True)
-
-    def tearDown(self):
-        """Remove general temp test folder
-        """
-        try:
-            shutil.rmtree(self.test_input)
-        except NotADirectoryError:
-            os.remove(self.test_input)
-        except FileNotFoundError:
-            pass
-
-        try:
-            shutil.rmtree(self.test_output)
-        except NotADirectoryError:
-            os.remove(self.test_output)
-        except FileNotFoundError:
-            pass
 
     def test_basic01(self):
         """Check for typical WebScrapBook items. (prefix=True)"""

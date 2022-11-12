@@ -3,6 +3,7 @@
 #     for a possible leak of the source code is pending.
 import os
 import shutil
+import tempfile
 import unittest
 from base64 import b64encode
 from functools import partial
@@ -14,32 +15,35 @@ from webscrapbook import WSB_CONFIG, WSB_DIR
 from webscrapbook import app as wsbapp
 from webscrapbook.app import make_app
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-server_root = os.path.join(root_dir, 'test_app_config')
-server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
+from . import ROOT_DIR, TEMP_DIR
 
 
 def setUpModule():
-    # create temp folders
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='config-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(os.path.join(_tmpdir.name, 'd'))
+    shutil.copytree(os.path.join(ROOT_DIR, 'test_app_config'), tmpdir)
+
+    global server_root, server_config
+    server_root = tmpdir
+    server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
     os.makedirs(os.path.dirname(server_config), exist_ok=True)
 
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(server_root, 'wsb')),
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(server_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
     ]
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
-    # purge WSB_DIR
-    try:
-        shutil.rmtree(os.path.join(server_root, WSB_DIR))
-    except FileNotFoundError:
-        pass
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
 
     # stop mock
     for mocking in mockings:

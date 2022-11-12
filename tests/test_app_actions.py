@@ -8,6 +8,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 import zipfile
@@ -25,34 +26,35 @@ from webscrapbook.util import (
     zip_tuple_timestamp,
 )
 
-from . import SYMLINK_SUPPORTED
-
-root_dir = os.path.abspath(os.path.dirname(__file__))
-server_root = os.path.join(root_dir, 'test_app_actions')
+from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
 
 
 def setUpModule():
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='actions-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(os.path.join(_tmpdir.name, 'd'))
+    shutil.copytree(os.path.join(ROOT_DIR, 'test_app_actions'), tmpdir)
+
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.WSB_USER_DIR', server_root, 'wsb'),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', server_root),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
     ]
     for mocking in mockings:
         mocking.start()
 
     # init app
     global app
-    app = make_app(server_root)
+    app = make_app(tmpdir)
     app.testing = True
 
 
 def tearDownModule():
-    # purge WSB_DIR
-    try:
-        shutil.rmtree(os.path.join(server_root, WSB_DIR, 'server'))
-    except FileNotFoundError:
-        pass
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
 
     # stop mock
     for mocking in mockings:
@@ -236,7 +238,7 @@ class TestView(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check2(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -271,8 +273,8 @@ class TestView(unittest.TestCase):
                 path='/subdir/',
                 pathparts=['/subdir'],
                 subentries={
-                    ('file.txt', 'file', 3, os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime),
-                    ('sub', 'dir', None, os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime),
+                    ('file.txt', 'file', 3, os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime),
+                    ('sub', 'dir', None, os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime),
                 },
             )
 
@@ -281,7 +283,7 @@ class TestView(unittest.TestCase):
             r = c.get('/index.html', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html')
-            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'index.html')).st_size))
+            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.html')).st_size))
             self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -316,7 +318,7 @@ class TestView(unittest.TestCase):
             self.assertEqual(r.data.decode('UTF-8').replace('\r\n', '\n'), '<!DOCTYPE html>')
 
     def test_htz(self):
-        zip_filename = os.path.join(server_root, 'archive.htz')
+        zip_filename = os.path.join(tmpdir, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
@@ -332,7 +334,7 @@ class TestView(unittest.TestCase):
                 pass
 
     def test_maff(self):
-        zip_filename = os.path.join(server_root, 'archive.maff')
+        zip_filename = os.path.join(tmpdir, 'archive.maff')
         try:
             # 1 page
             with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -391,7 +393,7 @@ class TestView(unittest.TestCase):
                 pass
 
     def test_zip(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
@@ -418,7 +420,7 @@ class TestView(unittest.TestCase):
                 r = c.get('/index.md')
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-                self.assertNotEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'index.md')).st_size))
+                self.assertNotEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.md')).st_size))
                 self.assertEqual(r.headers['Cache-Control'], 'no-cache')
                 self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
                 self.assertIsNotNone(r.headers['Last-Modified'])
@@ -463,7 +465,7 @@ class TestView(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_zip_subdir(self, mock_template):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
@@ -514,7 +516,7 @@ class TestView(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_subdir_noslash(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)), '')
@@ -530,7 +532,7 @@ class TestView(unittest.TestCase):
                 pass
 
     def test_zip_subfile(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
@@ -575,7 +577,7 @@ class TestView(unittest.TestCase):
                 pass
 
     def test_zip_subfile_nested(self):
-        zip_filename = os.path.join(server_root, 'archive.htz')
+        zip_filename = os.path.join(tmpdir, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 buf1 = io.BytesIO()
@@ -605,7 +607,7 @@ class TestView(unittest.TestCase):
                 pass
 
     def test_zip_markdown(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('index.md', (1987, 1, 1, 0, 0, 0)), '## Header\n\nHello 你好')
@@ -652,7 +654,7 @@ class TestView(unittest.TestCase):
                 pass
 
     def test_zip_meta_refresh(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('refresh.htm', (1987, 1, 1, 0, 0, 0)), '<meta http-equiv="refresh" content="0;url=index.html">')
@@ -669,7 +671,7 @@ class TestView(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_zip_nonexist(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -724,7 +726,7 @@ class TestInfo(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check2(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -748,7 +750,7 @@ class TestInfo(unittest.TestCase):
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
+                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir')).st_mtime,
                     'mime': None,
                 },
             })
@@ -762,7 +764,7 @@ class TestInfo(unittest.TestCase):
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir')).st_mtime,
+                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir')).st_mtime,
                     'mime': None,
                 },
             })
@@ -780,7 +782,7 @@ class TestInfo(unittest.TestCase):
             filename = file['filename']
             mime = file['mime']
             with self.subTest(filename=filename, mime=mime):
-                file_path = os.path.join(server_root, filename)
+                file_path = os.path.join(tmpdir, filename)
                 url_path = '/' + filename
                 iszip = os.path.splitext(file_path)[1] in ('.zip', '.htz', '.maff')
                 if iszip:
@@ -811,7 +813,7 @@ class TestInfo(unittest.TestCase):
                             pass
 
     def test_file_zip(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('explicit_dir/', (1987, 1, 1, 0, 0, 0)), '')
@@ -975,7 +977,7 @@ class TestList(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check2(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -1007,13 +1009,13 @@ class TestList(TestActions):
                     'name': 'file.txt',
                     'type': 'file',
                     'size': 3,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
+                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
                 }),
                 frozendict({
                     'name': 'sub',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
+                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
                 }),
             })
 
@@ -1027,13 +1029,13 @@ class TestList(TestActions):
                     'name': 'file.txt',
                     'type': 'file',
                     'size': 3,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
+                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
                 }),
                 frozendict({
                     'name': 'sub',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
+                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
                 }),
             })
 
@@ -1050,7 +1052,7 @@ class TestList(TestActions):
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
     def test_zip(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('explicit_dir/', (1987, 1, 1, 0, 0, 0)), '')
@@ -1201,7 +1203,7 @@ class TestList(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_nonexist(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -1243,13 +1245,13 @@ class TestList(TestActions):
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
+                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
             }), sse)
             self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
+                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
             }), sse)
             self.assertIn(('complete', None), sse)
 
@@ -1261,13 +1263,13 @@ class TestList(TestActions):
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'file.txt')).st_mtime,
+                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
             }), sse)
             self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
-                'last_modified': os.stat(os.path.join(server_root, 'subdir', 'sub')).st_mtime,
+                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
             }), sse)
             self.assertIn(('complete', None), sse)
 
@@ -1284,7 +1286,7 @@ class TestList(TestActions):
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
     def test_sse_zip(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr(zipfile.ZipInfo('explicit_dir/', (1987, 1, 1, 0, 0, 0)), '')
@@ -1419,7 +1421,7 @@ class TestSource(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check2(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -1439,7 +1441,7 @@ class TestSource(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
             self.assertEqual(r.headers['Content-Disposition'], 'inline')
-            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'index.html')).st_size))
+            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.html')).st_size))
             self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -1479,7 +1481,7 @@ class TestSource(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
             self.assertEqual(r.headers['Content-Disposition'], 'inline')
-            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'index.md')).st_size))
+            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.md')).st_size))
             self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -1510,7 +1512,7 @@ class TestSource(unittest.TestCase):
             self.assertEqual(r.data.decode('UTF-8').replace('\r\n', '\n'), '## Header')
 
     def test_file_binary(self):
-        zip_filename = os.path.join(server_root, 'archive.htz')
+        zip_filename = os.path.join(tmpdir, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('index.html', 'Hello World! 你好')
@@ -1520,7 +1522,7 @@ class TestSource(unittest.TestCase):
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
                 self.assertEqual(r.headers['Content-Disposition'], 'inline')
-                self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(server_root, 'archive.htz')).st_size))
+                self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'archive.htz')).st_size))
                 self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
                 self.assertEqual(r.headers['Cache-Control'], 'no-cache')
                 self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -1573,7 +1575,7 @@ class TestSource(unittest.TestCase):
             mock_abort.assert_called_once_with(404)
 
     def test_file_zip_subfile(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('index.html', 'Hello World! 你好')
@@ -1619,7 +1621,7 @@ class TestSource(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_zip_subdir(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('explicit_dir/', '')
@@ -1655,7 +1657,7 @@ class TestSource(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_zip_nonexist(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -1686,7 +1688,7 @@ class TestDownload(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check2(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -1700,7 +1702,7 @@ class TestDownload(TestActions):
                 pass
 
     def test_file_binary(self):
-        zip_filename = os.path.join(server_root, '中文.htz')
+        zip_filename = os.path.join(tmpdir, '中文.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('index.html', 'Hello World! 你好')
@@ -1723,7 +1725,7 @@ class TestDownload(TestActions):
                 pass
 
     def test_directory01(self):
-        root = os.path.join(server_root, '中文')
+        root = os.path.join(tmpdir, '中文')
         try:
             os.makedirs(os.path.join(root, 'subdir'), exist_ok=True)
             with open(os.path.join(root, 'subdir', 'bar.txt'), 'w', encoding='UTF-8') as fh:
@@ -1762,7 +1764,7 @@ class TestDownload(TestActions):
 
     def test_directory02(self):
         """Test param i"""
-        root = os.path.join(server_root, '中文')
+        root = os.path.join(tmpdir, '中文')
         try:
             os.makedirs(os.path.join(root, 'subdir'), exist_ok=True)
             with open(os.path.join(root, 'subdir', 'bar.txt'), 'w', encoding='UTF-8') as fh:
@@ -1847,7 +1849,7 @@ class TestDownload(TestActions):
             mock_abort.assert_called_once_with(404)
 
     def test_file_zip_subfile(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 buf = io.BytesIO()
@@ -1873,7 +1875,7 @@ class TestDownload(TestActions):
                 pass
 
     def test_file_zip_subdir01(self):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('explicit_dir/', '')
@@ -1936,7 +1938,7 @@ class TestDownload(TestActions):
 
     def test_file_zip_subdir02(self):
         """Test param i"""
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('explicit_dir/', '')
@@ -2021,7 +2023,7 @@ class TestDownload(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_zip_nonexist(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -2114,8 +2116,8 @@ class TestConfig(unittest.TestCase):
 
 class TestEdit(unittest.TestCase):
     def setUp(self):
-        self.test_file = os.path.join(server_root, 'temp.html')
-        self.test_zip = os.path.join(server_root, 'temp.maff')
+        self.test_file = os.path.join(tmpdir, 'temp.html')
+        self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
     def tearDown(self):
         try:
@@ -2281,7 +2283,7 @@ class TestEditx(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.zip')
+        zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
@@ -2310,7 +2312,7 @@ class TestEditx(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_zip(self, mock_template):
-        zip_filename = os.path.join(server_root, 'temp.maff')
+        zip_filename = os.path.join(tmpdir, 'temp.maff')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('19870101/index.html', 'Hello World! 你好')
@@ -2344,7 +2346,7 @@ class TestExec(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_exec.assert_called_once_with(os.path.join(server_root, 'subdir'))
+            mock_exec.assert_called_once_with(os.path.join(tmpdir, 'subdir'))
 
     @mock.patch('webscrapbook.util.launch')
     def test_file(self, mock_exec):
@@ -2356,7 +2358,7 @@ class TestExec(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_exec.assert_called_once_with(os.path.join(server_root, 'index.html'))
+            mock_exec.assert_called_once_with(os.path.join(tmpdir, 'index.html'))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
@@ -2366,7 +2368,7 @@ class TestExec(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.htz')
+        zip_filename = os.path.join(tmpdir, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('index.html', 'Hello World!')
@@ -2392,7 +2394,7 @@ class TestBrowse(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_browse.assert_called_once_with(os.path.join(server_root, 'subdir'))
+            mock_browse.assert_called_once_with(os.path.join(tmpdir, 'subdir'))
 
     @mock.patch('webscrapbook.util.view_in_explorer')
     def test_file(self, mock_browse):
@@ -2404,7 +2406,7 @@ class TestBrowse(unittest.TestCase):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_browse.assert_called_once_with(os.path.join(server_root, 'index.html'))
+            mock_browse.assert_called_once_with(os.path.join(tmpdir, 'index.html'))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
@@ -2414,7 +2416,7 @@ class TestBrowse(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip(self, mock_abort):
-        zip_filename = os.path.join(server_root, 'archive.htz')
+        zip_filename = os.path.join(tmpdir, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 zh.writestr('index.html', 'Hello World!')
@@ -2442,7 +2444,7 @@ class TestToken(unittest.TestCase):
             r = c.post('/', data={'a': 'token'})
             try:
                 self.assertEqual(r.status_code, 200)
-                token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
+                token_file = os.path.join(tmpdir, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
                 self.assertTrue(os.path.isfile(token_file))
             finally:
                 try:
@@ -2457,7 +2459,7 @@ class TestToken(unittest.TestCase):
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'application/json')
                 data = r.json
-                token_file = os.path.join(server_root, WSB_DIR, 'server', 'tokens', data['data'])
+                token_file = os.path.join(tmpdir, WSB_DIR, 'server', 'tokens', data['data'])
                 self.assertTrue(data['success'])
                 self.assertTrue(isinstance(data['data'], str))
                 self.assertTrue(os.path.isfile(token_file))
@@ -2470,7 +2472,7 @@ class TestToken(unittest.TestCase):
 
 class TestLock(unittest.TestCase):
     def setUp(self):
-        self.lock = os.path.join(server_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        self.lock = os.path.join(tmpdir, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     def tearDown(self):
         try:
@@ -2634,7 +2636,7 @@ class TestLock(unittest.TestCase):
 
 class TestUnlock(unittest.TestCase):
     def setUp(self):
-        self.lock = os.path.join(server_root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        self.lock = os.path.join(tmpdir, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     def tearDown(self):
         try:
@@ -2766,8 +2768,8 @@ class TestUnlock(unittest.TestCase):
 
 class TestMkdir(unittest.TestCase):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
-        self.test_zip = os.path.join(server_root, 'temp.maff')
+        self.test_dir = os.path.join(tmpdir, 'temp')
+        self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
     def tearDown(self):
         try:
@@ -2821,7 +2823,7 @@ class TestMkdir(unittest.TestCase):
             self.assertTrue(os.path.isdir(self.test_dir))
 
     def test_nonexist_deep(self):
-        test_dir = os.path.join(server_root, 'temp', 'subdir')
+        test_dir = os.path.join(tmpdir, 'temp', 'subdir')
 
         with app.test_client() as c:
             r = c.post('/temp/subdir', data={
@@ -2995,8 +2997,8 @@ class TestMkdir(unittest.TestCase):
 
 class TestMkzip(unittest.TestCase):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
-        self.test_zip = os.path.join(server_root, 'temp', 'test.zip')
+        self.test_dir = os.path.join(tmpdir, 'temp')
+        self.test_zip = os.path.join(tmpdir, 'temp', 'test.zip')
 
     def tearDown(self):
         try:
@@ -3159,9 +3161,9 @@ class TestMkzip(unittest.TestCase):
 
 class TestSave(unittest.TestCase):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
-        self.test_file = os.path.join(server_root, 'temp', 'test.txt')
-        self.test_zip = os.path.join(server_root, 'temp.maff')
+        self.test_dir = os.path.join(tmpdir, 'temp')
+        self.test_file = os.path.join(tmpdir, 'temp', 'test.txt')
+        self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
     def tearDown(self):
         try:
@@ -3603,9 +3605,9 @@ class TestSave(unittest.TestCase):
 
 class TestDelete(TestActions):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
-        self.test_file = os.path.join(server_root, 'temp', 'test.txt')
-        self.test_zip = os.path.join(server_root, 'temp.maff')
+        self.test_dir = os.path.join(tmpdir, 'temp')
+        self.test_file = os.path.join(tmpdir, 'temp', 'test.txt')
+        self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
     def tearDown(self):
         try:
@@ -4103,8 +4105,8 @@ class TestDelete(TestActions):
 
 class TestMove(TestActions):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
-        self.test_zip = os.path.join(server_root, 'temp.maff')
+        self.test_dir = os.path.join(tmpdir, 'temp')
+        self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
@@ -4832,8 +4834,8 @@ class TestMove(TestActions):
 
 class TestCopy(TestActions):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
-        self.test_zip = os.path.join(server_root, 'temp.maff')
+        self.test_dir = os.path.join(tmpdir, 'temp')
+        self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
@@ -5971,7 +5973,7 @@ class TestCopy(TestActions):
 
 class TestBackup(TestActions):
     def setUp(self):
-        self.test_dir = os.path.join(server_root, 'temp')
+        self.test_dir = os.path.join(tmpdir, 'temp')
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
             f.write('ABC 你好')
@@ -6029,8 +6031,8 @@ class TestBackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
-            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            os.path.join(tmpdir, 'temp', 'subdir', 'test.txt'),
+            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
             base=None,
             move=False,
         )
@@ -6054,8 +6056,8 @@ class TestBackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
-            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            os.path.join(tmpdir, 'temp', 'subdir', 'test.txt'),
+            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
             base=None,
             move=True,
         )
@@ -6079,8 +6081,8 @@ class TestBackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, 'temp', 'subdir', 'test.txt'),
-            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
+            os.path.join(tmpdir, 'temp', 'subdir', 'test.txt'),
+            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
             base=None,
             move=False,
         )
@@ -6103,8 +6105,8 @@ class TestBackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, 'temp', 'subdir'),
-            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            os.path.join(tmpdir, 'temp', 'subdir'),
+            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
             base=None,
             move=False,
         )
@@ -6128,8 +6130,8 @@ class TestBackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, 'temp', 'subdir'),
-            backup_dir=os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            os.path.join(tmpdir, 'temp', 'subdir'),
+            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
             base=None,
             move=True,
         )
@@ -6188,7 +6190,7 @@ class TestUnbackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405'),
+            os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
         )
 
         self.assertEqual(r.status_code, 200)
@@ -6210,7 +6212,7 @@ class TestUnbackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(server_root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
+            os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
         )
 
         self.assertEqual(r.status_code, 200)

@@ -3,8 +3,9 @@ import unittest
 
 from webscrapbook.locales import I18N
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-test_root = os.path.join(root_dir, 'test_locales')
+from . import ROOT_DIR
+
+test_root = os.path.join(ROOT_DIR, 'test_locales')
 test_dirs = [
     os.path.join(test_root, 'test_general', 'host'),
     os.path.join(test_root, 'test_general', 'user'),

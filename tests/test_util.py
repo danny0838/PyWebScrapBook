@@ -2,8 +2,8 @@ import collections
 import io
 import os
 import platform
-import shutil
 import subprocess
+import tempfile
 import time
 import unittest
 import zipfile
@@ -15,10 +15,21 @@ import lxml.html
 from webscrapbook import util
 from webscrapbook.util import frozendict, zip_tuple_timestamp
 
-from . import SYMLINK_SUPPORTED
+from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-test_root = os.path.join(root_dir, 'test_util')
+test_root = os.path.join(ROOT_DIR, 'test_util')
+
+
+def setUpModule():
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='util-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(_tmpdir.name)
+
+
+def tearDownModule():
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
 
 
 class TestUtils(unittest.TestCase):
@@ -308,8 +319,8 @@ ul  >  li  :not([hidden])  {
     def test_get_relative_url(self):
         self.assertEqual(
             util.get_relative_url(
-                os.path.join(root_dir),
-                os.path.join(root_dir, 'tree', 'meta.js'),
+                os.path.join(tmpdir),
+                os.path.join(tmpdir, 'tree', 'meta.js'),
                 start_is_dir=False,
             ),
             '../',
@@ -317,16 +328,16 @@ ul  >  li  :not([hidden])  {
 
         self.assertEqual(
             util.get_relative_url(
-                os.path.join(root_dir, 'tree', 'icon'),
-                os.path.join(root_dir, 'data', '20200101000000000'),
+                os.path.join(tmpdir, 'tree', 'icon'),
+                os.path.join(tmpdir, 'data', '20200101000000000'),
             ),
             '../../tree/icon/',
         )
 
         self.assertEqual(
             util.get_relative_url(
-                os.path.join(root_dir, 'tree', 'icon', 'dummy.png'),
-                os.path.join(root_dir, 'data', '20200101000000000'),
+                os.path.join(tmpdir, 'tree', 'icon', 'dummy.png'),
+                os.path.join(tmpdir, 'data', '20200101000000000'),
                 path_is_dir=False,
             ),
             '../../tree/icon/dummy.png',
@@ -334,16 +345,16 @@ ul  >  li  :not([hidden])  {
 
         self.assertEqual(
             util.get_relative_url(
-                os.path.join(root_dir, 'data', '20200102000000000'),
-                os.path.join(root_dir, 'data', '20200101000000000'),
+                os.path.join(tmpdir, 'data', '20200102000000000'),
+                os.path.join(tmpdir, 'data', '20200101000000000'),
             ),
             '../20200102000000000/',
         )
 
         self.assertEqual(
             util.get_relative_url(
-                os.path.join(root_dir, '中文#456.png'),
-                os.path.join(root_dir, '中文#123.png'),
+                os.path.join(tmpdir, '中文#456.png'),
+                os.path.join(tmpdir, '中文#123.png'),
                 path_is_dir=False,
                 start_is_dir=False,
             ),
@@ -352,12 +363,12 @@ ul  >  li  :not([hidden])  {
 
     def test_checksum(self):
         self.assertEqual(
-            util.checksum(os.path.join(root_dir, 'test_util', 'checksum', 'checksum.txt')),
+            util.checksum(os.path.join(test_root, 'checksum', 'checksum.txt')),
             'da39a3ee5e6b4b0d3255bfef95601890afd80709',
         )
 
         self.assertEqual(
-            util.checksum(os.path.join(root_dir, 'test_util', 'checksum', 'checksum.txt'), method='sha256'),
+            util.checksum(os.path.join(test_root, 'checksum', 'checksum.txt'), method='sha256'),
             'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         )
 
@@ -375,7 +386,7 @@ ul  >  li  :not([hidden])  {
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_is_link(self):
         # junction
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'junction')
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
 
         # capture_output is not supported in Python < 3.8
         subprocess.run(
@@ -383,7 +394,7 @@ ul  >  li  :not([hidden])  {
                 'mklink',
                 '/j',
                 entry,
-                os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+                os.path.join(test_root, 'file_info', 'folder'),
             ],
             shell=True, check=True,
             stdout=subprocess.DEVNULL,
@@ -393,73 +404,66 @@ ul  >  li  :not([hidden])  {
         try:
             self.assertTrue(util.file_is_link(entry))
         finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+            # prevent tree cleanup issue for junction in Python 3.7
+            os.remove(entry)
 
         # directory
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'folder')
+        entry = os.path.join(test_root, 'file_info', 'folder')
         self.assertFalse(util.file_is_link(entry))
 
         # file
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'file.txt')
+        entry = os.path.join(test_root, 'file_info', 'file.txt')
         self.assertFalse(util.file_is_link(entry))
 
         # non-exist
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'nonexist')
+        entry = os.path.join(test_root, 'file_info', 'nonexist')
         self.assertFalse(util.file_is_link(entry))
 
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
     def test_file_is_link2(self):
         # symlink
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
 
         os.symlink(
-            os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+            os.path.join(test_root, 'file_info', 'file.txt'),
             entry,
         )
 
-        try:
-            self.assertTrue(util.file_is_link(entry))
-        finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+        self.assertTrue(util.file_is_link(entry))
 
-    def test_file_info(self):
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'nonexist.file')
+    def test_file_info_nonexist(self):
+        entry = os.path.join(test_root, 'file_info', 'nonexist.file')
         self.assertEqual(
             util.file_info(entry),
             ('nonexist.file', None, None, None),
         )
 
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'file.txt')
+    def test_file_info_file(self):
+        entry = os.path.join(test_root, 'file_info', 'file.txt')
         self.assertEqual(
             util.file_info(entry),
             ('file.txt', 'file', 3, os.stat(entry).st_mtime),
         )
 
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'folder')
+    def test_file_info_dir(self):
+        entry = os.path.join(test_root, 'file_info', 'folder')
         self.assertEqual(
             util.file_info(entry),
             ('folder', 'dir', None, os.stat(entry).st_mtime),
         )
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    def test_file_info_junction(self):
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'junction')
+    def test_file_info_junction_dir(self):
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
 
-        # target directory
         # capture_output is not supported in Python < 3.8
         subprocess.run(
             [
                 'mklink',
                 '/j',
                 entry,
-                os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+                os.path.join(test_root, 'file_info', 'folder'),
             ],
             shell=True, check=True,
             stdout=subprocess.DEVNULL,
@@ -472,19 +476,20 @@ ul  >  li  :not([hidden])  {
                 ('junction', 'link', None, os.lstat(entry).st_mtime),
             )
         finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+            # prevent tree cleanup issue for junction in Python 3.7
+            os.remove(entry)
 
-        # target non-exist
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_file_info_junction_nonexist(self):
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
+
         # capture_output is not supported in Python < 3.8
         subprocess.run(
             [
                 'mklink',
                 '/j',
                 entry,
-                os.path.join(root_dir, 'test_util', 'file_info', 'nonexist'),
+                os.path.join(test_root, 'file_info', 'nonexist'),
             ],
             shell=True, check=True,
             stdout=subprocess.DEVNULL,
@@ -497,69 +502,57 @@ ul  >  li  :not([hidden])  {
                 ('junction', 'link', None, os.lstat(entry).st_mtime),
             )
         finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+            # prevent tree cleanup issue for junction in Python 3.7
+            os.remove(entry)
 
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
-    def test_file_info_symlink(self):
-        entry = os.path.join(root_dir, 'test_util', 'file_info', 'symlink')
+    def test_file_info_symlink_file(self):
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
 
         # target file
         os.symlink(
-            os.path.join(root_dir, 'test_util', 'file_info', 'file.txt'),
+            os.path.join(test_root, 'file_info', 'file.txt'),
             entry,
         )
 
-        try:
-            self.assertEqual(
-                util.file_info(entry),
-                ('symlink', 'link', None, os.lstat(entry).st_mtime),
-            )
-        finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            util.file_info(entry),
+            ('symlink', 'link', None, os.lstat(entry).st_mtime),
+        )
 
-        # target directory
+    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
+                     'requires administrator or Developer Mode on Windows')
+    def test_file_info_symlink_dir(self):
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
+
         os.symlink(
-            os.path.join(root_dir, 'test_util', 'file_info', 'folder'),
+            os.path.join(test_root, 'file_info', 'folder'),
             entry,
         )
 
-        try:
-            self.assertEqual(
-                util.file_info(entry),
-                ('symlink', 'link', None, os.lstat(entry).st_mtime),
-            )
-        finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            util.file_info(entry),
+            ('symlink', 'link', None, os.lstat(entry).st_mtime),
+        )
 
-        # target non-exist
+    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
+                     'requires administrator or Developer Mode on Windows')
+    def test_file_info_symlink_nonexist(self):
+        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
+
         os.symlink(
-            os.path.join(root_dir, 'test_util', 'file_info', 'nonexist'),
+            os.path.join(test_root, 'file_info', 'nonexist'),
             entry,
         )
 
-        try:
-            self.assertEqual(
-                util.file_info(entry),
-                ('symlink', 'link', None, os.lstat(entry).st_mtime),
-            )
-        finally:
-            try:
-                os.remove(entry)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            util.file_info(entry),
+            ('symlink', 'link', None, os.lstat(entry).st_mtime),
+        )
 
     def test_listdir(self):
-        entry = os.path.join(root_dir, 'test_util', 'listdir')
+        entry = os.path.join(test_root, 'listdir')
         self.assertEqual(set(util.listdir(entry)), {
             ('file.txt', 'file', 3, os.stat(os.path.join(entry, 'file.txt')).st_mtime),
             ('folder', 'dir', None, os.stat(os.path.join(entry, 'folder')).st_mtime),
@@ -836,631 +829,464 @@ ul  >  li  :not([hidden])  {
         )
 
     def test_zip_file_info(self):
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
 
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'file.txt'),
+            ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'folder'),
+            ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'folder/'),
+            ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'folder/.gitkeep'),
+            ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, ''),
+            ('', None, None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'implicit_folder'),
+            ('implicit_folder', None, None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'implicit_folder/'),
+            ('implicit_folder', None, None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, '', check_implicit_dir=True),
+            ('', 'dir', None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'implicit_folder', check_implicit_dir=True),
+            ('implicit_folder', 'dir', None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'implicit_folder/', check_implicit_dir=True),
+            ('implicit_folder', 'dir', None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'implicit_folder/.gitkeep'),
+            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'nonexist'),
+            ('nonexist', None, None, None),
+        )
+
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'nonexist/'),
+            ('nonexist', None, None, None),
+        )
+
+        # take zipfile.ZipFile
+        with zipfile.ZipFile(zip_filename, 'r') as zh:
             self.assertEqual(
-                util.zip_file_info(zip_filename, 'file.txt'),
+                util.zip_file_info(zh, 'file.txt'),
                 ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
             )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'folder'),
-                ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'folder/'),
-                ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'folder/.gitkeep'),
-                ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0))),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, ''),
-                ('', None, None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'implicit_folder'),
-                ('implicit_folder', None, None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'implicit_folder/'),
-                ('implicit_folder', None, None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, '', check_implicit_dir=True),
-                ('', 'dir', None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'implicit_folder', check_implicit_dir=True),
-                ('implicit_folder', 'dir', None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'implicit_folder/', check_implicit_dir=True),
-                ('implicit_folder', 'dir', None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'implicit_folder/.gitkeep'),
-                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'nonexist'),
-                ('nonexist', None, None, None),
-            )
-
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'nonexist/'),
-                ('nonexist', None, None, None),
-            )
-
-            # take zipfile.ZipFile
-            with zipfile.ZipFile(zip_filename, 'r') as zip:
-                self.assertEqual(
-                    util.zip_file_info(zip, 'file.txt'),
-                    ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
-                )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
 
     @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
     def test_zip_file_info_altsep(self):
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('implicit_folder\\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('implicit_folder\\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
 
-            self.assertEqual(
-                util.zip_file_info(zip_filename, 'implicit_folder\\.gitkeep'),
-                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            util.zip_file_info(zip_filename, 'implicit_folder\\.gitkeep'),
+            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
+        )
 
     def test_zip_listdir(self):
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
 
-            self.assertEqual(set(util.zip_listdir(zip_filename, '')), {
+        self.assertEqual(set(util.zip_listdir(zip_filename, '')), {
+            ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('implicit_folder', 'dir', None, None),
+            ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
+        })
+
+        self.assertEqual(set(util.zip_listdir(zip_filename, '/')), {
+            ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('implicit_folder', 'dir', None, None),
+            ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
+        })
+
+        self.assertEqual(set(util.zip_listdir(zip_filename, '', recursive=True)), {
+            ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('folder/.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0))),
+            ('implicit_folder', 'dir', None, None),
+            ('implicit_folder/.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
+        })
+
+        self.assertEqual(set(util.zip_listdir(zip_filename, 'folder')), {
+            ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0)))
+        })
+
+        self.assertEqual(set(util.zip_listdir(zip_filename, 'folder/')), {
+            ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0)))
+        })
+
+        self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder')), {
+            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
+        })
+
+        self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder/')), {
+            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
+        })
+
+        with self.assertRaises(util.ZipDirNotFoundError):
+            set(util.zip_listdir(zip_filename, 'nonexist'))
+
+        with self.assertRaises(util.ZipDirNotFoundError):
+            set(util.zip_listdir(zip_filename, 'nonexist/'))
+
+        with self.assertRaises(util.ZipDirNotFoundError):
+            set(util.zip_listdir(zip_filename, 'file.txt'))
+
+        # take zipfile.ZipFile
+        with zipfile.ZipFile(zip_filename, 'r') as zh:
+            self.assertEqual(set(util.zip_listdir(zh, '')), {
                 ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
                 ('implicit_folder', 'dir', None, None),
                 ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
             })
-
-            self.assertEqual(set(util.zip_listdir(zip_filename, '/')), {
-                ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
-                ('implicit_folder', 'dir', None, None),
-                ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
-            })
-
-            self.assertEqual(set(util.zip_listdir(zip_filename, '', recursive=True)), {
-                ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
-                ('folder/.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0))),
-                ('implicit_folder', 'dir', None, None),
-                ('implicit_folder/.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
-                ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
-            })
-
-            self.assertEqual(set(util.zip_listdir(zip_filename, 'folder')), {
-                ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0)))
-            })
-
-            self.assertEqual(set(util.zip_listdir(zip_filename, 'folder/')), {
-                ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0)))
-            })
-
-            self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder')), {
-                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
-            })
-
-            self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder/')), {
-                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
-            })
-
-            with self.assertRaises(util.ZipDirNotFoundError):
-                set(util.zip_listdir(zip_filename, 'nonexist'))
-
-            with self.assertRaises(util.ZipDirNotFoundError):
-                set(util.zip_listdir(zip_filename, 'nonexist/'))
-
-            with self.assertRaises(util.ZipDirNotFoundError):
-                set(util.zip_listdir(zip_filename, 'file.txt'))
-
-            # take zipfile.ZipFile
-            with zipfile.ZipFile(zip_filename, 'r') as zip:
-                self.assertEqual(set(util.zip_listdir(zip, '')), {
-                    ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
-                    ('implicit_folder', 'dir', None, None),
-                    ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
-                })
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
 
     @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
     def test_zip_listdir_altsep(self):
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo(r'implicit_folder\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo(r'implicit_folder\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
 
-            self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder\\')), {
-                ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
-            })
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(set(util.zip_listdir(zip_filename, 'implicit_folder\\')), {
+            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
+        })
 
     def test_zip_has(self):
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr('file.txt', '123456')
-                zh.writestr('folder/', '')
-                zh.writestr('folder/.gitkeep', '123')
-                zh.writestr('implicit_folder/.gitkeep', '1234')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr('file.txt', '123456')
+            zh.writestr('folder/', '')
+            zh.writestr('folder/.gitkeep', '123')
+            zh.writestr('implicit_folder/.gitkeep', '1234')
 
-            self.assertTrue(util.zip_has(zip_filename, '', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, '/', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'file.txt', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'file.txt/', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, 'folder', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, 'folder/', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, '', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, '/', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'file.txt', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'file.txt/', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, 'folder', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, 'folder/', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='dir'))
 
-            self.assertFalse(util.zip_has(zip_filename, '', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, '/', type='file'))
-            self.assertTrue(util.zip_has(zip_filename, 'file.txt', type='file'))
-            self.assertTrue(util.zip_has(zip_filename, 'file.txt/', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'folder', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'folder/', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/', type='file'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='file'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, '', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, '/', type='file'))
+        self.assertTrue(util.zip_has(zip_filename, 'file.txt', type='file'))
+        self.assertTrue(util.zip_has(zip_filename, 'file.txt/', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'folder', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'folder/', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder/', type='file'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='file'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='file'))
 
-            self.assertTrue(util.zip_has(zip_filename, '', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, '/', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'file.txt', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'file.txt/', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'folder', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'folder/', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='any'))
-            self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='any'))
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
+        self.assertTrue(util.zip_has(zip_filename, '', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, '/', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'file.txt', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'file.txt/', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'folder', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'folder/', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='any'))
+        self.assertFalse(util.zip_has(zip_filename, 'nonexist.foo', type='any'))
 
     @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
     def test_zip_has_altsep(self):
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr('implicit_folder\\.gitkeep', '1234')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr('implicit_folder\\.gitkeep', '1234')
 
-            self.assertTrue(util.zip_has(zip_filename, '', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, '\\', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='dir'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='dir'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, '', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, '\\', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='dir'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='dir'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='dir'))
 
-            self.assertFalse(util.zip_has(zip_filename, '', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, '\\', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder', type='file'))
-            self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\', type='file'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='file'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, '', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, '\\', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder', type='file'))
+        self.assertFalse(util.zip_has(zip_filename, 'implicit_folder\\', type='file'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='file'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='file'))
 
-            self.assertTrue(util.zip_has(zip_filename, '', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, '\\', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='any'))
-            self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='any'))
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
+        self.assertTrue(util.zip_has(zip_filename, '', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, '\\', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='any'))
+        self.assertTrue(util.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='any'))
 
     def test_zip_compress01(self):
         """directory"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABC中文')
-            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-            os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-            with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABCDEF')
-            with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('123456')
+        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
+        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABCDEF')
+        with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('123456')
 
-            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder')
+        util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder')
 
-            with zipfile.ZipFile(zip_filename) as zh:
-                self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
-                self.assertEqual(zh.read('myfolder/subfile.txt').decode('UTF-8'), '123456')
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename) as zh:
+            self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
+            self.assertEqual(zh.read('myfolder/subfile.txt').decode('UTF-8'), '123456')
 
     def test_zip_compress02(self):
         """directory with subpath=''"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABC中文')
-            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-            os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-            with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABCDEF')
-            with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('123456')
+        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
+        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABCDEF')
+        with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('123456')
 
-            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), '')
+        util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), '')
 
-            with zipfile.ZipFile(zip_filename) as zh:
-                self.assertEqual(zh.read('subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
-                self.assertEqual(zh.read('subfile.txt').decode('UTF-8'), '123456')
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename) as zh:
+            self.assertEqual(zh.read('subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
+            self.assertEqual(zh.read('subfile.txt').decode('UTF-8'), '123456')
 
     def test_zip_compress03(self):
         """directory with filter"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABC中文')
-            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-            os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-            with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABCDEF')
-            with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('123456')
+        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
+        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABCDEF')
+        with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('123456')
 
-            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder', filter={'subfolder'})
+        util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder', filter={'subfolder'})
 
-            with zipfile.ZipFile(zip_filename) as zh:
-                self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
-                with self.assertRaises(KeyError):
-                    zh.getinfo('myfolder/subfile.txt')
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename) as zh:
+            self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
+            with self.assertRaises(KeyError):
+                zh.getinfo('myfolder/subfile.txt')
 
     def test_zip_compress04(self):
         """file"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABC中文')
-            os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-            with open(os.path.join(temp_dir, 'folder', 'sybfile1.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('123456')
+        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
+        with open(os.path.join(temp_dir, 'folder', 'sybfile1.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('123456')
 
-            util.zip_compress(zip_filename, os.path.join(temp_dir, 'file.txt'), 'myfile.txt')
+        util.zip_compress(zip_filename, os.path.join(temp_dir, 'file.txt'), 'myfile.txt')
 
-            with zipfile.ZipFile(zip_filename) as zh:
-                self.assertEqual(zh.read('myfile.txt').decode('UTF-8'), 'ABC中文')
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename) as zh:
+            self.assertEqual(zh.read('myfile.txt').decode('UTF-8'), 'ABC中文')
 
     @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
     def test_zip_compress05(self):
         """altsep"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-            with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
-                fh.write('ABCDEF')
+        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
+        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABCDEF')
 
-            util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
+        util.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
 
-            with zipfile.ZipFile(zip_filename) as zh:
-                self.assertEqual(zh.read('sub/folder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename) as zh:
+            self.assertEqual(zh.read('sub/folder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
 
     def test_zip_extract01(self):
         """root"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-            util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'))
+        util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'))
 
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
-            )
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'zipfile', 'folder')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
-            )
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'zipfile', 'folder', '.gitkeep')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
-            )
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'zipfile', 'implicit_folder', '.gitkeep')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
+        )
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'zipfile', 'folder')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+        )
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'zipfile', 'folder', '.gitkeep')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
+        )
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'zipfile', 'implicit_folder', '.gitkeep')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
+        )
 
     def test_zip_extract02(self):
         """folder explicit"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-            util.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'folder')
+        util.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'folder')
 
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'folder')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
-            )
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'folder')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+        )
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
+        )
 
     def test_zip_extract03(self):
         """folder implicit"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-            util.zip_extract(zip_filename, os.path.join(temp_dir, 'implicit_folder'), 'implicit_folder')
+        util.zip_extract(zip_filename, os.path.join(temp_dir, 'implicit_folder'), 'implicit_folder')
 
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'implicit_folder', '.gitkeep')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'implicit_folder', '.gitkeep')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
+        )
 
     def test_zip_extract04(self):
         """file"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-            util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile.txt'), 'file.txt')
+        util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile.txt'), 'file.txt')
 
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'zipfile.txt')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'zipfile.txt')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
+        )
 
     def test_zip_extract05(self):
         """target exists"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-                zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
-                zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-            with self.assertRaises(FileExistsError):
-                util.zip_extract(zip_filename, temp_dir, '')
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        with self.assertRaises(FileExistsError):
+            util.zip_extract(zip_filename, temp_dir, '')
 
     def test_zip_extract06(self):
         """timezone adjust"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
 
-            test_offset = -12345  # use a timezone offset which is unlikely really used
-            util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'), tzoffset=test_offset)
-            delta = datetime.now().astimezone().utcoffset().total_seconds()
+        test_offset = -12345  # use a timezone offset which is unlikely really used
+        util.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'), tzoffset=test_offset)
+        delta = datetime.now().astimezone().utcoffset().total_seconds()
 
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta,
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta,
+        )
 
     @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
     def test_zip_extract07(self):
         """altsep"""
-        temp_dir = os.path.join(root_dir, 'test_util', 'temp')
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
+        temp_dir = tempfile.mkdtemp(dir=tmpdir)
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
 
-        try:
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('sub\\folder\\.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('sub\\folder\\.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-            util.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
+        util.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
 
-            self.assertEqual(
-                os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
-                zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
-            )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
-            try:
-                shutil.rmtree(temp_dir)
-            except FileNotFoundError:
-                pass
+        self.assertEqual(
+            os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
+            zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
+        )
 
     def test_parse_content_type(self):
         self.assertEqual(
@@ -1535,7 +1361,7 @@ ul  >  li  :not([hidden])  {
             util.parse_datauri('data:text/plain;base64,ABC')
 
     def test_get_html_charset(self):
-        root = os.path.join(root_dir, 'test_util', 'get_html_charset')
+        root = os.path.join(test_root, 'get_html_charset')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html')), 'UTF-8')
         self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html'), default='Big5'), 'big5hkscs')
 
@@ -1833,7 +1659,7 @@ foo   中文<br/>
         )
 
     def test_iter_meta_refresh(self):
-        root = os.path.join(root_dir, 'test_util', 'iter_meta_refresh')
+        root = os.path.join(test_root, 'iter_meta_refresh')
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh1.html'))),
             [
@@ -1901,25 +1727,19 @@ foo   中文<br/>
             [],
         )
 
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
 
-            with zipfile.ZipFile(zip_filename, 'r') as zh:
-                with zh.open('refresh.html') as fh:
-                    self.assertEqual(
-                        list(util.iter_meta_refresh(fh)),
-                        [(0, 'target.html', None)],
-                    )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename, 'r') as zh:
+            with zh.open('refresh.html') as fh:
+                self.assertEqual(
+                    list(util.iter_meta_refresh(fh)),
+                    [(0, 'target.html', None)],
+                )
 
     def test_get_meta_refresh(self):
-        root = os.path.join(root_dir, 'test_util', 'get_meta_refresh')
+        root = os.path.join(test_root, 'get_meta_refresh')
 
         self.assertEqual(
             util.get_meta_refresh(os.path.join(root, 'refresh1.html')),
@@ -1951,25 +1771,19 @@ foo   中文<br/>
             (0, 'target.html', None),
         )
 
-        zip_filename = os.path.join(root_dir, 'test_util', 'zipfile.zip')
-        try:
-            with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
+        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zip_filename, 'w') as zh:
+            zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
 
-            with zipfile.ZipFile(zip_filename, 'r') as zh:
-                with zh.open('refresh.html') as fh:
-                    self.assertEqual(
-                        util.get_meta_refresh(fh),
-                        (0, 'target.html', None),
-                    )
-        finally:
-            try:
-                os.remove(zip_filename)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(zip_filename, 'r') as zh:
+            with zh.open('refresh.html') as fh:
+                self.assertEqual(
+                    util.get_meta_refresh(fh),
+                    (0, 'target.html', None),
+                )
 
     def test_get_meta_refreshed_file(self):
-        root = os.path.join(root_dir, 'test_util', 'get_meta_refreshed_file')
+        root = os.path.join(test_root, 'get_meta_refreshed_file')
 
         self.assertEqual(
             util.get_meta_refreshed_file(os.path.join(root, 'case01', 'index.html')),
@@ -2005,10 +1819,9 @@ foo   中文<br/>
             util.get_meta_refreshed_file(os.path.join(root, 'case08', 'index.html'))
 
     def test_parse_maff_index_rdf(self):
-        maff_filename = os.path.join(root_dir, 'test_util', 'tempfile.maff')
-        try:
-            with zipfile.ZipFile(maff_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('19870101/index.rdf', (1987, 1, 1, 0, 0, 0)), """<?xml version="1.0"?>
+        maff_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'tempfile.maff')
+        with zipfile.ZipFile(maff_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('19870101/index.rdf', (1987, 1, 1, 0, 0, 0)), """<?xml version="1.0"?>
 <RDF:RDF xmlns:MAF="http://maf.mozdev.org/metadata/rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -2021,23 +1834,17 @@ foo   中文<br/>
   </RDF:Description>
 </RDF:RDF>""")
 
-            with zipfile.ZipFile(maff_filename, 'r') as zh:
-                with zh.open('19870101/index.rdf', 'r') as rdf:
-                    self.assertEqual(
-                        util.parse_maff_index_rdf(rdf),
-                        ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'index.html', 'UTF-8'),
-                    )
-        finally:
-            try:
-                os.remove(maff_filename)
-            except FileNotFoundError:
-                pass
+        with zipfile.ZipFile(maff_filename, 'r') as zh:
+            with zh.open('19870101/index.rdf', 'r') as rdf:
+                self.assertEqual(
+                    util.parse_maff_index_rdf(rdf),
+                    ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'index.html', 'UTF-8'),
+                )
 
     def test_get_maff_pages(self):
-        maff_filename = os.path.join(root_dir, 'test_util', 'tempfile.maff')
-        try:
-            with zipfile.ZipFile(maff_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('webpage1/index.rdf', (1987, 1, 1, 0, 0, 0)), """<?xml version="1.0"?>
+        maff_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'tempfile.maff')
+        with zipfile.ZipFile(maff_filename, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('webpage1/index.rdf', (1987, 1, 1, 0, 0, 0)), """<?xml version="1.0"?>
 <RDF:RDF xmlns:MAF="http://maf.mozdev.org/metadata/rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -2049,26 +1856,21 @@ foo   中文<br/>
     <MAF:charset RDF:resource="UTF-8"/>
   </RDF:Description>
 </RDF:RDF>""")
-                zh.writestr(zipfile.ZipInfo('webpage2/index.html', (1987, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('webpage3/index.svg', (1987, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('webpage2/index.html', (1987, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('webpage3/index.svg', (1987, 1, 1, 0, 0, 0)), '')
 
-            self.assertEqual(util.get_maff_pages(maff_filename), [
+        self.assertEqual(util.get_maff_pages(maff_filename), [
+            ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'webpage1/index.html', 'UTF-8'),
+            (None, None, None, 'webpage2/index.html', None),
+            (None, None, None, 'webpage3/index.svg', None),
+        ])
+
+        with zipfile.ZipFile(maff_filename, 'r') as zh:
+            self.assertEqual(util.get_maff_pages(zh), [
                 ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'webpage1/index.html', 'UTF-8'),
                 (None, None, None, 'webpage2/index.html', None),
                 (None, None, None, 'webpage3/index.svg', None),
             ])
-
-            with zipfile.ZipFile(maff_filename, 'r') as zh:
-                self.assertEqual(util.get_maff_pages(zh), [
-                    ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'webpage1/index.html', 'UTF-8'),
-                    (None, None, None, 'webpage2/index.html', None),
-                    (None, None, None, 'webpage3/index.svg', None),
-                ])
-        finally:
-            try:
-                os.remove(maff_filename)
-            except FileNotFoundError:
-                pass
 
     @mock.patch('sys.stderr', io.StringIO())
     def test_encrypt(self):

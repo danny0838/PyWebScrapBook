@@ -1,6 +1,6 @@
 import os
 import re
-import shutil
+import tempfile
 import time
 import unittest
 from unittest import mock
@@ -9,23 +9,30 @@ from webscrapbook import WSB_DIR, Config, util
 from webscrapbook.scrapbook import host as wsb_host
 from webscrapbook.scrapbook.host import Host
 
-root_dir = os.path.abspath(os.path.dirname(__file__))
-test_root = os.path.join(root_dir, 'test_scrapbook_host')
+from . import TEMP_DIR
 
 
 def setUpModule():
+    """Set up a temp directory for testing."""
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='host-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(_tmpdir.name)
+
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(test_root, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', test_root),
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
     ]
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
+    """Cleanup the temp directory."""
+    _tmpdir.cleanup()
+
     # stop mock
     for mocking in mockings:
         mocking.stop()
@@ -35,35 +42,18 @@ class TestBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
-        cls.test_root = os.path.join(test_root, 'general')
-        cls.test_wsbdir = os.path.join(cls.test_root, WSB_DIR)
-        cls.test_config = os.path.join(cls.test_root, WSB_DIR, 'config.ini')
 
     def setUp(self):
         """Set up a general temp test folder
         """
-        try:
-            shutil.rmtree(self.test_root)
-        except NotADirectoryError:
-            os.remove(self.test_root)
-        except FileNotFoundError:
-            pass
+        self.test_root = tempfile.mkdtemp(dir=tmpdir)
+        self.test_wsbdir = os.path.join(self.test_root, WSB_DIR)
+        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
 
         os.makedirs(self.test_wsbdir)
 
-    def tearDown(self):
-        """Remove general temp test folder
-        """
-        try:
-            shutil.rmtree(self.test_root)
-        except NotADirectoryError:
-            os.remove(self.test_root)
-        except FileNotFoundError:
-            pass
-
 
 class TestHost(TestBase):
-    @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init01(self):
         """Check basic"""
         with open(self.test_config, 'w', encoding='UTF-8') as f:
@@ -88,17 +78,17 @@ name = mybook2
         self.assertEqual(host.backup_dir, os.path.join(self.test_root, 'mybackups'))
         self.assertEqual([os.path.normcase(f) for f in host.themes], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom')),
-            os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom')),
+            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.statics], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom', 'static')),
-            os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'static')),
+            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'static')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'static'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.templates], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom', 'templates')),
-            os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'templates')),
+            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
         ])
         self.assertEqual(host.locks, os.path.join(self.test_root, WSB_DIR, 'locks'))
@@ -107,7 +97,6 @@ name = mybook2
             'id2': 'mybook2',
         })
 
-    @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init02(self):
         """Check config param"""
         other_root = os.path.join(self.test_root, 'rootdir')
@@ -134,17 +123,17 @@ name = mybook2
         self.assertEqual(host.backup_dir, os.path.join(other_root, 'mybackups'))
         self.assertEqual([os.path.normcase(f) for f in host.themes], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom')),
-            os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom')),
+            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.statics], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom', 'static')),
-            os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'static')),
+            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'static')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'static'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.templates], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom', 'templates')),
-            os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', 'custom', 'templates')),
+            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
         ])
         self.assertEqual(host.locks, os.path.join(other_root, WSB_DIR, 'locks'))
@@ -153,7 +142,6 @@ name = mybook2
             'id2': 'mybook2',
         })
 
-    @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_init03(self):
         """Validate theme name to avoid a potential bad path."""
         for theme, theme_fixed in [
@@ -169,7 +157,7 @@ name = mybook2
                 host = Host(self.test_root)
                 self.assertEqual([os.path.normcase(f) for f in host.themes], [
                     os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', theme_fixed)),
-                    os.path.normcase(os.path.join(self.test_root, 'wsb', 'themes', theme_fixed)),
+                    os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', theme_fixed)),
                     os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', theme_fixed))),
                 ])
 
@@ -181,15 +169,17 @@ name = mybook2
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'default', 'static', 'index.css'))),
         )
 
-    @mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(test_root, 'general', 'wsb'))
     def test_get_static_file02(self):
         """Lookup static file from user themes"""
-        other_static = os.path.join(self.test_root, 'wsb', 'themes', 'default', 'static', 'test.txt')
+        user_dir = os.path.join(self.test_root, 'wsb')
+        other_static = os.path.join(user_dir, 'themes', 'default', 'static', 'test.txt')
         os.makedirs(os.path.dirname(other_static))
         with open(other_static, 'w'):
             pass
 
-        host = Host(self.test_root)
+        with mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', user_dir):
+            host = Host(self.test_root)
+
         self.assertEqual(host.get_static_file('test.txt'), other_static)
 
     def test_get_static_file03(self):
@@ -280,7 +270,11 @@ name = mybook2
         """Test base param."""
         test_backup_dir = os.path.join(self.test_root, 'backup')
         os.makedirs(test_backup_dir)
-        test_base_dir = os.path.join(test_root, 'backup')
+        test_base_dir = os.path.join(self.test_root, 'backup_base')
+        os.makedirs(test_base_dir)
+        test_file = os.path.join(test_base_dir, 'test.txt')
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC123')
 
         host = Host(self.test_root)
         host.backup(os.path.join(test_base_dir, 'test.txt'), test_backup_dir, base=test_base_dir)

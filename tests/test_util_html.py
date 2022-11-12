@@ -1,9 +1,6 @@
-import os
 import unittest
 
 from webscrapbook.util.html import HtmlRewriter, MarkupTag
-
-root_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Test(unittest.TestCase):
