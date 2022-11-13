@@ -228,24 +228,24 @@ class TestFunctions(Test):
 
         # entry1.zip!/entry2.zip!/ > entry1.zip!/entry2.zip
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            zip.writestr('entry1.zip!/entry2.zip!/', '')
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/entry2.zip!/', '')
 
             buf2 = io.BytesIO()
             with zipfile.ZipFile(buf2, 'w'):
                 pass
-            zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
 
-            zip.writestr('entry1.zip!/', '')
+            zh.writestr('entry1.zip!/', '')
 
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -255,24 +255,24 @@ class TestFunctions(Test):
 
         # entry1.zip!/entry2.zip!/ > entry1.zip!/entry2.zip
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            zip.writestr('entry1.zip!/entry2.zip!/.gitkeep', '')
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/entry2.zip!/.gitkeep', '')
 
             buf2 = io.BytesIO()
             with zipfile.ZipFile(buf2, 'w'):
                 pass
-            zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
 
-            zip.writestr('entry1.zip!/', '')
+            zh.writestr('entry1.zip!/', '')
 
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -282,22 +282,22 @@ class TestFunctions(Test):
 
         # entry1.zip!/entry2.zip > entry1.zip!/
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             buf2 = io.BytesIO()
             with zipfile.ZipFile(buf2, 'w'):
                 pass
-            zip.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
 
-            zip.writestr('entry1.zip!/', '')
+            zh.writestr('entry1.zip!/', '')
 
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -307,19 +307,19 @@ class TestFunctions(Test):
 
         # entry1.zip!/ > entry1.zip entry2.zip!/
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            zip.writestr('entry1.zip!/entry2.zip', 'non-zip')
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/entry2.zip', 'non-zip')
 
-            zip.writestr('entry1.zip!/', '')
+            zh.writestr('entry1.zip!/', '')
 
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -329,17 +329,17 @@ class TestFunctions(Test):
 
         # entry1.zip!/ > entry1.zip entry2.zip!/
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            zip.writestr('entry1.zip!/', '')
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/', '')
 
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -349,17 +349,17 @@ class TestFunctions(Test):
 
         # entry1.zip!/ > entry1.zip entry2.zip!/
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            zip.writestr('entry1.zip!/.gitkeep', '')
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/.gitkeep', '')
 
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -369,15 +369,15 @@ class TestFunctions(Test):
 
         # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!/', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!/', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -387,15 +387,15 @@ class TestFunctions(Test):
 
         # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip!/.gitkeep', '')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip!/.gitkeep', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -405,14 +405,14 @@ class TestFunctions(Test):
 
         # entry1.zip entry2.zip > entry1.zip
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
                 with zipfile.ZipFile(buf11, 'w'):
                     pass
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -422,10 +422,10 @@ class TestFunctions(Test):
 
         # entry1.zip
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.writestr('entry2.zip', 'non-zip')
-            zip.writestr('entry1.zip', buf1.getvalue())
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('entry2.zip', 'non-zip')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -435,8 +435,8 @@ class TestFunctions(Test):
 
         # other
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
-            zip.writestr('entry1.zip', 'non-zip')
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip', 'non-zip')
 
         app = wsbapp.make_app(root)
         with app.app_context():
@@ -446,7 +446,7 @@ class TestFunctions(Test):
 
         # other
         root = self.setup_test('general')
-        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zip:
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             pass
 
         app = wsbapp.make_app(root)
@@ -492,153 +492,153 @@ class TestFunctions(Test):
     def test_open_archive_path_read(self):
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
+        with zipfile.ZipFile(zip_file, 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
                 buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w') as zip2:
-                    zip2.writestr('subdir/index.html', 'Hello World!')
-                zip1.writestr('entry2.zip', buf11.getvalue())
-            zip.writestr('entry1.zip', buf1.getvalue())
+                with zipfile.ZipFile(buf11, 'w') as zh2:
+                    zh2.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.read('subdir/index.html').decode('UTF-8'), 'Hello World!')
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'Hello World!')
 
             with self.assertRaises(ValueError):
-                with wsbapp.open_archive_path([zip_file]) as zip:
+                with wsbapp.open_archive_path([zip_file]) as zh:
                     pass
 
     def test_open_archive_path_write(self):
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
-            zip.comment = 'test zip comment 測試'.encode('UTF-8')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            zh.comment = 'test zip comment 測試'.encode('UTF-8')
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.comment = 'test zip comment 1 測試'.encode('UTF-8')
-                zip1.writestr('subdir/index.html', 'Hello World!')
-            zip.writestr('entry1.zip', buf1.getvalue())
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.comment = 'test zip comment 1 測試'.encode('UTF-8')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w') as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w') as zh:
                 # existed
-                zip.writestr('subdir/index.html', 'rewritten 測試')
+                zh.writestr('subdir/index.html', 'rewritten 測試')
 
                 # new
-                zip.writestr('newdir/test.txt', 'new file 測試')
+                zh.writestr('newdir/test.txt', 'new file 測試')
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
                 # existed
-                self.assertEqual(zip.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
+                self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
 
                 # new
-                self.assertEqual(zip.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
+                self.assertEqual(zh.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
 
             # check comments are kept
-            with wsbapp.open_archive_path([zip_file, '']) as zip:
-                self.assertEqual(zip.comment.decode('UTF-8'), 'test zip comment 測試')
+            with wsbapp.open_archive_path([zip_file, '']) as zh:
+                self.assertEqual(zh.comment.decode('UTF-8'), 'test zip comment 測試')
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.comment.decode('UTF-8'), 'test zip comment 1 測試')
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.comment.decode('UTF-8'), 'test zip comment 1 測試')
 
     def test_open_archive_path_delete(self):
         # file
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
+        with zipfile.ZipFile(zip_file, 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.writestr('subdir/', '')
-                zip1.writestr('subdir/index.html', 'Hello World!')
-                zip1.writestr('subdir2/test.txt', 'dummy')
-            zip.writestr('entry1.zip', buf1.getvalue())
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir/index.html']) as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir/index.html']):
                 pass
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.namelist(), ['subdir/', 'subdir2/test.txt'])
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.namelist(), ['subdir/', 'subdir2/test.txt'])
 
         # explicit directory
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
+        with zipfile.ZipFile(zip_file, 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.writestr('subdir/', '')
-                zip1.writestr('subdir/index.html', 'Hello World!')
-                zip1.writestr('subdir2/test.txt', 'dummy')
-            zip.writestr('entry1.zip', buf1.getvalue())
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir']) as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir']):
                 pass
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.namelist(), ['subdir2/test.txt'])
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.namelist(), ['subdir2/test.txt'])
 
         # implicit directory
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
+        with zipfile.ZipFile(zip_file, 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.writestr('subdir/', '')
-                zip1.writestr('subdir/index.html', 'Hello World!')
-                zip1.writestr('subdir2/test.txt', 'dummy')
-            zip.writestr('entry1.zip', buf1.getvalue())
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir2']) as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir2']):
                 pass
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.namelist(), ['subdir/', 'subdir/index.html'])
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.namelist(), ['subdir/', 'subdir/index.html'])
 
         # root (as an implicit directory)
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
+        with zipfile.ZipFile(zip_file, 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.writestr('subdir/', '')
-                zip1.writestr('subdir/index.html', 'Hello World!')
-                zip1.writestr('subdir2/test.txt', 'dummy')
-            zip.writestr('entry1.zip', buf1.getvalue())
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['']) as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['']):
                 pass
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.namelist(), [])
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.namelist(), [])
 
         # multiple
         root = self.setup_test('general')
         zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zip:
+        with zipfile.ZipFile(zip_file, 'w') as zh:
             buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zip1:
-                zip1.writestr('subdir/', '')
-                zip1.writestr('subdir/index.html', 'Hello World!')
-                zip1.writestr('subdir2/test.txt', 'dummy')
-            zip.writestr('entry1.zip', buf1.getvalue())
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
 
         app = wsbapp.make_app(root)
         with app.app_context():
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir', 'subdir2']) as zip:
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir', 'subdir2']):
                 pass
 
-            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zip:
-                self.assertEqual(zip.namelist(), [])
+            with wsbapp.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+                self.assertEqual(zh.namelist(), [])
 
     def test_get_breadcrumbs(self):
         # directory
@@ -933,8 +933,8 @@ class TestWebHost(Test):
         token_file = os.path.join(self.token_dir, token)
 
         self.assertTrue(os.path.isfile(token_file))
-        with open(token_file, 'r', encoding='UTF-8') as f:
-            self.assertAlmostEqual(int(f.read()), expected_expire_time, delta=1)
+        with open(token_file, 'r', encoding='UTF-8') as fh:
+            self.assertAlmostEqual(int(fh.read()), expected_expire_time, delta=1)
         self.assertAlmostEqual(mock_check.call_args[0][0], now, delta=1)
 
     @mock.patch('webscrapbook.app.WebHost.token_check_delete_expire')
@@ -948,8 +948,8 @@ class TestWebHost(Test):
         token_file = os.path.join(self.token_dir, token)
 
         self.assertTrue(os.path.isfile(token_file))
-        with open(token_file, 'r', encoding='UTF-8') as f:
-            self.assertEqual(int(f.read()), expected_expire_time)
+        with open(token_file, 'r', encoding='UTF-8') as fh:
+            self.assertEqual(int(fh.read()), expected_expire_time)
         self.assertEqual(mock_check.call_args[0][0], now)
 
     def test_token_validate1(self):
@@ -957,8 +957,8 @@ class TestWebHost(Test):
         token_time = int(time.time()) + 3
 
         token_file = os.path.join(self.token_dir, token)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(token_time))
+        with open(token_file, 'w', encoding='UTF-8') as fh:
+            fh.write(str(token_time))
 
         handler = wsbapp.WebHost(self.root)
         self.assertTrue(handler.token_validate(token))
@@ -968,8 +968,8 @@ class TestWebHost(Test):
         token_time = int(time.time()) - 3
 
         token_file = os.path.join(self.token_dir, token)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(token_time))
+        with open(token_file, 'w', encoding='UTF-8') as fh:
+            fh.write(str(token_time))
 
         handler = wsbapp.WebHost(self.root)
         self.assertFalse(handler.token_validate(token))
@@ -980,8 +980,8 @@ class TestWebHost(Test):
         token_time = 30001
 
         token_file = os.path.join(self.token_dir, token)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(token_time))
+        with open(token_file, 'w', encoding='UTF-8') as fh:
+            fh.write(str(token_time))
 
         handler = wsbapp.WebHost(self.root)
         self.assertTrue(handler.token_validate(token, now))
@@ -992,8 +992,8 @@ class TestWebHost(Test):
         token_time = 29999
 
         token_file = os.path.join(self.token_dir, token)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(token_time))
+        with open(token_file, 'w', encoding='UTF-8') as fh:
+            fh.write(str(token_time))
 
         handler = wsbapp.WebHost(self.root)
         self.assertFalse(handler.token_validate(token, now))
@@ -1002,8 +1002,8 @@ class TestWebHost(Test):
         token = 'sampleToken'
 
         token_file = os.path.join(self.token_dir, token)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(32768))
+        with open(token_file, 'w', encoding='UTF-8') as fh:
+            fh.write(str(32768))
 
         handler = wsbapp.WebHost(self.root)
         handler.token_delete(token)
@@ -1012,14 +1012,14 @@ class TestWebHost(Test):
     def test_token_delete_expire1(self):
         now = int(time.time())
 
-        with open(os.path.join(self.token_dir, 'sampleToken1'), 'w', encoding='UTF-8') as f:
-            f.write(str(now - 100))
-        with open(os.path.join(self.token_dir, 'sampleToken2'), 'w', encoding='UTF-8') as f:
-            f.write(str(now - 10))
-        with open(os.path.join(self.token_dir, 'sampleToken3'), 'w', encoding='UTF-8') as f:
-            f.write(str(now + 10))
-        with open(os.path.join(self.token_dir, 'sampleToken4'), 'w', encoding='UTF-8') as f:
-            f.write(str(now + 100))
+        with open(os.path.join(self.token_dir, 'sampleToken1'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(now - 100))
+        with open(os.path.join(self.token_dir, 'sampleToken2'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(now - 10))
+        with open(os.path.join(self.token_dir, 'sampleToken3'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(now + 10))
+        with open(os.path.join(self.token_dir, 'sampleToken4'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(now + 100))
 
         handler = wsbapp.WebHost(self.root)
         handler.token_delete_expire()
@@ -1032,14 +1032,14 @@ class TestWebHost(Test):
     def test_token_delete_expire2(self):
         now = 30000
 
-        with open(os.path.join(self.token_dir, 'sampleToken1'), 'w', encoding='UTF-8') as f:
-            f.write(str(29000))
-        with open(os.path.join(self.token_dir, 'sampleToken2'), 'w', encoding='UTF-8') as f:
-            f.write(str(29100))
-        with open(os.path.join(self.token_dir, 'sampleToken3'), 'w', encoding='UTF-8') as f:
-            f.write(str(30100))
-        with open(os.path.join(self.token_dir, 'sampleToken4'), 'w', encoding='UTF-8') as f:
-            f.write(str(30500))
+        with open(os.path.join(self.token_dir, 'sampleToken1'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(29000))
+        with open(os.path.join(self.token_dir, 'sampleToken2'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(29100))
+        with open(os.path.join(self.token_dir, 'sampleToken3'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(30100))
+        with open(os.path.join(self.token_dir, 'sampleToken4'), 'w', encoding='UTF-8') as fh:
+            fh.write(str(30500))
 
         handler = wsbapp.WebHost(self.root)
         handler.token_delete_expire(now)

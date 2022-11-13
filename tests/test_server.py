@@ -42,8 +42,8 @@ def tearDownModule():
 class TestConfigServer(unittest.TestCase):
     @mock.patch('webscrapbook.server.make_server')
     def test_root(self, mock_make_server):
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 browse = false
@@ -55,8 +55,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_host_port1(self, mock_make_server):
         # IPv4
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 80
 browse = false
@@ -70,8 +70,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_host_port2(self, mock_make_server):
         # IPv6 => with []
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = ::1
 port = 8000
 browse = false
@@ -85,8 +85,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_host_port3(self, mock_make_server):
         # domain_name (the server will actually bind to the resolved IP.)
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = localhost
 port = 7357
 browse = false
@@ -100,8 +100,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_ssl1(self, mock_make_server):
         # SSL off
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = false
@@ -116,8 +116,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_ssl2(self, mock_make_server):
         # SSL with an adhoc key
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = true
@@ -132,8 +132,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_ssl3(self, mock_make_server):
         # SSL with missing key => adhoc
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = true
@@ -148,8 +148,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_ssl4(self, mock_make_server):
         # SSL with missing cert => adhoc
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = true
@@ -164,8 +164,8 @@ browse = false
     @mock.patch('webscrapbook.server.make_server')
     def test_ssl5(self, mock_make_server):
         # SSL with key and cert
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = true
@@ -186,8 +186,8 @@ class TestConfigBrowser(unittest.TestCase):
     @mock.patch('webscrapbook.server.make_server')
     def test_command1(self, mock_make_server, mock_browser):
         # server.browse = false
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 80
 browse = false
@@ -203,8 +203,8 @@ command =
     @mock.patch('webscrapbook.server.make_server')
     def test_command2(self, mock_make_server, mock_browser):
         # server.browse = true, browser.command not set
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 80
 browse = true
@@ -220,8 +220,8 @@ command =
     @mock.patch('webscrapbook.server.make_server')
     def test_command3(self, mock_make_server, mock_browser):
         # server.browse = true, browser.command set
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write(r"""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write(r"""[server]
 host = 127.0.0.1
 port = 80
 browse = true
@@ -237,8 +237,8 @@ command = "C:\Program Files\Mozilla Firefox\firefox.exe" %s &
     @mock.patch('webscrapbook.server.make_server')
     def test_url_scheme1(self, mock_make_server, mock_browser):
         # http
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = false
@@ -258,8 +258,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_scheme2(self, mock_make_server, mock_browser):
         # https
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = true
@@ -279,8 +279,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_host1(self, mock_make_server, mock_browser):
         # IPv4
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 browse = true
@@ -299,8 +299,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_host2(self, mock_make_server, mock_browser):
         # IPv6 => with []
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = ::1
 port = 7357
 browse = true
@@ -319,8 +319,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_host3(self, mock_make_server, mock_browser):
         # domain name
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = localhost
 port = 7357
 browse = true
@@ -339,8 +339,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_host4(self, mock_make_server, mock_browser):
         # null host (0.0.0.0) => localhost
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 0.0.0.0
 port = 7357
 browse = true
@@ -359,8 +359,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_host5(self, mock_make_server, mock_browser):
         # null host (::) => localhost
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = ::
 port = 7357
 browse = true
@@ -379,8 +379,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_port1(self, mock_make_server, mock_browser):
         # normal port
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = false
@@ -400,8 +400,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_port2(self, mock_make_server, mock_browser):
         # 80 for http
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 80
 ssl_on = false
@@ -421,8 +421,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_port3(self, mock_make_server, mock_browser):
         # 443 for https
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 443
 ssl_on = true
@@ -442,8 +442,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path1(self, mock_make_server, mock_browser):
         # app.index not set
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = false
@@ -460,8 +460,8 @@ index =
     @mock.patch('webscrapbook.server.make_server')
     def test_url_path2(self, mock_make_server, mock_browser):
         # app.index set
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[server]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[server]
 host = 127.0.0.1
 port = 7357
 ssl_on = false

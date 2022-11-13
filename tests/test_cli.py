@@ -76,8 +76,8 @@ class TestConfig(Test):
     def test_book_create2(self, mock_stdout):
         """No overwrite."""
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
-        with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as f:
-            f.write('dummy')
+        with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as fh:
+            fh.write('dummy')
 
         cli.cmd_config({
             'root': self.root,
@@ -117,8 +117,8 @@ class TestConfig(Test):
     @mock.patch('webscrapbook.util.launch', autospec=True)
     def test_book_edit2(self, mock_launch, mock_stdout):
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
-        with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as f:
-            f.write('foo')
+        with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as fh:
+            fh.write('foo')
 
         cli.cmd_config({
             'root': self.root,
@@ -165,12 +165,12 @@ class TestConfig(Test):
     def test_book_all2(self, mock_stdout):
         """No overwrite."""
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
-        with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as f:
-            f.write('dummy1')
-        with open(os.path.join(self.root, WSB_DIR, 'serve.py'), 'w') as f:
-            f.write('dummy2')
-        with open(os.path.join(self.root, WSB_DIR, 'app.py'), 'w') as f:
-            f.write('dummy3')
+        with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as fh:
+            fh.write('dummy1')
+        with open(os.path.join(self.root, WSB_DIR, 'serve.py'), 'w') as fh:
+            fh.write('dummy2')
+        with open(os.path.join(self.root, WSB_DIR, 'app.py'), 'w') as fh:
+            fh.write('dummy3')
 
         cli.cmd_config({
             'root': self.root,
@@ -212,8 +212,8 @@ class TestConfig(Test):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
     def test_user_create2(self, mock_stdout):
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
-        with open(self.user_config_file, 'w') as f:
-            f.write('dummy')
+        with open(self.user_config_file, 'w') as fh:
+            fh.write('dummy')
 
         cli.cmd_config({
             'root': self.root,
@@ -253,8 +253,8 @@ class TestConfig(Test):
     @mock.patch('webscrapbook.util.launch', autospec=True)
     def test_user_edit2(self, mock_launch, mock_stdout):
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
-        with open(self.user_config_file, 'w') as f:
-            f.write('dummy')
+        with open(self.user_config_file, 'w') as fh:
+            fh.write('dummy')
 
         cli.cmd_config({
             'root': self.root,
@@ -530,8 +530,8 @@ class TestHelp(Test):
             'topic': 'config',
         })
 
-        with open(os.path.join(RESOURCE_DIR, 'config.md')) as f:
-            self.assertEqual(mock_stdout.getvalue(), f.read() + '\n')
+        with open(os.path.join(RESOURCE_DIR, 'config.md')) as fh:
+            self.assertEqual(mock_stdout.getvalue(), fh.read() + '\n')
 
 
 class TestView(Test):

@@ -284,8 +284,8 @@ def cmd_help(args):
         file = os.path.join(root, 'mimetypes.md')
 
     if file:
-        with open(file, 'r', encoding='UTF-8') as f:
-            text = f.read()
+        with open(file, 'r', encoding='UTF-8') as fh:
+            text = fh.read()
         print(text)
 
 
@@ -348,8 +348,8 @@ def view_archive_files(files):
                 break
             else:
                 dest_dir = tempfile.mkdtemp(prefix=dest_prefix)
-                with zipfile.ZipFile(file) as zip:
-                    zip.extractall(dest_dir)
+                with zipfile.ZipFile(file) as zh:
+                    zh.extractall(dest_dir)
 
         # get URL of every index page
         base_url = 'file:' + pathname2url(dest_dir) + '/'

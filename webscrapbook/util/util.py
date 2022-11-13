@@ -1639,8 +1639,8 @@ def get_maff_pages(zip):
         for topdir in topdirs:
             rdf = topdir + 'index.rdf'
             try:
-                with zh.open(rdf, 'r') as f:
-                    meta = parse_maff_index_rdf(f)
+                with zh.open(rdf, 'r') as fh:
+                    meta = parse_maff_index_rdf(fh)
             except Exception:
                 pass
             else:

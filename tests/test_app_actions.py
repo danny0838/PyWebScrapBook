@@ -89,8 +89,8 @@ class TestActions(unittest.TestCase):
                 'stat': os.stat(data['file']) if follow_symlinks else os.lstat(data['file']),
             }
             if os.path.isfile(data['file']):
-                with open(data['file'], 'rb') as f:
-                    rv['bytes'] = f.read()
+                with open(data['file'], 'rb') as fh:
+                    rv['bytes'] = fh.read()
             else:
                 rv['bytes'] = None
         elif 'zip' in data:
@@ -2955,8 +2955,8 @@ class TestMkdir(unittest.TestCase):
             })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('20200101/entry.zip') as f:
-                    with zipfile.ZipFile(f, 'r') as zh1:
+                with zh.open('20200101/entry.zip') as fh:
+                    with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), ['20200102/'])
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -3052,8 +3052,8 @@ class TestMkzip(unittest.TestCase):
 
     def test_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
-        with open(self.test_zip, 'w', encoding='UTF-8') as f:
-            f.write('test')
+        with open(self.test_zip, 'w', encoding='UTF-8') as fh:
+            fh.write('test')
 
         with app.test_client() as c:
             r = c.post('/temp/test.zip', data={
@@ -3103,8 +3103,8 @@ class TestMkzip(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('entry.zip') as f:
-                    self.assertTrue(zipfile.is_zipfile(f))
+                with zh.open('entry.zip') as fh:
+                    self.assertTrue(zipfile.is_zipfile(fh))
 
     def test_zip_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
@@ -3125,8 +3125,8 @@ class TestMkzip(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('entry.zip') as f:
-                    self.assertTrue(zipfile.is_zipfile(f))
+                with zh.open('entry.zip') as fh:
+                    self.assertTrue(zipfile.is_zipfile(fh))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_dir(self, mock_abort):
@@ -3224,8 +3224,8 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             self.assertTrue(os.path.isfile(self.test_file))
-            with open(self.test_file, 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            with open(self.test_file, 'r', encoding='UTF-8') as fh:
+                self.assertEqual(fh.read(), 'ABC 你好')
 
     def test_save_nonexist_deep(self):
         with app.test_client() as c:
@@ -3243,13 +3243,13 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             self.assertTrue(os.path.isfile(self.test_file))
-            with open(self.test_file, 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            with open(self.test_file, 'r', encoding='UTF-8') as fh:
+                self.assertEqual(fh.read(), 'ABC 你好')
 
     def test_save_file_existed(self):
         os.makedirs(self.test_dir, exist_ok=True)
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write('test')
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('test')
 
         with app.test_client() as c:
             r = c.post('/temp/test.txt', data={
@@ -3266,8 +3266,8 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             self.assertTrue(os.path.isfile(self.test_file))
-            with open(self.test_file, 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            with open(self.test_file, 'r', encoding='UTF-8') as fh:
+                self.assertEqual(fh.read(), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_save_dir(self, mock_abort):
@@ -3369,8 +3369,8 @@ class TestSave(unittest.TestCase):
             })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('20200101/entry.zip') as f:
-                    with zipfile.ZipFile(f, 'r') as zh1:
+                with zh.open('20200101/entry.zip') as fh:
+                    with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -3421,8 +3421,8 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             self.assertTrue(os.path.isfile(self.test_file))
-            with open(self.test_file, 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            with open(self.test_file, 'r', encoding='UTF-8') as fh:
+                self.assertEqual(fh.read(), 'ABC 你好')
 
     def test_upload_nonexist_deep(self):
         with app.test_client() as c:
@@ -3440,13 +3440,13 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             self.assertTrue(os.path.isfile(self.test_file))
-            with open(self.test_file, 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            with open(self.test_file, 'r', encoding='UTF-8') as fh:
+                self.assertEqual(fh.read(), 'ABC 你好')
 
     def test_upload_file(self):
         os.makedirs(self.test_dir, exist_ok=True)
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write('test')
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('test')
 
         with app.test_client() as c:
             r = c.post('/temp/test.txt', data={
@@ -3463,8 +3463,8 @@ class TestSave(unittest.TestCase):
                 'data': 'Command run successfully.',
             })
             self.assertTrue(os.path.isfile(self.test_file))
-            with open(self.test_file, 'r', encoding='UTF-8') as f:
-                self.assertEqual(f.read(), 'ABC 你好')
+            with open(self.test_file, 'r', encoding='UTF-8') as fh:
+                self.assertEqual(fh.read(), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_upload_dir(self, mock_abort):
@@ -3568,8 +3568,8 @@ class TestSave(unittest.TestCase):
             })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('20200101/entry.zip') as f:
-                    with zipfile.ZipFile(f, 'r') as zh1:
+                with zh.open('20200101/entry.zip') as fh:
+                    with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -3714,8 +3714,8 @@ class TestDelete(TestActions):
     def test_junction1(self):
         """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('dummy')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
 
         # capture_output is not supported in Python < 3.8
         subprocess.run(
@@ -3782,8 +3782,8 @@ class TestDelete(TestActions):
         """Delete junction entities without altering the referenced directory.
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('dummy')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
         # capture_output is not supported in Python < 3.8
@@ -3819,8 +3819,8 @@ class TestDelete(TestActions):
     def test_symlink1(self):
         """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('dummy')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
 
         os.symlink(
             os.path.join(self.test_dir, 'subdir'),
@@ -3850,8 +3850,8 @@ class TestDelete(TestActions):
     def test_symlink2(self):
         """Delete the link entity rather than the referenced file."""
         os.makedirs(self.test_dir, exist_ok=True)
-        with open(os.path.join(self.test_dir, 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('dummy')
+        with open(os.path.join(self.test_dir, 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
 
         os.symlink(
             os.path.join(self.test_dir, 'test.txt'),
@@ -3908,8 +3908,8 @@ class TestDelete(TestActions):
         """Delete symlink entities without altering the referenced directory.
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('dummy')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('dummy')
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
         os.symlink(
@@ -4074,8 +4074,8 @@ class TestDelete(TestActions):
             })
             self.assertTrue(os.path.isfile(self.test_zip))
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
-                with zh.open('20200101/entry.zip') as f:
-                    with zipfile.ZipFile(f, 'r') as zh1:
+                with zh.open('20200101/entry.zip') as fh:
+                    with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), [])
 
     def test_zip_root(self):
@@ -4109,10 +4109,10 @@ class TestMove(TestActions):
         self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('ABC 你好')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC 你好')
 
-        with zipfile.ZipFile(self.test_zip, 'w') as f:
+        with zipfile.ZipFile(self.test_zip, 'w') as fh:
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, 'w') as z:
                 z.writestr(
@@ -4138,19 +4138,19 @@ class TestMove(TestActions):
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
-            f.writestr('entry.maff', buf.getvalue())
-            f.writestr(
+            fh.writestr('entry.maff', buf.getvalue())
+            fh.writestr(
                 zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
                 ''
             )
             info = zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 1, 0, 0))
             info.comment = 'dummy comment'.encode('UTF-8')
-            f.writestr(
+            fh.writestr(
                 info,
                 'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
             )
-            f.writestr(
+            fh.writestr(
                 zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
                 'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
@@ -4402,8 +4402,8 @@ class TestMove(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
-            f.write('你好 XYZ')
+        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('你好 XYZ')
 
         with app.test_client() as c:
             c.post('/temp/subdir/test.txt', data={
@@ -4418,8 +4418,8 @@ class TestMove(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
-            f.write('你好 XYZ')
+        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('你好 XYZ')
 
         with app.test_client() as c:
             c.post('/temp/subdir', data={
@@ -4576,8 +4576,8 @@ class TestMove(TestActions):
             mock_abort.assert_called_once_with(400, 'Unable to move across a zip.')
 
     def test_zip_to_zip_file(self):
-        with zipfile.ZipFile(self.test_zip) as zip1:
-            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+        with zipfile.ZipFile(self.test_zip) as zh1:
+            orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir/index.html', data={
@@ -4594,22 +4594,22 @@ class TestMove(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/index.html')
+                    zh1.getinfo('subdir/index.html')
 
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             orig_data,
-                            {'zip': zip2, 'filename': 'deep/newdir/index2.html'},
+                            {'zip': zh2, 'filename': 'deep/newdir/index2.html'},
                             is_move=True,
                         )
 
     def test_zip_to_zip_dir(self):
-        with zipfile.ZipFile(self.test_zip) as zip1:
-            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/'})
-            orig_data2 = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+        with zipfile.ZipFile(self.test_zip) as zh1:
+            orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/'})
+            orig_data2 = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
@@ -4626,21 +4626,21 @@ class TestMove(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/')
+                    zh1.getinfo('subdir/')
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/index.html')
+                    zh1.getinfo('subdir/index.html')
 
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             orig_data,
-                            {'zip': zip2, 'filename': 'deep/newdir/'},
+                            {'zip': zh2, 'filename': 'deep/newdir/'},
                         )
                         self.assert_file_equal(
                             orig_data2,
-                            {'zip': zip2, 'filename': 'deep/newdir/index.html'},
+                            {'zip': zh2, 'filename': 'deep/newdir/index.html'},
                         )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4680,8 +4680,8 @@ class TestMove(TestActions):
             mock_abort.assert_called_once_with(400, 'Found something at target.')
 
     def test_zip_to_zip_file_to_dir(self):
-        with zipfile.ZipFile(self.test_zip) as zip1:
-            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+        with zipfile.ZipFile(self.test_zip) as zh1:
+            orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir/index.html', data={
@@ -4698,15 +4698,15 @@ class TestMove(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/index.html')
+                    zh1.getinfo('subdir/index.html')
 
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             orig_data,
-                            {'zip': zip2, 'filename': 'subdir4/index.html'},
+                            {'zip': zh2, 'filename': 'subdir4/index.html'},
                         )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4734,9 +4734,9 @@ class TestMove(TestActions):
             mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
 
     def test_zip_to_zip_dir_to_dir1(self):
-        with zipfile.ZipFile(self.test_zip) as zip1:
-            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/'})
-            orig_data2 = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+        with zipfile.ZipFile(self.test_zip) as zh1:
+            orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/'})
+            orig_data2 = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
@@ -4753,27 +4753,27 @@ class TestMove(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/')
+                    zh1.getinfo('subdir/')
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/index.html')
+                    zh1.getinfo('subdir/index.html')
 
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             orig_data,
-                            {'zip': zip2, 'filename': 'subdir/subdir/'},
+                            {'zip': zh2, 'filename': 'subdir/subdir/'},
                         )
                         self.assert_file_equal(
                             orig_data2,
-                            {'zip': zip2, 'filename': 'subdir/subdir/index.html'},
+                            {'zip': zh2, 'filename': 'subdir/subdir/index.html'},
                         )
 
     def test_zip_to_zip_dir_to_dir2(self):
-        with zipfile.ZipFile(self.test_zip) as zip1:
-            orig_data = self.get_file_data({'zip': zip1, 'filename': 'subdir/'})
-            orig_data2 = self.get_file_data({'zip': zip1, 'filename': 'subdir/index.html'})
+        with zipfile.ZipFile(self.test_zip) as zh1:
+            orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/'})
+            orig_data2 = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
         with app.test_client() as c:
             r = c.post('/temp.maff!/subdir', data={
@@ -4790,21 +4790,21 @@ class TestMove(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/')
+                    zh1.getinfo('subdir/')
                 with self.assertRaises(KeyError):
-                    zip1.getinfo('subdir/index.html')
+                    zh1.getinfo('subdir/index.html')
 
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             orig_data,
-                            {'zip': zip2, 'filename': 'subdir2/subdir/'},
+                            {'zip': zh2, 'filename': 'subdir2/subdir/'},
                         )
                         self.assert_file_equal(
                             orig_data2,
-                            {'zip': zip2, 'filename': 'subdir2/subdir/index.html'},
+                            {'zip': zh2, 'filename': 'subdir2/subdir/index.html'},
                         )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4838,10 +4838,10 @@ class TestCopy(TestActions):
         self.test_zip = os.path.join(tmpdir, 'temp.maff')
 
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('ABC 你好')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC 你好')
 
-        with zipfile.ZipFile(self.test_zip, 'w') as f:
+        with zipfile.ZipFile(self.test_zip, 'w') as fh:
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, 'w') as z:
                 z.writestr(
@@ -4867,19 +4867,19 @@ class TestCopy(TestActions):
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
-            f.writestr('entry.maff', buf.getvalue())
-            f.writestr(
+            fh.writestr('entry.maff', buf.getvalue())
+            fh.writestr(
                 zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
                 ''
             )
             info = zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 1, 0, 0))
             info.comment = 'dummy comment'.encode('UTF-8')
-            f.writestr(
+            fh.writestr(
                 info,
                 'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
             )
-            f.writestr(
+            fh.writestr(
                 zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
                 'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
@@ -5252,8 +5252,8 @@ class TestCopy(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
-            f.write('你好 XYZ')
+        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('你好 XYZ')
 
         with app.test_client() as c:
             c.post('/temp/subdir/test.txt', data={
@@ -5268,8 +5268,8 @@ class TestCopy(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as f:
-            f.write('你好 XYZ')
+        with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('你好 XYZ')
 
         with app.test_client() as c:
             c.post('/temp/subdir', data={
@@ -5586,12 +5586,12 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
-                            {'zip': zip2, 'filename': 'subdir/test.txt'},
+                            {'zip': zh2, 'filename': 'subdir/test.txt'},
                         )
 
     def test_disk_to_zip_dir_to_dir(self):
@@ -5610,16 +5610,16 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
                             {'file': os.path.join(self.test_dir, 'subdir')},
-                            {'zip': zip2, 'filename': 'subdir/subdir/'},
+                            {'zip': zh2, 'filename': 'subdir/subdir/'},
                         )
                         self.assert_file_equal(
                             {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
-                            {'zip': zip2, 'filename': 'subdir/subdir/test.txt'},
+                            {'zip': zh2, 'filename': 'subdir/subdir/test.txt'},
                         )
 
     def test_zip_to_disk_file(self):
@@ -5686,9 +5686,9 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 self.assert_file_equal(
-                    {'zip': zip1, 'filename': 'subdir/index.html'},
+                    {'zip': zh1, 'filename': 'subdir/index.html'},
                     {'file': os.path.join(self.test_dir, 'subdir', 'index.html')},
                 )
 
@@ -5708,13 +5708,13 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
+            with zipfile.ZipFile(self.test_zip) as zh1:
                 self.assert_file_equal(
-                    {'zip': zip1, 'filename': 'subdir/'},
+                    {'zip': zh1, 'filename': 'subdir/'},
                     {'file': os.path.join(self.test_dir, 'subdir', 'subdir')},
                 )
                 self.assert_file_equal(
-                    {'zip': zip1, 'filename': 'subdir/index.html'},
+                    {'zip': zh1, 'filename': 'subdir/index.html'},
                     {'file': os.path.join(self.test_dir, 'subdir', 'subdir', 'index.html')},
                 )
 
@@ -5770,12 +5770,12 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/index.html'},
-                            {'zip': zip2, 'filename': 'deep/newdir/index2.html'},
+                            {'zip': zh1, 'filename': 'subdir/index.html'},
+                            {'zip': zh2, 'filename': 'deep/newdir/index2.html'},
                         )
 
     def test_zip_to_zip_dir(self):
@@ -5794,16 +5794,16 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/'},
-                            {'zip': zip2, 'filename': 'deep/newdir/'},
+                            {'zip': zh1, 'filename': 'subdir/'},
+                            {'zip': zh2, 'filename': 'deep/newdir/'},
                         )
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/index.html'},
-                            {'zip': zip2, 'filename': 'deep/newdir/index.html'},
+                            {'zip': zh1, 'filename': 'subdir/index.html'},
+                            {'zip': zh2, 'filename': 'deep/newdir/index.html'},
                         )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -5858,12 +5858,12 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/index.html'},
-                            {'zip': zip2, 'filename': 'subdir4/index.html'},
+                            {'zip': zh1, 'filename': 'subdir/index.html'},
+                            {'zip': zh2, 'filename': 'subdir4/index.html'},
                         )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -5906,16 +5906,16 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/'},
-                            {'zip': zip2, 'filename': 'subdir/subdir/'},
+                            {'zip': zh1, 'filename': 'subdir/'},
+                            {'zip': zh2, 'filename': 'subdir/subdir/'},
                         )
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/index.html'},
-                            {'zip': zip2, 'filename': 'subdir/subdir/index.html'},
+                            {'zip': zh1, 'filename': 'subdir/index.html'},
+                            {'zip': zh2, 'filename': 'subdir/subdir/index.html'},
                         )
 
     def test_zip_to_zip_dir_to_dir2(self):
@@ -5934,16 +5934,16 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip1:
-                with zip1.open('entry.maff') as f:
-                    with zipfile.ZipFile(f) as zip2:
+            with zipfile.ZipFile(self.test_zip) as zh1:
+                with zh1.open('entry.maff') as fh:
+                    with zipfile.ZipFile(fh) as zh2:
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/'},
-                            {'zip': zip2, 'filename': 'subdir2/subdir/'},
+                            {'zip': zh1, 'filename': 'subdir/'},
+                            {'zip': zh2, 'filename': 'subdir2/subdir/'},
                         )
                         self.assert_file_equal(
-                            {'zip': zip1, 'filename': 'subdir/index.html'},
-                            {'zip': zip2, 'filename': 'subdir2/subdir/index.html'},
+                            {'zip': zh1, 'filename': 'subdir/index.html'},
+                            {'zip': zh2, 'filename': 'subdir2/subdir/index.html'},
                         )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -5975,8 +5975,8 @@ class TestBackup(TestActions):
     def setUp(self):
         self.test_dir = os.path.join(tmpdir, 'temp')
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
-        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as f:
-            f.write('ABC 你好')
+        with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
+            fh.write('ABC 你好')
 
     def tearDown(self):
         try:

@@ -71,22 +71,22 @@ def static_file(filename, mimetype=None):
     return response
 
 
-def zip_static_file(zip, subpath, mimetype=None):
+def zip_static_file(zh, subpath, mimetype=None):
     """Output the specified file in a ZIP to the client.
 
     Args:
-        zip: an opened zipfile.ZipFile
+        zh: an opened zipfile.ZipFile
         subpath: str or zipfile.ZipInfo
     """
     if not isinstance(subpath, zipfile.ZipInfo):
         try:
-            info = zip.getinfo(subpath)
+            info = zh.getinfo(subpath)
         except KeyError:
             abort(404)
     else:
         info = subpath
 
-    fh = zip.open(info, 'r')
+    fh = zh.open(info, 'r')
 
     lm = util.zip_timestamp(info)
     last_modified = http_date(lm)
@@ -193,19 +193,19 @@ def _get_archive_path_add_subpath(paths, zh, subpath):
             break
 
         try:
-            f = zh.open(archivepath, 'r')
+            fh = zh.open(archivepath, 'r')
         except KeyError:
             continue
 
-        with f as f:
+        with fh as fh:
             try:
-                zip = zipfile.ZipFile(f, 'r')
+                zh1 = zipfile.ZipFile(fh, 'r')
             except zipfile.BadZipFile:
                 continue
 
-            with zip as zip:
+            with zh1 as zh1:
                 paths.append(archivepath)
-                _get_archive_path_add_subpath(paths, zip, subpath[m.end(0):])
+                _get_archive_path_add_subpath(paths, zh1, subpath[m.end(0):])
                 return
 
     paths.append(_get_archive_path_tidy(subpath, True))
@@ -235,13 +235,13 @@ def get_archive_path(filepath):
         # if parent directory does not exist, FileNotFoundError is raised on
         # Windows, while NotADirectoryError is raised on Linux
         try:
-            zip = zipfile.ZipFile(archivefile, 'r')
+            zh = zipfile.ZipFile(archivefile, 'r')
         except (zipfile.BadZipFile, FileNotFoundError, NotADirectoryError):
             continue
 
-        with zip as zip:
+        with zh as zh:
             paths.append(archivepath)
-            _get_archive_path_add_subpath(paths, zip, filepath[m.end(0):])
+            _get_archive_path_add_subpath(paths, zh, filepath[m.end(0):])
             return paths
 
     paths.append(_get_archive_path_tidy(filepath))
@@ -290,28 +290,28 @@ def open_archive_path(localpaths, mode='r', filters=None):
     filtered = False
     stack = []
     try:
-        zip = zipfile.ZipFile(localpaths[0])
-        stack.append(zip)
+        zh = zipfile.ZipFile(localpaths[0])
+        stack.append(zh)
         for i in range(1, last):
-            f = zip.open(localpaths[i])
-            stack.append(f)
-            zip = zipfile.ZipFile(f)
-            stack.append(zip)
+            fh = zh.open(localpaths[i])
+            stack.append(fh)
+            zh = zipfile.ZipFile(fh)
+            stack.append(zh)
 
         if mode == 'r':
-            yield zip
+            yield zh
 
         elif mode == 'w':
             # create a buffer for writing
             buffer = io.BytesIO()
-            with zipfile.ZipFile(buffer, 'w') as zip:
-                yield zip
+            with zipfile.ZipFile(buffer, 'w') as zh:
+                yield zh
 
             # copy zip file
             for i in reversed(range(1, last + 1)):
                 zip0 = stack.pop()
-                with zipfile.ZipFile(buffer, 'a') as zip:
-                    zip.comment = zip0.comment
+                with zipfile.ZipFile(buffer, 'a') as zh:
+                    zh.comment = zip0.comment
                     for info in zip0.infolist():
                         if filters and i == last:
                             if _open_archive_path_filter(info.filename, filters):
@@ -319,13 +319,13 @@ def open_archive_path(localpaths, mode='r', filters=None):
                                 continue
 
                         try:
-                            zip.getinfo(info.filename)
+                            zh.getinfo(info.filename)
                         except KeyError:
                             pass
                         else:
                             continue
 
-                        zip.writestr(info, zip0.read(info),
+                        zh.writestr(info, zip0.read(info),
                                      compress_type=info.compress_type,
                                      compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
                                      )
@@ -338,8 +338,8 @@ def open_archive_path(localpaths, mode='r', filters=None):
 
                 # writer to another buffer for the parent zip
                 buffer2 = io.BytesIO()
-                with zipfile.ZipFile(buffer2, 'w') as zip:
-                    zip.writestr(localpaths[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
+                with zipfile.ZipFile(buffer2, 'w') as zh:
+                    zh.writestr(localpaths[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
                 buffer.close()
                 buffer = buffer2
 
@@ -354,8 +354,8 @@ def open_archive_path(localpaths, mode='r', filters=None):
                 for chunk in iter(functools.partial(fr.read, 8192), b''):
                     fw.write(chunk)
     finally:
-        for f in reversed(stack):
-            f.close()
+        for fh in reversed(stack):
+            fh.close()
 
 
 def get_breadcrumbs(paths, base='', topname='.'):
@@ -442,12 +442,12 @@ def verify_authorization(perm, action):
     return False
 
 
-def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=None):
+def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=None):
     """List contents in a directory.
 
     Args:
         localpaths: [path-to-zip-file, subpath1, subpath2, ...]
-        zip: an opened zipfile.ZipFile object for faster reading
+        zh: an opened zipfile.ZipFile object for faster reading
     """
     # ensure directory has trailing '/'
     if redirect_slash and not request.path.endswith('/'):
@@ -481,8 +481,8 @@ def handle_directory_listing(localpaths, zip=None, redirect_slash=True, format=N
             'ETag': etag,
         }
 
-        with nullcontext(zip) if zip else open_archive_path(localpaths) as zip:
-            subentries = util.zip_listdir(zip, localpaths[-1])
+        with nullcontext(zh) if zh else open_archive_path(localpaths) as zh:
+            subentries = util.zip_listdir(zh, localpaths[-1])
 
     else:
         # disallow cache to reflect any content file change
@@ -551,9 +551,9 @@ def handle_archive_viewing(localpaths, mimetype):
         subpath = 'index.html'
     else:
         if len(localpaths) > 1:
-            with open_archive_path(localpaths) as zip:
-                with zip.open(localpaths[-1]) as zh:
-                    pages = util.get_maff_pages(zh)
+            with open_archive_path(localpaths) as zh:
+                with zh.open(localpaths[-1]) as zh1:
+                    pages = util.get_maff_pages(zh1)
         else:
             pages = util.get_maff_pages(localpaths[-1])
 
@@ -578,25 +578,25 @@ def handle_archive_viewing(localpaths, mimetype):
     return redirect(new_url)
 
 
-def handle_markdown_output(localpaths, zip=None):
+def handle_markdown_output(localpaths, zh=None):
     """Output processed markdown.
 
     Args:
         localpaths: [path-to-zip-file, subpath1, subpath2, ...]
-        zip: an opened zipfile.ZipFile object for faster reading
+        zh: an opened zipfile.ZipFile object for faster reading
     """
     if len(localpaths) > 1:
-        if zip:
-            context = nullcontext(zip)
+        if zh:
+            context = nullcontext(zh)
         else:
             context = open_archive_path(localpaths)
     else:
         context = nullcontext(None)
 
-    with context as zip:
+    with context as zh:
         # calculate last-modified time and etag
-        if zip:
-            info = zip.getinfo(localpaths[-1])
+        if zh:
+            info = zh.getinfo(localpaths[-1])
             lm = util.zip_timestamp(info)
             last_modified = http_date(lm)
 
@@ -626,12 +626,12 @@ def handle_markdown_output(localpaths, zip=None):
             headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
         # prepare content
-        if zip:
-            with zip.open(info) as f:
-                body = f.read().decode('UTF-8')
+        if zh:
+            with zh.open(info) as fh:
+                body = fh.read().decode('UTF-8')
         else:
-            with open(localpaths[0], 'r', encoding='UTF-8') as f:
-                body = f.read()
+            with open(localpaths[0], 'r', encoding='UTF-8') as fh:
+                body = fh.read()
 
     body = render_template('markdown.html',
                            sitename=host.name,
@@ -755,8 +755,8 @@ def handle_action_renaming(func):
         localpaths = request.localpaths
 
         if len(localpaths) > 1:
-            with open_archive_path(localpaths) as zip:
-                if not util.zip_has(zip, localpaths[-1]):
+            with open_archive_path(localpaths) as zh:
+                if not util.zip_has(zh, localpaths[-1]):
                     abort(404, 'Source does not exist.')
         else:
             if not os.path.lexists(localpaths[0]):
@@ -771,17 +771,17 @@ def handle_action_renaming(func):
         targetpaths[0] = get_localpath(targetpaths[0])
 
         if len(targetpaths) > 1:
-            with open_archive_path(targetpaths) as zip:
+            with open_archive_path(targetpaths) as zh:
                 # target is a file
-                if util.zip_has(zip, targetpaths[-1], type='file'):
+                if util.zip_has(zh, targetpaths[-1], type='file'):
                     abort(400, 'Found something at target.')
 
                 # target is a directory, treat as to target/<basename>
-                if util.zip_has(zip, targetpaths[-1], type='dir'):
+                if util.zip_has(zh, targetpaths[-1], type='dir'):
                     targetpaths[-1] = targetpaths[-1] + ('/' if targetpaths[-1] else '') + os.path.basename(localpaths[-1])
 
                     # recheck if target exists
-                    if util.zip_has(zip, targetpaths[-1], type='any'):
+                    if util.zip_has(zh, targetpaths[-1], type='any'):
                         abort(400, 'Found identical entry under the target directory.')
         else:
             if os.path.lexists(targetpaths[0]):
@@ -818,18 +818,18 @@ def action_view():
     mimetype = request.localmimetype
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zip:
+        with open_archive_path(localpaths) as zh:
             # List directory only when URL suffixed with "/", as it's not a
             # common operation, and it's costy to check for directory existence
             # in a ZIP.
             if request.path.endswith('/'):
                 try:
-                    return handle_directory_listing(localpaths, zip, redirect_slash=False)
+                    return handle_directory_listing(localpaths, zh, redirect_slash=False)
                 except util.ZipDirNotFoundError:
                     abort(404)
 
             try:
-                info = zip.getinfo(localpaths[-1])
+                info = zh.getinfo(localpaths[-1])
             except KeyError:
                 # File does not exist.
                 abort(404)
@@ -840,11 +840,11 @@ def action_view():
 
                 # view markdown
                 if mimetype == 'text/markdown':
-                    return handle_markdown_output(localpaths, zip)
+                    return handle_markdown_output(localpaths, zh)
 
                 # convert meta refresh to 302 redirect
                 if localpaths[-1].lower().endswith('.htm'):
-                    with zip.open(info) as fh:
+                    with zh.open(info) as fh:
                         target = util.get_meta_refresh(fh).target
 
                     if target is not None:
@@ -861,7 +861,7 @@ def action_view():
                         return redirect(new_url)
 
                 # show static file for other cases
-                response = zip_static_file(zip, localpaths[-1], mimetype=mimetype)
+                response = zip_static_file(zh, localpaths[-1], mimetype=mimetype)
     else:
         localpath = localpaths[0]
 
@@ -921,8 +921,8 @@ def action_source():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zip:
-            response = zip_static_file(zip, localpaths[-1])
+        with open_archive_path(localpaths) as zh:
+            response = zip_static_file(zh, localpaths[-1])
     else:
         response = static_file(localpaths[0])
 
@@ -949,12 +949,12 @@ def action_download():
     filter = request.values.getlist('i')
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zip:
+        with open_archive_path(localpaths) as zh:
             try:
-                zip.getinfo(localpaths[-1])
+                zh.getinfo(localpaths[-1])
             except KeyError:
                 base = localpaths[-1] + '/' if localpaths[-1] else ''
-                infos = [i for i in zip.infolist() if i.filename.startswith(base)]
+                infos = [i for i in zh.infolist() if i.filename.startswith(base)]
 
                 # not exist
                 if base and not len(infos):
@@ -967,7 +967,7 @@ def action_download():
                 filename = (localpaths[-1] or os.path.basename(localpaths[-2])) + '.zip'
                 mimetype, _ = mimetypes.guess_type(filename)
                 fh = io.BytesIO()
-                with zipfile.ZipFile(fh, 'w') as zh:
+                with zipfile.ZipFile(fh, 'w') as zh2:
                     cut = len(base)
                     for info in infos:
                         info.filename = info.filename[cut:]
@@ -982,14 +982,14 @@ def action_download():
                                 if not any(info.filename.startswith(f) for f in filter_d):
                                     continue
 
-                        zh.writestr(info, zip.read(info))
+                        zh2.writestr(info, zh.read(info))
 
                 fh.seek(0)
                 response = flask.send_file(fh, mimetype=mimetype)
                 response.headers.set('Cache-Control', 'no-store')
             else:
                 filename = os.path.basename(request.localrealpath)
-                response = zip_static_file(zip, localpaths[-1], mimetype=request.localmimetype)
+                response = zip_static_file(zh, localpaths[-1], mimetype=request.localmimetype)
     else:
         if os.path.isdir(localpaths[0]):
             filename = os.path.basename(request.localrealpath) + '.zip'
@@ -1020,8 +1020,8 @@ def action_info():
     mimetype = request.localmimetype
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zip:
-            info = util.zip_file_info(zip, localpaths[-1], check_implicit_dir=True)
+        with open_archive_path(localpaths) as zh:
+            info = util.zip_file_info(zh, localpaths[-1], check_implicit_dir=True)
     else:
         info = util.file_info(localpaths[0])
 
@@ -1085,17 +1085,17 @@ def action_edit():
         abort(400, 'Found a non-file here.')
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zip:
+        with open_archive_path(localpaths) as zh:
             try:
-                info = zip.getinfo(localpaths[-1])
+                info = zh.getinfo(localpaths[-1])
             except KeyError:
                 body = b''
             else:
-                body = zip.read(info)
+                body = zh.read(info)
     else:
         try:
-            with open(localpath, 'rb') as f:
-                body = f.read()
+            with open(localpath, 'rb') as fh:
+                body = fh.read()
         except FileNotFoundError:
             body = b''
 
@@ -1137,9 +1137,9 @@ def action_editx():
         abort(400, 'This is not an HTML file.')
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zip:
+        with open_archive_path(localpaths) as zh:
             try:
-                zip.getinfo(localpaths[-1])
+                zh.getinfo(localpaths[-1])
             except KeyError:
                 abort(404)
     else:
@@ -1317,7 +1317,7 @@ def action_mkdir():
 
     if len(localpaths) > 1:
         try:
-            zip = None
+            zh = None
             with open_archive_path(localpaths) as zip0:
                 if util.zip_has(zip0, localpaths[-1], type='file'):
                     abort(400, 'Found a non-directory here.')
@@ -1328,14 +1328,14 @@ def action_mkdir():
 
                 # append for a non-nested zip
                 if len(localpaths) == 2:
-                    zip = zipfile.ZipFile(localpaths[0], 'a')
+                    zh = zipfile.ZipFile(localpaths[0], 'a')
 
-            if zip is None:
-                zip = open_archive_path(localpaths, 'w')
+            if zh is None:
+                zh = open_archive_path(localpaths, 'w')
 
-            with zip as zip:
+            with zh as zh:
                 info = zipfile.ZipInfo(localpaths[-1] + '/', time.localtime())
-                zip.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
+                zh.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
         except HTTPException:
             raise
         except Exception:
@@ -1364,7 +1364,7 @@ def action_mkzip():
 
     if len(localpaths) > 1:
         try:
-            zip = None
+            zh = None
             with open_archive_path(localpaths) as zip0:
                 if util.zip_has(zip0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
@@ -1372,17 +1372,17 @@ def action_mkzip():
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
                     if not util.zip_has(zip0, localpaths[-1], type='file'):
-                        zip = zipfile.ZipFile(localpaths[0], 'a')
+                        zh = zipfile.ZipFile(localpaths[0], 'a')
 
-            if zip is None:
-                zip = open_archive_path(localpaths, 'w')
+            if zh is None:
+                zh = open_archive_path(localpaths, 'w')
 
-            with zip as zip:
+            with zh as zh:
                 info = zipfile.ZipInfo(localpaths[-1], time.localtime())
                 buf = io.BytesIO()
                 with zipfile.ZipFile(buf, 'w'):
                     pass
-                zip.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_STORED)
+                zh.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_STORED)
         except HTTPException:
             raise
         except Exception:
@@ -1418,7 +1418,7 @@ def action_save():
 
     if len(localpaths) > 1:
         try:
-            zip = None
+            zh = None
             with open_archive_path(localpaths) as zip0:
                 if util.zip_has(zip0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
@@ -1426,22 +1426,22 @@ def action_save():
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
                     if not util.zip_has(zip0, localpaths[-1], type='file'):
-                        zip = zipfile.ZipFile(localpaths[0], 'a')
+                        zh = zipfile.ZipFile(localpaths[0], 'a')
 
-            if zip is None:
-                zip = open_archive_path(localpaths, 'w')
+            if zh is None:
+                zh = open_archive_path(localpaths, 'w')
 
-            with zip as zip:
+            with zh as zh:
                 info = zipfile.ZipInfo(localpaths[-1], time.localtime())
                 file = request.files.get('upload')
                 if file is not None:
-                    with zip.open(info, 'w', force_zip64=True) as fh:
+                    with zh.open(info, 'w', force_zip64=True) as fh:
                         stream = file.stream
                         for chunk in iter(functools.partial(stream.read, 8192), b''):
                             fh.write(chunk)
                 else:
                     bytes_ = request.values.get('text', '').encode('ISO-8859-1')
-                    zip.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                    zh.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
         except HTTPException:
             raise
         except Exception:
@@ -1466,8 +1466,8 @@ def action_save():
                 file.save(localpath)
             else:
                 bytes_ = request.values.get('text', '').encode('ISO-8859-1')
-                with open(localpath, 'wb') as f:
-                    f.write(bytes_)
+                with open(localpath, 'wb') as fh:
+                    fh.write(bytes_)
         except Exception:
             traceback.print_exc()
             abort(500, 'Unable to write to this file.')
@@ -1552,26 +1552,26 @@ def action_move(sourcepaths, targetpaths):
                 abort(400, 'Unable to move across a zip.')
 
             else:
-                with open_archive_path(sourcepaths) as zip:
+                with open_archive_path(sourcepaths) as zh:
                     try:
-                        zip.getinfo(sourcepaths[-1])
+                        zh.getinfo(sourcepaths[-1])
                     except KeyError:
                         base = sourcepaths[-1] + '/'
-                        entries = [e for e in zip.namelist() if e.startswith(base)]
+                        entries = [e for e in zh.namelist() if e.startswith(base)]
                     else:
                         entries = [sourcepaths[-1]]
 
-                    with open_archive_path(targetpaths, 'w') as zip2:
+                    with open_archive_path(targetpaths, 'w') as zh2:
                         cut = len(sourcepaths[-1])
                         for entry in entries:
-                            info = zip.getinfo(entry)
+                            info = zh.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
-                            zip2.writestr(info, zip.read(entry),
+                            zh2.writestr(info, zh.read(entry),
                                           compress_type=info.compress_type,
                                           compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
                                           )
 
-                with open_archive_path(sourcepaths, 'w', entries) as zip:
+                with open_archive_path(sourcepaths, 'w', entries):
                     pass
 
     except HTTPException:
@@ -1611,9 +1611,9 @@ def action_copy(sourcepaths, targetpaths):
 
             else:
                 error = False
-                with open_archive_path(targetpaths, 'w') as zip:
+                with open_archive_path(targetpaths, 'w') as zh:
                     try:
-                        util.zip_compress(zip, sourcepaths[0], targetpaths[-1])
+                        util.zip_compress(zh, sourcepaths[0], targetpaths[-1])
                     except shutil.Error:
                         traceback.print_exc()
                         error = True
@@ -1632,20 +1632,20 @@ def action_copy(sourcepaths, targetpaths):
                     util.zip_extract(zh, targetpaths[0], sourcepaths[-1])
 
             else:
-                with open_archive_path(sourcepaths) as zip:
+                with open_archive_path(sourcepaths) as zh:
                     try:
-                        zip.getinfo(sourcepaths[-1])
+                        zh.getinfo(sourcepaths[-1])
                     except KeyError:
-                        entries = [e for e in zip.namelist() if e.startswith(sourcepaths[-1] + '/')]
+                        entries = [e for e in zh.namelist() if e.startswith(sourcepaths[-1] + '/')]
                     else:
                         entries = [sourcepaths[-1]]
 
-                    with open_archive_path(targetpaths, 'w') as zip2:
+                    with open_archive_path(targetpaths, 'w') as zh2:
                         cut = len(sourcepaths[-1])
                         for entry in entries:
-                            info = zip.getinfo(entry)
+                            info = zh.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
-                            zip2.writestr(info, zip.read(entry),
+                            zh2.writestr(info, zh.read(entry),
                                           compress_type=info.compress_type,
                                           compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
                                           )
@@ -1896,8 +1896,8 @@ class WebHost(wsb_host.Host):
             token_file = os.path.join(self.tokens, token)
 
         os.makedirs(os.path.dirname(token_file), exist_ok=True)
-        with open(token_file, 'w', encoding='UTF-8') as f:
-            f.write(str(now + self.TOKEN_DEFAULT_EXPIRY))
+        with open(token_file, 'w', encoding='UTF-8') as fh:
+            fh.write(str(now + self.TOKEN_DEFAULT_EXPIRY))
 
         return token
 
@@ -1908,8 +1908,8 @@ class WebHost(wsb_host.Host):
         token_file = os.path.join(self.tokens, token)
 
         try:
-            with open(token_file, 'r', encoding='UTF-8') as f:
-                expire = int(f.read())
+            with open(token_file, 'r', encoding='UTF-8') as fh:
+                expire = int(fh.read())
         except (FileNotFoundError, IsADirectoryError):
             return False
 
@@ -1938,8 +1938,8 @@ class WebHost(wsb_host.Host):
         else:
             for token_file in token_files:
                 try:
-                    with open(token_file, 'r', encoding='UTF-8') as f:
-                        expire = int(f.read())
+                    with open(token_file, 'r', encoding='UTF-8') as fh:
+                        expire = int(fh.read())
                 except (OSError, ValueError):
                     continue
                 if now >= expire:

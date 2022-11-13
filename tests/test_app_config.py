@@ -57,8 +57,8 @@ def token(get):
 
 class TestApp(unittest.TestCase):
     def test_name(self):
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 name = mywsb
 """)
 
@@ -79,8 +79,8 @@ name = mywsb
 
     def test_name2(self):
         """app.name should be used as auth realm"""
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 name = mywsb
 
 [auth "id1"]
@@ -102,8 +102,8 @@ permission = all
 
     @mock.patch('jinja2.FileSystemLoader')
     def test_theme(self, mock_loader):
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 theme = default
 """)
 
@@ -115,14 +115,14 @@ theme = default
         ])
 
     def test_root(self):
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 root = subdir
 """)
 
         os.makedirs(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'static'))
-        with open(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'static', 'index.js'), 'w', encoding='UTF-8') as f:
-            f.write('console.log("test");')
+        with open(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'static', 'index.js'), 'w', encoding='UTF-8') as fh:
+            fh.write('console.log("test");')
 
         app = make_app(server_root)
         app.testing = True
@@ -151,8 +151,8 @@ root = subdir
 
     def test_x_prefix(self):
         # allowed_x_prefix = 0
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_prefix = 0
 """)
 
@@ -193,8 +193,8 @@ allowed_x_prefix = 0
             self.assertIn('data-base="" data-path="/subdir/"', html)
 
         # allowed_x_prefix = 1
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_prefix = 1
 """)
 
@@ -236,8 +236,8 @@ allowed_x_prefix = 1
 
     def test_x_host(self):
         # x_.. = 0
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_proto = 0
 allowed_x_host = 0
 allowed_x_port = 0
@@ -258,8 +258,8 @@ allowed_x_port = 0
             self.assertEqual(r.headers['Location'], 'http://localhost/subdir/')
 
         # x_.. = 1
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_proto = 1
 allowed_x_host = 1
 allowed_x_port = 1
@@ -304,8 +304,8 @@ allowed_x_port = 1
     @mock.patch('werkzeug.wrappers.request.Request.host', 'example.com')
     def test_x_for(self):
         # allowed_x_for = 0
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_for = 0
 """)
 
@@ -333,8 +333,8 @@ allowed_x_for = 0
             self.assertTrue(data['data']['app']['is_local'])
 
         # allowed_x_for = 1
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_for = 1
 """)
 
@@ -362,8 +362,8 @@ allowed_x_for = 1
             self.assertFalse(data['data']['app']['is_local'])
 
         # allowed_x_for > 1
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 allowed_x_for = 2
 """)
 
@@ -392,8 +392,8 @@ allowed_x_for = 2
 
     def test_csp(self):
         # content_security_policy == 'strict'
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 content_security_policy = strict
 """)
 
@@ -411,8 +411,8 @@ content_security_policy = strict
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
 
         # content_security_policy == ''
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 content_security_policy =
 """)
 
@@ -445,8 +445,8 @@ class TestAuth(unittest.TestCase):
     @mock.patch('webscrapbook.app.get_permission', side_effect=SystemExit)
     def test_get_permission(self, mock_perm):
         """Check if HTTP authorization info is passed to get_permission()."""
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [auth "anony"]
 user =
 pw = salt
@@ -479,8 +479,8 @@ permission = view
     @mock.patch('webscrapbook.app.verify_authorization', side_effect=SystemExit)
     def test_verify_authorization(self, mock_auth):
         """Check if action is passed to verify_authorization()."""
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [auth "anony"]
 user =
 pw = salt
@@ -511,8 +511,8 @@ permission = view
 
     def test_request(self):
         """Random request challanges."""
-        with open(server_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(server_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [auth "anony"]
 user =
 pw = salt

@@ -87,8 +87,8 @@ class TestFuncGenerate(TestCache):
     def test_param_book_ids01(self, mock_book):
         """Include effective provided IDs"""
         os.makedirs(os.path.dirname(self.test_config))
-        with open(self.test_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [book "id1"]
 
 [book "id2"]
@@ -112,8 +112,8 @@ class TestFuncGenerate(TestCache):
     def test_param_book_ids02(self, mock_book):
         """Include all available IDs if None provided"""
         os.makedirs(os.path.dirname(self.test_config))
-        with open(self.test_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [book "id1"]
 
 [book "id2"]
@@ -138,8 +138,8 @@ class TestFuncGenerate(TestCache):
     def test_no_tree(self, mock_lock):
         """Books with no_tree=True should be skipped."""
         os.makedirs(os.path.dirname(self.test_config))
-        with open(self.test_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [book ""]
 no_tree = true
 """)
@@ -264,8 +264,8 @@ class TestFulltextCacheGenerator(TestCache):
         os.makedirs(self.test_dir)
 
     def create_meta(self):
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "index": "20200101000000000/index.html",
@@ -277,8 +277,8 @@ scrapbook.meta({
 })""")
 
     def create_meta_htz(self):
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "index": "20200101000000000.htz",
@@ -290,8 +290,8 @@ scrapbook.meta({
 })""")
 
     def create_meta_maff(self):
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "index": "20200101000000000.maff",
@@ -303,8 +303,8 @@ scrapbook.meta({
 })""")
 
     def create_meta_singlehtml(self):
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "index": "20200101000000000.html",
@@ -316,8 +316,8 @@ scrapbook.meta({
 })""")
 
     def create_meta_charset_big5(self):
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "index": "20200101000000000/index.html",
@@ -332,16 +332,16 @@ scrapbook.meta({
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator._cache_item')
     def test_id_pool01(self, mock_func):
         """Include id in meta or fulltext"""
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000001": {},
   "20200101000000002": {},
   "20200101000000003": {},
   "20200101000000004": {}
 })""")
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
   "20200101000000002": {},
   "20200101000000003": {},
@@ -366,16 +366,16 @@ scrapbook.fulltext({
     @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator._cache_item')
     def test_id_pool02(self, mock_func):
         """Include each provided id in meta or fulltext"""
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000001": {},
   "20200101000000002": {},
   "20200101000000003": {},
   "20200101000000004": {}
 })""")
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
   "20200101000000002": {},
   "20200101000000003": {},
@@ -404,8 +404,8 @@ scrapbook.fulltext({
         """Check if current cache is ignored"""
         test_file1 = os.path.join(self.test_root, '20200101000000001', 'index.html')
         test_file2 = os.path.join(self.test_root, '20200101000000002', 'index.html')
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000001": {
     "index": "20200101000000001/index.html",
@@ -422,8 +422,8 @@ scrapbook.meta({
     "modify": "20200101000000002"
   }
 })""")
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000001": {
   "index.html": {
@@ -437,8 +437,8 @@ scrapbook.fulltext({
  }
 })""")
         os.makedirs(os.path.dirname(test_file1), exist_ok=True)
-        with open(test_file1, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(test_file1, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content 1.
@@ -446,8 +446,8 @@ Page content 1.
 </html>
 """)
         os.makedirs(os.path.dirname(test_file2), exist_ok=True)
-        with open(test_file2, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(test_file2, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content 2.
@@ -474,8 +474,8 @@ Page content 2.
     def test_update01(self):
         """Update if no cache"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -499,12 +499,12 @@ Page content.
     def test_update02(self):
         """Update if index file not in cache"""
         self.create_meta()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -528,13 +528,13 @@ Page content.
     def test_update03(self):
         """Update if cache index is None"""
         self.create_meta()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": null
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -558,8 +558,8 @@ Page content.
     def test_update04(self):
         """Update if index file newer than cache"""
         self.create_meta()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -567,8 +567,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -594,8 +594,8 @@ Page content.
     def test_update05(self):
         """Don't include if index file older than cache"""
         self.create_meta()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -603,8 +603,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -629,8 +629,8 @@ Page content.
 
     def test_update06(self):
         """Remove if id not in meta"""
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -638,8 +638,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -656,13 +656,13 @@ Page content.
 
     def test_update07(self):
         """Remove if meta[id] is None"""
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": null
 })""")
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -670,8 +670,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -688,8 +688,8 @@ Page content.
 
     def test_update08(self):
         """Remove if item no index"""
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "title": "Dummy",
@@ -698,8 +698,8 @@ scrapbook.meta({
     "modify": "20200101000000000"
   }
 })""")
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -707,8 +707,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -725,8 +725,8 @@ Page content.
 
     def test_update09(self):
         """Remove if item index is falsy"""
-        with open(self.test_meta, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.meta({
   "20200101000000000": {
     "index": "",
@@ -736,8 +736,8 @@ scrapbook.meta({
     "modify": "20200101000000000"
   }
 })""")
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -745,8 +745,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -764,8 +764,8 @@ Page content.
     def test_update10(self):
         """Remove if index file not exist"""
         self.create_meta()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -789,8 +789,8 @@ scrapbook.fulltext({
         """
         self.create_meta()
         linked_file = os.path.join(self.test_dir, 'linked.html')
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -798,16 +798,16 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="linked.html">link</a>
 </body>
 </html>
 """)
-        with open(linked_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(linked_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -842,8 +842,8 @@ Linked page content.
         """
         self.create_meta()
         linked_file = os.path.join(self.test_dir, 'linked.html')
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -854,16 +854,16 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
 </body>
 </html>
 """)
-        with open(linked_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(linked_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -898,8 +898,8 @@ Linked page content.
         """
         self.create_meta()
         linked_file = os.path.join(self.test_dir, 'linked.html')
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -910,16 +910,16 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
 </body>
 </html>
 """)
-        with open(linked_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(linked_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -952,8 +952,8 @@ Linked page content.
         - Even if index file not updating.
         """
         self.create_meta()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -964,8 +964,8 @@ scrapbook.fulltext({
   }
  }
 })""")
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Page content.
@@ -992,8 +992,8 @@ Page content.
         """Update subfiles if archive newer than cache
         """
         self.create_meta_htz()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -1076,8 +1076,8 @@ Linked page content 3.
         """Don't update any subfiles if archive older than cache
         """
         self.create_meta_htz()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -1160,8 +1160,8 @@ Linked page content 3.
         """Treat as no file exists if archive corrupted
         """
         self.create_meta_htz()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -1200,8 +1200,8 @@ scrapbook.fulltext({
         """Update all indexes for a MAFF if archive newer than cache
         """
         self.create_meta_maff()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "20200101000000000/index.html": {
@@ -1294,8 +1294,8 @@ Linked page content 3.
         """Don't update any subfile for a MAFF if archive older than cache
         """
         self.create_meta_maff()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "20200101000000000/index.html": {
@@ -1385,8 +1385,8 @@ Linked page content 3.
         """Treat as no file exists if MAFF archive corrupted
         """
         self.create_meta_maff()
-        with open(self.test_fulltext, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_fulltext, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 scrapbook.fulltext({
  "20200101000000000": {
   "20200101000000000/index.html": {
@@ -1424,8 +1424,8 @@ scrapbook.fulltext({
     def test_update21(self):
         """Inline a frame with higher priority than cache as another page."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="iframe.html">link</a>
@@ -1433,8 +1433,8 @@ scrapbook.fulltext({
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Iframe page content.
@@ -1458,8 +1458,8 @@ Iframe page content.
     def test_update22(self):
         """Inline a frame unless it's already cached as another page."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="linked.html">link1</a>
@@ -1467,8 +1467,8 @@ Iframe page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1476,8 +1476,8 @@ Linked page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Iframe page content.
@@ -1504,8 +1504,8 @@ Iframe page content.
     def test_update23(self):
         """Inline a frame unless it's already cached as another page."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="iframe.html">link1</a>
@@ -1513,8 +1513,8 @@ Iframe page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1522,8 +1522,8 @@ Linked page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Iframe page content.
@@ -1555,8 +1555,8 @@ Iframe page content.
         """
         self.create_meta()
         other_file = os.path.join(self.test_root, '20200101000000001', 'index.html')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="../20200101000000001/index.html">link</a>
@@ -1564,8 +1564,8 @@ Iframe page content.
 </html>
 """)
         os.makedirs(os.path.dirname(other_file))
-        with open(other_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(other_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1592,16 +1592,16 @@ Linked page content.
         self.create_meta_singlehtml()
         test_file = os.path.join(self.test_root, '20200101000000000.html')
         other_file = os.path.join(self.test_root, '20200101000000001.html')
-        with open(test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="20200101000000001.html">link</a>
 </body>
 </html>
 """)
-        with open(other_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(other_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1629,8 +1629,8 @@ Linked page content.
         """Don't include external paths or self
         """
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="http://example.com/test.html">link1</a>
@@ -1659,16 +1659,16 @@ Linked page content.
         """Test for a path with special chars
         """
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="ABC%E4%B8%AD%E6%96%87!%23%24%25%26%2B%2C%3B%3D%40%5B%5D%5E%60%7B%7D.html?id=1#123">link</a>
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as f:  # noqa: P103
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as fh:  # noqa: P103
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1696,14 +1696,14 @@ Linked page content.
         """Test for a meta refresh path with special chars
         """
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <meta http-equiv="refresh" content="0;url=ABC%E4%B8%AD%E6%96%87!%23%24%25%26%2B%2C%3B%3D%40%5B%5D%5E%60%7B%7D.html?id=1#123">
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as f:  # noqa: P103
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'ABC中文!#$%&+,;=@[]^`{}.html'), 'w', encoding='UTF-8') as fh:  # noqa: P103
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1731,16 +1731,16 @@ Linked page content.
         """Don't include links inside a data URL page
         """
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <iframe src="data:text/html,frame%20%3Ca%20href%3D%22linked.html%22%3Elink%3C%2Fa%3E"></iframe>
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -1764,9 +1764,9 @@ Linked page content.
     def test_html_charset01(self):
         """Detect charset from BOM. (UTF-16-LE)"""
         self.create_meta()
-        with open(self.test_file, 'wb') as f:
-            f.write(b'\xff\xfe')
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'wb') as fh:
+            fh.write(b'\xff\xfe')
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1794,9 +1794,9 @@ English
     def test_html_charset02(self):
         """Detect charset from BOM. (UTF-16-BE)"""
         self.create_meta()
-        with open(self.test_file, 'wb') as f:
-            f.write(b'\xfe\xff')
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'wb') as fh:
+            fh.write(b'\xfe\xff')
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1824,8 +1824,8 @@ English
     def test_html_charset03(self):
         """Get charset from meta[charset] if no BOM."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='big5') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='big5') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="big5">
@@ -1853,8 +1853,8 @@ English
     def test_html_charset04(self):
         """Get charset from meta[http-equiv="content-type"] if no BOM."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='big5') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='big5') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=big5">
@@ -1882,8 +1882,8 @@ English
     def test_html_charset05(self):
         """Get charset from item charset if no BOM or meta."""
         self.create_meta_charset_big5()
-        with open(self.test_file, 'w', encoding='big5') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='big5') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 English
@@ -1908,8 +1908,8 @@ English
     def test_html_charset06(self):
         """Fallback to UTF-8 if no BOM, meta, or item charset."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 English
@@ -1934,8 +1934,8 @@ English
     def test_html_charset07(self):
         """Fix certain charsets of the web page."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='cp950') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='cp950') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=big5">
@@ -1962,8 +1962,8 @@ English
     def test_html_elems(self):
         """Text in certain HTML tags should not be cached."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2029,12 +2029,12 @@ before math <math><mtext>math text</mtext></math> after math
         """Text in certain HTML tags should not be cached."""
         self.create_meta()
         xhtml_file = os.path.join(self.test_dir, 'index.xhtml')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=index.xhtml">
 """)
-        with open(xhtml_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+        with open(xhtml_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8"/>
@@ -2103,12 +2103,12 @@ before math <math><mtext>math text</mtext></math> after math
         """lxml seems to work for malformed XHTML"""
         self.create_meta()
         xhtml_file = os.path.join(self.test_dir, 'index.xhtml')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=index.xhtml">
 """)
-        with open(xhtml_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+        with open(xhtml_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2140,16 +2140,16 @@ second line <br>
     def test_html_iframe01(self):
         """Include iframe content in index page"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <iframe src="iframe.html">Frame label 中文</iframe>
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Iframe page content. 中文
@@ -2173,16 +2173,16 @@ Iframe page content. 中文
     def test_html_iframe02(self):
         """Treat iframe content as another page if specified"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <iframe src="iframe.html">Frame label 中文</iframe>
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Iframe page content. 中文
@@ -2209,8 +2209,8 @@ Iframe page content. 中文
     def test_html_iframe_datauri01(self):
         """Include data URL content"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <iframe src="data:text/plain;base64,QUJDMTIz5Lit5paH">Frame label 中文</iframe>
@@ -2234,8 +2234,8 @@ Iframe page content. 中文
     def test_html_iframe_datauri02(self):
         """Include data URL content, regardless of inclusion mode"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <iframe src="data:text/plain;base64,QUJDMTIz5Lit5paH">Frame label 中文</iframe>
@@ -2260,16 +2260,16 @@ Iframe page content. 中文
         """Include srcdoc content"""
         self.create_meta()
         linked_file = os.path.join(self.test_dir, 'linked.html')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <iframe src="data:text/plain;base64,QUJDMTIz5Lit5paH" srcdoc="XYZ987<a href=&quot;linked.html&quot;>中文</a>">Frame label 中文</iframe>
 </body>
 </html>
 """)
-        with open(linked_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(linked_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content.
@@ -2296,8 +2296,8 @@ Linked page content.
     def test_html_frame01(self):
         """Include frame content in index page"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <frameset cols="*,*">
 <frame name="toc" src="frame1.html"></frame>
@@ -2305,16 +2305,16 @@ Linked page content.
 </frameset>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'frame1.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'frame1.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Frame page content 1.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'frame2.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'frame2.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 中文
@@ -2338,8 +2338,8 @@ Frame page content 1.
     def test_html_frame02(self):
         """Treat frame content as another page if specified"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <frameset cols="*,*">
 <frame name="toc" src="frame1.html"></frame>
@@ -2347,16 +2347,16 @@ Frame page content 1.
 </frameset>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'frame1.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'frame1.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Frame page content 1.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'frame2.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'frame2.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 中文
@@ -2386,8 +2386,8 @@ Frame page content 1.
     def test_html_frame_datauri01(self):
         """Include data URL content"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <frameset cols="*,*">
 <frame name="toc" src="data:text/plain,ABC123%E4%B8%AD%E6%96%87"></frame>
@@ -2412,8 +2412,8 @@ Frame page content 1.
     def test_html_frame_datauri02(self):
         """Include data URL content, regardless of inclusion mode"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <frameset cols="*,*">
 <frame name="toc" src="data:text/plain,ABC123%E4%B8%AD%E6%96%87"></frame>
@@ -2438,8 +2438,8 @@ Frame page content 1.
     def test_html_refresh01(self):
         """Don't cache content for a page with an instant meta refresh"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="refresh" content="0;url=refreshed1.html">
@@ -2451,24 +2451,24 @@ Main page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'refreshed1.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'refreshed1.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Refreshed page content 1. 中文
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'refreshed2.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'refreshed2.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Refreshed page content 2. 中文
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'refreshed3.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'refreshed3.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Refreshed page content 3. 中文
@@ -2501,8 +2501,8 @@ Refreshed page content 3. 中文
     def test_html_refresh02(self):
         """Cache content for a page without an instant meta refresh"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="refresh" content="1;url=refreshed1.html">
@@ -2514,24 +2514,24 @@ Main page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'refreshed1.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'refreshed1.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Refreshed page content 1. 中文
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'refreshed2.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'refreshed2.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Refreshed page content 2. 中文
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'refreshed3.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'refreshed3.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Refreshed page content 3. 中文
@@ -2564,8 +2564,8 @@ Refreshed page content 3. 中文
     def test_html_refresh_datauri01(self):
         """Include all refresh target data URL pages, regardless of refresh time"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="refresh" content="0;url=data:text/plain,ABC123%E4%B8%AD%E6%96%87">
@@ -2593,8 +2593,8 @@ Main page content.
     def test_html_refresh_datauri02(self):
         """Include all refresh target data URL pages, regardless of refresh time"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="refresh" content="1;url=data:text/plain,ABC123%E4%B8%AD%E6%96%87">
@@ -2622,8 +2622,8 @@ Main page content.
     def test_html_link(self):
         """Cache linked pages"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="linked.html">link 中文</a>
@@ -2631,16 +2631,16 @@ Main page content.
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'linked.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content. 中文
 </body>
 </html>
 """)
-        with open(os.path.join(self.test_dir, 'linked2.html'), 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(os.path.join(self.test_dir, 'linked2.html'), 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 Linked page content 2. 中文
@@ -2670,8 +2670,8 @@ Linked page content 2. 中文
     def test_html_link_datauri(self):
         """Include linked data URL pages"""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="data:text/plain,ABC123%E4%B8%AD%E6%96%87">link 中文</a>
@@ -2697,13 +2697,13 @@ Linked page content 2. 中文
         """Detect charset from BOM. (UTF-16-LE)"""
         self.create_meta_charset_big5()
         text_file = os.path.join(self.test_root, '20200101000000000', 'file.txt')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=file.txt">
 """)
-        with open(text_file, 'wb') as f:
-            f.write(b'\xff\xfe')
-            f.write("""中文""".encode('UTF-16-LE'))
+        with open(text_file, 'wb') as fh:
+            fh.write(b'\xff\xfe')
+            fh.write("""中文""".encode('UTF-16-LE'))
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
@@ -2725,13 +2725,13 @@ Linked page content 2. 中文
         """Detect charset from BOM. (UTF-16-BE)"""
         self.create_meta_charset_big5()
         text_file = os.path.join(self.test_root, '20200101000000000', 'file.txt')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=file.txt">
 """)
-        with open(text_file, 'wb') as f:
-            f.write(b'\xfe\xff')
-            f.write("""中文""".encode('UTF-16-BE'))
+        with open(text_file, 'wb') as fh:
+            fh.write(b'\xfe\xff')
+            fh.write("""中文""".encode('UTF-16-BE'))
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
@@ -2753,12 +2753,12 @@ Linked page content 2. 中文
         """Use item charset if no BOM."""
         self.create_meta_charset_big5()
         text_file = os.path.join(self.test_root, '20200101000000000', 'file.txt')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=file.txt">
 """)
-        with open(text_file, 'w', encoding='big5') as f:
-            f.write("""\
+        with open(text_file, 'w', encoding='big5') as fh:
+            fh.write("""\
 Text file content
 中文
 """)
@@ -2783,12 +2783,12 @@ Text file content
         """Fallback to UTF-8 if no BOM or item charset."""
         self.create_meta()
         text_file = os.path.join(self.test_root, '20200101000000000', 'file.txt')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=file.txt">
 """)
-        with open(text_file, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(text_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 Text file content
 中文
 """)
@@ -2813,12 +2813,12 @@ Text file content
         """Certain charsets of the web page need fix."""
         self.create_meta_charset_big5()
         text_file = os.path.join(self.test_root, '20200101000000000', 'file.txt')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=file.txt">
 """)
-        with open(text_file, 'w', encoding='cp950') as f:
-            f.write("""碁銹裏墻恒粧嫺""")
+        with open(text_file, 'w', encoding='cp950') as fh:
+            fh.write("""碁銹裏墻恒粧嫺""")
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
@@ -2840,12 +2840,12 @@ Text file content
         """Wrong encoding produces gibberish, but won't fail out."""
         self.create_meta_charset_big5()
         text_file = os.path.join(self.test_root, '20200101000000000', 'file.txt')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=file.txt">
 """)
-        with open(text_file, 'w', encoding='UTF-8') as f:
-            f.write("""Text file content 中文""")
+        with open(text_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""Text file content 中文""")
 
         book = Host(self.test_root).books['']
         generator = wsb_cache.FulltextCacheGenerator(book)
@@ -2867,11 +2867,11 @@ Text file content
         """Don't include binary in cache"""
         self.create_meta()
         bin_file = os.path.join(self.test_root, '20200101000000000', 'image.jpg')
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <meta http-equiv="refresh" content="0;url=image.jpg">
 """)
-        with open(bin_file, 'wb') as f:
+        with open(bin_file, 'wb') as fh:
             pass
 
         book = Host(self.test_root).books['']
@@ -2890,8 +2890,8 @@ Text file content
     def test_datauri_html(self):
         """Cache HTML files."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="data:text/html,<b>test</b>">link1</a>
@@ -2916,8 +2916,8 @@ Text file content
     def test_datauri_text(self):
         """Cache text files only."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="data:text/plain,text/plain">link1</a>
@@ -2953,8 +2953,8 @@ Text file content
     def test_datauri_malformed(self):
         """Skip caching data of a malformed data URL."""
         self.create_meta()
-        with open(self.test_file, 'w', encoding='UTF-8') as f:
-            f.write("""<!DOCTYPE html>
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
 <html>
 <body>
 <a href="data:text/html;base64,wtf">link</a>
@@ -3072,8 +3072,8 @@ class TestStaticSiteGenerator(TestCache):
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
     def test_config_filepaths(self, mock_func):
         """Check if special chars in the path are correctly handled."""
-        with open(self.test_config, 'w', encoding='UTF-8') as f:
-            f.write("""\
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
 [book ""]
 top_dir = #top
 data_dir = data%中文

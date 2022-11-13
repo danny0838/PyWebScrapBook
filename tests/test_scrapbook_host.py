@@ -56,8 +56,8 @@ class TestBase(unittest.TestCase):
 class TestHost(TestBase):
     def test_init01(self):
         """Check basic"""
-        with open(self.test_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 name = myhost
 theme = custom
 root = public
@@ -101,8 +101,8 @@ name = mybook2
         """Check config param"""
         other_root = os.path.join(self.test_root, 'rootdir')
         os.makedirs(other_root)
-        with open(self.test_config, 'w', encoding='UTF-8') as f:
-            f.write("""[app]
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""[app]
 name = myhost
 theme = custom
 root = public
@@ -152,8 +152,8 @@ name = mybook2
             ('foo\\bar', 'foo_bar'),
         ]:
             with self.subTest(theme=theme):
-                with open(self.test_config, 'w', encoding='UTF-8') as f:
-                    f.write(f'[app]\ntheme = {theme}')
+                with open(self.test_config, 'w', encoding='UTF-8') as fh:
+                    fh.write(f'[app]\ntheme = {theme}')
                 host = Host(self.test_root)
                 self.assertEqual([os.path.normcase(f) for f in host.themes], [
                     os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', theme_fixed)),
