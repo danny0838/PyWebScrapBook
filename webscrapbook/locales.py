@@ -62,8 +62,8 @@ class I18N:
             langs.append(DEFAULT_LANG)
 
         self.translators = []
-        for dir_ in dirs:
-            for lang in langs:
+        for lang in langs:
+            for dir_ in dirs:
                 file = os.path.join(dir_, lang, domain + '.py')
                 hash_ = hashlib.md5(os.path.normcase(dir_).encode('UTF-8')).hexdigest()
                 try:

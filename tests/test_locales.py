@@ -23,40 +23,40 @@ class TestI18N(unittest.TestCase):
         i18n = I18N(test_dirs, 'zh_CN')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
         i18n = I18N(test_dirs, 'zh-CN')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
         i18n = I18N(test_dirs, 'zh_cn')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
         i18n = I18N(test_dirs, 'zh-cn')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh_cn', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
@@ -64,8 +64,8 @@ class TestI18N(unittest.TestCase):
         i18n = I18N(test_dirs, 'zh_TW')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
@@ -88,8 +88,8 @@ class TestI18N(unittest.TestCase):
             i18n = I18N(test_dirs)
             self.assertEqual([t.__file__ for t in i18n.translators], [
                 os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-                os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
                 os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+                os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
                 os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
             ])
 
