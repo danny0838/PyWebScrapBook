@@ -88,6 +88,10 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(mod.__name__, 'webscrapbook._test_import_module_file')
         self.assertEqual(mod.test_key, 'test_value')
 
+        # reuse if imported
+        mod2 = util.import_module_file('webscrapbook._test_import_module_file', os.path.join(test_root, 'import_module_file.py'))
+        self.assertIs(mod2, mod)
+
     def test_datetime_to_id(self):
         # create an ID from UTC time
         self.assertEqual(

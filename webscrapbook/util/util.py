@@ -89,9 +89,19 @@ def make_hashable(obj):
 
 
 def import_module_file(ns, file):
+    try:
+        return sys.modules[ns]
+    except KeyError:
+        pass
+
     spec = importlib.util.spec_from_file_location(ns, file)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.modules[ns] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        del sys.modules[ns]
+        raise
     return module
 
 
