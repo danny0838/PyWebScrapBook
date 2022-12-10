@@ -44,6 +44,8 @@ class I18N:
         """
         if not lang:
             lang, _ = locale.getdefaultlocale()
+        if not lang:
+            lang = DEFAULT_LANG
 
         # normalize lang to lower_snake_case
         lang = lang.replace('-', '_').lower()

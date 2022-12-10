@@ -93,6 +93,14 @@ class TestI18N(unittest.TestCase):
                 os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
             ])
 
+        # take default lang if default locale cannot be determined
+        with mock.patch('locale.getdefaultlocale', return_value=(None, None)):
+            i18n = I18N(test_dirs)
+            self.assertEqual([t.__file__ for t in i18n.translators], [
+                os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
+                os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
+            ])
+
     def test_init_domain(self):
         # mydomain
         i18n = I18N([os.path.join(test_root, 'test_domain')], 'zh_TW', 'mydomain')
