@@ -17,9 +17,9 @@ class TestI18N(unittest.TestCase):
     def setUpClass(cls):
         cls.maxDiff = 8192
 
-    def test_init(self):
+    def test_init_lang(self):
         # zh_CN, ch-CN, zh_cn, zh-cn should all work same
-        i18n = I18N(test_dirs, 'zh_CN', 'messages')
+        i18n = I18N(test_dirs, 'zh_CN')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
@@ -29,7 +29,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
-        i18n = I18N(test_dirs, 'zh-CN', 'messages')
+        i18n = I18N(test_dirs, 'zh-CN')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
@@ -39,7 +39,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
-        i18n = I18N(test_dirs, 'zh_cn', 'messages')
+        i18n = I18N(test_dirs, 'zh_cn')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
@@ -49,7 +49,7 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
-        i18n = I18N(test_dirs, 'zh-cn', 'messages')
+        i18n = I18N(test_dirs, 'zh-cn')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh_cn', 'messages.py'),
             os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
@@ -60,15 +60,6 @@ class TestI18N(unittest.TestCase):
         ])
 
         # zh_tw => zh => en
-        i18n = I18N(test_dirs, 'zh_TW', 'messages')
-        self.assertEqual([t.__file__ for t in i18n.translators], [
-            os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
-            os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
-        ])
-
-        # no domain => defaults to 'messages'
         i18n = I18N(test_dirs, 'zh_TW')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
@@ -89,6 +80,23 @@ class TestI18N(unittest.TestCase):
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
+        ])
+
+    def test_init_domain(self):
+        # mydomain
+        i18n = I18N([os.path.join(test_root, 'test_domain')], 'zh_TW', 'mydomain')
+        self.assertEqual([t.__file__ for t in i18n.translators], [
+            os.path.join(test_root, 'test_domain', 'zh_tw', 'mydomain.py'),
+            os.path.join(test_root, 'test_domain', 'zh', 'mydomain.py'),
+            os.path.join(test_root, 'test_domain', 'en', 'mydomain.py'),
+        ])
+
+        # no domain => defaults to 'messages'
+        i18n = I18N([os.path.join(test_root, 'test_domain')], 'zh_TW')
+        self.assertEqual([t.__file__ for t in i18n.translators], [
+            os.path.join(test_root, 'test_domain', 'zh_tw', 'messages.py'),
+            os.path.join(test_root, 'test_domain', 'zh', 'messages.py'),
+            os.path.join(test_root, 'test_domain', 'en', 'messages.py'),
         ])
 
     def test_call(self):
