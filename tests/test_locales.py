@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest import mock
 
 from webscrapbook.locales import I18N
 
@@ -75,12 +76,22 @@ class TestI18N(unittest.TestCase):
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
 
-        # unknown lang should fallback to default
+        # unknown lang => fallback to default
         i18n = I18N(test_dirs, 'wtf')
         self.assertEqual([t.__file__ for t in i18n.translators], [
             os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
             os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
         ])
+
+        # unprovided lang => take default locale
+        with mock.patch('locale.getdefaultlocale', return_value=('zh', 'cp950')):
+            i18n = I18N(test_dirs)
+            self.assertEqual([t.__file__ for t in i18n.translators], [
+                os.path.join(test_root, 'test_general', 'host', 'zh', 'messages.py'),
+                os.path.join(test_root, 'test_general', 'host', 'en', 'messages.py'),
+                os.path.join(test_root, 'test_general', 'user', 'zh', 'messages.py'),
+                os.path.join(test_root, 'test_general', 'user', 'en', 'messages.py'),
+            ])
 
     def test_init_domain(self):
         # mydomain
