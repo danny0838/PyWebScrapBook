@@ -65,15 +65,13 @@ class I18N:
         for lang in langs:
             for dir_ in dirs:
                 file = os.path.join(dir_, lang, domain + '.py')
+                if not os.path.isfile(file):
+                    continue
                 hash_ = hashlib.md5(os.path.normcase(dir_).encode('UTF-8')).hexdigest()
-                try:
-                    mod = util.import_module_file(
-                        f'webscrapbook.locales._{hash_}.{lang}.{domain}',
-                        file)
-                except FileNotFoundError:
-                    pass
-                else:
-                    self.translators.append(mod)
+                mod = util.import_module_file(
+                    f'webscrapbook.locales._{hash_}.{lang}.{domain}',
+                    file)
+                self.translators.append(mod)
 
     def __call__(self, name, *args, **kwargs):
         """Search for a translate of the given message name.
