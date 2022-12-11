@@ -3,6 +3,14 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.7.0] - 2022-12-11
+* Dropped support for Python 3.6.
+* Locale now searches for all given directories before checking for the next fallback language.
+* Fixed a script error when the default locale cannot be determined by the system.
+* Miscellaneous code optimization.
+* Fixed several potential errors.
+* Fixed several random errors for tests.
+
 ## [1.6.1] - 2022-08-28
 * Updated classifiers and some documentation for the package.
 * Fixed some packaging issues that may cause obsolete files be included.
