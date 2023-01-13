@@ -3,6 +3,15 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.8.0] - 2023-01-14
+* Added localication for Spanish (es).
+* Adjusted filename tidying strategy:
+  * Spaces, tabs, and linefeeds are now collapsed into a space.
+  * "<", and ">" are now translated into "_".
+  * "%"s are no more encoded when forcing ASCII.
+  * Fix bad handling for a filename like " .ext".
+  * Windows preserved filenames like "CON" and "NUL.txt" are now renamed.
+
 ## [1.7.0] - 2022-12-11
 * Dropped support for Python 3.6.
 * Locale now searches for all given directories before checking for the next fallback language.
