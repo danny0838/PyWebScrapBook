@@ -198,22 +198,24 @@ def validate_filename(filename, force_ascii=False):
     """
     fn = filename
 
-    # control chars are bad for filename
+    # common restrictions
+    # - collapse document spaces
+    fn = re.sub(r'[\t\n\f\r]+', ' ', fn)
+
+    # - control chars are bad for filename
     fn = re.sub(r'[\x00-\x1F\x7F\x80-\x9F]+', '', fn)
 
-    # leading/trailing spaces and dots are not allowed on Windows
-    fn = re.sub(r'^\.', '_.', fn)
+    # - bad chars on most OS
+    fn = re.sub(r'[:"?*\\/|<>]', '_', fn)
+
+    # Windows restrictions
+    # - leading/trailing spaces and dots
     fn = re.sub(r'^ +', '', fn)
     fn = re.sub(r'[. ]+$', '', fn)
+    fn = re.sub(r'^\.', '_.', fn)
 
-    # bad chars on most OS
-    fn = re.sub(r'[:"?*\\/|]', '_', fn)
-
-    # bad chars on Windows, replace with adequate direction
-    fn = fn.replace('<', '(').replace('>', ')')
-
-    # "~" is not allowed by browser.downloads
-    fn = fn.replace('~', '-')
+    # - reserved filenames
+    fn = re.sub(r'^(CON|PRN|AUX|NUL|COM\d|LPT\d)((?:\..+)?)$', '\g<1>_\g<2>', fn, flags=re.I)
 
     if force_ascii:
         fn = quote(fn, safe="""!_#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")

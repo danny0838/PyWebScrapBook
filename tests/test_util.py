@@ -175,39 +175,117 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(util.id_to_datetime_legacy('20200102036505'))
 
     def test_validate_filename(self):
+        # basic
         self.assertEqual(
             util.validate_filename(''),
             '_')
+        self.assertEqual(
+            util.validate_filename('foo/bar'),
+            'foo_bar')
+        self.assertEqual(
+            util.validate_filename('foo\\bar'),
+            'foo_bar')
+
+        self.assertEqual(
+            util.validate_filename('abc\x0D\x0A\x09\x0Cxyz'),
+            'abc xyz')
+
+        self.assertEqual(
+            util.validate_filename(''.join(chr(i) for i in range(0xA0))),
+            "!_#$%&'()_+,-._0123456789_;_=__@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}~")
+        self.assertEqual(
+            util.validate_filename('\u00A0中文𠀀'),
+            '\u00A0中文𠀀')
+        self.assertEqual(
+            util.validate_filename('123%.dat'),
+            '123%.dat')
+
+        # Windows
+        self.assertEqual(
+            util.validate_filename(' '),
+            '_')
+        self.assertEqual(
+            util.validate_filename('  '),
+            '_')
+        self.assertEqual(
+            util.validate_filename('  wsb  '),
+            'wsb')
         self.assertEqual(
             util.validate_filename('.'),
             '_')
         self.assertEqual(
             util.validate_filename('..'),
             '_')
+
         self.assertEqual(
             util.validate_filename('.wsb'),
             '_.wsb')
         self.assertEqual(
+            util.validate_filename('..wsb'),
+            '_..wsb')
+        self.assertEqual(
+            util.validate_filename('  ..wsb'),
+            '_..wsb')
+        self.assertEqual(
             util.validate_filename('foo.'),
             'foo')
         self.assertEqual(
-            util.validate_filename('  wsb  '),
-            'wsb')
+            util.validate_filename('foo..  '),
+            'foo')
+
         self.assertEqual(
-            util.validate_filename('foo\\bar'),
-            'foo_bar')
+            util.validate_filename('con'),
+            'con_')
         self.assertEqual(
-            util.validate_filename(''.join(chr(i) for i in range(0xA0))),
-            "!_#$%&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
+            util.validate_filename('prn'),
+            'prn_')
         self.assertEqual(
-            util.validate_filename('\u00A0中文𠀀'),
-            '\u00A0中文𠀀')
+            util.validate_filename('aux'),
+            'aux_')
+        self.assertEqual(
+            util.validate_filename('com0'),
+            'com0_')
+        self.assertEqual(
+            util.validate_filename('com9'),
+            'com9_')
+        self.assertEqual(
+            util.validate_filename('lpt0'),
+            'lpt0_')
+        self.assertEqual(
+            util.validate_filename('lpt9'),
+            'lpt9_')
+        self.assertEqual(
+            util.validate_filename('con.txt'),
+            'con_.txt')
+        self.assertEqual(
+            util.validate_filename('prn.txt'),
+            'prn_.txt')
+        self.assertEqual(
+            util.validate_filename('aux.txt'),
+            'aux_.txt')
+        self.assertEqual(
+            util.validate_filename('com0.txt'),
+            'com0_.txt')
+        self.assertEqual(
+            util.validate_filename('com9.txt'),
+            'com9_.txt')
+        self.assertEqual(
+            util.validate_filename('lpt0.txt'),
+            'lpt0_.txt')
+        self.assertEqual(
+            util.validate_filename('lpt9.txt'),
+            'lpt9_.txt')
+
+        # force_ascii=True
         self.assertEqual(
             util.validate_filename(''.join(chr(i) for i in range(0xA0)), force_ascii=True),
-            "!_#$%&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
+            "!_#$%&'()_+,-._0123456789_;_=__@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}~")
         self.assertEqual(
             util.validate_filename('\u00A0中文𠀀', force_ascii=True),
             '%C2%A0%E4%B8%AD%E6%96%87%F0%A0%80%80')
+        self.assertEqual(
+            util.validate_filename('123%.dat', force_ascii=True),
+            '123%.dat')
 
     def test_crop(self):
         self.assertEqual(util.crop('dummy text', 10), 'dummy text')

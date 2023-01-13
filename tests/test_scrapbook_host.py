@@ -363,7 +363,7 @@ name = mybook2
         host.init_backup(True, 'foo~bar')
         self.assertRegex(
             host._backup_dir,
-            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo-bar',
+            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo~bar',
         )
 
         ts = util.datetime_to_id()
