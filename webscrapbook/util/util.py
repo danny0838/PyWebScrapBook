@@ -216,7 +216,7 @@ def validate_filename(filename, force_ascii=False):
     fn = fn.replace('~', '-')
 
     if force_ascii:
-        fn = quote(fn, safe="""!_#$&'()*+,-./:;<=>?@[\\]^_`{|}~""")
+        fn = quote(fn, safe="""!_#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
 
     # prevent empty filename
     fn = fn or '_'

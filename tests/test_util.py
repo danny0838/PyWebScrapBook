@@ -204,7 +204,7 @@ class TestUtils(unittest.TestCase):
             '\u00A0中文𠀀')
         self.assertEqual(
             util.validate_filename(''.join(chr(i) for i in range(0xA0)), force_ascii=True),
-            "!_#$%25&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
+            "!_#$%&'()_+,-._0123456789_;(=)_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[_]^_`abcdefghijklmnopqrstuvwxyz{_}-")
         self.assertEqual(
             util.validate_filename('\u00A0中文𠀀', force_ascii=True),
             '%C2%A0%E4%B8%AD%E6%96%87%F0%A0%80%80')
