@@ -215,7 +215,7 @@ def validate_filename(filename, force_ascii=False):
     fn = re.sub(r'^\.', '_.', fn)
 
     # - reserved filenames
-    fn = re.sub(r'^(CON|PRN|AUX|NUL|COM\d|LPT\d)((?:\..+)?)$', '\g<1>_\g<2>', fn, flags=re.I)
+    fn = re.sub(r'^(CON|PRN|AUX|NUL|COM\d|LPT\d)((?:\..+)?)$', r'\g<1>_\g<2>', fn, flags=re.I)
 
     if force_ascii:
         fn = quote(fn, safe="""!_#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")

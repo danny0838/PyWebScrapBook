@@ -326,9 +326,9 @@ def open_archive_path(localpaths, mode='r', filters=None):
                             continue
 
                         zh.writestr(info, zip0.read(info),
-                                     compress_type=info.compress_type,
-                                     compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                     )
+                                    compress_type=info.compress_type,
+                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                    )
 
                 if filters and not any(f == '' for f in filters) and not filtered:
                     raise KeyError('paths to filter do not exist')
@@ -1567,9 +1567,9 @@ def action_move(sourcepaths, targetpaths):
                             info = zh.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
                             zh2.writestr(info, zh.read(entry),
-                                          compress_type=info.compress_type,
-                                          compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                          )
+                                         compress_type=info.compress_type,
+                                         compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                         )
 
                 with open_archive_path(sourcepaths, 'w', entries):
                     pass
@@ -1646,9 +1646,9 @@ def action_copy(sourcepaths, targetpaths):
                             info = zh.getinfo(entry)
                             info.filename = targetpaths[-1] + entry[cut:]
                             zh2.writestr(info, zh.read(entry),
-                                          compress_type=info.compress_type,
-                                          compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                          )
+                                         compress_type=info.compress_type,
+                                         compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                         )
 
     except HTTPException:
         raise
