@@ -55,6 +55,7 @@ class BookChecker:
             self.resolve = True
 
         self.wsb_dir = os.path.join(book.root, WSB_DIR)
+        self.book_wsb_dir = os.path.join(book.top_dir, WSB_DIR)
 
     def run(self):
         self.seen_in_toc = set()
@@ -400,9 +401,21 @@ class BookChecker:
         subdirs = {}
         with entries as entries:
             for entry in entries:
-                if os.path.samefile(entry, self.wsb_dir):
+                try:
+                    assert not os.path.samefile(entry, self.wsb_dir)
+                except AssertionError:
                     yield Info('debug', f'Skipped special "{self.book.get_subpath(entry)}"')
                     continue
+                except OSError:
+                    pass
+
+                try:
+                    assert not os.path.samefile(entry, self.book_wsb_dir)
+                except AssertionError:
+                    yield Info('debug', f'Skipped special "{self.book.get_subpath(entry)}"')
+                    continue
+                except OSError:
+                    pass
 
                 if entry.is_dir():
                     self.cnt_dirs += 1

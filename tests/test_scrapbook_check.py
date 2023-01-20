@@ -895,6 +895,30 @@ page content
             ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'],
         )
 
+    def test_resolve_unindexed_files_exclude_wsb(self):
+        """<book>/.wsb should be skipped."""
+        config_file = os.path.join(self.test_root, WSB_DIR, 'config.ini')
+        with open(config_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+top_dir = top
+data_dir =
+tree_dir = .wsb/tree
+""")
+
+        wsb_file = os.path.join(self.test_root, 'top', WSB_DIR, 'index.html')
+        os.makedirs(os.path.dirname(wsb_file), exist_ok=True)
+        with open(wsb_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>index content""")
+
+        book = Host(self.test_root).books['']
+        generator = BookChecker(book, resolve_unindexed_files=True)
+        for _info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {})
+        self.assertDictEqual(book.toc, {})
+
     def test_resolve_absolute_icon01(self):
         """Check favicon with absolute URL."""
         test_index = os.path.join(self.test_root, '20200101000000000.html')
