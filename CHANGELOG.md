@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.8.1] - 2023-01-20
+* Fixed an issue that the `.wsb` directory under the `top_dir` of a scrapbook is not ignored when running the checker.
+* Fixed script error when a bad HTML file is encountered when running the indexer.
+
 ## [1.8.0] - 2023-01-14
 * Added localication for Spanish (es).
 * Adjusted filename tidying strategy:
