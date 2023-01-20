@@ -100,6 +100,22 @@ page content
             },
         })
 
+    def test_bad_html(self):
+        """No item should be indexed if the HTML file is bad."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8'):
+            pass
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {})
+
     def test_item_id(self):
         """Test if id is provided."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')

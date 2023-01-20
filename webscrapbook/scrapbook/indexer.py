@@ -185,10 +185,11 @@ class Indexer:
                 return None
 
             tree_root = tree.getroot()
-            html_elem = tree_root if tree_root.tag == 'html' else None
-            if html_elem is None:
+            if tree_root is None or tree_root.tag != 'html':
                 yield Info('error', f'No html element in file "{subpath}"')
                 return None
+
+            html_elem = tree_root
 
         # generate default properties
         meta = self.book.DEFAULT_META.copy()
