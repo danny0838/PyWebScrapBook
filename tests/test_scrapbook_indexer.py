@@ -666,6 +666,48 @@ page content
             },
         })
 
+    def test_item_icon_link_no_rel(self):
+        """No error for link:not([rel])."""
+        test_index = os.path.join(self.test_root, '20200101000000000.htz')
+        with zipfile.ZipFile(test_index, 'w') as zh:
+            zh.writestr('index.html', """\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+<link href="favicon.bmp">
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+            zh.writestr(
+                'favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
+
+        book = Host(self.test_root).books['']
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.htz',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': '',
+                'comment': '',
+            },
+        })
+
     def test_param_handle_ie_meta01(self):
         """handle_ie_meta=True"""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')

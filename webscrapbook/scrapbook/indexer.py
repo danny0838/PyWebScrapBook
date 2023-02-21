@@ -123,7 +123,7 @@ def iter_title_elems(tree):
 def iter_favicon_elems(tree):
     """Iterate over valid favicon elements."""
     for elem in tree.iter('link'):
-        if 'icon' in elem.attrib.get('rel').lower().split():
+        if 'icon' in elem.attrib.get('rel', '').lower().split():
             yield elem
 
 
