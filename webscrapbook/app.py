@@ -795,7 +795,7 @@ def handle_action_renaming(func):
                 else:
                     abort(400, 'Found something at target.')
 
-        return func(sourcepaths=localpaths, targetpaths=targetpaths, *args, **kwargs)
+        return func(*args, sourcepaths=localpaths, targetpaths=targetpaths, **kwargs)
 
     return wrapper
 
