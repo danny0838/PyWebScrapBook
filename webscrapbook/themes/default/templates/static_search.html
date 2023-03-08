@@ -296,7 +296,7 @@ const scrapbook = {
     const targetUrl = this.resolveUrl(url, location.href);
     const targetUrlObj = new URL(targetUrl);
     if (['http:', 'https:'].indexOf(targetUrlObj.protocol) !== -1 &&
-        ['localhost', '127.0.0.1'].indexOf(targetUrlObj.hostname) === -1) {
+        ['localhost', '127.0.0.1', '[::1]'].indexOf(targetUrlObj.hostname) === -1) {
       if (conf.allowHttp === 0) {
         if (confirm({{ i18n('cache_search_confirm_remote') | tojson }})) {
           conf.allowHttp = 1;
