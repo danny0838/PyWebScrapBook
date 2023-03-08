@@ -133,6 +133,7 @@ cache_search_sort_last_created = '最后创建'
 cache_search_sort_last_modified = '最后修改'
 cache_search_sort_title = '标题排序'
 cache_search_sort_id = 'ID 排序'
+cache_search_confirm_remote = '加载远程全文缓存可能使用较大的网络流量。要继续吗？'
 
 
 #########################################################################

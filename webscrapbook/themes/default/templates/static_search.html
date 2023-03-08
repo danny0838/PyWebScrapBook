@@ -298,7 +298,7 @@ const scrapbook = {
     if (['http:', 'https:'].indexOf(targetUrlObj.protocol) !== -1 &&
         ['localhost', '127.0.0.1'].indexOf(targetUrlObj.hostname) === -1) {
       if (conf.allowHttp === 0) {
-        if (confirm("Loading remote fulltext cache may require large network flow. Continue?")) {
+        if (confirm({{ i18n('cache_search_confirm_remote') | tojson }})) {
           conf.allowHttp = 1;
         } else {
           conf.allowHttp = -1;

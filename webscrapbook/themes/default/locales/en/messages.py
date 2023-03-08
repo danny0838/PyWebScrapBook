@@ -133,6 +133,7 @@ cache_search_sort_last_created = 'Last Created'
 cache_search_sort_last_modified = 'Last Modified'
 cache_search_sort_title = 'Sort by title'
 cache_search_sort_id = 'Sort by ID'
+cache_search_confirm_remote = 'Loading remote fulltext cache may require large network flow. Continue?'
 
 
 #########################################################################

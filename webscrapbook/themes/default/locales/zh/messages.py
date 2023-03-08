@@ -133,6 +133,7 @@ cache_search_sort_last_created = '最後建立'
 cache_search_sort_last_modified = '最後修改'
 cache_search_sort_title = '標題排序'
 cache_search_sort_id = 'ID 排序'
+cache_search_confirm_remote = '載入遠端全文快取可能使用較大的網路流量。要繼續嗎？'
 
 
 #########################################################################
