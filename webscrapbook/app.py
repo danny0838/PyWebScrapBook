@@ -55,6 +55,13 @@ def static_url(path):
     return f'{quote_path(request.script_root)}/{quote_path(path)}?a=static'
 
 
+def apply_csp(response):
+    """Apply CSP, mostly for a static resource.
+    """
+    if host.config['app']['content_security_policy'] == 'strict':
+        response.headers.set('Content-Security-Policy', "connect-src 'none'; form-action 'none';")
+
+
 def static_file(filename, mimetype=None):
     """Output the specified file to the client.
 
@@ -66,8 +73,7 @@ def static_file(filename, mimetype=None):
     response = flask.send_file(filename, conditional=True, mimetype=mimetype)
     response.headers.set('Accept-Ranges', 'bytes')
     response.headers.set('Cache-Control', 'no-cache')
-    if host.config['app']['content_security_policy'] == 'strict':
-        response.headers.set('Content-Security-Policy', "connect-src 'none'; form-action 'none';")
+    apply_csp(response)
     return response
 
 
@@ -103,11 +109,10 @@ def zip_static_file(zh, subpath, mimetype=None):
         'Last-Modified': last_modified,
         'ETag': etag,
     }
-    if host.config['app']['content_security_policy'] == 'strict':
-        headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
     response = Response(fh, headers=headers, mimetype=mimetype)
     response.make_conditional(request.environ, accept_ranges=True, complete_length=info.file_size)
+    apply_csp(response)
     return response
 
 
@@ -622,8 +627,6 @@ def handle_markdown_output(localpaths, zh=None):
             'Last-Modified': last_modified,
             'ETag': etag,
         }
-        if host.config['app']['content_security_policy'] == 'strict':
-            headers['Content-Security-Policy'] = "connect-src 'none'; form-action 'none';"
 
         # prepare content
         if zh:
@@ -642,7 +645,9 @@ def handle_markdown_output(localpaths, zh=None):
                            content=commonmark.commonmark(body),
                            )
 
-    return http_response(body, headers=headers)
+    response = http_response(body, headers=headers)
+    apply_csp(response)
+    return response
 
 
 class Request(flask.Request):
