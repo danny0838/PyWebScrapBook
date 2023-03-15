@@ -709,12 +709,13 @@ auto-generate parent folders if not found. (ignores --target and
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Migrate a scrapbook to be compatible with the latest WebScrapBook version.
+- WebScrapBook < 0.115: Migrate old shadow root loader and content data.
+- WebScrapBook < 0.69: Migrate old canvas and shadow root loaders.
 
-This tool fixes incomplete conversion from legacy ScrapBook to WebScrapBook or
-migrate from older WebScrapBook to the latest.
-
-- Convert legacy annotations and resources at chrome://scrapbook/skin/* for all
-  web pages associated with an item.
+Also fix an incomplete conversion from legacy ScrapBook:
+- Convert legacy annotations to be compatible with latest WebScrapBook.
+- Convert legacy resources at chrome://scrapbook/skin/* to work in a browser
+  without legacy ScrapBook add-on installed.
 - Convert the index file of "postit" items for canonical wrapper and styling.
 """,
         help="""migrate to latest WebScrapBook""")
@@ -778,7 +779,7 @@ Available FORMATs:
   no multi-page or arbitrary metadata is included in the MAFF file), while
   conversion between "single_file" and other formats may lose information
   permanently, such as filename and in-depth captured pages. Also note that
-  some features are not supported for single_file.
+  some features are not supported for "single_file".
 
 Available TYPEs:
   ""         a captured web page
@@ -826,7 +827,10 @@ Available TYPEs:
         description="""\
 Convert a scrapbook from legacy ScrapBook to WebScrapBook.
 
-Fulltext cache is not converted and requires a manual rebuild.
+The conversion is safe and lossless, with a few caveats:
+- In-depth capture information is not converted and cannot be reused
+  for a merge capture.
+- Fulltext cache is not converted and requires a manual rebuild.
 
 Known supported legacy scrapbook implementations:
 - ScrapBook X (legacy Firefox Add-on)
@@ -846,7 +850,7 @@ Known supported legacy scrapbook implementations:
 with the conversion, and run "wsb convert migrate" afterwards for advanced options)""")
     parser_convert_sb2wsb.add_argument(
         '--no-backup', default=False, action='store_true',
-        help="""do not backup unneeded legacy scrapbook files""")
+        help="""do not copy legacy ScrapBook files not needed by WebScrapBook""")
     parser_convert_sb2wsb.add_argument(
         '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
