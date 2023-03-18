@@ -3,6 +3,8 @@ import tempfile
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
+PROG_DIR = os.path.normpath(os.path.join(ROOT_DIR, '..', 'webscrapbook'))
+
 # The root directory for placing temp directories and files.
 # None for auto-detection from the local system.
 TEMP_DIR = None

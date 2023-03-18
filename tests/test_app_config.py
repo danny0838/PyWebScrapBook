@@ -15,7 +15,9 @@ from webscrapbook import WSB_CONFIG, WSB_DIR
 from webscrapbook import app as wsbapp
 from webscrapbook.app import make_app
 
-from . import ROOT_DIR, TEMP_DIR
+from . import PROG_DIR, ROOT_DIR, TEMP_DIR
+
+THEMES_DIR = os.path.join(PROG_DIR, 'themes')
 
 
 def setUpModule():
@@ -111,7 +113,7 @@ theme = default
         self.assertListEqual([os.path.normcase(i) for i in mock_loader.call_args[0][0]], [
             os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb', 'themes', 'default', 'templates'))),
-            os.path.normcase(os.path.abspath(os.path.join(__file__, '..', '..', 'webscrapbook', 'themes', 'default', 'templates'))),
+            os.path.normcase(os.path.abspath(os.path.join(THEMES_DIR, 'default', 'templates'))),
         ])
 
     def test_root(self):

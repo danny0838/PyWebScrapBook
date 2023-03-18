@@ -10,9 +10,9 @@ from urllib.request import pathname2url
 
 from webscrapbook import WSB_DIR, cli
 
-from . import ROOT_DIR, TEMP_DIR
+from . import PROG_DIR, TEMP_DIR
 
-RESOURCE_DIR = os.path.join(ROOT_DIR, '..', 'webscrapbook', 'resources')
+RESOURCE_DIR = os.path.join(PROG_DIR, 'resources')
 
 
 def setUpModule():
