@@ -38,6 +38,15 @@ scrapbook.meta({
     "source": "http://example.com/t0001-1",
     "icon": "../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp"
   },
+  "20200917155205233": {
+    "index": "20200917155205233.html",
+    "title": "Lorem Ipsum 4",
+    "type": "",
+    "create": "20200917155205233",
+    "modify": "20200917210031735",
+    "source": "http://example.com/t0001-1",
+    "icon": "../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp"
+  },
   "20200917131358430": {
     "index": "",
     "title": "Bookmark example",
@@ -108,5 +117,12 @@ scrapbook.meta({
     "modify": "20200917132321858",
     "source": "http://example.com/",
     "icon": ""
+  },
+  "20230318125542001": {
+    "index": "20230318125542001/index.html",
+    "type": "postit",
+    "create": "20230318125542001",
+    "modify": "20230318125608423",
+    "title": "postit example"
   }
 })
