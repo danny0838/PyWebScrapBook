@@ -998,11 +998,11 @@ scrapbook.meta({
   }
 })""")
 
-        input = """<html><body><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="first" title="inline annotation
+        input = """<html><body><b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="first" title="inline annotation
 2nd line">Suspendisse eget</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="last" title="inline annotation
 2nd line"> interdum quam, eu semper ipsum</scrapbook-linemarker>.<style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""  # noqa: E501
 
-        expected = """<html><body><span data-sb-id="20200101000000000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted #FF0000;" title="inline annotation
+        expected = """<html><body><b><span data-sb-id="20200101000000000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted #FF0000;" title="inline annotation
 2nd line">Suspendisse eget</span></b><span data-sb-id="20200101000000000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted #FF0000;" title="inline annotation
 2nd line"> interdum quam, eu semper ipsum</span>.</body></html>"""  # noqa: E501
 

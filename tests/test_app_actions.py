@@ -242,7 +242,7 @@ class TestView(unittest.TestCase):
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
-            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+            with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
                 c.get('/archive.zip!/')
                 mock_abort.assert_called_once_with(403)
         finally:
@@ -981,7 +981,7 @@ class TestList(TestActions):
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
-            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+            with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
                 c.get('/archive.zip!/', query_string={'a': 'list', 'f': 'json'})
                 mock_abort.assert_called_once_with(403)
         finally:
@@ -1425,7 +1425,7 @@ class TestSource(unittest.TestCase):
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
-            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+            with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
                 c.get('/archive.zip!/', query_string={'a': 'source'})
                 mock_abort.assert_called_once_with(403)
         finally:
@@ -1692,7 +1692,7 @@ class TestDownload(TestActions):
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
-            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+            with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
                 c.get('/archive.zip!/', query_string={'a': 'download'})
                 mock_abort.assert_called_once_with(403)
         finally:
@@ -2149,7 +2149,7 @@ class TestEdit(unittest.TestCase):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/temp.maff!/index.html', query_string={'a': 'edit'})
             mock_abort.assert_called_once_with(403)
 
@@ -2287,7 +2287,7 @@ class TestEditx(unittest.TestCase):
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
-            with app.test_client() as c, mock.patch('zipfile.ZipFile', side_effect=PermissionError('Forbidden')):
+            with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
                 c.get('/archive.zip!/index.html', query_string={'a': 'editx'})
                 mock_abort.assert_called_once_with(403)
         finally:
