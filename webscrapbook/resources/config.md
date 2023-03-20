@@ -2,11 +2,11 @@
 WebScrapBook is an application that can host one or more directories, with
 each host containing one or more scrapbooks.
 
-A host has 3 levels of configuration:
+A WebScrapBook host for a diretory `<root>` has 3 levels of configuration:
 
 * default: written in the source code
 * user: at `~/.config/wsb/config.ini` and `~/.wsbconfig`
-* host: at `<host>/.wsb/config.ini`
+* host: at `<root>/.wsb/config.ini`
 
 with the latters overwriting the formers.
 
@@ -14,7 +14,7 @@ A config file can be generated using the command `wsb config`. Run
 `wsb config --help` for more details.
 
 Configs are loaded only at process starting, and a config change won't affect
-an already running process. For example, a running webscrapbook server needs
+an already running process. For example, a running WebScrapBook host needs
 to be shut off and restarted to get new configs take effect.
 
 

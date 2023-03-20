@@ -85,7 +85,7 @@ Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the path of 
 
 ### Configuration
 
-Run `wsb config -be` to edit configs for CWD. For documentation about configs, run `wsb help config`, or [read online](https://github.com/danny0838/PyWebScrapBook/blob/master/webscrapbook/resources/config.md).
+Run `wsb config -be` to edit configs for CWD. For documentation about configs, run `wsb help config`, or [read it online](https://github.com/danny0838/PyWebScrapBook/blob/master/webscrapbook/resources/config.md).
 
 ### Further documentation
 
