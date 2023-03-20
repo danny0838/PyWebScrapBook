@@ -77,6 +77,8 @@ Run the generated `.wsb/serve.py` to start the server, or run below command from
 
     wsb serve
 
+> Alternatively, a backend server can be run with a specialized WSGI server, such as mod_wsgi, uWSGI, or Gunicorn, by providing the generated application script `.wsb/app.py` to it.
+
 ### Open archive file directly
 
 The `wsbview` executable supports opening an archive page (HTZ or MAFF) to view in the browser.
