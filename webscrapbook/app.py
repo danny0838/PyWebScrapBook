@@ -314,10 +314,10 @@ def open_archive_path(localpaths, mode='r', filters=None):
 
             # copy zip file
             for i in reversed(range(1, last + 1)):
-                zip0 = stack.pop()
+                zh0 = stack.pop()
                 with zipfile.ZipFile(buffer, 'a') as zh:
-                    zh.comment = zip0.comment
-                    for info in zip0.infolist():
+                    zh.comment = zh0.comment
+                    for info in zh0.infolist():
                         if filters and i == last:
                             if _open_archive_path_filter(info.filename, filters):
                                 filtered = True
@@ -330,7 +330,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
                         else:
                             continue
 
-                        zh.writestr(info, zip0.read(info),
+                        zh.writestr(info, zh0.read(info),
                                     compress_type=info.compress_type,
                                     compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
                                     )
@@ -1323,12 +1323,12 @@ def action_mkdir():
     if len(localpaths) > 1:
         try:
             zh = None
-            with open_archive_path(localpaths) as zip0:
-                if util.zip_has(zip0, localpaths[-1], type='file'):
+            with open_archive_path(localpaths) as zh0:
+                if util.zip_has(zh0, localpaths[-1], type='file'):
                     abort(400, 'Found a non-directory here.')
 
                 # skip if the folder already exists
-                if util.zip_has(zip0, localpaths[-1], type='dir'):
+                if util.zip_has(zh0, localpaths[-1], type='dir'):
                     return
 
                 # append for a non-nested zip
@@ -1370,13 +1370,13 @@ def action_mkzip():
     if len(localpaths) > 1:
         try:
             zh = None
-            with open_archive_path(localpaths) as zip0:
-                if util.zip_has(zip0, localpaths[-1], type='dir'):
+            with open_archive_path(localpaths) as zh0:
+                if util.zip_has(zh0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
 
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
-                    if not util.zip_has(zip0, localpaths[-1], type='file'):
+                    if not util.zip_has(zh0, localpaths[-1], type='file'):
                         zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
@@ -1424,13 +1424,13 @@ def action_save():
     if len(localpaths) > 1:
         try:
             zh = None
-            with open_archive_path(localpaths) as zip0:
-                if util.zip_has(zip0, localpaths[-1], type='dir'):
+            with open_archive_path(localpaths) as zh0:
+                if util.zip_has(zh0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
 
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
-                    if not util.zip_has(zip0, localpaths[-1], type='file'):
+                    if not util.zip_has(zh0, localpaths[-1], type='file'):
                         zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
