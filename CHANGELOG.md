@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.9.0] - 2023-03-26
+* Suppoort streaming when downloading multiple files/directories as a ZIP.
+* Miscellaneous documentation improvements and code optimization.
+
 ## [1.8.3] - 2023-03-08
 * Fixed remote detection of `[::1]` for the generated search page.
 * Fixed some incomplete localizations.
