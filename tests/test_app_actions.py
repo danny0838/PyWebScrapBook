@@ -113,6 +113,10 @@ class TestActions(unittest.TestCase):
             *datas: compatible data format with get_file_data()
             is_move: requires strict equivalent of stat
         """
+        # Such bits may be changed by the API when copying among ZIP files,
+        # and we don't really care about them.
+        excluded_flag_bits = 1 << 3
+
         datas = [self.get_file_data(data, follow_symlinks=not is_move) for data in datas]
         for i in range(1, len(datas)):
             self.assertEqual(datas[0]['bytes'], datas[i]['bytes'])
@@ -148,7 +152,7 @@ class TestActions(unittest.TestCase):
                         'compress_type': datas[0]['stat'].compress_type,
                         'comment': datas[0]['stat'].comment,
                         'extra': datas[0]['stat'].extra,
-                        'flag_bits': datas[0]['stat'].flag_bits,
+                        'flag_bits': datas[0]['stat'].flag_bits & ~excluded_flag_bits,
                         'internal_attr': datas[0]['stat'].internal_attr,
                         'external_attr': datas[0]['stat'].external_attr,
                     }
@@ -177,7 +181,7 @@ class TestActions(unittest.TestCase):
                         'compress_type': datas[i]['stat'].compress_type,
                         'comment': datas[i]['stat'].comment,
                         'extra': datas[i]['stat'].extra,
-                        'flag_bits': datas[i]['stat'].flag_bits,
+                        'flag_bits': datas[i]['stat'].flag_bits & ~excluded_flag_bits,
                         'internal_attr': datas[i]['stat'].internal_attr,
                         'external_attr': datas[i]['stat'].external_attr,
                     }
@@ -1739,7 +1743,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1779,7 +1783,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1800,7 +1804,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1821,7 +1825,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.zip; filename="%E4%B8%AD%E6%96%87.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1891,7 +1895,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1916,7 +1920,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''implicit_dir.zip; filename="implicit_dir.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1955,7 +1959,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1977,7 +1981,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)
@@ -1999,7 +2003,7 @@ class TestDownload(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
             self.assertEqual(r.headers['Content-Disposition'], '''attachment; filename*=UTF-8''explicit_dir.zip; filename="explicit_dir.zip"''')
-            self.assertNotEqual(r.headers['Content-Length'], '0')
+            self.assertIsNone(r.headers.get('Content-Length'))
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Security-Policy'], "frame-ancestors 'none';")
             fh = io.BytesIO(r.data)

@@ -943,10 +943,7 @@ def action_source():
 
 
 def action_download():
-    """Download a file or directory.
-
-    @TODO: support streaming ZIP output to prevent memory exhaustion for a large directory
-    """
+    """Download a file or directory."""
     if request.format:
         abort(400, 'Action not supported.')
 
@@ -954,6 +951,7 @@ def action_download():
     filter = request.values.getlist('i')
 
     if len(localpaths) > 1:
+        streaming = False
         with open_archive_path(localpaths) as zh:
             try:
                 zh.getinfo(localpaths[-1])
@@ -965,44 +963,94 @@ def action_download():
                 if base and not len(infos):
                     abort(404)
 
-                filter = set(filter)
-                filter_d = {f + '/' for f in filter}
-
-                # directory (explicit or implicit)
+                # directory (explicit or implicit): stream as ZIP
+                streaming = True
                 filename = (localpaths[-1] or os.path.basename(localpaths[-2])) + '.zip'
                 mimetype, _ = mimetypes.guess_type(filename)
-                fh = io.BytesIO()
-                with zipfile.ZipFile(fh, 'w') as zh2:
-                    cut = len(base)
-                    for info in infos:
-                        info.filename = info.filename[cut:]
+                cut = len(base)
 
-                        # exclude the directory itself
-                        if not info.filename:
-                            continue
+                # prepare paths to output
+                filter = set(filter)
+                filter_d = {f + '/' for f in filter}
+                paths = []
+                for info in infos:
+                    arcname = info.filename
+                    subpath = info.filename[cut:]
 
-                        # apply the filter
-                        if filter:
-                            if info.filename not in filter:
-                                if not any(info.filename.startswith(f) for f in filter_d):
-                                    continue
+                    # exclude the directory itself
+                    if not arcname:
+                        continue
 
-                        zh2.writestr(info, zh.read(info))
+                    # apply the filter
+                    if filter:
+                        if subpath not in filter:
+                            if not any(subpath.startswith(f) for f in filter_d):
+                                continue
 
-                fh.seek(0)
-                response = flask.send_file(fh, mimetype=mimetype)
-                response.headers.set('Cache-Control', 'no-store')
+                    paths.append((arcname, subpath))
             else:
                 filename = os.path.basename(request.localrealpath)
                 response = zip_static_file(zh, localpaths[-1], mimetype=request.localmimetype)
+
+        if streaming:
+            def gen():
+                zs = util.ZipStream()
+                with open_archive_path(localpaths) as zh,\
+                     zipfile.ZipFile(zs, 'w') as zf:
+                    for arcname, subpath in paths:
+                        info = zh.getinfo(arcname)
+                        with zh.open(info) as ih:
+                            info.filename = subpath
+                            with zf.open(info, 'w') as oh:
+                                for chunk in iter(lambda: ih.read(8192), b''):
+                                    oh.write(chunk)
+                                    yield zs.get()
+                yield zs.get()
+
+            response = Response(gen(), mimetype=mimetype)
+            response.headers.set('Cache-Control', 'no-store')
     else:
         if os.path.isdir(localpaths[0]):
             filename = os.path.basename(request.localrealpath) + '.zip'
             mimetype, _ = mimetypes.guess_type(filename)
-            fh = io.BytesIO()
-            util.zip_compress(fh, localpaths[0], '', filter=filter)
-            fh.seek(0)
-            response = flask.send_file(fh, mimetype=mimetype)
+
+            # prepare paths to output
+            filter = {os.path.normcase(os.path.join(localpaths[0], f)) for f in filter}
+            filter_d = {os.path.join(f, '') for f in filter}
+            cut = len(os.path.join(localpaths[0], ''))
+            paths = []
+            for root, dirs, files in os.walk(localpaths[0]):
+                for file in dirs + files:
+                    file = os.path.join(root, file)
+
+                    # apply the filter
+                    if filter:
+                        file_nc = os.path.normcase(file)
+                        if file_nc not in filter:
+                            if not any(file_nc.startswith(f) for f in filter_d):
+                                continue
+
+                    subpath = file[cut:]
+                    if os.path.isdir(file):
+                        subpath += '/'
+                    paths.append((file, subpath))
+
+            def gen():
+                zs = util.ZipStream()
+                with zipfile.ZipFile(zs, 'w') as zf:
+                    for file, subpath in paths:
+                        zinfo = zipfile.ZipInfo.from_file(file, subpath)
+                        if zinfo.is_dir():
+                            zf.writestr(zinfo, b'')
+                            yield zs.get()
+                        else:
+                            with open(file, 'rb') as ih, zf.open(zinfo, 'w') as oh:
+                                for chunk in iter(lambda: ih.read(8192), b''):
+                                    oh.write(chunk)
+                                    yield zs.get()
+                yield zs.get()
+
+            response = Response(gen(), mimetype=mimetype)
             response.headers.set('Cache-Control', 'no-store')
         else:
             filename = os.path.basename(request.localrealpath)
