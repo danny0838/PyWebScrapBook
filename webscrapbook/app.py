@@ -10,7 +10,7 @@ import shutil
 import time
 import traceback
 import zipfile
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 from secrets import token_urlsafe
 from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
 from zlib import adler32
@@ -253,116 +253,6 @@ def get_archive_path(filepath):
     return paths
 
 
-def _open_archive_path_filter(path, filters):
-    for filter in filters:
-        filter = filter.rstrip('/')
-        if path == filter:
-            return True
-        if path.startswith(filter + ('/' if filter else '')):
-            return True
-    return False
-
-
-@contextmanager
-def open_archive_path(localpaths, mode='r', filters=None):
-    """Open the innermost zip handler for reading or writing.
-
-    e.g. reading from localpaths=['/path/to/foo.zip', 'subdir/file.txt']:
-
-        with open_archive_path(localpaths) as zh:
-            with zh.open(localpaths[-1]) as fh:
-                print(fh.read())
-
-    e.g. writing to localpaths=['/path/to/foo.zip', 'subdir/file.txt']:
-
-        with open_archive_path(localpaths, 'w') as zh:
-            zh.writestr(localpaths[-1], 'foo')
-
-    e.g. deleting localpaths=['/path/to/foo.zip', 'subdir/']:
-
-        with open_archive_path(localpaths, 'w', [localpaths[-1]]) as zh:
-            pass
-
-    Args:
-        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
-        mode: 'r' for reading, 'w' for modifying
-        filters: a list of file or folder to remove
-    """
-    last = len(localpaths) - 1
-    if last < 1:
-        raise ValueError('length of paths must > 1')
-
-    filtered = False
-    stack = []
-    try:
-        zh = zipfile.ZipFile(localpaths[0])
-        stack.append(zh)
-        for i in range(1, last):
-            fh = zh.open(localpaths[i])
-            stack.append(fh)
-            zh = zipfile.ZipFile(fh)
-            stack.append(zh)
-
-        if mode == 'r':
-            yield zh
-
-        elif mode == 'w':
-            # create a buffer for writing
-            buffer = io.BytesIO()
-            with zipfile.ZipFile(buffer, 'w') as zh:
-                yield zh
-
-            # copy zip file
-            for i in reversed(range(1, last + 1)):
-                zh0 = stack.pop()
-                with zipfile.ZipFile(buffer, 'a') as zh:
-                    zh.comment = zh0.comment
-                    for info in zh0.infolist():
-                        if filters and i == last:
-                            if _open_archive_path_filter(info.filename, filters):
-                                filtered = True
-                                continue
-
-                        try:
-                            zh.getinfo(info.filename)
-                        except KeyError:
-                            pass
-                        else:
-                            continue
-
-                        zh.writestr(info, zh0.read(info),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    )
-
-                if filters and not any(f == '' for f in filters) and not filtered:
-                    raise KeyError('paths to filter do not exist')
-
-                if i == 1:
-                    break
-
-                # writer to another buffer for the parent zip
-                buffer2 = io.BytesIO()
-                with zipfile.ZipFile(buffer2, 'w') as zh:
-                    zh.writestr(localpaths[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
-                buffer.close()
-                buffer = buffer2
-
-                # pop a file handler
-                stack.pop()
-
-            # write to the outermost zip
-            # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
-            buffer.seek(0)
-            with open(localpaths[0], 'r+b') as fw, buffer as fr:
-                fw.truncate()
-                for chunk in iter(functools.partial(fr.read, 8192), b''):
-                    fw.write(chunk)
-    finally:
-        for fh in reversed(stack):
-            fh.close()
-
-
 def get_breadcrumbs(paths, base='', topname='.'):
     """Generate (label, subpath, sep, is_last) tuples.
     """
@@ -486,7 +376,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
             'ETag': etag,
         }
 
-        with nullcontext(zh) if zh else open_archive_path(localpaths) as zh:
+        with nullcontext(zh) if zh else util.fs.open_archive_path(localpaths) as zh:
             subentries = util.fs.zip_listdir(zh, localpaths[-1])
 
     else:
@@ -556,7 +446,7 @@ def handle_archive_viewing(localpaths, mimetype):
         subpath = 'index.html'
     else:
         if len(localpaths) > 1:
-            with open_archive_path(localpaths) as zh:
+            with util.fs.open_archive_path(localpaths) as zh:
                 with zh.open(localpaths[-1]) as zh1:
                     pages = util.get_maff_pages(zh1)
         else:
@@ -594,7 +484,7 @@ def handle_markdown_output(localpaths, zh=None):
         if zh:
             context = nullcontext(zh)
         else:
-            context = open_archive_path(localpaths)
+            context = util.fs.open_archive_path(localpaths)
     else:
         context = nullcontext(None)
 
@@ -760,7 +650,7 @@ def handle_action_renaming(func):
         localpaths = request.localpaths
 
         if len(localpaths) > 1:
-            with open_archive_path(localpaths) as zh:
+            with util.fs.open_archive_path(localpaths) as zh:
                 if not util.fs.zip_has(zh, localpaths[-1]):
                     abort(404, 'Source does not exist.')
         else:
@@ -776,7 +666,7 @@ def handle_action_renaming(func):
         targetpaths[0] = get_localpath(targetpaths[0])
 
         if len(targetpaths) > 1:
-            with open_archive_path(targetpaths) as zh:
+            with util.fs.open_archive_path(targetpaths) as zh:
                 # target is a file
                 if util.fs.zip_has(zh, targetpaths[-1], type='file'):
                     abort(400, 'Found something at target.')
@@ -823,7 +713,7 @@ def action_view():
     mimetype = request.localmimetype
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zh:
+        with util.fs.open_archive_path(localpaths) as zh:
             # List directory only when URL suffixed with "/", as it's not a
             # common operation, and it's costy to check for directory existence
             # in a ZIP.
@@ -926,7 +816,7 @@ def action_source():
     localpaths = request.localpaths
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zh:
+        with util.fs.open_archive_path(localpaths) as zh:
             response = zip_static_file(zh, localpaths[-1])
     else:
         response = static_file(localpaths[0])
@@ -952,7 +842,7 @@ def action_download():
 
     if len(localpaths) > 1:
         streaming = False
-        with open_archive_path(localpaths) as zh:
+        with util.fs.open_archive_path(localpaths) as zh:
             try:
                 zh.getinfo(localpaths[-1])
             except KeyError:
@@ -995,7 +885,7 @@ def action_download():
         if streaming:
             def gen():
                 zs = util.fs.ZipStream()
-                with open_archive_path(localpaths) as zh,\
+                with util.fs.open_archive_path(localpaths) as zh,\
                      zipfile.ZipFile(zs, 'w') as zf:
                     for arcname, subpath in paths:
                         info = zh.getinfo(arcname)
@@ -1073,7 +963,7 @@ def action_info():
     mimetype = request.localmimetype
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zh:
+        with util.fs.open_archive_path(localpaths) as zh:
             info = util.fs.zip_file_info(zh, localpaths[-1], check_implicit_dir=True)
     else:
         info = util.fs.file_info(localpaths[0])
@@ -1138,7 +1028,7 @@ def action_edit():
         abort(400, 'Found a non-file here.')
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zh:
+        with util.fs.open_archive_path(localpaths) as zh:
             try:
                 info = zh.getinfo(localpaths[-1])
             except KeyError:
@@ -1190,7 +1080,7 @@ def action_editx():
         abort(400, 'This is not an HTML file.')
 
     if len(localpaths) > 1:
-        with open_archive_path(localpaths) as zh:
+        with util.fs.open_archive_path(localpaths) as zh:
             try:
                 zh.getinfo(localpaths[-1])
             except KeyError:
@@ -1371,7 +1261,7 @@ def action_mkdir():
     if len(localpaths) > 1:
         try:
             zh = None
-            with open_archive_path(localpaths) as zh0:
+            with util.fs.open_archive_path(localpaths) as zh0:
                 if util.fs.zip_has(zh0, localpaths[-1], type='file'):
                     abort(400, 'Found a non-directory here.')
 
@@ -1384,7 +1274,7 @@ def action_mkdir():
                     zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
-                zh = open_archive_path(localpaths, 'w')
+                zh = util.fs.open_archive_path(localpaths, 'w')
 
             with zh as zh:
                 info = zipfile.ZipInfo(localpaths[-1] + '/', time.localtime())
@@ -1418,7 +1308,7 @@ def action_mkzip():
     if len(localpaths) > 1:
         try:
             zh = None
-            with open_archive_path(localpaths) as zh0:
+            with util.fs.open_archive_path(localpaths) as zh0:
                 if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
 
@@ -1428,7 +1318,7 @@ def action_mkzip():
                         zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
-                zh = open_archive_path(localpaths, 'w')
+                zh = util.fs.open_archive_path(localpaths, 'w')
 
             with zh as zh:
                 info = zipfile.ZipInfo(localpaths[-1], time.localtime())
@@ -1472,7 +1362,7 @@ def action_save():
     if len(localpaths) > 1:
         try:
             zh = None
-            with open_archive_path(localpaths) as zh0:
+            with util.fs.open_archive_path(localpaths) as zh0:
                 if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
 
@@ -1482,7 +1372,7 @@ def action_save():
                         zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
-                zh = open_archive_path(localpaths, 'w')
+                zh = util.fs.open_archive_path(localpaths, 'w')
 
             with zh as zh:
                 info = zipfile.ZipInfo(localpaths[-1], time.localtime())
@@ -1535,7 +1425,7 @@ def action_delete():
 
     if len(localpaths) > 1:
         try:
-            with open_archive_path(localpaths, 'w', [localpaths[-1]]):
+            with util.fs.open_archive_path(localpaths, 'w', [localpaths[-1]]):
                 pass
         except KeyError:
             # fail since nothing is deleted
@@ -1605,7 +1495,7 @@ def action_move(sourcepaths, targetpaths):
                 abort(400, 'Unable to move across a zip.')
 
             else:
-                with open_archive_path(sourcepaths) as zh:
+                with util.fs.open_archive_path(sourcepaths) as zh:
                     try:
                         zh.getinfo(sourcepaths[-1])
                     except KeyError:
@@ -1614,7 +1504,7 @@ def action_move(sourcepaths, targetpaths):
                     else:
                         entries = [sourcepaths[-1]]
 
-                    with open_archive_path(targetpaths, 'w') as zh2:
+                    with util.fs.open_archive_path(targetpaths, 'w') as zh2:
                         cut = len(sourcepaths[-1])
                         for entry in entries:
                             info = zh.getinfo(entry)
@@ -1624,7 +1514,7 @@ def action_move(sourcepaths, targetpaths):
                                          compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
                                          )
 
-                with open_archive_path(sourcepaths, 'w', entries):
+                with util.fs.open_archive_path(sourcepaths, 'w', entries):
                     pass
 
     except HTTPException:
@@ -1664,7 +1554,7 @@ def action_copy(sourcepaths, targetpaths):
 
             else:
                 error = False
-                with open_archive_path(targetpaths, 'w') as zh:
+                with util.fs.open_archive_path(targetpaths, 'w') as zh:
                     try:
                         util.fs.zip_compress(zh, sourcepaths[0], targetpaths[-1])
                     except shutil.Error:
@@ -1681,11 +1571,11 @@ def action_copy(sourcepaths, targetpaths):
                     traceback.print_exc()
                     abort(500, 'Unable to copy to this path.')
 
-                with open_archive_path(sourcepaths) as zh:
+                with util.fs.open_archive_path(sourcepaths) as zh:
                     util.fs.zip_extract(zh, targetpaths[0], sourcepaths[-1])
 
             else:
-                with open_archive_path(sourcepaths) as zh:
+                with util.fs.open_archive_path(sourcepaths) as zh:
                     try:
                         zh.getinfo(sourcepaths[-1])
                     except KeyError:
@@ -1693,7 +1583,7 @@ def action_copy(sourcepaths, targetpaths):
                     else:
                         entries = [sourcepaths[-1]]
 
-                    with open_archive_path(targetpaths, 'w') as zh2:
+                    with util.fs.open_archive_path(targetpaths, 'w') as zh2:
                         cut = len(sourcepaths[-1])
                         for entry in entries:
                             info = zh.getinfo(entry)

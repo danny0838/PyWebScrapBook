@@ -729,7 +729,7 @@ class TestInfo(unittest.TestCase):
         try:
             with zipfile.ZipFile(zip_filename, 'w'):
                 pass
-            with app.test_client() as c, mock.patch('webscrapbook.app.open_archive_path', side_effect=PermissionError('Forbidden')):
+            with app.test_client() as c, mock.patch('webscrapbook.util.fs.open_archive_path', side_effect=PermissionError('Forbidden')):
                 c.get('/archive.zip!/', query_string={'a': 'info', 'f': 'json'})
                 mock_abort.assert_called_once_with(403)
         finally:
