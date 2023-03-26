@@ -228,13 +228,13 @@ my page content
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
-                util.zip_timestamp(zh.getinfo('index.html')),
+                util.fs.zip_timestamp(zh.getinfo('index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000002', 'index.html')).st_mtime,
             )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
-                util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
+                util.fs.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000003', 'index.html')).st_mtime,
             )
 
@@ -460,7 +460,7 @@ scrapbook.meta({
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
-                util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
+                util.fs.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000003.htz')).st_mtime,
             )
 
@@ -720,7 +720,7 @@ scrapbook.meta({
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
-                util.zip_timestamp(zh.getinfo('index.html')),
+                util.fs.zip_timestamp(zh.getinfo('index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000002.maff')).st_mtime,
             )
 
@@ -1015,13 +1015,13 @@ my page content
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
-                util.zip_timestamp(zh.getinfo('index.html')),
+                util.fs.zip_timestamp(zh.getinfo('index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000002.html')).st_mtime,
             )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
-                util.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
+                util.fs.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
                 os.stat(os.path.join(self.test_output, '20200101000000003.html')).st_mtime,
             )
 

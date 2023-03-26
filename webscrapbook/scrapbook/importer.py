@@ -302,7 +302,7 @@ class Importer():
 
             yield Info('debug', f'Extracting data files to "{self.book.get_subpath(dst)}"')
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            util.zip_extract(zh, dst, src, tzoffset=export_info['timezone'])
+            util.fs.zip_extract(zh, dst, src, tzoffset=export_info['timezone'])
 
         # import favicon
         for f in zh.namelist():
@@ -311,7 +311,7 @@ class Importer():
                     basename = os.path.basename(f)
                     dst = os.path.join(self.book.tree_dir, 'favicon', basename)
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
-                    util.zip_extract(zh, dst, f, tzoffset=export_info['timezone'])
+                    util.fs.zip_extract(zh, dst, f, tzoffset=export_info['timezone'])
                 except FileExistsError:
                     yield Info('debug', f'Skipped existing favicon cache "{basename}"')
                 else:

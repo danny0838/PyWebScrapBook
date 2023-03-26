@@ -1,4 +1,4 @@
 """Miscellaneous utilities
 """
+from . import fs
 from .util import *
-from .zipstream import ZipStream

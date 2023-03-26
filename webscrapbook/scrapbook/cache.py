@@ -616,7 +616,7 @@ class FulltextCacheGenerator():
             try:
                 with zh as zh:
                     info = zh.getinfo(path)
-                    return util.zip_timestamp(info)
+                    return util.fs.zip_timestamp(info)
             except KeyError:
                 return None
             except Exception as exc:

@@ -94,7 +94,7 @@ class TestConfig(Test):
         self.assertEqual(mock_stdout.getvalue(), '')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch', autospec=True)
+    @mock.patch('webscrapbook.util.fs.launch', autospec=True)
     def test_book_edit(self, mock_launch, mock_stdout):
         cli.cmd_config({
             'root': self.root,
@@ -114,7 +114,7 @@ class TestConfig(Test):
         self.assertNotEqual(mock_stdout.getvalue(), '')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch', autospec=True)
+    @mock.patch('webscrapbook.util.fs.launch', autospec=True)
     def test_book_edit2(self, mock_launch, mock_stdout):
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
         with open(os.path.join(self.root, WSB_DIR, 'config.ini'), 'w') as fh:
@@ -230,7 +230,7 @@ class TestConfig(Test):
         self.assertEqual(mock_stdout.getvalue(), '')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch', autospec=True)
+    @mock.patch('webscrapbook.util.fs.launch', autospec=True)
     def test_user_edit(self, mock_launch, mock_stdout):
         cli.cmd_config({
             'root': self.root,
@@ -250,7 +250,7 @@ class TestConfig(Test):
         self.assertNotEqual(mock_stdout.getvalue(), '')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.launch', autospec=True)
+    @mock.patch('webscrapbook.util.fs.launch', autospec=True)
     def test_user_edit2(self, mock_launch, mock_stdout):
         os.makedirs(os.path.join(self.root, WSB_DIR), exist_ok=True)
         with open(self.user_config_file, 'w') as fh:

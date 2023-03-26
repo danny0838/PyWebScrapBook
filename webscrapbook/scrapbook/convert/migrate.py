@@ -844,7 +844,7 @@ class ConvertDataFilesV1:
                 tempdir = tempfile.mkdtemp()
                 tempzipdir = os.path.join(tempdir, 'zip')
                 try:
-                    util.zip_extract(index_file, tempzipdir)
+                    util.fs.zip_extract(index_file, tempzipdir)
 
                     changed = False
                     for root, _dirs, files in os.walk(tempzipdir):
@@ -864,7 +864,7 @@ class ConvertDataFilesV1:
 
                     # don't recompress (and change mtime) if no content changed
                     if changed:
-                        util.zip_compress(index_file, tempzipdir, '')
+                        util.fs.zip_compress(index_file, tempzipdir, '')
                 finally:
                     try:
                         shutil.rmtree(tempdir)

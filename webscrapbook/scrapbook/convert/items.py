@@ -115,7 +115,7 @@ class Converter:
             fsrc = os.path.normpath(os.path.join(book.data_dir, index))
             indexbase = index[:-4]
             indexdir = os.path.normpath(os.path.join(book.data_dir, indexbase + '.' + util.datetime_to_id()))
-            util.zip_extract(fsrc, indexdir)
+            util.fs.zip_extract(fsrc, indexdir)
         elif format == 'maff':
             fsrc = os.path.normpath(os.path.join(book.data_dir, index))
             indexbase = index[:-5]
@@ -126,7 +126,7 @@ class Converter:
                 yield Info('debug', f'Skipping "{id}": no valid index page in MAFF')
             subpath, _, _ = maff_info.indexfilename.partition('/')
 
-            util.zip_extract(fsrc, indexdir, subpath)
+            util.fs.zip_extract(fsrc, indexdir, subpath)
 
             rdf_file = os.path.join(indexdir, 'index.rdf')
             try:
@@ -184,7 +184,7 @@ class Converter:
                     yield Info('error', f'Failed to convert "{id}": target "{book.get_subpath(fdst)}" already exists.')
                     return
 
-                util.zip_compress(fdst, indexdir, '')
+                util.fs.zip_compress(fdst, indexdir, '')
                 shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
 
                 # adjust icon path to fit the new index file
@@ -208,13 +208,13 @@ class Converter:
                     return
 
                 subpath = id if util.id_to_datetime(id) else util.datetime_to_id()
-                util.zip_compress(fdst, indexdir, subpath)
+                util.fs.zip_compress(fdst, indexdir, subpath)
 
                 rdf_content = self._generate_index_rdf(book, id)
                 with zipfile.ZipFile(fdst, 'a') as zh:
                     zh.writestr(
                         f'{subpath}/index.rdf', rdf_content,
-                        **util.zip_compression_params(mimetype='application/rdf+xml')
+                        **util.fs.zip_compression_params(mimetype='application/rdf+xml')
                     )
 
                 shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)

@@ -83,7 +83,7 @@ def cmd_config(args):
 
         if args['edit']:
             try:
-                util.launch(fdst)
+                util.fs.launch(fdst)
             except OSError:
                 pass
 
@@ -120,7 +120,7 @@ def cmd_config(args):
 
         if args['edit']:
             try:
-                util.launch(fdst)
+                util.fs.launch(fdst)
             except OSError:
                 pass
 

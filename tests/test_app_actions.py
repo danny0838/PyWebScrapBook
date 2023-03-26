@@ -19,12 +19,8 @@ from flask import abort
 import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook.app import make_app
-from webscrapbook.util import (
-    frozendict,
-    make_hashable,
-    zip_timestamp,
-    zip_tuple_timestamp,
-)
+from webscrapbook.util import frozendict, make_hashable
+from webscrapbook.util.fs import zip_timestamp, zip_tuple_timestamp
 
 from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
 
@@ -723,7 +719,7 @@ class TestInfo(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check(self, mock_abort):
-        with app.test_client() as c, mock.patch('webscrapbook.util.file_info', side_effect=PermissionError('Forbidden')):
+        with app.test_client() as c, mock.patch('webscrapbook.util.fs.file_info', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'info', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
@@ -2339,7 +2335,7 @@ class TestEditx(unittest.TestCase):
 
 
 class TestExec(unittest.TestCase):
-    @mock.patch('webscrapbook.util.launch')
+    @mock.patch('webscrapbook.util.fs.launch')
     def test_directory(self, mock_exec):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'exec', 'f': 'json'})
@@ -2351,7 +2347,7 @@ class TestExec(unittest.TestCase):
             })
             mock_exec.assert_called_once_with(os.path.join(tmpdir, 'subdir'))
 
-    @mock.patch('webscrapbook.util.launch')
+    @mock.patch('webscrapbook.util.fs.launch')
     def test_file(self, mock_exec):
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'exec', 'f': 'json'})
@@ -2387,7 +2383,7 @@ class TestExec(unittest.TestCase):
 
 
 class TestBrowse(unittest.TestCase):
-    @mock.patch('webscrapbook.util.view_in_explorer')
+    @mock.patch('webscrapbook.util.fs.view_in_explorer')
     def test_directory(self, mock_browse):
         with app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'browse', 'f': 'json'})
@@ -2399,7 +2395,7 @@ class TestBrowse(unittest.TestCase):
             })
             mock_browse.assert_called_once_with(os.path.join(tmpdir, 'subdir'))
 
-    @mock.patch('webscrapbook.util.view_in_explorer')
+    @mock.patch('webscrapbook.util.fs.view_in_explorer')
     def test_file(self, mock_browse):
         with app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'browse', 'f': 'json'})

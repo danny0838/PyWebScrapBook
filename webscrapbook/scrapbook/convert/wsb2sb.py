@@ -232,7 +232,7 @@ class Converter:
                     fsrc = os.path.normpath(os.path.join(book.data_dir, index))
                     fdst = os.path.join(self.output, 'data', oid)
                     os.makedirs(os.path.dirname(fdst), exist_ok=True)
-                    util.zip_extract(fsrc, fdst)
+                    util.fs.zip_extract(fsrc, fdst)
                 elif util.is_maff(index):
                     fsrc = os.path.normpath(os.path.join(book.data_dir, index))
                     fdst = os.path.join(self.output, 'data', oid)
@@ -247,7 +247,7 @@ class Converter:
                         topdir, _, _ = page.indexfilename.partition('/')
 
                     os.makedirs(os.path.dirname(fdst), exist_ok=True)
-                    util.zip_extract(fsrc, fdst, topdir)
+                    util.fs.zip_extract(fsrc, fdst, topdir)
                 else:
                     basename = os.path.basename(index)
                     fsrc = os.path.normpath(os.path.join(book.data_dir, index))

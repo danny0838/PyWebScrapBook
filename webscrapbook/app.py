@@ -94,7 +94,7 @@ def zip_static_file(zh, subpath, mimetype=None):
 
     fh = zh.open(info, 'r')
 
-    lm = util.zip_timestamp(info)
+    lm = util.fs.zip_timestamp(info)
     last_modified = http_date(lm)
 
     etag = '%s-%s-%s' % (
@@ -487,7 +487,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
         }
 
         with nullcontext(zh) if zh else open_archive_path(localpaths) as zh:
-            subentries = util.zip_listdir(zh, localpaths[-1])
+            subentries = util.fs.zip_listdir(zh, localpaths[-1])
 
     else:
         # disallow cache to reflect any content file change
@@ -497,7 +497,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
             'Last-Modified': http_date(stats.st_mtime),
         }
 
-        subentries = util.listdir(localpaths[0])
+        subentries = util.fs.listdir(localpaths[0])
 
     if format == 'sse':
         def gen():
@@ -602,7 +602,7 @@ def handle_markdown_output(localpaths, zh=None):
         # calculate last-modified time and etag
         if zh:
             info = zh.getinfo(localpaths[-1])
-            lm = util.zip_timestamp(info)
+            lm = util.fs.zip_timestamp(info)
             last_modified = http_date(lm)
 
             etag = '%s-%s-%s' % (
@@ -761,7 +761,7 @@ def handle_action_renaming(func):
 
         if len(localpaths) > 1:
             with open_archive_path(localpaths) as zh:
-                if not util.zip_has(zh, localpaths[-1]):
+                if not util.fs.zip_has(zh, localpaths[-1]):
                     abort(404, 'Source does not exist.')
         else:
             if not os.path.lexists(localpaths[0]):
@@ -778,15 +778,15 @@ def handle_action_renaming(func):
         if len(targetpaths) > 1:
             with open_archive_path(targetpaths) as zh:
                 # target is a file
-                if util.zip_has(zh, targetpaths[-1], type='file'):
+                if util.fs.zip_has(zh, targetpaths[-1], type='file'):
                     abort(400, 'Found something at target.')
 
                 # target is a directory, treat as to target/<basename>
-                if util.zip_has(zh, targetpaths[-1], type='dir'):
+                if util.fs.zip_has(zh, targetpaths[-1], type='dir'):
                     targetpaths[-1] = targetpaths[-1] + ('/' if targetpaths[-1] else '') + os.path.basename(localpaths[-1])
 
                     # recheck if target exists
-                    if util.zip_has(zh, targetpaths[-1], type='any'):
+                    if util.fs.zip_has(zh, targetpaths[-1], type='any'):
                         abort(400, 'Found identical entry under the target directory.')
         else:
             if os.path.lexists(targetpaths[0]):
@@ -830,7 +830,7 @@ def action_view():
             if request.path.endswith('/'):
                 try:
                     return handle_directory_listing(localpaths, zh, redirect_slash=False)
-                except util.ZipDirNotFoundError:
+                except util.fs.ZipDirNotFoundError:
                     abort(404)
 
             try:
@@ -994,7 +994,7 @@ def action_download():
 
         if streaming:
             def gen():
-                zs = util.ZipStream()
+                zs = util.fs.ZipStream()
                 with open_archive_path(localpaths) as zh,\
                      zipfile.ZipFile(zs, 'w') as zf:
                     for arcname, subpath in paths:
@@ -1036,7 +1036,7 @@ def action_download():
                     paths.append((file, subpath))
 
             def gen():
-                zs = util.ZipStream()
+                zs = util.fs.ZipStream()
                 with zipfile.ZipFile(zs, 'w') as zf:
                     for file, subpath in paths:
                         zinfo = zipfile.ZipInfo.from_file(file, subpath)
@@ -1074,9 +1074,9 @@ def action_info():
 
     if len(localpaths) > 1:
         with open_archive_path(localpaths) as zh:
-            info = util.zip_file_info(zh, localpaths[-1], check_implicit_dir=True)
+            info = util.fs.zip_file_info(zh, localpaths[-1], check_implicit_dir=True)
     else:
-        info = util.file_info(localpaths[0])
+        info = util.fs.file_info(localpaths[0])
 
     data = {
         'name': info.name,
@@ -1100,7 +1100,7 @@ def action_list():
     if len(localpaths) > 1:
         try:
             return handle_directory_listing(localpaths, redirect_slash=False, format=format)
-        except util.ZipDirNotFoundError:
+        except util.fs.ZipDirNotFoundError:
             abort(404, 'Directory does not exist.')
 
     if os.path.isdir(localpaths[0]):
@@ -1221,7 +1221,7 @@ def action_exec():
     if not os.path.lexists(localpath):
         abort(404, 'File does not exist.')
 
-    util.launch(localpath)
+    util.fs.launch(localpath)
 
     if format:
         return http_response('Command run successfully.', format=format)
@@ -1241,7 +1241,7 @@ def action_browse():
     if not os.path.lexists(localpath):
         abort(404, 'File does not exist.')
 
-    util.view_in_explorer(localpath)
+    util.fs.view_in_explorer(localpath)
 
     if format:
         return http_response('Command run successfully.', format=format)
@@ -1372,11 +1372,11 @@ def action_mkdir():
         try:
             zh = None
             with open_archive_path(localpaths) as zh0:
-                if util.zip_has(zh0, localpaths[-1], type='file'):
+                if util.fs.zip_has(zh0, localpaths[-1], type='file'):
                     abort(400, 'Found a non-directory here.')
 
                 # skip if the folder already exists
-                if util.zip_has(zh0, localpaths[-1], type='dir'):
+                if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
                     return
 
                 # append for a non-nested zip
@@ -1419,12 +1419,12 @@ def action_mkzip():
         try:
             zh = None
             with open_archive_path(localpaths) as zh0:
-                if util.zip_has(zh0, localpaths[-1], type='dir'):
+                if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
 
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
-                    if not util.zip_has(zh0, localpaths[-1], type='file'):
+                    if not util.fs.zip_has(zh0, localpaths[-1], type='file'):
                         zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
@@ -1473,12 +1473,12 @@ def action_save():
         try:
             zh = None
             with open_archive_path(localpaths) as zh0:
-                if util.zip_has(zh0, localpaths[-1], type='dir'):
+                if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
                     abort(400, 'Found a non-file here.')
 
                 # append for a nonexistent path in a non-nested zip
                 if len(localpaths) == 2:
-                    if not util.zip_has(zh0, localpaths[-1], type='file'):
+                    if not util.fs.zip_has(zh0, localpaths[-1], type='file'):
                         zh = zipfile.ZipFile(localpaths[0], 'a')
 
             if zh is None:
@@ -1550,7 +1550,7 @@ def action_delete():
         if not os.path.lexists(localpath):
             abort(404, 'File does not exist.')
 
-        if util.file_is_link(localpath):
+        if util.fs.file_is_link(localpath):
             try:
                 os.remove(localpath)
             except OSError:
@@ -1666,7 +1666,7 @@ def action_copy(sourcepaths, targetpaths):
                 error = False
                 with open_archive_path(targetpaths, 'w') as zh:
                     try:
-                        util.zip_compress(zh, sourcepaths[0], targetpaths[-1])
+                        util.fs.zip_compress(zh, sourcepaths[0], targetpaths[-1])
                     except shutil.Error:
                         traceback.print_exc()
                         error = True
@@ -1682,7 +1682,7 @@ def action_copy(sourcepaths, targetpaths):
                     abort(500, 'Unable to copy to this path.')
 
                 with open_archive_path(sourcepaths) as zh:
-                    util.zip_extract(zh, targetpaths[0], sourcepaths[-1])
+                    util.fs.zip_extract(zh, targetpaths[0], sourcepaths[-1])
 
             else:
                 with open_archive_path(sourcepaths) as zh:

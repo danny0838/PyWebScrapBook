@@ -128,7 +128,7 @@ class Exporter():
                 zh.writestr('data/', '')
                 src = os.path.join(self.book.data_dir, os.path.dirname(index) if index.endswith('/index.html') else index)
                 yield Info('debug', f'Saving data files for "{id}": "{self.book.get_subpath(src)}"')
-                util.zip_compress(zh, src, f'data/{os.path.basename(src)}')
+                util.fs.zip_compress(zh, src, f'data/{os.path.basename(src)}')
 
             # include favicon cache
             iconfile = self.book.get_icon_file(meta)
@@ -140,7 +140,7 @@ class Exporter():
                 return
 
             zh.writestr('favicon/', '')
-            util.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
+            util.fs.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
 
 
 def run(root, output, book_id='', item_ids=None, *, recursive=False, singleton=False,
