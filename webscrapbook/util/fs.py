@@ -3,6 +3,7 @@ import functools
 import io
 import mimetypes
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -17,9 +18,167 @@ from datetime import datetime
 from . import util
 
 
-def launch(path):
+class CPath:
+    """A complex path object representing filesystem path and ZIP subpaths."""
+    def __new__(cls, pathlike, *subpaths):
+        """Get a singleton new CPath from pathlike."""
+        if isinstance(pathlike, cls) and not subpaths:
+            return pathlike
+        self = super().__new__(cls)
+        self.__init__(pathlike, *subpaths)
+        return self
+
+    def __init__(self, pathlike, *subpaths):
+        if isinstance(pathlike, str):
+            self._path = [pathlike]
+        elif isinstance(pathlike, CPath):
+            self._path = pathlike.path.copy()
+        elif isinstance(pathlike, list):
+            self._path = pathlike.copy()
+        elif isinstance(pathlike, tuple):
+            self._path = list(pathlike)
+        elif isinstance(pathlike, dict):
+            self._path = list(pathlike)
+        else:  # pathlib.Path etc.
+            self._path = [str(pathlike)]
+
+        if subpaths:
+            self._path.extend(str(s) for s in subpaths)
+
+    def __str__(self):
+        return '!/'.join(self._path)
+
+    def __repr__(self):
+        path = ', '.join(repr(p) for p in self._path)
+        return f'{self.__class__.__name__}({path})'
+
+    def __len__(self):
+        return len(self._path)
+
+    def __getitem__(self, key):
+        return self._path[key]
+
+    def __eq__(self, other):
+        return self._path == other
+
+    def copy(self):
+        return CPath(self._path)
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def file(self):
+        return self._path[0]
+
+    @staticmethod
+    def resolve(plainpath, resolver=None):
+        """Resolves a plainpath with '!/' to a CPath.
+
+        - Priority:
+          entry.zip!/entry1.zip!/ = entry.zip!/entry1.zip! >
+          entry.zip!/entry1.zip >
+          entry.zip!/ = entry.zip! >
+          entry.zip
+
+        - If resolver is provided, the result file path (first segment) will
+          only be tidied; otherwise it will be normalized.
+
+        Args:
+            plainpath: a path string that may contain '!/'
+            resolver: a function that resolves a path to real filesystem path
+
+        Returns:
+            CPath
+        """
+        paths = []
+        for m in reversed(list(re.finditer(r'!/', plainpath, flags=re.I))):
+            archivepath = plainpath[:m.start(0)]
+            if resolver:
+                archivepath = CPath._resolve_tidy_subpath(archivepath)
+                archivefile = resolver(archivepath)
+            else:
+                archivepath = archivefile = os.path.normpath(archivepath)
+            conflicting = archivefile + '!'
+
+            if os.path.lexists(conflicting):
+                break
+
+            # if parent directory does not exist, FileNotFoundError is raised on
+            # Windows, while NotADirectoryError is raised on Linux
+            try:
+                zh = zipfile.ZipFile(archivefile, 'r')
+            except (zipfile.BadZipFile, FileNotFoundError, NotADirectoryError):
+                continue
+
+            with zh as zh:
+                paths.append(archivepath)
+                CPath._resolve_add_subpath(paths, zh, plainpath[m.end(0):])
+                return CPath(paths)
+
+        archivepath = plainpath
+        if resolver:
+            archivepath = CPath._resolve_tidy_subpath(archivepath)
+        else:
+            archivepath = os.path.normpath(archivepath)
+        paths.append(archivepath)
+        return CPath(paths)
+
+    @staticmethod
+    def _resolve_add_subpath(paths, zh, subpath):
+        for m in reversed(list(re.finditer(r'!/', subpath, flags=re.I))):
+            archivepath = CPath._resolve_tidy_subpath(subpath[:m.start(0)], True)
+            conflicting = archivepath + '!/'
+
+            if any(i.startswith(conflicting) for i in zh.namelist()):
+                break
+
+            try:
+                fh = zh.open(archivepath)
+            except KeyError:
+                continue
+
+            with fh as fh:
+                try:
+                    zh1 = zipfile.ZipFile(fh)
+                except zipfile.BadZipFile:
+                    continue
+
+                with zh1 as zh1:
+                    paths.append(archivepath)
+                    CPath._resolve_add_subpath(paths, zh1, subpath[m.end(0):])
+                    return
+
+        paths.append(CPath._resolve_tidy_subpath(subpath, True))
+
+    @staticmethod
+    def _resolve_tidy_subpath(path, striproot=False):
+        """Tidy a subpath with possible '.', '..', '//', etc."""
+        has_initial_slash = path.startswith('/')
+        comps = path.split('/')
+        new_comps = []
+        for comp in comps:
+            if comp in ('', '.'):
+                continue
+            if comp == '..':
+                if new_comps:
+                    new_comps.pop()
+                continue
+            new_comps.append(comp)
+        return ('/' if has_initial_slash and not striproot else '') + '/'.join(new_comps)
+
+
+def launch(cpath):
     """Launch a file or open a directory in the explorer.
     """
+    cpath = CPath(cpath)
+
+    if len(cpath) > 1:
+        raise ValueError('Launching inside a ZIP is not supported')
+
+    path = cpath.file
+
     if sys.platform == 'win32':
         os.startfile(path)
     elif sys.platform == 'darwin':
@@ -28,8 +187,15 @@ def launch(path):
         subprocess.run(['xdg-open', path])
 
 
-def view_in_explorer(path):
+def view_in_explorer(cpath):
     """Open the parent directory of a file or directory in the explorer."""
+    cpath = CPath(cpath)
+
+    if len(cpath) > 1:
+        raise ValueError('Viewing inside a ZIP is not supported')
+
+    path = cpath.file
+
     if sys.platform == 'win32':
         subprocess.run(['explorer', '/select,', path])
     elif sys.platform == 'darwin':
@@ -466,41 +632,43 @@ def _open_archive_path_filter(path, filters):
 
 
 @contextmanager
-def open_archive_path(localpaths, mode='r', filters=None):
+def open_archive_path(cpath, mode='r', filters=None):
     """Open the innermost zip handler for reading or writing.
 
     e.g. reading from ['/path/to/foo.zip', 'subdir/file.txt']:
 
-        with open_archive_path(localpaths) as zh:
-            with zh.open(localpaths[-1]) as fh:
+        with open_archive_path(cpath) as zh:
+            with zh.open(cpath[-1]) as fh:
                 print(fh.read())
 
     e.g. writing to ['/path/to/foo.zip', 'subdir/file.txt']:
 
-        with open_archive_path(localpaths, 'w') as zh:
-            zh.writestr(localpaths[-1], 'foo')
+        with open_archive_path(cpath, 'w') as zh:
+            zh.writestr(cpath[-1], 'foo')
 
     e.g. deleting ['/path/to/foo.zip', 'subdir/']:
 
-        with open_archive_path(localpaths, 'w', [localpaths[-1]]) as zh:
+        with open_archive_path(cpath, 'w', [cpath[-1]]) as zh:
             pass
 
     Args:
-        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
+        cpath
         mode: 'r' for reading, 'w' for modifying
         filters: a list of file or folder to remove
     """
-    last = len(localpaths) - 1
+    cpath = CPath(cpath)
+
+    last = len(cpath) - 1
     if last < 1:
         raise ValueError('length of paths must > 1')
 
     filtered = False
     stack = []
     try:
-        zh = zipfile.ZipFile(localpaths[0])
+        zh = zipfile.ZipFile(cpath[0])
         stack.append(zh)
         for i in range(1, last):
-            fh = zh.open(localpaths[i])
+            fh = zh.open(cpath[i])
             stack.append(fh)
             zh = zipfile.ZipFile(fh)
             stack.append(zh)
@@ -546,7 +714,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
                 # writer to another buffer for the parent zip
                 buffer2 = io.BytesIO()
                 with zipfile.ZipFile(buffer2, 'w') as zh:
-                    zh.writestr(localpaths[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
+                    zh.writestr(cpath[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
                 buffer.close()
                 buffer = buffer2
 
@@ -556,7 +724,7 @@ def open_archive_path(localpaths, mode='r', filters=None):
             # write to the outermost zip
             # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
             buffer.seek(0)
-            with open(localpaths[0], 'r+b') as fw, buffer as fr:
+            with open(cpath[0], 'r+b') as fw, buffer as fr:
                 fw.truncate()
                 for chunk in iter(functools.partial(fr.read, 8192), b''):
                     fw.write(chunk)

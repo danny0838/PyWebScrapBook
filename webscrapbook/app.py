@@ -5,7 +5,6 @@ import io
 import json
 import mimetypes
 import os
-import re
 import shutil
 import time
 import traceback
@@ -172,85 +171,6 @@ def get_localpath(path):
     # absolute (e.g. "/path/to/foo" on POSIX or "X:/foo" on Windows), which
     # can cause a security issue.
     return os.path.normpath(host.chroot + os.sep + path)
-
-
-def _get_archive_path_tidy(path, striproot=False):
-    has_initial_slash = path.startswith('/')
-    comps = path.split('/')
-    new_comps = []
-    for comp in comps:
-        if comp in ('', '.'):
-            continue
-        if comp == '..':
-            if new_comps:
-                new_comps.pop()
-            continue
-        new_comps.append(comp)
-    return ('/' if has_initial_slash and not striproot else '') + '/'.join(new_comps)
-
-
-def _get_archive_path_add_subpath(paths, zh, subpath):
-    for m in reversed(list(re.finditer(r'!/', subpath, flags=re.I))):
-        archivepath = _get_archive_path_tidy(subpath[:m.start(0)], True)
-        conflicting = archivepath + '!/'
-
-        if any(i.startswith(conflicting) for i in zh.namelist()):
-            break
-
-        try:
-            fh = zh.open(archivepath, 'r')
-        except KeyError:
-            continue
-
-        with fh as fh:
-            try:
-                zh1 = zipfile.ZipFile(fh, 'r')
-            except zipfile.BadZipFile:
-                continue
-
-            with zh1 as zh1:
-                paths.append(archivepath)
-                _get_archive_path_add_subpath(paths, zh1, subpath[m.end(0):])
-                return
-
-    paths.append(_get_archive_path_tidy(subpath, True))
-
-
-def get_archive_path(filepath):
-    """Parse archive file path and the sub-archive path.
-
-    - Priority:
-      entry.zip!/entry1.zip!/ = entry.zip!/entry1.zip! >
-      entry.zip!/entry1.zip >
-      entry.zip!/ = entry.zip! >
-      entry.zip
-
-    Returns:
-        a list [path-to-directory-or-file]
-        or [path-to-zip-file, subpath1, subpath2, ...]
-    """
-    paths = []
-    for m in reversed(list(re.finditer(r'!/', filepath, flags=re.I))):
-        archivepath = _get_archive_path_tidy(filepath[:m.start(0)])
-        archivefile = get_localpath(archivepath)
-        conflicting = archivefile + '!'
-        if os.path.lexists(conflicting):
-            break
-
-        # if parent directory does not exist, FileNotFoundError is raised on
-        # Windows, while NotADirectoryError is raised on Linux
-        try:
-            zh = zipfile.ZipFile(archivefile, 'r')
-        except (zipfile.BadZipFile, FileNotFoundError, NotADirectoryError):
-            continue
-
-        with zh as zh:
-            paths.append(archivepath)
-            _get_archive_path_add_subpath(paths, zh, filepath[m.end(0):])
-            return paths
-
-    paths.append(_get_archive_path_tidy(filepath))
-    return paths
 
 
 def get_breadcrumbs(paths, base='', topname='.'):
@@ -546,7 +466,7 @@ class Request(flask.Request):
     @cached_property
     def paths(self):
         """Like request.path, but with ZIP subpaths resolved."""
-        return get_archive_path(self.path)
+        return util.fs.CPath.resolve(self.path, get_localpath).path
 
     @cached_property
     def localpath(self):
@@ -662,7 +582,7 @@ def handle_action_renaming(func):
         if target is None:
             abort(400, 'Target is not specified.')
 
-        targetpaths = get_archive_path(target)
+        targetpaths = util.fs.CPath.resolve(target, get_localpath).path
         targetpaths[0] = get_localpath(targetpaths[0])
 
         if len(targetpaths) > 1:

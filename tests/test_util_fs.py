@@ -28,6 +28,650 @@ def tearDownModule():
     _tmpdir.cleanup()
 
 
+class TestCPath(unittest.TestCase):
+    def test_init(self):
+        self.assertSequenceEqual(
+            util.fs.CPath(r'C:\Users\Myname\myfile.txt'),
+            [r'C:\Users\Myname\myfile.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath('/path/to/myfile.txt'),
+            ['/path/to/myfile.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath(['/path/to/archive.zip', 'subfile.txt']),
+            ['/path/to/archive.zip', 'subfile.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath(('/path/to/archive.zip', 'subfile.txt')),
+            ['/path/to/archive.zip', 'subfile.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath({'/path/to/archive.zip': True, 'subfile.txt': None}),
+            ['/path/to/archive.zip', 'subfile.txt'],
+        )
+
+        # subpaths
+        self.assertSequenceEqual(
+            util.fs.CPath('/path/to/archive.zip', 'subarchive.zip', 'subfile.txt'),
+            ['/path/to/archive.zip', 'subarchive.zip', 'subfile.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath(['/path/to/archive.zip', 'subarchive.zip'], 'subfile.txt'),
+            ['/path/to/archive.zip', 'subarchive.zip', 'subfile.txt'],
+        )
+
+        # singleton for CPath without subpaths
+        cpath = util.fs.CPath('/path/to/archive.zip', 'subfile.txt')
+        cpath2 = util.fs.CPath(cpath)
+        self.assertIs(cpath2, cpath)
+
+        # new instance for CPath with subpath(s)
+        cpath = util.fs.CPath('/path/to/archive.zip', 'subarchive.zip')
+        cpath2 = util.fs.CPath(cpath, 'subfile.txt')
+        self.assertIsNot(cpath2, cpath)
+        self.assertSequenceEqual(
+            cpath,
+            ['/path/to/archive.zip', 'subarchive.zip'],
+        )
+        self.assertSequenceEqual(
+            cpath2,
+            ['/path/to/archive.zip', 'subarchive.zip', 'subfile.txt'],
+        )
+
+    def test_str(self):
+        self.assertSequenceEqual(
+            str(util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt')),
+            r'C:\Users\Myname\archive.zip!/subfile.txt',
+        )
+        self.assertSequenceEqual(
+            str(util.fs.CPath('/path/to/archive.zip', 'subfile.txt')),
+            '/path/to/archive.zip!/subfile.txt',
+        )
+
+    def test_repr(self):
+        self.assertSequenceEqual(
+            repr(util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt')),
+            r"CPath('C:\\Users\\Myname\\archive.zip', 'subfile.txt')",
+        )
+        self.assertSequenceEqual(
+            repr(util.fs.CPath('/path/to/archive.zip', 'subfile.txt')),
+            r"CPath('/path/to/archive.zip', 'subfile.txt')",
+        )
+
+    def test_getitem(self):
+        self.assertSequenceEqual(
+            util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt')[0],
+            r'C:\Users\Myname\archive.zip',
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt')[1],
+            'subfile.txt',
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath('/path/to/archive.zip', 'subfile.txt')[0],
+            '/path/to/archive.zip',
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath('/path/to/archive.zip', 'subfile.txt')[1],
+            'subfile.txt',
+        )
+        self.assertEqual(
+            list(iter(util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt'))),
+            [r'C:\Users\Myname\archive.zip', 'subfile.txt'],
+        )
+
+    def test_len(self):
+        self.assertEqual(
+            len(util.fs.CPath(r'C:\Users\Myname\archive.zip')),
+            1,
+        )
+        self.assertEqual(
+            len(util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt')),
+            2,
+        )
+        self.assertEqual(
+            len(util.fs.CPath('/path/to/archive.zip')),
+            1,
+        )
+        self.assertEqual(
+            len(util.fs.CPath('/path/to/archive.zip', 'subfile.txt')),
+            2,
+        )
+
+    def test_eq(self):
+        self.assertEqual(
+            util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt'),
+            util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt'),
+        )
+        self.assertEqual(
+            util.fs.CPath('/path/to/archive.zip', 'subfile.txt'),
+            util.fs.CPath('/path/to/archive.zip', 'subfile.txt'),
+        )
+
+    def test_copy(self):
+        cpath = util.fs.CPath('/path/to/archive.zip', 'subfile.txt')
+        cpath2 = cpath.copy()
+        self.assertIsNot(cpath2, cpath)
+        self.assertSequenceEqual(
+            cpath,
+            ['/path/to/archive.zip', 'subfile.txt'],
+        )
+        self.assertSequenceEqual(
+            cpath2,
+            ['/path/to/archive.zip', 'subfile.txt'],
+        )
+
+    def test_path(self):
+        self.assertSequenceEqual(
+            util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt').path,
+            [r'C:\Users\Myname\archive.zip', 'subfile.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath('/path/to/archive.zip', 'subfile.txt').path,
+            [r'/path/to/archive.zip', 'subfile.txt'],
+        )
+
+    def test_file(self):
+        self.assertSequenceEqual(
+            util.fs.CPath(r'C:\Users\Myname\archive.zip', 'subfile.txt').file,
+            r'C:\Users\Myname\archive.zip',
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath('/path/to/archive.zip', 'subfile.txt').file,
+            r'/path/to/archive.zip',
+        )
+
+    def test_resolve1(self):
+        """Basic logic for a sub-archive path."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip'),
+            [os.path.join(root, 'entry.zip')],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!'),
+            [os.path.join(root, 'entry.zip!')],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/'),
+            [os.path.join(root, 'entry.zip'), '']
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/subdir'),
+            [os.path.join(root, 'entry.zip'), 'subdir'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/subdir/'),
+            [os.path.join(root, 'entry.zip'), 'subdir'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/index.html'),
+            [os.path.join(root, 'entry.zip'), 'index.html'],
+        )
+
+    def test_resolve2(self):
+        """Handle conflicting file or directory."""
+        # entry.zip!/entry1.zip!/ = entry.zip!/entry1.zip! >
+        # entry.zip!/entry1.zip >
+        # entry.zip!/ = entry.zip! >
+        # entry.zip
+
+        # entry.zip!/entry1.zip!/ > entry.zip!/entry1.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        os.makedirs(os.path.join(root, 'entry.zip!', 'entry1.zip!'), exist_ok=True)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
+            pass
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip!', 'entry1.zip!')],
+        )
+
+        # entry.zip!/entry1.zip! > entry.zip!/entry1.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+        with open(os.path.join(root, 'entry.zip!', 'entry1.zip!'), 'w'):
+            pass
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
+            pass
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip!', 'entry1.zip!')],
+        )
+
+        # entry.zip!/entry1.zip > entry.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+        os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
+            pass
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip!', 'entry1.zip'), ''],
+        )
+
+        # entry.zip!/ > entry.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip!', 'entry1.zip!')],
+        )
+
+        # entry.zip! > entry.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with open(os.path.join(root, 'entry.zip!'), 'w'):
+            pass
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip!', 'entry1.zip!')],
+        )
+
+        # entry.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!'],
+        )
+
+        # other
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with open(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/'),
+            [os.path.join(root, 'entry.zip!', 'entry1.zip!')],
+        )
+
+    def test_resolve3(self):
+        """Handle recursive sub-archive path."""
+        # entry1.zip!/entry2.zip!/ >
+        # entry1.zip!/entry2.zip >
+        # entry1.zip!/ >
+        # entry1.zip entry2.zip!/ >
+        # entry1.zip entry2.zip >
+        # entry1.zip >
+        # other
+
+        # entry1.zip!/entry2.zip!/ > entry1.zip!/entry2.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/entry2.zip!/', '')
+
+            buf2 = io.BytesIO()
+            with zipfile.ZipFile(buf2, 'w'):
+                pass
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+            zh.writestr('entry1.zip!/', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+        # entry1.zip!/entry2.zip!/ > entry1.zip!/entry2.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/entry2.zip!/.gitkeep', '')
+
+            buf2 = io.BytesIO()
+            with zipfile.ZipFile(buf2, 'w'):
+                pass
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+            zh.writestr('entry1.zip!/', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+        # entry1.zip!/entry2.zip > entry1.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            buf2 = io.BytesIO()
+            with zipfile.ZipFile(buf2, 'w'):
+                pass
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+            zh.writestr('entry1.zip!/', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip', ''],
+        )
+
+        # entry1.zip!/ > entry1.zip entry2.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/entry2.zip', 'non-zip')
+
+            zh.writestr('entry1.zip!/', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+        # entry1.zip!/ > entry1.zip entry2.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+        # entry1.zip!/ > entry1.zip entry2.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip!/.gitkeep', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+        # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!/', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'],
+        )
+
+        # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!/.gitkeep', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'],
+        )
+
+        # entry1.zip entry2.zip > entry1.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip', ''],
+        )
+
+        # entry1.zip
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('entry2.zip', 'non-zip')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip', 'entry2.zip!'],
+        )
+
+        # other
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            zh.writestr('entry1.zip', 'non-zip')
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+        # other
+        root = tempfile.mkdtemp(dir=tmpdir)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
+            [os.path.join(root, 'entry.zip'), 'entry1.zip!/entry2.zip!'],
+        )
+
+    def test_resolve4(self):
+        """Tidy path."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        os.makedirs(os.path.join(root, 'foo', 'bar'), exist_ok=True)
+        with zipfile.ZipFile(os.path.join(root, 'foo', 'bar', 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}//foo///bar////entry.zip//'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip')],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/./foo/././bar/./././entry.zip/./'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip')],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/wtf/../bar/wtf/./wtf2/.././../entry.zip'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip')],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!//foo//bar///baz.txt//'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip'), 'foo/bar/baz.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!/./foo/./bar/././baz.txt/./'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip'), 'foo/bar/baz.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!/foo/wtf/../bar/wtf/./wtf2/../../baz.txt'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip'), 'foo/bar/baz.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!/../../'),
+            [os.path.join(root, 'foo', 'bar', 'entry.zip'), ''],
+        )
+
+    def test_resolve_with_resolver1(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+
+        def resolver(p):
+            return os.path.normpath(os.path.join(root, p))
+
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip', resolver),
+            [f'{root}/entry.zip'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/subdir', resolver),
+            [f'{root}/entry.zip', 'subdir'],
+        )
+
+    def test_resolve_with_resolver2(self):
+        # entry.zip!/entry1.zip > entry.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+
+        def resolver(p):
+            return os.path.normpath(os.path.join(root, p))
+
+        os.makedirs(os.path.join(root, 'entry.zip!'), exist_ok=True)
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip!', 'entry1.zip'), 'w'):
+            pass
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/', resolver),
+            [f'{root}/entry.zip!/entry1.zip', ''],
+        )
+
+    def test_resolve_with_resolver3(self):
+        # entry1.zip!/entry2.zip > entry1.zip!/
+        root = tempfile.mkdtemp(dir=tmpdir)
+
+        def resolver(p):
+            return os.path.normpath(os.path.join(root, p))
+
+        with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
+            buf2 = io.BytesIO()
+            with zipfile.ZipFile(buf2, 'w'):
+                pass
+            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
+
+            zh.writestr('entry1.zip!/', '')
+
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w'):
+                    pass
+                zh1.writestr('entry2.zip!', '')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/', resolver),
+            [f'{root}/entry.zip', 'entry1.zip!/entry2.zip', ''],
+        )
+
+    def test_resolve_with_resolver4(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+
+        def resolver(p):
+            return os.path.normpath(os.path.join(root, p))
+
+        os.makedirs(os.path.join(root, 'foo', 'bar'), exist_ok=True)
+        with zipfile.ZipFile(os.path.join(root, 'foo', 'bar', 'entry.zip'), 'w'):
+            pass
+
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}//foo///bar////entry.zip//', resolver),
+            [f'{root}/foo/bar/entry.zip'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/./foo/././bar/./././entry.zip/./', resolver),
+            [f'{root}/foo/bar/entry.zip'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/wtf/../bar/wtf/./wtf2/.././../entry.zip', resolver),
+            [f'{root}/foo/bar/entry.zip'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!//foo//bar///baz.txt//', resolver),
+            [f'{root}/foo/bar/entry.zip', 'foo/bar/baz.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!/./foo/./bar/././baz.txt/./', resolver),
+            [f'{root}/foo/bar/entry.zip', 'foo/bar/baz.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!/foo/wtf/../bar/wtf/./wtf2/../../baz.txt', resolver),
+            [f'{root}/foo/bar/entry.zip', 'foo/bar/baz.txt'],
+        )
+        self.assertSequenceEqual(
+            util.fs.CPath.resolve(f'{root}/foo/bar/entry.zip!/../../', resolver),
+            [f'{root}/foo/bar/entry.zip', ''],
+        )
+
+
 class TestHelpers(unittest.TestCase):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_is_link(self):
