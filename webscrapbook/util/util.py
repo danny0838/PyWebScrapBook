@@ -1052,7 +1052,7 @@ def zip_has(zip, subpath, type='any'):
         base += '/'
         if type in ('dir', 'any'):
             try:
-                zh.getinfo(base + '/')
+                zh.getinfo(base)
             except KeyError:
                 pass
             else:
