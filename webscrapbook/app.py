@@ -1,11 +1,9 @@
 """The WGSI application.
 """
 import functools
-import io
 import json
 import mimetypes
 import os
-import shutil
 import time
 import traceback
 import zipfile
@@ -558,59 +556,6 @@ def handle_action_writing(func):
             abort(403, 'Unable to operate the root directory.')
 
         return func(*args, **kwargs)
-
-    return wrapper
-
-
-def handle_action_renaming(func):
-    """A decorator function that helps handling a move/copy action.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        localpaths = request.localpaths
-
-        if len(localpaths) > 1:
-            with util.fs.open_archive_path(localpaths) as zh:
-                if not util.fs.zip_has(zh, localpaths[-1]):
-                    abort(404, 'Source does not exist.')
-        else:
-            if not os.path.lexists(localpaths[0]):
-                abort(404, 'Source does not exist.')
-
-        target = request.values.get('target')
-
-        if target is None:
-            abort(400, 'Target is not specified.')
-
-        targetpaths = util.fs.CPath.resolve(target, get_localpath).path
-        targetpaths[0] = get_localpath(targetpaths[0])
-
-        if len(targetpaths) > 1:
-            with util.fs.open_archive_path(targetpaths) as zh:
-                # target is a file
-                if util.fs.zip_has(zh, targetpaths[-1], type='file'):
-                    abort(400, 'Found something at target.')
-
-                # target is a directory, treat as to target/<basename>
-                if util.fs.zip_has(zh, targetpaths[-1], type='dir'):
-                    targetpaths[-1] = targetpaths[-1] + ('/' if targetpaths[-1] else '') + os.path.basename(localpaths[-1])
-
-                    # recheck if target exists
-                    if util.fs.zip_has(zh, targetpaths[-1], type='any'):
-                        abort(400, 'Found identical entry under the target directory.')
-        else:
-            if os.path.lexists(targetpaths[0]):
-                if os.path.isdir(targetpaths[0]):
-                    # target is an existing directory, treat as to target/<basename>
-                    targetpaths[0] = os.path.join(targetpaths[0], os.path.basename(localpaths[-1]))
-
-                    # recheck if target exists
-                    if os.path.lexists(targetpaths[0]):
-                        abort(400, 'Found identical entry under the target directory.')
-                else:
-                    abort(400, 'Found something at target.')
-
-        return func(*args, sourcepaths=localpaths, targetpaths=targetpaths, **kwargs)
 
     return wrapper
 
@@ -1178,44 +1123,15 @@ def action_mkdir():
     """Create a directory."""
     localpaths = request.localpaths
 
-    if len(localpaths) > 1:
-        try:
-            zh = None
-            with util.fs.open_archive_path(localpaths) as zh0:
-                if util.fs.zip_has(zh0, localpaths[-1], type='file'):
-                    abort(400, 'Found a non-directory here.')
-
-                # skip if the folder already exists
-                if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
-                    return
-
-                # append for a non-nested zip
-                if len(localpaths) == 2:
-                    zh = zipfile.ZipFile(localpaths[0], 'a')
-
-            if zh is None:
-                zh = util.fs.open_archive_path(localpaths, 'w')
-
-            with zh as zh:
-                info = zipfile.ZipInfo(localpaths[-1] + '/', time.localtime())
-                zh.writestr(info, b'', compress_type=zipfile.ZIP_STORED)
-        except HTTPException:
-            raise
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to create a directory here.')
-
-    else:
-        localpath = localpaths[0]
-
-        if os.path.lexists(localpath) and not os.path.isdir(localpath):
-            abort(400, 'Found a non-directory here.')
-
-        try:
-            os.makedirs(localpath, exist_ok=True)
-        except OSError:
-            traceback.print_exc()
-            abort(500, 'Unable to create a directory here.')
+    try:
+        util.fs.mkdir(localpaths)
+    except util.fs.FSEntryExistsError:
+        abort(400, 'Found something here.')
+    except util.fs.FSBadParentError:
+        abort(400, 'Parent directory is not available.')
+    except Exception:
+        traceback.print_exc()
+        abort(500, 'Unable to create a directory here.')
 
 
 @handle_action_advanced
@@ -1225,51 +1141,17 @@ def action_mkzip():
     """Create a zip file."""
     localpaths = request.localpaths
 
-    if len(localpaths) > 1:
-        try:
-            zh = None
-            with util.fs.open_archive_path(localpaths) as zh0:
-                if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
-                    abort(400, 'Found a non-file here.')
-
-                # append for a nonexistent path in a non-nested zip
-                if len(localpaths) == 2:
-                    if not util.fs.zip_has(zh0, localpaths[-1], type='file'):
-                        zh = zipfile.ZipFile(localpaths[0], 'a')
-
-            if zh is None:
-                zh = util.fs.open_archive_path(localpaths, 'w')
-
-            with zh as zh:
-                info = zipfile.ZipInfo(localpaths[-1], time.localtime())
-                buf = io.BytesIO()
-                with zipfile.ZipFile(buf, 'w'):
-                    pass
-                zh.writestr(info, buf.getvalue(), compress_type=zipfile.ZIP_STORED)
-        except HTTPException:
-            raise
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this ZIP file.')
-
-    else:
-        localpath = localpaths[0]
-
-        if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            abort(400, 'Found a non-file here.')
-
-        try:
-            os.makedirs(os.path.dirname(localpath), exist_ok=True)
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this path.')
-
-        try:
-            with zipfile.ZipFile(localpath, 'w'):
-                pass
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this file.')
+    try:
+        util.fs.mkzip(localpaths)
+    except util.fs.FSIsADirectoryError:
+        abort(400, 'Found a non-file here.')
+    except util.fs.FSEntryExistsError:
+        abort(400, 'Found something here.')
+    except util.fs.FSBadParentError:
+        abort(400, 'Parent directory is not available.')
+    except Exception:
+        traceback.print_exc()
+        abort(500, 'Unable to write to this ZIP file.')
 
 
 @handle_action_advanced
@@ -1279,61 +1161,23 @@ def action_save():
     """Write a file with provided text or uploaded stream."""
     localpaths = request.localpaths
 
-    if len(localpaths) > 1:
-        try:
-            zh = None
-            with util.fs.open_archive_path(localpaths) as zh0:
-                if util.fs.zip_has(zh0, localpaths[-1], type='dir'):
-                    abort(400, 'Found a non-file here.')
-
-                # append for a nonexistent path in a non-nested zip
-                if len(localpaths) == 2:
-                    if not util.fs.zip_has(zh0, localpaths[-1], type='file'):
-                        zh = zipfile.ZipFile(localpaths[0], 'a')
-
-            if zh is None:
-                zh = util.fs.open_archive_path(localpaths, 'w')
-
-            with zh as zh:
-                info = zipfile.ZipInfo(localpaths[-1], time.localtime())
-                file = request.files.get('upload')
-                if file is not None:
-                    with zh.open(info, 'w', force_zip64=True) as fh:
-                        stream = file.stream
-                        for chunk in iter(functools.partial(stream.read, 8192), b''):
-                            fh.write(chunk)
-                else:
-                    bytes_ = request.values.get('text', '').encode('ISO-8859-1')
-                    zh.writestr(info, bytes_, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-        except HTTPException:
-            raise
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this ZIP file.')
-
+    file = request.files.get('upload')
+    if file is not None:
+        src = file.stream
     else:
-        localpath = localpaths[0]
+        src = request.values.get('text', '').encode('ISO-8859-1')
 
-        if os.path.lexists(localpath) and not os.path.isfile(localpath):
-            abort(400, 'Found a non-file here.')
-
-        try:
-            os.makedirs(os.path.dirname(localpath), exist_ok=True)
-        except OSError:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this path.')
-
-        try:
-            file = request.files.get('upload')
-            if file is not None:
-                file.save(localpath)
-            else:
-                bytes_ = request.values.get('text', '').encode('ISO-8859-1')
-                with open(localpath, 'wb') as fh:
-                    fh.write(bytes_)
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this file.')
+    try:
+        util.fs.save(localpaths, src)
+    except util.fs.FSIsADirectoryError:
+        abort(400, 'Found a non-file here.')
+    except util.fs.FSEntryExistsError:
+        abort(400, 'Found something here.')
+    except util.fs.FSBadParentError:
+        abort(400, 'Parent directory is not available.')
+    except Exception:
+        traceback.print_exc()
+        abort(500, 'Unable to write to this ZIP file.')
 
 
 @handle_action_advanced
@@ -1343,102 +1187,36 @@ def action_delete():
     """Delete a file or directory."""
     localpaths = request.localpaths
 
-    if len(localpaths) > 1:
-        try:
-            with util.fs.open_archive_path(localpaths, 'w', [localpaths[-1]]):
-                pass
-        except KeyError:
-            # fail since nothing is deleted
-            abort(404, 'Entry does not exist in this ZIP file.')
-        except Exception:
-            traceback.print_exc()
-            abort(500, 'Unable to write to this ZIP file.')
-
-    else:
-        localpath = localpaths[0]
-
-        if not os.path.lexists(localpath):
-            abort(404, 'File does not exist.')
-
-        if util.fs.file_is_link(localpath):
-            try:
-                os.remove(localpath)
-            except OSError:
-                traceback.print_exc()
-                abort(500, 'Unable to delete this link.')
-        elif os.path.isfile(localpath):
-            try:
-                os.remove(localpath)
-            except OSError:
-                traceback.print_exc()
-                abort(500, 'Unable to delete this file.')
-        elif os.path.isdir(localpath):
-            try:
-                shutil.rmtree(localpath)
-            except OSError:
-                traceback.print_exc()
-                abort(500, 'Unable to delete this directory.')
-        else:
-            # this should not happen
-            abort(500, 'Unable to handle this path.')
+    try:
+        util.fs.delete(localpaths)
+    except util.fs.FSEntryNotFoundError:
+        abort(404, 'Entry does not exist.')
+    except Exception:
+        traceback.print_exc()
+        abort(500, 'Unable to delete this entry.')
 
 
 @handle_action_advanced
 @handle_action_token
 @handle_action_writing
-@handle_action_renaming
-def action_move(sourcepaths, targetpaths):
+def action_move():
     """Move a file or directory."""
+    localpaths = request.localpaths
+
+    target = request.values.get('target')
+    if target is None:
+        abort(400, 'Target is not specified.')
+    targetpaths = util.fs.CPath.resolve(target, get_localpath).path
+    targetpaths[0] = get_localpath(targetpaths[0])
+
     try:
-        if len(sourcepaths) == 1:
-            if len(targetpaths) == 1:
-                try:
-                    os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
-                except OSError:
-                    traceback.print_exc()
-                    abort(500, 'Unable to move to this path.')
-
-                shutil.move(sourcepaths[0], targetpaths[0])
-
-            else:
-                # Moving a file into a zip is like moving across disk,
-                # which makes little sense. Additionally, moving a
-                # symlink/junction should rename the entry and cannot be
-                # implemented as copying-deleting. Forbid such operation to
-                # prevent a confusion.
-                abort(400, 'Unable to move across a zip.')
-
-        elif len(sourcepaths) > 1:
-            if len(targetpaths) == 1:
-                # Moving from zip to disk is like moving across disk, which
-                # makes little sense.
-                abort(400, 'Unable to move across a zip.')
-
-            else:
-                with util.fs.open_archive_path(sourcepaths) as zh:
-                    try:
-                        zh.getinfo(sourcepaths[-1])
-                    except KeyError:
-                        base = sourcepaths[-1] + '/'
-                        entries = [e for e in zh.namelist() if e.startswith(base)]
-                    else:
-                        entries = [sourcepaths[-1]]
-
-                    with util.fs.open_archive_path(targetpaths, 'w') as zh2:
-                        cut = len(sourcepaths[-1])
-                        for entry in entries:
-                            info = zh.getinfo(entry)
-                            info.filename = targetpaths[-1] + entry[cut:]
-                            zh2.writestr(info, zh.read(entry),
-                                         compress_type=info.compress_type,
-                                         compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                         )
-
-                with util.fs.open_archive_path(sourcepaths, 'w', entries):
-                    pass
-
-    except HTTPException:
-        raise
+        util.fs.move(localpaths, targetpaths)
+    except util.fs.FSEntryExistsError:
+        abort(400, 'Target already exists.')
+    except util.fs.FSMoveAcrossZipError:
+        abort(400, 'Unable to move across a zip.')
+    except util.fs.FSEntryNotFoundError:
+        abort(404, 'Source does not exist.')
     except Exception:
         traceback.print_exc()
         abort(500, 'Unable to move to the target.')
@@ -1447,74 +1225,24 @@ def action_move(sourcepaths, targetpaths):
 @handle_action_advanced
 @handle_action_token
 @handle_action_writing
-@handle_action_renaming
-def action_copy(sourcepaths, targetpaths):
+def action_copy():
     """Copy a file or directory."""
-    # Copying a symlink/junction means copying the real file/directory.
-    # It makes no sense if the symlink/junction is broken.
-    if not os.path.exists(sourcepaths[0]):
-        abort(404, 'Source does not exist.')
+    localpaths = request.localpaths
+
+    target = request.values.get('target')
+    if target is None:
+        abort(400, 'Target is not specified.')
+    targetpaths = util.fs.CPath.resolve(target, get_localpath).path
+    targetpaths[0] = get_localpath(targetpaths[0])
 
     try:
-        if len(sourcepaths) == 1:
-            if len(targetpaths) == 1:
-                try:
-                    os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
-                except OSError:
-                    traceback.print_exc()
-                    abort(500, 'Unable to copy to this path.')
-
-                try:
-                    shutil.copytree(sourcepaths[0], targetpaths[0])
-                except NotADirectoryError:
-                    shutil.copy2(sourcepaths[0], targetpaths[0])
-                except shutil.Error:
-                    traceback.print_exc()
-                    abort(500, 'Fail to copy some files.')
-
-            else:
-                error = False
-                with util.fs.open_archive_path(targetpaths, 'w') as zh:
-                    try:
-                        util.fs.zip_compress(zh, sourcepaths[0], targetpaths[-1])
-                    except shutil.Error:
-                        traceback.print_exc()
-                        error = True
-                if error:
-                    abort(500, 'Fail to copy some files.')
-
-        elif len(sourcepaths) > 1:
-            if len(targetpaths) == 1:
-                try:
-                    os.makedirs(os.path.dirname(targetpaths[0]), exist_ok=True)
-                except OSError:
-                    traceback.print_exc()
-                    abort(500, 'Unable to copy to this path.')
-
-                with util.fs.open_archive_path(sourcepaths) as zh:
-                    util.fs.zip_extract(zh, targetpaths[0], sourcepaths[-1])
-
-            else:
-                with util.fs.open_archive_path(sourcepaths) as zh:
-                    try:
-                        zh.getinfo(sourcepaths[-1])
-                    except KeyError:
-                        entries = [e for e in zh.namelist() if e.startswith(sourcepaths[-1] + '/')]
-                    else:
-                        entries = [sourcepaths[-1]]
-
-                    with util.fs.open_archive_path(targetpaths, 'w') as zh2:
-                        cut = len(sourcepaths[-1])
-                        for entry in entries:
-                            info = zh.getinfo(entry)
-                            info.filename = targetpaths[-1] + entry[cut:]
-                            zh2.writestr(info, zh.read(entry),
-                                         compress_type=info.compress_type,
-                                         compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                         )
-
-    except HTTPException:
-        raise
+        util.fs.copy(localpaths, targetpaths)
+    except util.fs.FSEntryExistsError:
+        abort(400, 'Target already exists.')
+    except util.fs.FSEntryNotFoundError:
+        abort(404, 'Source does not exist.')
+    except util.fs.FSPartialError:
+        abort(500, 'Fail to copy some files.')
     except Exception:
         traceback.print_exc()
         abort(500, 'Unable to copy to the target.')

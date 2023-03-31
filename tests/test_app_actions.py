@@ -2866,7 +2866,7 @@ class TestMkdir(unittest.TestCase):
                 'f': 'json',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found a non-directory here.')
+            mock_abort.assert_called_once_with(400, 'Found something here.')
 
     def test_zip_nonexist(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -2969,7 +2969,7 @@ class TestMkdir(unittest.TestCase):
                 'f': 'json',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found a non-directory here.')
+            mock_abort.assert_called_once_with(400, 'Found something here.')
 
     def test_zip_root(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -3927,7 +3927,7 @@ class TestDelete(TestActions):
                 'f': 'json',
             })
 
-            mock_abort.assert_called_once_with(404, 'File does not exist.')
+            mock_abort.assert_called_once_with(404, 'Entry does not exist.')
 
     def test_zip_file(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -4032,7 +4032,7 @@ class TestDelete(TestActions):
                 'f': 'json',
             })
 
-            mock_abort.assert_called_once_with(404, 'Entry does not exist in this ZIP file.')
+            mock_abort.assert_called_once_with(404, 'Entry does not exist.')
 
     def test_zip_directory_nested(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
@@ -4391,7 +4391,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2/test2.txt',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_file(self, mock_abort):
@@ -4407,7 +4407,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2/test2.txt',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_file_to_dir(self):
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
@@ -4450,7 +4450,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_to_dir_with_same_dir(self, mock_abort):
@@ -4464,7 +4464,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_dir_to_dir(self):
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir')})
@@ -4513,7 +4513,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_dir_with_same_dir(self, mock_abort):
@@ -4527,7 +4527,7 @@ class TestMove(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip(self, mock_abort):
@@ -4643,7 +4643,7 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir/index.html',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_file(self, mock_abort):
@@ -4655,7 +4655,7 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir/index.html',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_file_to_dir(self):
         with zipfile.ZipFile(self.test_zip) as zh1:
@@ -4697,7 +4697,7 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
@@ -4709,7 +4709,7 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir3',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_dir_to_dir1(self):
         with zipfile.ZipFile(self.test_zip) as zh1:
@@ -4795,7 +4795,7 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir4',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
@@ -4807,7 +4807,7 @@ class TestMove(TestActions):
                 'target': '/temp.maff!/entry.maff!/',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
 
 class TestCopy(TestActions):
@@ -5222,7 +5222,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2/test2.txt',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_file(self, mock_abort):
@@ -5238,7 +5238,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2/test2.txt',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_file_to_dir(self):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
@@ -5277,7 +5277,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file_to_dir_with_same_dir(self, mock_abort):
@@ -5291,7 +5291,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_dir_to_dir(self):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
@@ -5330,7 +5330,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir_to_dir_with_same_dir(self, mock_abort):
@@ -5344,7 +5344,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir2',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_disk_to_zip_file(self):
         with app.test_client() as c:
@@ -5507,7 +5507,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir/index.html',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_dir_to_file(self, mock_abort):
@@ -5519,7 +5519,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir/index.html',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_disk_to_zip_file_to_dir(self):
         with app.test_client() as c:
@@ -5691,7 +5691,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir/test.txt',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_disk_dir_to_file(self, mock_abort):
@@ -5703,7 +5703,7 @@ class TestCopy(TestActions):
                 'target': '/temp/subdir/test.txt',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_file(self):
         with app.test_client() as c:
@@ -5779,7 +5779,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir/index.html',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_file(self, mock_abort):
@@ -5791,7 +5791,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir/index.html',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found something at target.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_file_to_dir(self):
         with app.test_client() as c:
@@ -5827,7 +5827,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
@@ -5839,7 +5839,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir3',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_dir_to_dir1(self):
         with app.test_client() as c:
@@ -5907,7 +5907,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
@@ -5919,7 +5919,7 @@ class TestCopy(TestActions):
                 'target': '/temp.maff!/entry.maff!/subdir4',
             })
 
-            mock_abort.assert_called_once_with(400, 'Found identical entry under the target directory.')
+            mock_abort.assert_called_once_with(400, 'Target already exists.')
 
 
 class TestBackup(TestActions):
