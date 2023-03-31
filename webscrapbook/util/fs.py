@@ -18,6 +18,120 @@ from datetime import datetime
 from . import util
 
 
+class FSError(Exception):
+    def __init__(self, cpath):
+        self.cpath = cpath
+        self.msg = 'Unexpected error'
+
+    def __str__(self):
+        return f'{self.msg}: {self.cpath}'
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.msg)})'
+
+
+class FSPermissionError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Permission denied'
+
+
+class FSEntryExistsError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Entry already exists'
+
+
+class FSFileExistsError(FSEntryExistsError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'File already exists'
+
+
+class FSDirExistsError(FSEntryExistsError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Directory already exists'
+
+
+class FSEntryNotFoundError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Entry is not found'
+
+
+class FSFileNotFoundError(FSEntryNotFoundError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'File is not found'
+
+
+class FSDirNotFoundError(FSEntryNotFoundError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Directory is not found'
+
+
+class FSNotADirectoryError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Entry is not a directory'
+
+
+class FSIsADirectoryError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Entry is a directory'
+
+
+class FSBadParentError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Parent directory is not available'
+
+
+class FSBadZipFileError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'ZIP file is corrupted'
+
+
+class FSMoveAcrossZipError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Unable to move across a zip'
+
+
+class FSPartialError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Some subentries are not operated correctly'
+
+
+def _map_exc(exc, cpath=None):
+    """Get a general exception type from a standard exception."""
+    if isinstance(exc, PermissionError):
+        return FSPermissionError(cpath)
+
+    elif isinstance(exc, FileNotFoundError):
+        return FSEntryNotFoundError(cpath)
+
+    elif isinstance(exc, NotADirectoryError):
+        # This usually happens on most POSIX platforms when an ancestor
+        # directory cannot be traversed (e.g. occupied by a file).
+        # Treat as entry not found in general.
+        return FSEntryNotFoundError(cpath)
+
+    elif isinstance(exc, FileExistsError):
+        return FSEntryExistsError(cpath)
+
+    elif isinstance(exc, zipfile.BadZipFile):
+        return FSBadZipFileError(cpath)
+
+    # unexpected error
+    return FSError(cpath)
+
+
 class CPath:
     """A complex path object representing filesystem path and ZIP subpaths."""
     def __new__(cls, pathlike, *subpaths):
@@ -210,6 +324,376 @@ def view_in_explorer(cpath):
         except OSError:
             # fallback if no nautilus
             launch(os.path.dirname(path))
+
+
+def mkdir(cpath):
+    """Create a directory at target."""
+    cpath = CPath(cpath)
+    try:
+        if len(cpath) == 1:
+            try:
+                os.makedirs(cpath.file, exist_ok=True)
+            except (FileNotFoundError, NotADirectoryError) as exc:
+                raise FSBadParentError(cpath) from exc
+
+        else:
+            zh = None
+            with open_archive_path(cpath) as zh0:
+                if zip_has(zh0, cpath[-1], type='file'):
+                    raise FSFileExistsError(cpath)
+
+                # skip if the folder already exists
+                if zip_has(zh0, cpath[-1], type='dir'):
+                    return
+
+                # append for a non-nested zip
+                if len(cpath) == 2:
+                    zh = zipfile.ZipFile(cpath.file, 'a')
+
+            if zh is None:
+                zh = open_archive_path(cpath, 'w')
+
+            with zh as zh:
+                zinfo = zipfile.ZipInfo(cpath[-1] + '/', time.localtime())
+                zinfo.compress_type = zipfile.ZIP_STORED
+                zh.writestr(zinfo, b'')
+    except FSError:
+        raise
+    except Exception as exc:
+        raise _map_exc(exc, cpath) from exc
+
+
+def mkzip(cpath):
+    """Create a ZIP file at target."""
+    cpath = CPath(cpath)
+    try:
+        if len(cpath) == 1:
+            dst = cpath.file
+            if os.path.lexists(dst) and not os.path.isfile(dst):
+                raise FSIsADirectoryError(cpath)
+
+            try:
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+            except OSError as exc:
+                raise FSBadParentError(cpath) from exc
+
+            with zipfile.ZipFile(dst, 'w'):
+                pass
+
+        else:
+            zh = None
+            with open_archive_path(cpath) as zh0:
+                if zip_has(zh0, cpath[-1], type='dir'):
+                    raise FSIsADirectoryError(cpath)
+
+                # append for a nonexistent path in a non-nested zip
+                if len(cpath) == 2:
+                    if not zip_has(zh0, cpath[-1], type='file'):
+                        zh = zipfile.ZipFile(cpath[0], 'a')
+
+            if zh is None:
+                zh = open_archive_path(cpath, 'w')
+
+            with zh as zh:
+                zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
+                zinfo.compress_type = zipfile.ZIP_STORED
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, 'w'):
+                    pass
+                zh.writestr(zinfo, buf.getvalue())
+    except FSError:
+        raise
+    except Exception as exc:
+        raise _map_exc(exc, cpath) from exc
+
+
+def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+    """Write content to the target.
+
+    Args:
+        src: bytes or a stream object (with callble 'read' attribute)
+    """
+    cpath = CPath(cpath)
+    try:
+        if len(cpath) == 1:
+            dst = cpath.file
+            if os.path.lexists(dst) and not os.path.isfile(dst):
+                raise FSIsADirectoryError(cpath)
+
+            try:
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+            except OSError as exc:
+                raise FSBadParentError(cpath) from exc
+
+            if isinstance(src, bytes):
+                with open(dst, 'wb') as fh:
+                    fh.write(src)
+                return
+
+            try:
+                assert callable(src.read)
+            except (AssertionError, AttributeError):
+                pass
+            else:
+                with open(dst, 'wb') as fh:
+                    for chunk in iter(functools.partial(src.read, buffer_size), b''):
+                        fh.write(chunk)
+                return
+
+        else:
+            zh = None
+            with open_archive_path(cpath) as zh0:
+                if zip_has(zh0, cpath[-1], type='dir'):
+                    raise FSIsADirectoryError(cpath)
+
+                # append for a nonexistent path in a non-nested zip
+                if len(cpath) == 2:
+                    if not zip_has(zh0, cpath[-1], type='file'):
+                        zh = zipfile.ZipFile(cpath[0], 'a')
+
+            if zh is None:
+                zh = open_archive_path(cpath, 'w')
+
+            with zh as zh:
+                zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
+
+                if isinstance(src, bytes):
+                    zh.writestr(zinfo, src, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                    return
+
+                try:
+                    assert callable(src.read)
+                except (AssertionError, AttributeError):
+                    pass
+                else:
+                    with zh.open(zinfo, 'w') as fh:
+                        for chunk in iter(functools.partial(src.read, buffer_size), b''):
+                            fh.write(chunk)
+                    return
+
+        raise ValueError('src must be bytes or a stream')
+    except FSError:
+        raise
+    except Exception as exc:
+        raise _map_exc(exc, cpath) from exc
+
+
+def delete(cpath):
+    """Delete the target."""
+    cpath = CPath(cpath)
+    try:
+        if len(cpath) == 1:
+            dst = cpath.file
+
+            if not os.path.lexists(dst):
+                raise FSEntryNotFoundError(cpath)
+
+            if file_is_link(dst):
+                os.remove(dst)
+            elif os.path.isfile(dst):
+                os.remove(dst)
+            elif os.path.isdir(dst):
+                shutil.rmtree(dst)
+            else:
+                # this should not happen
+                raise RuntimeError('Unable to handle this path.')
+
+        else:
+            try:
+                with open_archive_path(cpath, 'w', [cpath[-1]]):
+                    pass
+            except KeyError:
+                # fail since nothing is deleted
+                raise FSEntryNotFoundError(cpath)
+    except FSError:
+        raise
+    except Exception as exc:
+        raise _map_exc(exc, cpath) from exc
+
+
+def _check_move_copy(csrc, cdst):
+    """Common checks for a move or copy.
+
+    Returns:
+        cdst: the possibly changed cdst
+    """
+    if len(csrc) == 1:
+        if not os.path.lexists(csrc.file):
+            raise FSEntryNotFoundError(csrc)
+    else:
+        with open_archive_path(csrc) as zh:
+            if not zip_has(zh, csrc[-1]):
+                raise FSEntryNotFoundError(csrc)
+
+    if len(cdst) == 1:
+        if os.path.lexists(cdst.file):
+            if os.path.isdir(cdst.file):
+                # target is an existing directory, treat as to target/<basename>
+                cdst = CPath(os.path.join(cdst.file, os.path.basename(csrc[-1])))
+
+                # recheck if target exists
+                if os.path.lexists(cdst.file):
+                    raise FSEntryExistsError(cdst)
+            else:
+                raise FSEntryExistsError(cdst)
+    else:
+        with open_archive_path(cdst) as zh:
+            # target is a file
+            if zip_has(zh, cdst[-1], type='file'):
+                raise FSFileExistsError(cdst)
+
+            # target is a directory, treat as to target/<basename>
+            if zip_has(zh, cdst[-1], type='dir'):
+                cdst = CPath([
+                    *cdst[:-1],
+                    cdst[-1] + ('/' if cdst[-1] else '') + os.path.basename(csrc[-1]),
+                ])
+
+                # recheck if target exists
+                if zip_has(zh, cdst[-1], type='any'):
+                    raise FSEntryExistsError(cdst)
+
+    return cdst
+
+
+def move(csrc, cdst):
+    """Move the source to the target."""
+    csrc = CPath(csrc)
+    cdst = CPath(cdst)
+    try:
+        cdst = _check_move_copy(csrc, cdst)
+
+        if len(csrc) == 1:
+            if len(cdst) == 1:
+                try:
+                    os.makedirs(os.path.dirname(cdst.file), exist_ok=True)
+                except OSError as exc:
+                    raise FSBadParentError(cdst) from exc
+
+                try:
+                    shutil.move(csrc.file, cdst.file)
+                except shutil.Error as exc:
+                    if exc.args and isinstance(exc.args[0], list):
+                        raise FSPartialError(cdst) from exc
+                    raise
+
+            else:
+                # Moving a file into a zip is actually copying-deleting, and
+                # is eror-prone as not all metadata can be preserved.
+                # Especially that copying a symlink/junction causes the
+                # referenced file/directory rather than the entity itself be
+                # copied.  Forbid such operation to prevent a misuse and
+                # confusion.
+                raise FSMoveAcrossZipError(cdst)
+
+        else:
+            if len(cdst) == 1:
+                # Moving a file from zip to disk is actually copying-deleting,
+                # and is eror-prone as not all metadata can be preserved.
+                # Especially that entries in a ZIP could have invalid or
+                # duplicated filename and can hardly be mirrored to the disk.
+                raise FSMoveAcrossZipError(cdst)
+
+            else:
+                with open_archive_path(csrc) as zh:
+                    try:
+                        zh.getinfo(csrc[-1])
+                    except KeyError:
+                        base = csrc[-1] + '/'
+                        entries = [e for e in zh.namelist() if e.startswith(base)]
+                    else:
+                        entries = [csrc[-1]]
+
+                    with open_archive_path(cdst, 'w') as zh2:
+                        cut = len(csrc[-1])
+                        for entry in entries:
+                            zinfo = zh.getinfo(entry)
+                            zinfo.filename = cdst[-1] + entry[cut:]
+                            zh2.writestr(zinfo, zh.read(entry),
+                                         compress_type=zinfo.compress_type,
+                                         compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
+                                         )
+
+                with open_archive_path(csrc, 'w', entries):
+                    pass
+
+    except FSError:
+        raise
+    except Exception as exc:
+        raise _map_exc(exc, cdst) from exc
+
+
+def copy(csrc, cdst):
+    """Copy the source to the target."""
+    csrc = CPath(csrc)
+    cdst = CPath(cdst)
+    try:
+        cdst = _check_move_copy(csrc, cdst)
+
+        if len(csrc) == 1:
+            if len(cdst) == 1:
+                try:
+                    os.makedirs(os.path.dirname(cdst.file), exist_ok=True)
+                except OSError as exc:
+                    raise FSBadParentError(cdst) from exc
+
+                try:
+                    shutil.copytree(csrc.file, cdst.file)
+                except NotADirectoryError:
+                    shutil.copy2(csrc.file, cdst.file)
+                except shutil.Error as exc:
+                    if exc.args and isinstance(exc.args[0], list):
+                        raise FSPartialError(cdst) from exc
+                    raise
+
+            else:
+                _exc = None
+                with open_archive_path(cdst, 'w') as zh:
+                    try:
+                        zip_compress(zh, csrc.file, cdst[-1])
+                    except shutil.Error as exc:
+                        # don't raise here so that zh writeback not interrupted
+                        _exc = exc
+                if _exc:
+                    exc = _exc
+                    if exc.args and isinstance(exc.args[0], list):
+                        raise FSPartialError(cdst) from exc
+                    raise exc
+
+        else:
+            if len(cdst) == 1:
+                try:
+                    os.makedirs(os.path.dirname(cdst.file), exist_ok=True)
+                except OSError as exc:
+                    raise FSBadParentError(cdst) from exc
+
+                with open_archive_path(csrc) as zh:
+                    zip_extract(zh, cdst.file, csrc[-1])
+
+            else:
+                with open_archive_path(csrc) as zh:
+                    try:
+                        zh.getinfo(csrc[-1])
+                    except KeyError:
+                        base = csrc[-1] + '/'
+                        entries = [e for e in zh.namelist() if e.startswith(base)]
+                    else:
+                        entries = [csrc[-1]]
+
+                    with open_archive_path(cdst, 'w') as zh2:
+                        cut = len(csrc[-1])
+                        for entry in entries:
+                            zinfo = zh.getinfo(entry)
+                            zinfo.filename = cdst[-1] + entry[cut:]
+                            zh2.writestr(zinfo, zh.read(entry),
+                                         compress_type=zinfo.compress_type,
+                                         compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
+                                         )
+
+    except FSError:
+        raise
+    except Exception as exc:
+        raise _map_exc(exc, cdst) from exc
 
 
 def _open_archive_path_filter(path, filters):
