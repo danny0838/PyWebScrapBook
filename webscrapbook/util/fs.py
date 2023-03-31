@@ -17,6 +17,14 @@ from datetime import datetime
 
 from . import util
 
+ZIP_SUBPATH_NONE = 0
+ZIP_SUBPATH_INVALID = 1
+ZIP_SUBPATH_FILE = 2
+ZIP_SUBPATH_DIR = 3
+ZIP_SUBPATH_DIR_IMPLICIT = 4
+ZIP_SUBPATH_DIR_ROOT = 5
+ZIP_SUBPATH_MIXED = 6
+
 
 class FSError(Exception):
     def __init__(self, cpath):
@@ -339,11 +347,12 @@ def mkdir(cpath):
         else:
             zh = None
             with open_archive_path(cpath) as zh0:
-                if zip_has(zh0, cpath[-1], type='file'):
+                cur = zip_check_subpath(zh0, cpath[-1])
+                if cur == ZIP_SUBPATH_INVALID:
+                    raise FSBadParentError(cpath)
+                elif cur == ZIP_SUBPATH_FILE:
                     raise FSFileExistsError(cpath)
-
-                # skip if the folder already exists
-                if zip_has(zh0, cpath[-1], type='dir'):
+                elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_ROOT):
                     return
 
                 # append for a non-nested zip
@@ -383,13 +392,15 @@ def mkzip(cpath):
         else:
             zh = None
             with open_archive_path(cpath) as zh0:
-                if zip_has(zh0, cpath[-1], type='dir'):
+                cur = zip_check_subpath(zh0, cpath[-1])
+                if cur == ZIP_SUBPATH_INVALID:
+                    raise FSBadParentError(cpath)
+                elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_IMPLICIT, ZIP_SUBPATH_DIR_ROOT):
                     raise FSIsADirectoryError(cpath)
 
                 # append for a nonexistent path in a non-nested zip
-                if len(cpath) == 2:
-                    if not zip_has(zh0, cpath[-1], type='file'):
-                        zh = zipfile.ZipFile(cpath[0], 'a')
+                if len(cpath) == 2 and cur == ZIP_SUBPATH_NONE:
+                    zh = zipfile.ZipFile(cpath[0], 'a')
 
             if zh is None:
                 zh = open_archive_path(cpath, 'w')
@@ -443,13 +454,15 @@ def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
         else:
             zh = None
             with open_archive_path(cpath) as zh0:
-                if zip_has(zh0, cpath[-1], type='dir'):
+                cur = zip_check_subpath(zh0, cpath[-1])
+                if cur == ZIP_SUBPATH_INVALID:
+                    raise FSBadParentError(cpath)
+                elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_IMPLICIT, ZIP_SUBPATH_DIR_ROOT):
                     raise FSIsADirectoryError(cpath)
 
                 # append for a nonexistent path in a non-nested zip
-                if len(cpath) == 2:
-                    if not zip_has(zh0, cpath[-1], type='file'):
-                        zh = zipfile.ZipFile(cpath[0], 'a')
+                if len(cpath) == 2 and cur == ZIP_SUBPATH_NONE:
+                    zh = zipfile.ZipFile(cpath[0], 'a')
 
             if zh is None:
                 zh = open_archive_path(cpath, 'w')
@@ -516,14 +529,23 @@ def _check_move_copy(csrc, cdst):
 
     Returns:
         cdst: the possibly changed cdst
+        zstsrc: path stat in the zip of csrc
+        zstdst: path stat in the zip of cdst
     """
+    zstsrc = None
+    zstdst = None
+
     if len(csrc) == 1:
         if not os.path.lexists(csrc.file):
             raise FSEntryNotFoundError(csrc)
     else:
         with open_archive_path(csrc) as zh:
-            if not zip_has(zh, csrc[-1]):
+            cur = zip_check_subpath(zh, csrc[-1])
+            if cur in (ZIP_SUBPATH_NONE, ZIP_SUBPATH_DIR_ROOT):
                 raise FSEntryNotFoundError(csrc)
+            elif cur == ZIP_SUBPATH_INVALID:
+                raise FSBadParentError(csrc)
+            zstsrc = cur
 
     if len(cdst) == 1:
         if os.path.lexists(cdst.file):
@@ -538,22 +560,24 @@ def _check_move_copy(csrc, cdst):
                 raise FSEntryExistsError(cdst)
     else:
         with open_archive_path(cdst) as zh:
-            # target is a file
-            if zip_has(zh, cdst[-1], type='file'):
+            cur = zip_check_subpath(zh, cdst[-1])
+            if cur == ZIP_SUBPATH_INVALID:
+                raise FSBadParentError(cdst)
+            elif cur == ZIP_SUBPATH_FILE:
                 raise FSFileExistsError(cdst)
-
-            # target is a directory, treat as to target/<basename>
-            if zip_has(zh, cdst[-1], type='dir'):
+            elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_IMPLICIT, ZIP_SUBPATH_DIR_ROOT):
+                # target is an existing directory, treat as to target/<basename>
                 cdst = CPath([
                     *cdst[:-1],
                     cdst[-1] + ('/' if cdst[-1] else '') + os.path.basename(csrc[-1]),
                 ])
 
                 # recheck if target exists
-                if zip_has(zh, cdst[-1], type='any'):
+                if zip_check_subpath(zh, cdst[-1]) in (ZIP_SUBPATH_FILE, ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_IMPLICIT):
                     raise FSEntryExistsError(cdst)
+            zstdst = cur
 
-    return cdst
+    return cdst, zstsrc, zstdst
 
 
 def move(csrc, cdst):
@@ -561,7 +585,7 @@ def move(csrc, cdst):
     csrc = CPath(csrc)
     cdst = CPath(cdst)
     try:
-        cdst = _check_move_copy(csrc, cdst)
+        cdst, zstsrc, zstdst = _check_move_copy(csrc, cdst)
 
         if len(csrc) == 1:
             if len(cdst) == 1:
@@ -595,24 +619,21 @@ def move(csrc, cdst):
                 raise FSMoveAcrossZipError(cdst)
 
             else:
-                with open_archive_path(csrc) as zh:
-                    try:
-                        zh.getinfo(csrc[-1])
-                    except KeyError:
+                with open_archive_path(csrc) as zh,\
+                     open_archive_path(cdst, 'w') as zh2:
+                    if zstsrc == ZIP_SUBPATH_FILE:
+                        entries = [csrc[-1]]
+                    else:
                         base = csrc[-1] + '/'
                         entries = [e for e in zh.namelist() if e.startswith(base)]
-                    else:
-                        entries = [csrc[-1]]
-
-                    with open_archive_path(cdst, 'w') as zh2:
-                        cut = len(csrc[-1])
-                        for entry in entries:
-                            zinfo = zh.getinfo(entry)
-                            zinfo.filename = cdst[-1] + entry[cut:]
-                            zh2.writestr(zinfo, zh.read(entry),
-                                         compress_type=zinfo.compress_type,
-                                         compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
-                                         )
+                    cut = len(csrc[-1])
+                    for entry in entries:
+                        zinfo = zh.getinfo(entry)
+                        zinfo.filename = cdst[-1] + entry[cut:]
+                        zh2.writestr(zinfo, zh.read(entry),
+                                     compress_type=zinfo.compress_type,
+                                     compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
+                                     )
 
                 with open_archive_path(csrc, 'w', entries):
                     pass
@@ -628,7 +649,7 @@ def copy(csrc, cdst):
     csrc = CPath(csrc)
     cdst = CPath(cdst)
     try:
-        cdst = _check_move_copy(csrc, cdst)
+        cdst, zstsrc, zstdst = _check_move_copy(csrc, cdst)
 
         if len(csrc) == 1:
             if len(cdst) == 1:
@@ -671,24 +692,21 @@ def copy(csrc, cdst):
                     zip_extract(zh, cdst.file, csrc[-1])
 
             else:
-                with open_archive_path(csrc) as zh:
-                    try:
-                        zh.getinfo(csrc[-1])
-                    except KeyError:
+                with open_archive_path(csrc) as zh,\
+                     open_archive_path(cdst, 'w') as zh2:
+                    if zstsrc == ZIP_SUBPATH_FILE:
+                        entries = [csrc[-1]]
+                    else:
                         base = csrc[-1] + '/'
                         entries = [e for e in zh.namelist() if e.startswith(base)]
-                    else:
-                        entries = [csrc[-1]]
-
-                    with open_archive_path(cdst, 'w') as zh2:
-                        cut = len(csrc[-1])
-                        for entry in entries:
-                            zinfo = zh.getinfo(entry)
-                            zinfo.filename = cdst[-1] + entry[cut:]
-                            zh2.writestr(zinfo, zh.read(entry),
-                                         compress_type=zinfo.compress_type,
-                                         compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
-                                         )
+                    cut = len(csrc[-1])
+                    for entry in entries:
+                        zinfo = zh.getinfo(entry)
+                        zinfo.filename = cdst[-1] + entry[cut:]
+                        zh2.writestr(zinfo, zh.read(entry),
+                                     compress_type=zinfo.compress_type,
+                                     compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
+                                     )
 
     except FSError:
         raise
@@ -1029,49 +1047,54 @@ def zip_listdir(zip, subpath, recursive=False):
                 yield info
 
 
-def zip_has(zip, subpath, type='any'):
-    """Check if a directory or file exists in the ZIP.
-
-    NOTE: It is possible that entry mydir/ does not exist while mydir/foo.bar
-    exists. Check for matching subentries to make sure whether the implicit
-    directory exists.
+def zip_check_subpath(zip, subpath):
+    """Check what is at the subpath in the ZIP.
 
     Args:
         zip: path, file-like object, or zipfile.ZipFile
         subpath: the subpath in the ZIP, with or without trailing slash
-        type: 'dir', 'file', or 'any'
     """
-    if type not in ('dir', 'file', 'any'):
-        raise ValueError(f'Invalid type: "{type}"')
-
     base = subpath.rstrip('/')
+
+    # treat root as directory
     if base == '':
-        return True if type != 'file' else False
+        return ZIP_SUBPATH_DIR_ROOT
 
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
-        if type in ('file', 'any'):
+        # check if an ancestor is a file
+        parts = base.split('/')
+        for i in range(len(parts) - 1):
+            chk = '/'.join(parts[:i + 1])
             try:
-                zh.getinfo(base)
+                zh.getinfo(chk)
             except KeyError:
                 pass
             else:
-                return True
+                return ZIP_SUBPATH_INVALID
 
+        # check file
+        try:
+            zh.getinfo(base)
+        except KeyError:
+            pass
+        else:
+            return ZIP_SUBPATH_FILE
+
+        # check explicit directory
         base += '/'
-        if type in ('dir', 'any'):
-            try:
-                zh.getinfo(base)
-            except KeyError:
-                pass
-            else:
-                return True
+        try:
+            zh.getinfo(base)
+        except KeyError:
+            pass
+        else:
+            return ZIP_SUBPATH_DIR
 
-            # check for an implicit directory
-            for path in zh.namelist():
-                if path.startswith(base):
-                    return True
+        # check descendants for an implicit directory
+        for path in zh.namelist():
+            if path.startswith(base):
+                return ZIP_SUBPATH_DIR_IMPLICIT
 
-    return False
+    return ZIP_SUBPATH_NONE
 
 
 def zip_compress(zip, filename, subpath, filter=None):

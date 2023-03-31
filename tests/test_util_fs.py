@@ -841,8 +841,6 @@ class TestFsUtilBasicMixin:
         with self.assertRaises(exc):
             self.func(dst)
 
-    # @FIXME:
-    @unittest.expectedFailure
     def test_zip_bad_parent1(self, exc=util.fs.FSBadParentError):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
@@ -852,8 +850,6 @@ class TestFsUtilBasicMixin:
         with self.assertRaises(exc):
             self.func(dst)
 
-    # @FIXME:
-    @unittest.expectedFailure
     def test_zip_bad_parent2(self, exc=util.fs.FSBadParentError):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
@@ -974,7 +970,7 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [zfile, 'deep/subdir']
         util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh:
-            self.assertEqual(zh.namelist(), ['deep/subdir/somefile.txt'])
+            self.assertEqual(zh.namelist(), ['deep/subdir/somefile.txt', 'deep/subdir/'])
 
     def test_zip_dir_root(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1937,6 +1933,17 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
                 {'deep/subdir/', 'deep/subdir/file.txt'},
             )
 
+    def test_zip_dir_root_to_nonexist(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), '']
+        src2 = [os.path.join(root, 'archive.zip'), 'subdir/file.txt']
+        dst = [os.path.join(root, 'archive2.zip'), 'deep/subdir2']
+        util.fs.mkzip(src[0])
+        util.fs.save(src2, self.dummy_bytes)
+        util.fs.mkzip(dst[0])
+        with self.assertRaises(util.fs.FSEntryNotFoundError):
+            util.fs.move(src, dst)
+
     # inherited
     def test_bad_parent(self):
         super().test_bad_parent(exc=util.fs.FSEntryNotFoundError)
@@ -2353,6 +2360,16 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': src}, {'file': dst})
         self.assert_file_equal({'file': src2}, {'file': dst2})
 
+    def test_zip_to_disk_dir_root_to_nonexist(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), '']
+        src2 = [os.path.join(root, 'archive.zip'), 'subdir/file.txt']
+        dst = os.path.join(root, 'deep', 'newdir')
+        util.fs.mkzip(src[0])
+        util.fs.save(src2, self.dummy_bytes)
+        with self.assertRaises(util.fs.FSEntryNotFoundError):
+            util.fs.copy(src, dst)
+
     def test_zip_nonexist(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/nonexist']
@@ -2509,6 +2526,16 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst)
         util.fs.mkdir(dst2)
         with self.assertRaises(util.fs.FSEntryExistsError):
+            util.fs.copy(src, dst)
+
+    def test_zip_dir_root_to_nonexist(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), '']
+        src2 = [os.path.join(root, 'archive.zip'), 'subdir/file.txt']
+        dst = [os.path.join(root, 'archive2.zip'), 'deep/subdir2']
+        util.fs.mkzip(src[0])
+        util.fs.save(src2, self.dummy_bytes)
+        with self.assertRaises(util.fs.FSEntryNotFoundError):
             util.fs.copy(src, dst)
 
     # inherited
@@ -2944,51 +2971,35 @@ class TestHelpers(unittest.TestCase):
                 ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
             })
 
-    def test_zip_has(self):
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+    def test_zip_check_subpath(self):
+        zfile = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr('file.txt', '123456')
             zh.writestr('explicit_folder/', '')
             zh.writestr('implicit_folder/.gitkeep', '1234')
 
-        self.assertTrue(util.fs.zip_has(zip_filename, '', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, '/', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'file.txt', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'file.txt/', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'explicit_folder', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'explicit_folder/', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist.foo', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist/', type='dir'))
+        self.assertEqual(util.fs.zip_check_subpath(zfile, ''), util.fs.ZIP_SUBPATH_DIR_ROOT)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, '/'), util.fs.ZIP_SUBPATH_DIR_ROOT)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'file.txt'), util.fs.ZIP_SUBPATH_FILE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'file.txt/'), util.fs.ZIP_SUBPATH_FILE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'explicit_folder'), util.fs.ZIP_SUBPATH_DIR)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'explicit_folder/'), util.fs.ZIP_SUBPATH_DIR)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder'), util.fs.ZIP_SUBPATH_DIR_IMPLICIT)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/'), util.fs.ZIP_SUBPATH_DIR_IMPLICIT)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/.gitkeep'), util.fs.ZIP_SUBPATH_FILE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/.gitkeep/'), util.fs.ZIP_SUBPATH_FILE)
 
-        self.assertFalse(util.fs.zip_has(zip_filename, '', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, '/', type='file'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'file.txt', type='file'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'file.txt/', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'explicit_folder', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'explicit_folder/', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder/', type='file'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='file'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist.foo', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist/', type='file'))
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'explicit_folder/nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'explicit_folder/nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/nonexist/'), util.fs.ZIP_SUBPATH_NONE)
 
-        self.assertTrue(util.fs.zip_has(zip_filename, '', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, '/', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'file.txt', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'file.txt/', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'explicit_folder', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'explicit_folder/', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='any'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist.foo', type='any'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist/', type='any'))
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'file.txt/nonexist'), util.fs.ZIP_SUBPATH_INVALID)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'file.txt/nonexist/'), util.fs.ZIP_SUBPATH_INVALID)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/.gitkeep/nonexist'), util.fs.ZIP_SUBPATH_INVALID)
+        self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/.gitkeep/nonexist/'), util.fs.ZIP_SUBPATH_INVALID)
 
     def test_zip_compress01(self):
         """directory"""
