@@ -334,13 +334,13 @@ def view_in_explorer(cpath):
             launch(os.path.dirname(path))
 
 
-def mkdir(cpath):
+def mkdir(cpath, mode=0o777, exist_ok=True):
     """Create a directory at target."""
     cpath = CPath(cpath)
     try:
         if len(cpath) == 1:
             try:
-                os.makedirs(cpath.file, exist_ok=True)
+                os.makedirs(cpath.file, mode, exist_ok)
             except (FileNotFoundError, NotADirectoryError) as exc:
                 raise FSBadParentError(cpath) from exc
 
@@ -353,7 +353,9 @@ def mkdir(cpath):
                 elif cur == ZIP_SUBPATH_FILE:
                     raise FSFileExistsError(cpath)
                 elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_ROOT):
-                    return
+                    if exist_ok:
+                        return
+                    raise FSDirExistsError(cpath)
 
                 # append for a non-nested zip
                 if len(cpath) == 2:
@@ -364,6 +366,8 @@ def mkdir(cpath):
 
             with zh as zh:
                 zinfo = zipfile.ZipInfo(cpath[-1] + '/', time.localtime())
+                zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16  # Unix attributes
+                zinfo.external_attr |= 0x10  # MS-DOS directory flag
                 zinfo.compress_type = zipfile.ZIP_STORED
                 zh.writestr(zinfo, b'')
     except FSError:

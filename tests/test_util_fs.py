@@ -906,12 +906,27 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst)
         self.assertTrue(os.path.isdir(dst))
 
+    @unittest.skipUnless(os.name == 'posix', 'requires POSIX')
+    def test_nonexist_mode(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'deep', 'subdir')
+        util.fs.mkdir(dst, mode=0o660)
+        self.assertTrue(os.path.isdir(dst))
+        self.assertEqual(oct(os.stat(dst).st_mode & 0o777), oct(0o660))
+
     def test_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'subdir')
         os.makedirs(dst, exist_ok=True)
         util.fs.mkdir(dst)
         self.assertTrue(os.path.isdir(dst))
+
+    def test_dir_not_exist_ok(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'deep', 'subdir')
+        os.makedirs(dst, exist_ok=True)
+        with self.assertRaises(util.fs.FSEntryExistsError):
+            util.fs.mkdir(dst, exist_ok=False)
 
     def test_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -949,6 +964,17 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
                     zinfo2 = zh2.getinfo('deep/subdir/')
                     self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
 
+    def test_zip_nonexist_mode(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w'):
+            pass
+        dst = [zfile, 'deep/subdir']
+        util.fs.mkdir(dst, mode=0o660)
+        with zipfile.ZipFile(zfile) as zh:
+            self.assertEqual(zh.namelist(), ['deep/subdir/'])
+            self.assertEqual(oct(zip_mode(zh.getinfo('deep/subdir/'))), oct(0o40660))
+
     def test_zip_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
@@ -962,6 +988,15 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
             zinfo = zh.getinfo('deep/subdir/')
             self.assertEqual(zip_timestamp(zinfo), zip_timestamp((1980, 1, 2, 0, 0, 0)))
 
+    def test_zip_dir_not_exist_ok(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/', '')
+        dst = [zfile, 'deep/subdir']
+        with self.assertRaises(util.fs.FSDirExistsError):
+            util.fs.mkdir(dst, exist_ok=False)
+
     def test_zip_dir_implicit(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
@@ -969,6 +1004,16 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
             zh.writestr('deep/subdir/somefile.txt', 'abc')
         dst = [zfile, 'deep/subdir']
         util.fs.mkdir(dst)
+        with zipfile.ZipFile(zfile) as zh:
+            self.assertEqual(zh.namelist(), ['deep/subdir/somefile.txt', 'deep/subdir/'])
+
+    def test_zip_dir_implicit_not_exist_ok(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/somefile.txt', 'abc')
+        dst = [zfile, 'deep/subdir']
+        util.fs.mkdir(dst, exist_ok=False)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/somefile.txt', 'deep/subdir/'])
 
@@ -981,6 +1026,15 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), [])
+
+    def test_zip_dir_root_not_exist_ok(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w'):
+            pass
+        dst = [zfile, '']
+        with self.assertRaises(util.fs.FSDirExistsError):
+            util.fs.mkdir(dst, exist_ok=False)
 
     def test_zip_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
