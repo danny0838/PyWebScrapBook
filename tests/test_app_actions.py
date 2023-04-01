@@ -119,79 +119,78 @@ class TestActions(unittest.TestCase):
 
         datas = [self.get_file_data(data, follow_symlinks=not is_move) for data in datas]
         for i in range(1, len(datas)):
-            self.assertEqual(datas[0]['bytes'], datas[i]['bytes'])
-            if (
-                is_move
-                and isinstance(datas[0]['stat'], os.stat_result)
-                and isinstance(datas[i]['stat'], os.stat_result)
-            ):
-                self.assertEqual(datas[0]['stat'], datas[i]['stat'])
-                return
+            self.assertEqual(datas[0].get('bytes'), datas[i].get('bytes'), msg='bytes not equal')
 
-            if isinstance(datas[0]['stat'], os.stat_result):
-                if isinstance(datas[i]['stat'], os.stat_result):
+            st0 = datas[0].get('stat')
+            sti = datas[i].get('stat')
+
+            if isinstance(st0, os.stat_result):
+                if isinstance(sti, os.stat_result):
                     stat0 = {
-                        'mode': datas[0]['stat'].st_mode,
-                        'uid': datas[0]['stat'].st_uid,
-                        'gid': datas[0]['stat'].st_gid,
-                        'mtime': datas[0]['stat'].st_mtime,
+                        'mode': st0.st_mode,
+                        'uid': st0.st_uid,
+                        'gid': st0.st_gid,
+                        'mtime': st0.st_mtime,
                     }
                 else:
                     stat0 = {
-                        'mtime': datas[0]['stat'].st_mtime,
+                        'mtime': st0.st_mtime,
                     }
 
-            elif isinstance(datas[0]['stat'], zipfile.ZipInfo):
-                if isinstance(datas[i]['stat'], os.stat_result):
+            elif isinstance(st0, zipfile.ZipInfo):
+                if isinstance(sti, zipfile.ZipInfo):
                     stat0 = {
-                        'mtime': zip_timestamp(datas[0]['stat']),
+                        'mtime': zip_timestamp(st0),
+                        'compress_type': st0.compress_type,
+                        'comment': st0.comment,
+                        'extra': st0.extra,
+                        'flag_bits': st0.flag_bits & ~excluded_flag_bits,
+                        'internal_attr': st0.internal_attr,
+                        'external_attr': st0.external_attr,
                     }
                 else:
                     stat0 = {
-                        'mtime': zip_timestamp(datas[0]['stat']),
-                        'compress_type': datas[0]['stat'].compress_type,
-                        'comment': datas[0]['stat'].comment,
-                        'extra': datas[0]['stat'].extra,
-                        'flag_bits': datas[0]['stat'].flag_bits & ~excluded_flag_bits,
-                        'internal_attr': datas[0]['stat'].internal_attr,
-                        'external_attr': datas[0]['stat'].external_attr,
+                        'mtime': zip_timestamp(st0),
                     }
+            else:
+                stat0 = {}
 
-            if isinstance(datas[i]['stat'], os.stat_result):
-                if isinstance(datas[0]['stat'], os.stat_result):
+            if isinstance(sti, os.stat_result):
+                if isinstance(st0, os.stat_result):
                     stati = {
-                        'mode': datas[i]['stat'].st_mode,
-                        'uid': datas[i]['stat'].st_uid,
-                        'gid': datas[i]['stat'].st_gid,
-                        'mtime': datas[i]['stat'].st_mtime,
+                        'mode': sti.st_mode,
+                        'uid': sti.st_uid,
+                        'gid': sti.st_gid,
+                        'mtime': sti.st_mtime,
                     }
                 else:
                     stati = {
-                        'mtime': datas[i]['stat'].st_mtime,
+                        'mtime': sti.st_mtime,
                     }
 
-            elif isinstance(datas[i]['stat'], zipfile.ZipInfo):
-                if isinstance(datas[0]['stat'], os.stat_result):
+            elif isinstance(sti, zipfile.ZipInfo):
+                if isinstance(st0, zipfile.ZipInfo):
                     stati = {
-                        'mtime': zip_timestamp(datas[i]['stat']),
+                        'mtime': zip_timestamp(sti),
+                        'compress_type': sti.compress_type,
+                        'comment': sti.comment,
+                        'extra': sti.extra,
+                        'flag_bits': sti.flag_bits & ~excluded_flag_bits,
+                        'internal_attr': sti.internal_attr,
+                        'external_attr': sti.external_attr,
                     }
                 else:
                     stati = {
-                        'mtime': zip_timestamp(datas[i]['stat']),
-                        'compress_type': datas[i]['stat'].compress_type,
-                        'comment': datas[i]['stat'].comment,
-                        'extra': datas[i]['stat'].extra,
-                        'flag_bits': datas[i]['stat'].flag_bits & ~excluded_flag_bits,
-                        'internal_attr': datas[i]['stat'].internal_attr,
-                        'external_attr': datas[i]['stat'].external_attr,
+                        'mtime': zip_timestamp(sti),
                     }
+            else:
+                stati = {}
 
-            for i in stat0:
-                with self.subTest(i=i):
-                    if i == 'mtime':
-                        self.assertAlmostEqual(stat0[i], stati[i], delta=2)
-                    else:
-                        self.assertEqual(stat0[i], stati[i])
+            for i in {*stat0, *stati}:
+                if i == 'mtime':
+                    self.assertAlmostEqual(stat0.get(i), stati.get(i), delta=2, msg=f"stat['{i}'] not equal")
+                else:
+                    self.assertEqual(stat0.get(i), stati.get(i), msg=f"stat['{i}'] not equal")
 
     def parse_sse(self, content):
         """Quick parser of SSE.
@@ -5407,11 +5406,12 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip:
+            with zipfile.ZipFile(self.test_zip) as zh:
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
-                    {'zip': zip, 'filename': 'deep/newdir/test2.txt'},
+                    {'zip': zh, 'filename': 'deep/newdir/test2.txt'},
                 )
+                self.assertEqual(zh.getinfo('deep/newdir/test2.txt').compress_type, zipfile.ZIP_DEFLATED)
 
     def test_disk_to_zip_dir(self):
         with app.test_client() as c:
@@ -5429,16 +5429,16 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip:
+            with zipfile.ZipFile(self.test_zip) as zh:
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir')},
-                    {'zip': zip, 'filename': 'deep/newdir/'},
+                    {'zip': zh, 'filename': 'deep/newdir/'},
                 )
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
-                    {'zip': zip, 'filename': 'deep/newdir/test.txt'},
+                    {'zip': zh, 'filename': 'deep/newdir/test.txt'},
                 )
-                self.assertEqual(zip.getinfo('deep/newdir/test.txt').compress_type, zipfile.ZIP_DEFLATED)
+                self.assertEqual(zh.getinfo('deep/newdir/test.txt').compress_type, zipfile.ZIP_DEFLATED)
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     @mock.patch('sys.stderr', io.StringIO())
@@ -5478,18 +5478,18 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(500, 'Fail to copy some files.')
 
-            with zipfile.ZipFile(self.test_zip) as zip:
+            with zipfile.ZipFile(self.test_zip) as zh:
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir')},
-                    {'zip': zip, 'filename': 'clone/junction/'},
+                    {'zip': zh, 'filename': 'clone/junction/'},
                 )
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
-                    {'zip': zip, 'filename': 'clone/junction/test.txt'},
+                    {'zip': zh, 'filename': 'clone/junction/test.txt'},
                 )
 
                 with self.assertRaises(KeyError):
-                    zip.getinfo('clone/junction2/')
+                    zh.getinfo('clone/junction2/')
 
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
@@ -5525,18 +5525,18 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(500, 'Fail to copy some files.')
 
-            with zipfile.ZipFile(self.test_zip) as zip:
+            with zipfile.ZipFile(self.test_zip) as zh:
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir')},
-                    {'zip': zip, 'filename': 'clone/symlink/'},
+                    {'zip': zh, 'filename': 'clone/symlink/'},
                 )
                 self.assert_file_equal(
                     {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
-                    {'zip': zip, 'filename': 'clone/symlink/test.txt'},
+                    {'zip': zh, 'filename': 'clone/symlink/test.txt'},
                 )
 
                 with self.assertRaises(KeyError):
-                    zip.getinfo('clone/symlink2/')
+                    zh.getinfo('clone/symlink2/')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_nonexist(self, mock_abort):
@@ -5642,9 +5642,9 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip:
+            with zipfile.ZipFile(self.test_zip) as zh:
                 self.assert_file_equal(
-                    {'zip': zip, 'filename': 'subdir/index.html'},
+                    {'zip': zh, 'filename': 'subdir/index.html'},
                     {'file': os.path.join(self.test_dir, 'deep', 'newdir', 'index2.html')},
                 )
 
@@ -5664,13 +5664,13 @@ class TestCopy(TestActions):
                 'data': 'Command run successfully.',
             })
 
-            with zipfile.ZipFile(self.test_zip) as zip:
+            with zipfile.ZipFile(self.test_zip) as zh:
                 self.assert_file_equal(
-                    {'zip': zip, 'filename': 'subdir/'},
+                    {'zip': zh, 'filename': 'subdir/'},
                     {'file': os.path.join(self.test_dir, 'deep', 'newdir')},
                 )
                 self.assert_file_equal(
-                    {'zip': zip, 'filename': 'subdir/index.html'},
+                    {'zip': zh, 'filename': 'subdir/index.html'},
                     {'file': os.path.join(self.test_dir, 'deep', 'newdir', 'index.html')},
                 )
 
