@@ -10,7 +10,7 @@ import zipfile
 from datetime import datetime
 
 from webscrapbook import util
-from webscrapbook.util.fs import zip_timestamp
+from webscrapbook.util.fs import zip_mode, zip_timestamp
 
 from . import (
     ROOT_DIR,
@@ -3069,12 +3069,24 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src),
             )
             self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/'))),
+                oct(os.stat(src).st_mode & 0xFFFF),
+            )
+            self.assertEqual(
                 zip_timestamp(zh.getinfo('myfolder/subfolder/')),
                 os.path.getmtime(src2),
             )
             self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/subfolder/'))),
+                oct(os.stat(src2).st_mode & 0xFFFF),
+            )
+            self.assertEqual(
                 zip_timestamp(zh.getinfo('myfolder/subfolder/subfolderfile.txt')),
                 os.path.getmtime(src3),
+            )
+            self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/subfolder/subfolderfile.txt'))),
+                oct(os.stat(src3).st_mode & 0xFFFF),
             )
             self.assertEqual(
                 zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'),
@@ -3083,6 +3095,10 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(
                 zip_timestamp(zh.getinfo('myfolder/subfile.txt')),
                 os.path.getmtime(src4),
+            )
+            self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/subfile.txt'))),
+                oct(os.stat(src4).st_mode & 0xFFFF),
             )
             self.assertEqual(
                 zh.read('myfolder/subfile.txt').decode('UTF-8'),
@@ -3129,8 +3145,16 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src2),
             )
             self.assertEqual(
+                oct(zip_mode(zh.getinfo('subfolder/'))),
+                oct(os.stat(src2).st_mode & 0xFFFF),
+            )
+            self.assertEqual(
                 zip_timestamp(zh.getinfo('subfolder/subfolderfile.txt')),
                 os.path.getmtime(src3),
+            )
+            self.assertEqual(
+                oct(zip_mode(zh.getinfo('subfolder/subfolderfile.txt'))),
+                oct(os.stat(src3).st_mode & 0xFFFF),
             )
             self.assertEqual(
                 zh.read('subfolder/subfolderfile.txt').decode('UTF-8'),
@@ -3139,6 +3163,10 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(
                 zip_timestamp(zh.getinfo('subfile.txt')),
                 os.path.getmtime(src4),
+            )
+            self.assertEqual(
+                oct(zip_mode(zh.getinfo('subfile.txt'))),
+                oct(os.stat(src4).st_mode & 0xFFFF),
             )
             self.assertEqual(
                 zh.read('subfile.txt').decode('UTF-8'),
@@ -3185,12 +3213,24 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src),
             )
             self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/'))),
+                oct(os.stat(src).st_mode & 0xFFFF),
+            )
+            self.assertEqual(
                 zip_timestamp(zh.getinfo('myfolder/subfolder/')),
                 os.path.getmtime(src2),
             )
             self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/subfolder/'))),
+                oct(os.stat(src2).st_mode & 0xFFFF),
+            )
+            self.assertEqual(
                 zip_timestamp(zh.getinfo('myfolder/subfolder/subfolderfile.txt')),
                 os.path.getmtime(src3),
+            )
+            self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfolder/subfolder/subfolderfile.txt'))),
+                oct(os.stat(src3).st_mode & 0xFFFF),
             )
             self.assertEqual(
                 zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'),
@@ -3220,8 +3260,44 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src),
             )
             self.assertEqual(
+                oct(zip_mode(zh.getinfo('myfile.txt'))),
+                oct(os.stat(src).st_mode & 0xFFFF),
+            )
+            self.assertEqual(
                 zh.read('myfile.txt').decode('UTF-8'),
                 'ABC中文'
+            )
+
+    def test_zip_compress_auto_compress_type(self):
+        """Auto determime compress type"""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'folder')
+        src2 = os.path.join(root, 'folder', 'image.jpg')
+        src3 = os.path.join(root, 'folder', 'text.txt')
+        zfile = os.path.join(root, 'archive.zip')
+        os.makedirs(src)
+        with open(src2, 'w', encoding='UTF-8') as fh:
+            fh.write('ABCDEF 中文')
+        with open(src3, 'w', encoding='UTF-8') as fh:
+            fh.write('123456 中文')
+
+        util.fs.zip_compress(zfile, src, '')
+
+        with zipfile.ZipFile(zfile) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'image.jpg',
+                    'text.txt',
+                },
+            )
+            self.assertEqual(
+                zh.getinfo('image.jpg').compress_type,
+                zipfile.ZIP_STORED,
+            )
+            self.assertEqual(
+                zh.getinfo('text.txt').compress_type,
+                zipfile.ZIP_DEFLATED,
             )
 
     def test_zip_extract_root(self):

@@ -1142,10 +1142,10 @@ def zip_compress(zip, filename, subpath, filter=None):
             dst = subpath
             if dst:
                 try:
-                    ts = time.localtime(os.stat(src).st_mtime)[:-3]
-                    zh.writestr(zipfile.ZipInfo(dst, ts), '')
+                    zinfo = zipfile.ZipInfo.from_file(src, dst)
+                    zh.writestr(zinfo, b'')
                 except OSError as why:
-                    errors.append((src, dst, str(why)))
+                    errors.append((src, dst, why))
 
             filter = {os.path.normcase(os.path.join(filename, f)) for f in (filter or [])}
             filter_d = {os.path.join(f, '') for f in filter}
@@ -1167,10 +1167,10 @@ def zip_compress(zip, filename, subpath, filter=None):
                         dst = dst.replace(os.sep, '/')
                     dst = subpath + dst + '/'
                     try:
-                        ts = time.localtime(os.stat(src).st_mtime)[:-3]
-                        zh.writestr(zipfile.ZipInfo(dst, ts), '')
+                        zinfo = zipfile.ZipInfo.from_file(src, dst)
+                        zh.writestr(zinfo, b'')
                     except OSError as why:
-                        errors.append((src, dst, str(why)))
+                        errors.append((src, dst, why))
 
                 for file in files:
                     src = os.path.join(root, file)
@@ -1187,14 +1187,14 @@ def zip_compress(zip, filename, subpath, filter=None):
                         dst = dst.replace(os.sep, '/')
                     dst = subpath + dst
                     try:
-                        zh.write(src, dst, **zip_compression_params(mimetype=mimetypes.guess_type(dst)[0]))
+                        zh.write(src, dst, **zip_compression_params(mimetypes.guess_type(dst)[0]))
                     except OSError as why:
-                        errors.append((src, dst, str(why)))
+                        errors.append((src, dst, why))
 
             if errors:
                 raise shutil.Error(errors)
         else:
-            zh.write(filename, subpath, **zip_compression_params(mimetype=mimetypes.guess_type(subpath)[0]))
+            zh.write(filename, subpath, **zip_compression_params(mimetypes.guess_type(subpath)[0]))
 
 
 def zip_extract(zip, dst, subpath='', tzoffset=None):
