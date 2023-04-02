@@ -4530,6 +4530,20 @@ class TestMove(TestActions):
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    def test_dir_to_child(self, mock_abort):
+        os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
+
+        with app.test_client() as c:
+            c.post('/temp/subdir', data={
+                'token': token(c),
+                'a': 'move',
+                'f': 'json',
+                'target': '/temp/subdir/subdir2',
+            })
+
+            mock_abort.assert_called_once_with(400, 'Unable to move into self.')
+
+    @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip(self, mock_abort):
         with app.test_client() as c:
             c.post('/temp/subdir/test.txt', data={

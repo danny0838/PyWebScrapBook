@@ -1639,7 +1639,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir', 'folder', 'subfolder')
         util.fs.mkdir(src)
         util.fs.save(src2, self.dummy_bytes)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change
@@ -1661,7 +1661,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir', 'folder')
         util.fs.mkdir(src)
         util.fs.save(src2, self.dummy_bytes)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change
@@ -1670,8 +1670,6 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             {os.path.join(src, ''), src2},
         )
 
-    # @FIXME:
-    @unittest.expectedFailure
     @unittest.skipUnless(os.path.normcase('ABC') == os.path.normcase('abc'),
                          'requires case insensitive filesystem such as Windows')
     def test_dir_to_child_ci(self):
@@ -1681,7 +1679,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir', 'Folder', 'subfolder')
         util.fs.mkdir(src)
         util.fs.save(src2, self.dummy_bytes)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change
@@ -1690,8 +1688,6 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             {os.path.join(src, ''), src2},
         )
 
-    # @FIXME:
-    @unittest.expectedFailure
     @unittest.skipUnless(os.path.normcase('ABC') == os.path.normcase('abc'),
                          'requires case insensitive filesystem such as Windows')
     def test_dir_to_child_self_ci(self):
@@ -1701,7 +1697,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'Subdir', 'folder')
         util.fs.mkdir(src)
         util.fs.save(src2, self.dummy_bytes)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change
@@ -1929,8 +1925,6 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.move(src, dst)
 
-    # @FIXME:
-    @unittest.expectedFailure
     def test_zip_dir_to_child1(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/subdir']
@@ -1939,7 +1933,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
         util.fs.save(src2, self.dummy_bytes)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change
@@ -1949,15 +1943,13 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
                 {'deep/subdir/', 'deep/subdir/file.txt'},
             )
 
-    # @FIXME:
-    @unittest.expectedFailure
     def test_zip_dir_to_child2(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip']
         dst = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/file.txt']
         util.fs.mkzip(src[0])
         util.fs.mkzip(src)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change
@@ -1967,8 +1959,6 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
                 {'deep/subarchive.zip'},
             )
 
-    # @FIXME:
-    @unittest.expectedFailure
     def test_zip_dir_to_child_self(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/subdir']
@@ -1977,7 +1967,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
         util.fs.save(src2, self.dummy_bytes)
-        with self.assertRaises(util.fs.FSError):
+        with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
         # verify no unexpected content change

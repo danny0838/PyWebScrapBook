@@ -104,6 +104,12 @@ class FSBadZipFileError(FSError):
         self.msg = 'ZIP file is corrupted'
 
 
+class FSMoveInsideError(FSError):
+    def __init__(self, cpath):
+        super().__init__(cpath)
+        self.msg = 'Unable to move into self'
+
+
 class FSMoveAcrossZipError(FSError):
     def __init__(self, cpath):
         super().__init__(cpath)
@@ -584,12 +590,60 @@ def _check_move_copy(csrc, cdst):
     return cdst, zstsrc, zstdst
 
 
+def _check_move(csrc, cdst):
+    if not _dstinsrc(csrc.file, cdst.file):
+        return True
+
+    # ['some/path'] => ['some/path']
+    # ['some/path'] => ['some/path/deeper']
+    # ['some/archive.zip'] => ['some/archive.zip', ...]
+    # ['some/archive.zip', ...] => ['some/archive.zip']
+    for i in range(1, len(cdst)):
+        dst = cdst[i] + '/'
+        try:
+            src = csrc[i] + '/'
+        except IndexError:
+            # [..., 'some/archive.zip'] => [..., 'some/archive.zip', ...]
+            return False
+
+        if not dst.startswith(src):
+            return True
+
+        if len(dst) > len(src):
+            # [..., 'some/path'] => [..., 'some/path/subpath']
+            return False
+
+    return False
+
+
+def _dstinsrc(src, dst):
+    """Check if dst is inside src.
+
+    Revised version of official shutil._dstinsrc.
+    """
+    src = os.path.abspath(src)
+    dst = os.path.abspath(dst)
+
+    src_chk = os.path.normcase(src).lower() + os.path.sep
+    dst_chk = os.path.normcase(dst).lower() + os.path.sep
+    if not dst_chk.startswith(src_chk):
+        return False
+
+    try:
+        return os.path.samefile(src, dst[:len(src)])
+    except OSError:
+        return False
+
+
 def move(csrc, cdst):
     """Move the source to the target."""
     csrc = CPath(csrc)
     cdst = CPath(cdst)
     try:
         cdst, zstsrc, zstdst = _check_move_copy(csrc, cdst)
+
+        if not _check_move(csrc, cdst):
+            raise FSMoveInsideError(cdst)
 
         if len(csrc) == 1:
             if len(cdst) == 1:

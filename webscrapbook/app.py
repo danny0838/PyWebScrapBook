@@ -1213,6 +1213,8 @@ def action_move():
         util.fs.move(localpaths, targetpaths)
     except util.fs.FSEntryExistsError:
         abort(400, 'Target already exists.')
+    except util.fs.FSMoveInsideError:
+        abort(400, 'Unable to move into self.')
     except util.fs.FSMoveAcrossZipError:
         abort(400, 'Unable to move across a zip.')
     except util.fs.FSEntryNotFoundError:
