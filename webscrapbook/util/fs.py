@@ -351,9 +351,9 @@ def mkdir(cpath, mode=0o777, exist_ok=True):
                 raise FSBadParentError(cpath) from exc
 
         else:
-            zh = None
-            with open_archive_path(cpath) as zh0:
-                cur = zip_check_subpath(zh0, cpath[-1])
+            # 'r' mode to check if zip is valid
+            with open_archive_path(cpath) as zh:
+                cur = zip_check_subpath(zh, cpath[-1])
                 if cur == ZIP_SUBPATH_INVALID:
                     raise FSBadParentError(cpath)
                 elif cur == ZIP_SUBPATH_FILE:
@@ -363,14 +363,7 @@ def mkdir(cpath, mode=0o777, exist_ok=True):
                         return
                     raise FSDirExistsError(cpath)
 
-                # append for a non-nested zip
-                if len(cpath) == 2:
-                    zh = zipfile.ZipFile(cpath.file, 'a')
-
-            if zh is None:
-                zh = open_archive_path(cpath, 'w')
-
-            with zh as zh:
+            with open_archive_path(cpath, 'a') as zh:
                 zinfo = zipfile.ZipInfo(cpath[-1] + '/', time.localtime())
                 zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16  # Unix attributes
                 zinfo.external_attr |= 0x10  # MS-DOS directory flag
@@ -400,22 +393,18 @@ def mkzip(cpath):
                 pass
 
         else:
-            zh = None
-            with open_archive_path(cpath) as zh0:
-                cur = zip_check_subpath(zh0, cpath[-1])
+            # 'r' mode to check if zip is valid
+            with open_archive_path(cpath) as zh:
+                cur = zip_check_subpath(zh, cpath[-1])
                 if cur == ZIP_SUBPATH_INVALID:
                     raise FSBadParentError(cpath)
                 elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_IMPLICIT, ZIP_SUBPATH_DIR_ROOT):
                     raise FSIsADirectoryError(cpath)
 
-                # append for a nonexistent path in a non-nested zip
-                if len(cpath) == 2 and cur == ZIP_SUBPATH_NONE:
-                    zh = zipfile.ZipFile(cpath[0], 'a')
+            with open_archive_path(cpath, 'a') as zh:
+                if cur == ZIP_SUBPATH_FILE:
+                    zip_remove(zh, cpath[-1])
 
-            if zh is None:
-                zh = open_archive_path(cpath, 'w')
-
-            with zh as zh:
                 zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
                 zinfo.compress_type = zipfile.ZIP_STORED
                 buf = io.BytesIO()
@@ -462,22 +451,18 @@ def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
                 return
 
         else:
-            zh = None
-            with open_archive_path(cpath) as zh0:
-                cur = zip_check_subpath(zh0, cpath[-1])
+            # 'r' mode to check if zip is valid
+            with open_archive_path(cpath) as zh:
+                cur = zip_check_subpath(zh, cpath[-1])
                 if cur == ZIP_SUBPATH_INVALID:
                     raise FSBadParentError(cpath)
                 elif cur in (ZIP_SUBPATH_DIR, ZIP_SUBPATH_DIR_IMPLICIT, ZIP_SUBPATH_DIR_ROOT):
                     raise FSIsADirectoryError(cpath)
 
-                # append for a nonexistent path in a non-nested zip
-                if len(cpath) == 2 and cur == ZIP_SUBPATH_NONE:
-                    zh = zipfile.ZipFile(cpath[0], 'a')
+            with open_archive_path(cpath, 'a') as zh:
+                if cur == ZIP_SUBPATH_FILE:
+                    zip_remove(zh, cpath[-1])
 
-            if zh is None:
-                zh = open_archive_path(cpath, 'w')
-
-            with zh as zh:
                 zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
 
                 if isinstance(src, bytes):
@@ -522,12 +507,20 @@ def delete(cpath):
                 raise RuntimeError('Unable to handle this path.')
 
         else:
-            try:
-                with open_archive_path(cpath, 'w', [cpath[-1]]):
-                    pass
-            except KeyError:
-                # fail since nothing is deleted
-                raise FSEntryNotFoundError(cpath)
+            # 'r' mode to check if zip is valid
+            with open_archive_path(cpath):
+                pass
+
+            with open_archive_path(cpath, 'a') as zh:
+                base = cpath[-1]
+                base_dir = base + ('/' if base else '')
+                zinfos = {i for i in zh.infolist() if i.filename == base or i.filename.startswith(base_dir)}
+
+                # fail if nothing to delete
+                if not zinfos:
+                    raise FSEntryNotFoundError(cpath)
+
+                _zip_remove_members(zh, zinfos)
     except FSError:
         raise
     except Exception as exc:
@@ -678,23 +671,37 @@ def move(csrc, cdst):
 
             else:
                 with open_archive_path(csrc) as zh,\
-                     open_archive_path(cdst, 'w') as zh2:
-                    if zstsrc == ZIP_SUBPATH_FILE:
-                        entries = [csrc[-1]]
-                    else:
-                        base = csrc[-1] + '/'
-                        entries = [e for e in zh.namelist() if e.startswith(base)]
+                     open_archive_path(cdst, 'a') as zh2:
+                    base = csrc[-1]
                     cut = len(csrc[-1])
-                    for entry in entries:
-                        zinfo = zh.getinfo(entry)
-                        zinfo.filename = cdst[-1] + entry[cut:]
-                        zh2.writestr(zinfo, zh.read(entry),
+
+                    zinfos = []
+                    new_subpaths = []
+                    infos_to_remove = set()
+                    for zinfo in zh.infolist():
+                        if not (zinfo.filename == base or zinfo.filename.startswith(base + '/')):
+                            continue
+                        zinfos.append(zinfo)
+                        subpath = cdst[-1] + zinfo.filename[cut:]
+                        new_subpaths.append(subpath)
+                        try:
+                            infos_to_remove.add(zh2.getinfo(subpath))
+                        except KeyError:
+                            pass
+                    _zip_remove_members(zh2, infos_to_remove)
+
+                    znames = {i.filename for i in zinfos}
+
+                    for i, zinfo in enumerate(zinfos):
+                        zinfo.filename = new_subpaths[i]
+                        zh2.writestr(zinfo, zh.read(zinfo),
                                      compress_type=zinfo.compress_type,
                                      compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
                                      )
 
-                with open_archive_path(csrc, 'w', entries):
-                    pass
+                with open_archive_path(csrc, 'a') as zh:
+                    zinfos = {i for i in zh.infolist() if i.filename in znames}
+                    _zip_remove_members(zh, zinfos)
 
     except FSError:
         raise
@@ -727,7 +734,7 @@ def copy(csrc, cdst):
 
             else:
                 _exc = None
-                with open_archive_path(cdst, 'w') as zh:
+                with open_archive_path(cdst, 'a') as zh:
                     try:
                         zip_compress(zh, csrc.file, cdst[-1])
                     except shutil.Error as exc:
@@ -751,17 +758,28 @@ def copy(csrc, cdst):
 
             else:
                 with open_archive_path(csrc) as zh,\
-                     open_archive_path(cdst, 'w') as zh2:
-                    if zstsrc == ZIP_SUBPATH_FILE:
-                        entries = [csrc[-1]]
-                    else:
-                        base = csrc[-1] + '/'
-                        entries = [e for e in zh.namelist() if e.startswith(base)]
+                     open_archive_path(cdst, 'a') as zh2:
+                    base = csrc[-1]
                     cut = len(csrc[-1])
-                    for entry in entries:
-                        zinfo = zh.getinfo(entry)
-                        zinfo.filename = cdst[-1] + entry[cut:]
-                        zh2.writestr(zinfo, zh.read(entry),
+
+                    zinfos = []
+                    new_subpaths = []
+                    infos_to_remove = set()
+                    for zinfo in zh.infolist():
+                        if not (zinfo.filename == base or zinfo.filename.startswith(base + '/')):
+                            continue
+                        zinfos.append(zinfo)
+                        subpath = cdst[-1] + zinfo.filename[cut:]
+                        new_subpaths.append(subpath)
+                        try:
+                            infos_to_remove.add(zh2.getinfo(subpath))
+                        except KeyError:
+                            pass
+                    _zip_remove_members(zh2, infos_to_remove)
+
+                    for i, zinfo in enumerate(zinfos):
+                        zinfo.filename = new_subpaths[i]
+                        zh2.writestr(zinfo, zh.read(zinfo),
                                      compress_type=zinfo.compress_type,
                                      compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
                                      )
@@ -772,19 +790,11 @@ def copy(csrc, cdst):
         raise _map_exc(exc, cdst) from exc
 
 
-def _open_archive_path_filter(path, filters):
-    for filter in filters:
-        filter = filter.rstrip('/')
-        if path == filter:
-            return True
-        if path.startswith(filter + ('/' if filter else '')):
-            return True
-    return False
-
-
 @contextmanager
-def open_archive_path(cpath, mode='r', filters=None):
+def open_archive_path(cpath, mode='r', *, buffer_size=io.DEFAULT_BUFFER_SIZE):
     """Open the innermost zip handler for reading or writing.
+
+    In-memory buffers will be generated for nested ZIPs (len(cpath) > 2),
 
     e.g. reading from ['/path/to/foo.zip', 'subdir/file.txt']:
 
@@ -794,18 +804,19 @@ def open_archive_path(cpath, mode='r', filters=None):
 
     e.g. writing to ['/path/to/foo.zip', 'subdir/file.txt']:
 
-        with open_archive_path(cpath, 'w') as zh:
+        with open_archive_path(cpath, 'a') as zh:
             zh.writestr(cpath[-1], 'foo')
 
     e.g. deleting ['/path/to/foo.zip', 'subdir/']:
 
-        with open_archive_path(cpath, 'w', [cpath[-1]]) as zh:
-            pass
+        with open_archive_path(cpath, 'a') as zh:
+            zip_remove(zh, cpath[-1])
 
     Args:
         cpath
-        mode: 'r' for reading, 'w' for modifying
-        filters: a list of file or folder to remove
+        mode: 'r' for reading, 'a' for modifying
+        buffer_size: the buffer size for the reading stream when generating an
+            internal buffer
     """
     cpath = CPath(cpath)
 
@@ -813,75 +824,62 @@ def open_archive_path(cpath, mode='r', filters=None):
     if last < 1:
         raise ValueError('length of paths must > 1')
 
-    filtered = False
     stack = []
-    try:
-        zh = zipfile.ZipFile(cpath[0])
-        stack.append(zh)
-        for i in range(1, last):
-            fh = zh.open(cpath[i])
-            stack.append(fh)
-            zh = zipfile.ZipFile(fh)
+    if mode == 'r':
+        try:
+            zh = zipfile.ZipFile(cpath[0])
             stack.append(zh)
 
-        if mode == 'r':
+            for i in range(1, last):
+                fh = zh.open(cpath[i])
+                stack.append(fh)
+                zh = zipfile.ZipFile(fh)
+                stack.append(zh)
+
+            yield zh
+        finally:
+            for fh in reversed(stack):
+                fh.close()
+
+    elif mode == 'a':
+        try:
+            zh = zipfile.ZipFile(cpath[0], mode)
+            stack.append(zh)
+
+            for i in range(1, last):
+                # make writable by copying bytes to a buffer
+                fh = io.BytesIO()
+                with zh.open(cpath[i]) as fr:
+                    for chunk in iter(functools.partial(fr.read, buffer_size), b''):
+                        fh.write(chunk)
+                stack.append(fh)
+                zh = zipfile.ZipFile(fh, mode)
+                stack.append(zh)
+
             yield zh
 
-        elif mode == 'w':
-            # create a buffer for writing
-            buffer = io.BytesIO()
-            with zipfile.ZipFile(buffer, 'w') as zh:
-                yield zh
+            fh = None
+            for i in reversed(range(last)):
+                zh = stack.pop()
+                if fh:
+                    zinfo = zh.getinfo(cpath[i + 1])
+                    zip_remove(zh, zinfo)
+                    zinfo.date_time = time.localtime()
+                    zinfo.compress_type = zipfile.ZIP_STORED
+                    with zh.open(zinfo, 'w') as fw:
+                        fh.seek(0)
+                        for chunk in iter(functools.partial(fh.read, buffer_size), b''):
+                            fw.write(chunk)
+                    fh.close()
+                zh.close()
+                if i:
+                    fh = stack.pop()
+        finally:
+            for fh in reversed(stack):
+                fh.close()
 
-            # copy zip file
-            for i in reversed(range(1, last + 1)):
-                zh0 = stack.pop()
-                with zipfile.ZipFile(buffer, 'a') as zh:
-                    zh.comment = zh0.comment
-                    for info in zh0.infolist():
-                        if filters and i == last:
-                            if _open_archive_path_filter(info.filename, filters):
-                                filtered = True
-                                continue
-
-                        try:
-                            zh.getinfo(info.filename)
-                        except KeyError:
-                            pass
-                        else:
-                            continue
-
-                        zh.writestr(info, zh0.read(info),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    )
-
-                if filters and not any(f == '' for f in filters) and not filtered:
-                    raise KeyError('paths to filter do not exist')
-
-                if i == 1:
-                    break
-
-                # writer to another buffer for the parent zip
-                buffer2 = io.BytesIO()
-                with zipfile.ZipFile(buffer2, 'w') as zh:
-                    zh.writestr(cpath[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
-                buffer.close()
-                buffer = buffer2
-
-                # pop a file handler
-                stack.pop()
-
-            # write to the outermost zip
-            # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
-            buffer.seek(0)
-            with open(cpath[0], 'r+b') as fw, buffer as fr:
-                fw.truncate()
-                for chunk in iter(functools.partial(fr.read, 8192), b''):
-                    fw.write(chunk)
-    finally:
-        for fh in reversed(stack):
-            fh.close()
+    else:
+        raise ValueError(f'Unsupported mode: {mode}')
 
 
 #########################################################################
@@ -1313,6 +1311,105 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
             shutil.rmtree(tempdir)
         except OSError:
             pass
+
+
+def zip_remove(zip, zinfo_or_arcname):
+    """Remove a member from the archive.
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+    """
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'a') as self:
+        if self.mode not in ('w', 'x', 'a'):
+            raise ValueError("remove() requires mode 'w', 'x', or 'a'")
+        if not self.fp:
+            raise ValueError(
+                'Attempt to write to ZIP archive that was already closed')
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists"
+            )
+
+        # Make sure we have an existing info object
+        if isinstance(zinfo_or_arcname, zipfile.ZipInfo):
+            zinfo = zinfo_or_arcname
+            # make sure zinfo exists
+            if zinfo not in self.filelist:
+                raise KeyError(
+                    'There is no item %r in the archive' % zinfo.filename)
+        else:
+            # get the info object
+            zinfo = self.getinfo(zinfo_or_arcname)
+
+        return _zip_remove_members(self, (zinfo,))
+
+
+def _zip_remove_members(zip, members, *, remove_physical=True, buffer_size=2**20):
+    """Remove members in a zip file.
+
+    All members (as zinfo) should exist in the zip; otherwise the zip file
+    will erroneously end in an inconsistent state.
+    """
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'a') as self:
+        with self._lock:
+            fp = self.fp
+            entry_offset = 0
+            member_seen = False
+
+            # get a sorted filelist by header offset, in case the dir order
+            # doesn't match the actual entry order
+            filelist = sorted(self.filelist, key=lambda x: x.header_offset)
+            for i in range(len(filelist)):
+                info = filelist[i]
+                is_member = info in members
+
+                if not (member_seen or is_member):
+                    continue
+
+                # get the total size of the entry
+                try:
+                    offset = filelist[i + 1].header_offset
+                except IndexError:
+                    offset = self.start_dir
+                entry_size = offset - info.header_offset
+
+                if is_member:
+                    member_seen = True
+                    entry_offset += entry_size
+
+                    # update caches
+                    self.filelist.remove(info)
+                    try:
+                        del self.NameToInfo[info.filename]
+                    except KeyError:
+                        pass
+                    continue
+
+                # update the header and move entry data to the new position
+                if remove_physical:
+                    old_header_offset = info.header_offset
+                    info.header_offset -= entry_offset
+                    read_size = 0
+                    while read_size < entry_size:
+                        fp.seek(old_header_offset + read_size)
+                        data = fp.read(min(entry_size - read_size, buffer_size))
+                        fp.seek(info.header_offset + read_size)
+                        fp.write(data)
+                        fp.flush()
+                        read_size += len(data)
+
+            # Avoid missing entry if entries have a duplicated name.
+            # Reverse the order as NameToInfo normally stores the last added one.
+            for info in reversed(self.filelist):
+                self.NameToInfo.setdefault(info.filename, info)
+
+            # update state
+            if remove_physical:
+                self.start_dir -= entry_offset
+            self._didModify = True
+
+            # seek to the start of the central dir
+            fp.seek(self.start_dir)
 
 
 class ZipStream(io.RawIOBase):
