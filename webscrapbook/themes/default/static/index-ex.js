@@ -1673,6 +1673,23 @@ onCommandRun.commands = {
 
       newDir = newDir.replace(/\/+$/, '') + '/';
 
+      // create the target directory
+      try {
+        const target = location.origin + (base + newDir).split('/').map(x => encodeURIComponent(x)).join('/');
+        const formData = new FormData();
+        formData.append('token', await utils.acquireToken(target));
+
+        await utils.wsb({
+          url: target + '?a=mkdir&f=json',
+          responseType: 'json',
+          method: "POST",
+          formData: formData,
+        });
+      } catch (ex) {
+        alert(`Unable to move to "${newDir}": ${ex.message}`);
+        return;
+      }
+
       const entries = Array.prototype.map.call(selectedEntries, entry => {
         const oldPath = dir + entry.dataset.path;
         const newPath = newDir + oldPath.replace(/^.*\//, '');
@@ -1681,7 +1698,7 @@ onCommandRun.commands = {
       const errors = [];
       for (const {oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          await moveEntry(oldPath, newPath);
+          await moveEntry(oldPath, newDir);
         } catch (ex) {
           errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
         }
@@ -1735,6 +1752,23 @@ onCommandRun.commands = {
 
       newDir = newDir.replace(/\/+$/, '') + '/';
 
+      // create the target directory
+      try {
+        const target = location.origin + (base + newDir).split('/').map(x => encodeURIComponent(x)).join('/');
+        const formData = new FormData();
+        formData.append('token', await utils.acquireToken(target));
+
+        await utils.wsb({
+          url: target + '?a=mkdir&f=json',
+          responseType: 'json',
+          method: "POST",
+          formData: formData,
+        });
+      } catch (ex) {
+        alert(`Unable to move to "${newDir}": ${ex.message}`);
+        return;
+      }
+
       const entries = Array.prototype.map.call(selectedEntries, entry => {
         const oldPath = dir + entry.dataset.path;
         const newPath = newDir + oldPath.replace(/^.*\//, '');
@@ -1743,7 +1777,7 @@ onCommandRun.commands = {
       const errors = [];
       for (const {oldPath, newPath} of entries.sort(onCommandRun.sortEntries).reverse()) {
         try {
-          await copyEntry(oldPath, newPath);
+          await copyEntry(oldPath, newDir);
         } catch (ex) {
           errors.push(`"${oldPath}" => "${newPath}": ${ex.message}`);
         }
