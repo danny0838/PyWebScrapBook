@@ -351,6 +351,18 @@ def file_is_link(path, st=None):
     return stat.S_ISLNK(st.st_mode)
 
 
+def junction(src, dst):
+    """Create a directory junction. (Windows only)
+    """
+    # capture_output is not supported in Python < 3.8
+    subprocess.run(
+        ['mklink', '/j', dst, src],
+        shell=True, check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def file_info(file, base=None):
     """Read basic file information.
     """

@@ -1,7 +1,6 @@
 import io
 import os
 import platform
-import subprocess
 import tempfile
 import time
 import unittest
@@ -816,19 +815,7 @@ class TestHelpers(unittest.TestCase):
     def test_file_is_link(self):
         # junction
         entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
-
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            [
-                'mklink',
-                '/j',
-                entry,
-                os.path.join(test_root, 'file_info', 'folder'),
-            ],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
 
         try:
             self.assertTrue(util.fs.file_is_link(entry))
@@ -885,19 +872,7 @@ class TestHelpers(unittest.TestCase):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_info_junction_dir(self):
         entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
-
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            [
-                'mklink',
-                '/j',
-                entry,
-                os.path.join(test_root, 'file_info', 'folder'),
-            ],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
 
         try:
             self.assertEqual(
@@ -911,19 +886,7 @@ class TestHelpers(unittest.TestCase):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_info_junction_nonexist(self):
         entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
-
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            [
-                'mklink',
-                '/j',
-                entry,
-                os.path.join(test_root, 'file_info', 'nonexist'),
-            ],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        util.fs.junction(os.path.join(test_root, 'file_info', 'nonexist'), entry)
 
         try:
             self.assertEqual(

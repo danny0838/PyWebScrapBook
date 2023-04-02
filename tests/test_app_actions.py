@@ -6,7 +6,6 @@ import json
 import os
 import platform
 import shutil
-import subprocess
 import sys
 import tempfile
 import time
@@ -20,7 +19,7 @@ import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook.app import make_app
 from webscrapbook.util import frozendict, make_hashable
-from webscrapbook.util.fs import zip_timestamp, zip_tuple_timestamp
+from webscrapbook.util.fs import junction, zip_timestamp, zip_tuple_timestamp
 
 from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
 
@@ -3716,14 +3715,9 @@ class TestDelete(TestActions):
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('dummy')
 
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'junction'),
-             os.path.join(self.test_dir, 'subdir')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'subdir'),
+            os.path.join(self.test_dir, 'junction'),
         )
 
         with app.test_client() as c:
@@ -3749,14 +3743,9 @@ class TestDelete(TestActions):
         """Delete the link entity even if target not exist."""
         os.makedirs(self.test_dir, exist_ok=True)
 
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'junction'),
-             os.path.join(self.test_dir, 'nonexist')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'nonexist'),
+            os.path.join(self.test_dir, 'junction'),
         )
 
         with app.test_client() as c:
@@ -3785,14 +3774,9 @@ class TestDelete(TestActions):
             fh.write('dummy')
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'subdir2', 'junction'),
-             os.path.join(self.test_dir, 'subdir')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'subdir'),
+            os.path.join(self.test_dir, 'subdir2', 'junction'),
         )
 
         with app.test_client() as c:
@@ -4293,14 +4277,9 @@ class TestMove(TestActions):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_junction(self):
         """Moving the entity rather than the referenced directory."""
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'junction'),
-             os.path.join(self.test_dir, 'nonexist')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'nonexist'),
+            os.path.join(self.test_dir, 'junction'),
         )
 
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')}, follow_symlinks=False)
@@ -5007,14 +4986,9 @@ class TestCopy(TestActions):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_junction1(self):
         """Copy junction as a new regular directory."""
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'junction'),
-             os.path.join(self.test_dir, 'subdir')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'subdir'),
+            os.path.join(self.test_dir, 'junction'),
         )
 
         with app.test_client() as c:
@@ -5045,14 +5019,9 @@ class TestCopy(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_junction2(self, mock_abort):
         """Raises when copying a broken directory junction."""
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'junction'),
-             os.path.join(self.test_dir, 'nonexist')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'nonexist'),
+            os.path.join(self.test_dir, 'junction'),
         )
 
         with app.test_client() as c:
@@ -5080,22 +5049,13 @@ class TestCopy(TestActions):
         t = time.mktime((1971, 1, 1, 0, 0, 0, 0, 0, -1))
         os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
 
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'subdir2', 'junction'),
-             os.path.join(self.test_dir, 'subdir')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'subdir'),
+            os.path.join(self.test_dir, 'subdir2', 'junction'),
         )
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'subdir2', 'junction2'),
-             os.path.join(self.test_dir, 'nonexist')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'nonexist'),
+            os.path.join(self.test_dir, 'subdir2', 'junction2'),
         )
 
         with app.test_client() as c:
@@ -5446,22 +5406,13 @@ class TestCopy(TestActions):
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        # capture_output is not supported in Python < 3.8
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'subdir2', 'junction'),
-             os.path.join(self.test_dir, 'subdir')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'subdir'),
+            os.path.join(self.test_dir, 'subdir2', 'junction'),
         )
-        subprocess.run(
-            ['mklink', '/j',
-             os.path.join(self.test_dir, 'subdir2', 'junction2'),
-             os.path.join(self.test_dir, 'nonexist')],
-            shell=True, check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        junction(
+            os.path.join(self.test_dir, 'nonexist'),
+            os.path.join(self.test_dir, 'subdir2', 'junction2'),
         )
 
         with app.test_client() as c:
