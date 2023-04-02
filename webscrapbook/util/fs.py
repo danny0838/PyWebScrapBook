@@ -354,12 +354,9 @@ def file_is_link(path, st=None):
 def junction(src, dst):
     """Create a directory junction. (Windows only)
     """
-    # capture_output is not supported in Python < 3.8
     subprocess.run(
         ['mklink', '/j', dst, src],
-        shell=True, check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        shell=True, capture_output=True, check=True,
     )
 
 
