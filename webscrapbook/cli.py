@@ -307,8 +307,9 @@ def view_archive_files(files):
     import mimetypes
     import tempfile
     import webbrowser
-    import zipfile
     from urllib.request import pathname2url
+
+    from ._polyfill import zipfile
 
     cache_prefix = config['browser']['cache_prefix']
     cache_expire = config['browser']['cache_expire'] * 10 ** 9

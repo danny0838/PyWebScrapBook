@@ -1,10 +1,10 @@
 import os
 import tempfile
 import unittest
-import zipfile
 from datetime import datetime, timezone
 from unittest import mock
 
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import file2wsb
 from webscrapbook.scrapbook.host import Host
 

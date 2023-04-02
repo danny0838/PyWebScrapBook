@@ -3,13 +3,13 @@ import os
 import tempfile
 import time
 import unittest
-import zipfile
 from datetime import datetime, timezone
 from unittest import mock
 
 from lxml import etree
 
 from webscrapbook import WSB_DIR
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import cache as wsb_cache
 from webscrapbook.scrapbook.host import Host
 

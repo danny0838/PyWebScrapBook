@@ -4,11 +4,11 @@ import re
 import sys
 import tempfile
 import unittest
-import zipfile
 from unittest import mock
 from urllib.request import pathname2url
 
 from webscrapbook import WSB_DIR, cli
+from webscrapbook._polyfill import zipfile
 
 from . import PROG_DIR, TEMP_DIR
 

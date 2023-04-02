@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 import traceback
-import zipfile
 from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -17,6 +16,7 @@ from urllib.request import pathname2url, url2pathname, urlopen
 from lxml import etree
 
 from .. import util
+from .._polyfill import zipfile
 from ..util import Info
 from ..util.css import CssRewriter
 from ..util.html import REGEX_ASCII_WHITESPACES, HtmlRewriter

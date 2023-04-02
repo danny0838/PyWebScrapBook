@@ -4,12 +4,12 @@ import copy
 import os
 import time
 import traceback
-import zipfile
 from contextlib import nullcontext
 from datetime import datetime
 from urllib.parse import unquote, urlsplit
 
 from .. import WSB_DIR, util
+from .._polyfill import zipfile
 from ..util import Info
 from .book import Book, TreeFileError
 from .host import Host

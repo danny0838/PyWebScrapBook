@@ -1,10 +1,10 @@
 import os
 import tempfile
 import unittest
-import zipfile
 from unittest import mock
 
 from webscrapbook import WSB_DIR
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import migrate
 
 from . import TEMP_DIR, glob_files

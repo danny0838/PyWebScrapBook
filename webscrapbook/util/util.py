@@ -10,7 +10,6 @@ import mimetypes
 import os
 import re
 import sys
-import zipfile
 from base64 import b64decode
 from collections import namedtuple
 from contextlib import nullcontext
@@ -21,6 +20,8 @@ from urllib.request import pathname2url, url2pathname
 
 import lxml.html
 from lxml import etree
+
+from .._polyfill import zipfile
 
 #########################################################################
 # Common classes and objects handling

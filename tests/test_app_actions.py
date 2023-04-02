@@ -10,13 +10,13 @@ import sys
 import tempfile
 import time
 import unittest
-import zipfile
 from unittest import mock
 
 from flask import abort
 
 import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
+from webscrapbook._polyfill import zipfile
 from webscrapbook.app import make_app
 from webscrapbook.util import frozendict, make_hashable
 from webscrapbook.util.fs import junction, zip_timestamp

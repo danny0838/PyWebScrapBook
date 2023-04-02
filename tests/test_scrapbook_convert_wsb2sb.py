@@ -1,7 +1,6 @@
 import os
 import tempfile
 import unittest
-import zipfile
 from base64 import b64decode
 from datetime import datetime, timezone
 from unittest import mock
@@ -9,6 +8,7 @@ from unittest import mock
 from lxml import etree
 
 from webscrapbook import WSB_DIR, util
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import wsb2sb
 from webscrapbook.scrapbook.convert.wsb2sb import NC, NS1, RDF
 

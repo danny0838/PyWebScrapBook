@@ -10,11 +10,11 @@ import subprocess
 import sys
 import tempfile
 import time
-import zipfile
 from collections import namedtuple
 from contextlib import contextmanager, nullcontext
 from datetime import datetime
 
+from .._polyfill import zipfile
 from . import util
 
 ZIP_SUBPATH_NONE = 0

@@ -3,13 +3,13 @@ import io
 import os
 import tempfile
 import unittest
-import zipfile
 from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import lxml.html
 
 from webscrapbook import util
+from webscrapbook._polyfill import zipfile
 from webscrapbook.util import frozendict
 
 from . import ROOT_DIR, TEMP_DIR

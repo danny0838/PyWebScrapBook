@@ -6,7 +6,6 @@ import mimetypes
 import os
 import time
 import traceback
-import zipfile
 from contextlib import nullcontext
 from secrets import token_urlsafe
 from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
@@ -36,6 +35,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import cached_property
 
 from . import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION, __version__, util
+from ._polyfill import zipfile
 from .scrapbook import cache as wsb_cache
 from .scrapbook import check as wsb_check
 from .scrapbook import host as wsb_host

@@ -4,12 +4,12 @@ import os
 import shutil
 import time
 import traceback
-import zipfile
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from urllib.parse import quote
 
 from ... import util
+from ..._polyfill import zipfile
 from ...util import Info
 from ..host import Host
 from ..indexer import FavIconCacher, SingleHtmlConverter, UnSingleHtmlConverter

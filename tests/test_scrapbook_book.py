@@ -1,10 +1,10 @@
 import os
 import tempfile
 import unittest
-import zipfile
 from unittest import mock
 
 from webscrapbook import WSB_DIR
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import book as wsb_book
 from webscrapbook.scrapbook.book import Book
 from webscrapbook.scrapbook.host import Host

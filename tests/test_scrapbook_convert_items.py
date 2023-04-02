@@ -1,12 +1,12 @@
 import os
 import tempfile
 import unittest
-import zipfile
 from base64 import b64decode
 from email.utils import format_datetime
 from unittest import mock
 
 from webscrapbook import WSB_DIR, util
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import items as conv_items
 from webscrapbook.scrapbook.host import Host
 

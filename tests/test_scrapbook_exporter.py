@@ -2,12 +2,12 @@ import json
 import os
 import tempfile
 import unittest
-import zipfile
 from base64 import b64decode, b64encode
 from datetime import datetime, timezone
 from unittest import mock
 
 from webscrapbook import WSB_DIR, util
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import exporter as wsb_exporter
 
 from . import TEMP_DIR

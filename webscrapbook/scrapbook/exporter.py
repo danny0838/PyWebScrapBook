@@ -2,11 +2,11 @@ import json
 import os
 import time
 import traceback
-import zipfile
 from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 
 from .. import util
+from .._polyfill import zipfile
 from ..util import Info
 from .host import Host
 

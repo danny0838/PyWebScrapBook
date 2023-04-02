@@ -11,7 +11,6 @@ import re
 import shutil
 import time
 import traceback
-import zipfile
 from collections import UserDict, namedtuple
 from contextlib import nullcontext
 from datetime import datetime, timezone
@@ -21,6 +20,7 @@ import jinja2
 from lxml import etree
 
 from .. import util
+from .._polyfill import zipfile
 from ..util import Info
 from .host import Host
 

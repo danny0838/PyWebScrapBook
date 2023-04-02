@@ -8,11 +8,11 @@ import tempfile
 import time
 import unittest
 import warnings
-import zipfile
 from datetime import datetime
 from unittest import mock
 
 from webscrapbook import util
+from webscrapbook._polyfill import zipfile
 from webscrapbook.util.fs import zip_mode, zip_timestamp
 
 from . import (

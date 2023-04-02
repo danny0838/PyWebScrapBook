@@ -3,10 +3,10 @@
 import json
 import os
 import re
-import zipfile
 from urllib.parse import unquote, urlsplit
 
 from .. import util
+from .._polyfill import zipfile
 
 
 class TreeFileError(ValueError):

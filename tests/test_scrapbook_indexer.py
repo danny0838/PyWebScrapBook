@@ -1,12 +1,12 @@
 import os
 import tempfile
 import unittest
-import zipfile
 from base64 import b64decode
 from datetime import datetime, timezone
 from unittest import mock
 
 from webscrapbook import WSB_DIR
+from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook.indexer import (
     FavIconCacher,

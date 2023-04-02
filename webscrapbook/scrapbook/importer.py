@@ -6,11 +6,11 @@ import shutil
 import time
 import traceback
 import uuid
-import zipfile
 from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 
 from .. import util
+from .._polyfill import zipfile
 from ..util import Info
 from .book import Book
 from .host import Host
