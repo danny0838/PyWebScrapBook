@@ -2660,41 +2660,75 @@ class TestOpenArchivePath(unittest.TestCase):
 
 class TestHelpers(unittest.TestCase):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    def test_file_is_link(self):
+    def test_isjunction1(self):
+        # junction (target exists)
         root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'target')
+        dst = os.path.join(root, 'junction')
+        os.makedirs(ref)
+        util.fs.junction(ref, dst)
+        self.assertTrue(util.fs.isjunction(dst))
 
-        # junction
-        entry = os.path.join(root, 'junction')
-        util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
-        with test_file_cleanup(entry):
-            self.assertTrue(util.fs.file_is_link(entry))
+        # junction (target nonexist)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'junction')
+        with test_file_cleanup(dst):
+            util.fs.junction(ref, dst)
+            self.assertTrue(util.fs.isjunction(dst))
 
         # directory
-        entry = os.path.join(test_root, 'file_info', 'folder')
-        self.assertFalse(util.fs.file_is_link(entry))
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'folder')
+        os.makedirs(dst)
+        self.assertFalse(util.fs.isjunction(dst))
 
         # file
-        entry = os.path.join(test_root, 'file_info', 'file.txt')
-        self.assertFalse(util.fs.file_is_link(entry))
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'file.txt')
+        with open(dst, 'wb'):
+            pass
+        self.assertFalse(util.fs.isjunction(dst))
 
         # non-exist
-        entry = os.path.join(test_root, 'file_info', 'nonexist')
-        self.assertFalse(util.fs.file_is_link(entry))
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'nonexist')
+        self.assertFalse(util.fs.isjunction(dst))
 
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
-    def test_file_is_link2(self):
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_isjunction2(self):
+        # symlink (directory, target exists)
         root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'target')
+        dst = os.path.join(root, 'symlink')
+        os.makedirs(ref)
+        os.symlink(ref, dst)
+        self.assertFalse(util.fs.isjunction(dst))
 
-        # symlink
-        entry = os.path.join(root, 'symlink')
+        # symlink (file, target exists)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'file.txt')
+        dst = os.path.join(root, 'symlink')
+        with open(ref, 'wb'):
+            pass
+        os.symlink(ref, dst)
+        self.assertFalse(util.fs.isjunction(dst))
 
-        os.symlink(
-            os.path.join(test_root, 'file_info', 'file.txt'),
-            entry,
-        )
+        # symlink (directory, target nonexist)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'target')
+        dst = os.path.join(root, 'symlink')
+        os.symlink(ref, dst, True)
+        self.assertFalse(util.fs.isjunction(dst))
 
-        self.assertTrue(util.fs.file_is_link(entry))
+        # symlink (file, target nonexist)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'file.txt')
+        dst = os.path.join(root, 'symlink')
+        os.symlink(ref, dst, False)
+        self.assertFalse(util.fs.isjunction(dst))
 
     def test_file_info_nonexist(self):
         entry = os.path.join(test_root, 'file_info', 'nonexist.file')

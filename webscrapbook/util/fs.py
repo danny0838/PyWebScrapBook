@@ -495,7 +495,9 @@ def delete(cpath):
             if not os.path.lexists(dst):
                 raise FSEntryNotFoundError(cpath)
 
-            if file_is_link(dst):
+            if os.path.islink(dst):
+                os.remove(dst)
+            elif isjunction(dst):
                 os.remove(dst)
             elif os.path.isfile(dst):
                 os.remove(dst)
@@ -888,24 +890,24 @@ def open_archive_path(cpath, mode='r', *, buffer_size=io.DEFAULT_BUFFER_SIZE):
 FileInfo = namedtuple('FileInfo', ('name', 'type', 'size', 'last_modified'))
 
 
-def file_is_link(path, st=None):
-    """Check if a path is a symlink or Windows directory junction
+def isjunction(path):
+    """Test whether a path is a junction
 
-    Args:
-        st: known stat for the path for better performance
+    - os.path.isjunction is built-in since Python 3.12
+    - stat.st_reparse_tag is supported since Python 3.8
     """
-    if st is None:
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
+    try:
+        st = os.lstat(path)
+    except (OSError, ValueError, AttributeError):
+        return False
 
-    if os.name == 'nt':
-        if st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
-            # this is True for symlink or directory junction
-            return True
+    try:
+        # True for symlink or directory junction
+        assert st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+    except (AttributeError, AssertionError):
+        return False
 
-    return stat.S_ISLNK(st.st_mode)
+    return not stat.S_ISLNK(st.st_mode)
 
 
 def junction(src, dst):
@@ -938,7 +940,7 @@ def file_info(file, base=None):
 
     if not os.path.lexists(file):
         type = None
-    elif file_is_link(file, statinfo):
+    elif os.path.islink(file) or isjunction(file):
         type = 'link'
     elif os.path.isdir(file):
         type = 'dir'
