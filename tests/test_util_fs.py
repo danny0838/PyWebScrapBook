@@ -2840,6 +2840,20 @@ class TestHelpers(unittest.TestCase):
             time.mktime((1987, 1, 1, 0, 0, 0, 0, 0, -1)),
         )
 
+    def test_zip_mode(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        file = os.path.join(root, 'file.txt')
+        with open(file, 'wb'):
+            pass
+        mode = os.stat(file).st_mode & 0xFFFF
+        zinfo = zipfile.ZipInfo.from_file(file)
+
+        # zinfo
+        self.assertEqual(util.fs.zip_mode(zinfo), mode)
+
+        # external_attr
+        self.assertEqual(util.fs.zip_mode(zinfo.external_attr), mode)
+
     def test_zip_file_info(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
