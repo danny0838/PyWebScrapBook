@@ -1,7 +1,6 @@
 """Virtual filesystem for complex file operation."""
 import functools
 import io
-import mimetypes
 import os
 import re
 import shutil
@@ -14,7 +13,7 @@ from collections import namedtuple
 from contextlib import contextmanager, nullcontext
 from datetime import datetime
 
-from .._polyfill import zipfile
+from .._polyfill import mimetypes, zipfile
 from . import util
 
 ZIP_SUBPATH_NONE = 0

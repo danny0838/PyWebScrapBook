@@ -6,7 +6,6 @@ import collections
 import hashlib
 import importlib
 import math
-import mimetypes
 import os
 import re
 import sys
@@ -21,7 +20,7 @@ from urllib.request import pathname2url, url2pathname
 import lxml.html
 from lxml import etree
 
-from .._polyfill import zipfile
+from .._polyfill import mimetypes, zipfile
 
 #########################################################################
 # Common classes and objects handling

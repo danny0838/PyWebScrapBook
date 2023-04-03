@@ -304,12 +304,11 @@ def view_archive_files(files):
     Set default application of MAFF/HTZ archive files to this command to open
     them in the browser directly.
     """
-    import mimetypes
     import tempfile
     import webbrowser
     from urllib.request import pathname2url
 
-    from ._polyfill import zipfile
+    from ._polyfill import mimetypes, zipfile
 
     cache_prefix = config['browser']['cache_prefix']
     cache_expire = config['browser']['cache_expire'] * 10 ** 9

@@ -5,7 +5,6 @@ import functools
 import html
 import io
 import itertools
-import mimetypes
 import os
 import re
 import shutil
@@ -20,7 +19,7 @@ import jinja2
 from lxml import etree
 
 from .. import util
-from .._polyfill import zipfile
+from .._polyfill import mimetypes, zipfile
 from ..util import Info
 from .host import Host
 
