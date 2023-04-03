@@ -2688,8 +2688,10 @@ class TestOpenArchivePath(unittest.TestCase):
 class TestHelpers(unittest.TestCase):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_is_link(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+
         # junction
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
+        entry = os.path.join(root, 'junction')
         util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
         with test_file_cleanup(entry):
             self.assertTrue(util.fs.file_is_link(entry))
@@ -2709,8 +2711,10 @@ class TestHelpers(unittest.TestCase):
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
     def test_file_is_link2(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+
         # symlink
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
+        entry = os.path.join(root, 'symlink')
 
         os.symlink(
             os.path.join(test_root, 'file_info', 'file.txt'),
@@ -2742,7 +2746,8 @@ class TestHelpers(unittest.TestCase):
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_info_junction_dir(self):
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        entry = os.path.join(root, 'junction')
         util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
         with test_file_cleanup(entry):
             self.assertEqual(
@@ -2752,7 +2757,8 @@ class TestHelpers(unittest.TestCase):
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_info_junction_nonexist(self):
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        entry = os.path.join(root, 'junction')
         util.fs.junction(os.path.join(test_root, 'file_info', 'nonexist'), entry)
         with test_file_cleanup(entry):
             self.assertEqual(
@@ -2763,7 +2769,8 @@ class TestHelpers(unittest.TestCase):
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
     def test_file_info_symlink_file(self):
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        entry = os.path.join(root, 'symlink')
 
         # target file
         os.symlink(
@@ -2779,7 +2786,8 @@ class TestHelpers(unittest.TestCase):
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
     def test_file_info_symlink_dir(self):
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        entry = os.path.join(root, 'symlink')
 
         os.symlink(
             os.path.join(test_root, 'file_info', 'folder'),
@@ -2794,7 +2802,8 @@ class TestHelpers(unittest.TestCase):
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
     def test_file_info_symlink_nonexist(self):
-        entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'symlink')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        entry = os.path.join(root, 'symlink')
 
         os.symlink(
             os.path.join(test_root, 'file_info', 'nonexist'),
@@ -2831,106 +2840,108 @@ class TestHelpers(unittest.TestCase):
         )
 
     def test_zip_file_info(self):
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'file.txt'),
+            util.fs.zip_file_info(zfile, 'file.txt'),
             ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'folder'),
+            util.fs.zip_file_info(zfile, 'folder'),
             ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'folder/'),
+            util.fs.zip_file_info(zfile, 'folder/'),
             ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'folder/.gitkeep'),
+            util.fs.zip_file_info(zfile, 'folder/.gitkeep'),
             ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0))),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, ''),
+            util.fs.zip_file_info(zfile, ''),
             ('', None, None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'implicit_folder'),
+            util.fs.zip_file_info(zfile, 'implicit_folder'),
             ('implicit_folder', None, None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'implicit_folder/'),
+            util.fs.zip_file_info(zfile, 'implicit_folder/'),
             ('implicit_folder', None, None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, '', check_implicit_dir=True),
+            util.fs.zip_file_info(zfile, '', check_implicit_dir=True),
             ('', 'dir', None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'implicit_folder', check_implicit_dir=True),
+            util.fs.zip_file_info(zfile, 'implicit_folder', check_implicit_dir=True),
             ('implicit_folder', 'dir', None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'implicit_folder/', check_implicit_dir=True),
+            util.fs.zip_file_info(zfile, 'implicit_folder/', check_implicit_dir=True),
             ('implicit_folder', 'dir', None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'implicit_folder/.gitkeep'),
+            util.fs.zip_file_info(zfile, 'implicit_folder/.gitkeep'),
             ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'nonexist'),
+            util.fs.zip_file_info(zfile, 'nonexist'),
             ('nonexist', None, None, None),
         )
 
         self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'nonexist/'),
+            util.fs.zip_file_info(zfile, 'nonexist/'),
             ('nonexist', None, None, None),
         )
 
         # take zipfile.ZipFile
-        with zipfile.ZipFile(zip_filename, 'r') as zh:
+        with zipfile.ZipFile(zfile, 'r') as zh:
             self.assertEqual(
                 util.fs.zip_file_info(zh, 'file.txt'),
                 ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
             )
 
     def test_zip_listdir(self):
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, '')), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, '')), {
             ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
             ('implicit_folder', 'dir', None, None),
             ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
         })
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, '/')), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, '/')), {
             ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
             ('implicit_folder', 'dir', None, None),
             ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
         })
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, '', recursive=True)), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, '', recursive=True)), {
             ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
             ('folder/.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0))),
             ('implicit_folder', 'dir', None, None),
@@ -2938,33 +2949,33 @@ class TestHelpers(unittest.TestCase):
             ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
         })
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, 'folder')), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, 'folder')), {
             ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0)))
         })
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, 'folder/')), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, 'folder/')), {
             ('.gitkeep', 'file', 3, zip_tuple_timestamp((1989, 1, 1, 0, 0, 0)))
         })
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, 'implicit_folder')), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, 'implicit_folder')), {
             ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
         })
 
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, 'implicit_folder/')), {
+        self.assertEqual(set(util.fs.zip_listdir(zfile, 'implicit_folder/')), {
             ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
         })
 
         with self.assertRaises(util.fs.ZipDirNotFoundError):
-            set(util.fs.zip_listdir(zip_filename, 'nonexist'))
+            set(util.fs.zip_listdir(zfile, 'nonexist'))
 
         with self.assertRaises(util.fs.ZipDirNotFoundError):
-            set(util.fs.zip_listdir(zip_filename, 'nonexist/'))
+            set(util.fs.zip_listdir(zfile, 'nonexist/'))
 
         with self.assertRaises(util.fs.ZipDirNotFoundError):
-            set(util.fs.zip_listdir(zip_filename, 'file.txt'))
+            set(util.fs.zip_listdir(zfile, 'file.txt'))
 
         # take zipfile.ZipFile
-        with zipfile.ZipFile(zip_filename, 'r') as zh:
+        with zipfile.ZipFile(zfile, 'r') as zh:
             self.assertEqual(set(util.fs.zip_listdir(zh, '')), {
                 ('folder', 'dir', None, zip_tuple_timestamp((1988, 1, 1, 0, 0, 0))),
                 ('implicit_folder', 'dir', None, None),
@@ -2972,7 +2983,8 @@ class TestHelpers(unittest.TestCase):
             })
 
     def test_zip_check_subpath(self):
-        zfile = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr('file.txt', '123456')
             zh.writestr('explicit_folder/', '')
@@ -3003,197 +3015,211 @@ class TestHelpers(unittest.TestCase):
 
     def test_zip_compress01(self):
         """directory"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-
-        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-            fh.write('ABC中文')
-        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'folder')
+        src2 = os.path.join(root, 'folder', 'subfolder')
+        src3 = os.path.join(root, 'folder', 'subfolder', 'subfolderfile.txt')
+        src4 = os.path.join(root, 'folder', 'subfile.txt')
+        src5 = os.path.join(root, 'file.txt')
+        zfile = os.path.join(root, 'archive.zip')
+        os.makedirs(src, exist_ok=True)
+        os.makedirs(src2, exist_ok=True)
+        with open(src3, 'w', encoding='UTF-8') as fh:
             fh.write('ABCDEF')
-        with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+        with open(src4, 'w', encoding='UTF-8') as fh:
             fh.write('123456')
+        with open(src5, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
 
-        util.fs.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder')
+        util.fs.zip_compress(zfile, src, 'myfolder')
 
-        with zipfile.ZipFile(zip_filename) as zh:
+        with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
             self.assertEqual(zh.read('myfolder/subfile.txt').decode('UTF-8'), '123456')
 
     def test_zip_compress02(self):
         """directory with subpath=''"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-
-        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-            fh.write('ABC中文')
-        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'folder')
+        src2 = os.path.join(root, 'folder', 'subfolder')
+        src3 = os.path.join(root, 'folder', 'subfolder', 'subfolderfile.txt')
+        src4 = os.path.join(root, 'folder', 'subfile.txt')
+        src5 = os.path.join(root, 'file.txt')
+        zfile = os.path.join(root, 'archive.zip')
+        os.makedirs(src, exist_ok=True)
+        os.makedirs(src2, exist_ok=True)
+        with open(src3, 'w', encoding='UTF-8') as fh:
             fh.write('ABCDEF')
-        with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+        with open(src4, 'w', encoding='UTF-8') as fh:
             fh.write('123456')
+        with open(src5, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
 
-        util.fs.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), '')
+        util.fs.zip_compress(zfile, src, '')
 
-        with zipfile.ZipFile(zip_filename) as zh:
+        with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.read('subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
             self.assertEqual(zh.read('subfile.txt').decode('UTF-8'), '123456')
 
     def test_zip_compress03(self):
         """directory with filter"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-
-        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
-            fh.write('ABC中文')
-        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'folder')
+        src2 = os.path.join(root, 'folder', 'subfolder')
+        src3 = os.path.join(root, 'folder', 'subfolder', 'subfolderfile.txt')
+        src4 = os.path.join(root, 'folder', 'subfile.txt')
+        src5 = os.path.join(root, 'file.txt')
+        zfile = os.path.join(root, 'archive.zip')
+        os.makedirs(src, exist_ok=True)
+        os.makedirs(src2, exist_ok=True)
+        with open(src3, 'w', encoding='UTF-8') as fh:
             fh.write('ABCDEF')
-        with open(os.path.join(temp_dir, 'folder', 'subfile.txt'), 'w', encoding='UTF-8') as fh:
+        with open(src4, 'w', encoding='UTF-8') as fh:
             fh.write('123456')
+        with open(src5, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
 
-        util.fs.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'myfolder', filter={'subfolder'})
+        util.fs.zip_compress(zfile, src, 'myfolder', filter={'subfolder'})
 
-        with zipfile.ZipFile(zip_filename) as zh:
+        with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
             with self.assertRaises(KeyError):
                 zh.getinfo('myfolder/subfile.txt')
 
     def test_zip_compress04(self):
         """file"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-
-        with open(os.path.join(temp_dir, 'file.txt'), 'w', encoding='UTF-8') as fh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'file.txt')
+        src2 = os.path.join(root, 'folder')
+        src3 = os.path.join(root, 'folder', 'sybfile1.txt')
+        zfile = os.path.join(root, 'zipfile.zip')
+        with open(src, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        os.makedirs(os.path.join(temp_dir, 'folder'), exist_ok=True)
-        with open(os.path.join(temp_dir, 'folder', 'sybfile1.txt'), 'w', encoding='UTF-8') as fh:
+        os.makedirs(src2, exist_ok=True)
+        with open(src3, 'w', encoding='UTF-8') as fh:
             fh.write('123456')
 
-        util.fs.zip_compress(zip_filename, os.path.join(temp_dir, 'file.txt'), 'myfile.txt')
+        util.fs.zip_compress(zfile, src, 'myfile.txt')
 
-        with zipfile.ZipFile(zip_filename) as zh:
+        with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.read('myfile.txt').decode('UTF-8'), 'ABC中文')
 
     def test_zip_extract01(self):
         """root"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
 
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
             zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-        util.fs.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'))
+        util.fs.zip_extract(zfile, os.path.join(root, 'zipfile'))
 
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
+            os.stat(os.path.join(root, 'zipfile', 'file.txt')).st_mtime,
             zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
         )
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'zipfile', 'folder')).st_mtime,
+            os.stat(os.path.join(root, 'zipfile', 'folder')).st_mtime,
             zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
         )
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'zipfile', 'folder', '.gitkeep')).st_mtime,
+            os.stat(os.path.join(root, 'zipfile', 'folder', '.gitkeep')).st_mtime,
             zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
         )
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'zipfile', 'implicit_folder', '.gitkeep')).st_mtime,
+            os.stat(os.path.join(root, 'zipfile', 'implicit_folder', '.gitkeep')).st_mtime,
             zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
         )
 
     def test_zip_extract02(self):
         """folder explicit"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
 
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
             zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-        util.fs.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'folder')
+        util.fs.zip_extract(zfile, os.path.join(root, 'folder'), 'folder')
 
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'folder')).st_mtime,
+            os.stat(os.path.join(root, 'folder')).st_mtime,
             zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
         )
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
+            os.stat(os.path.join(root, 'folder', '.gitkeep')).st_mtime,
             zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
         )
 
     def test_zip_extract03(self):
         """folder implicit"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
 
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
             zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-        util.fs.zip_extract(zip_filename, os.path.join(temp_dir, 'implicit_folder'), 'implicit_folder')
+        util.fs.zip_extract(zfile, os.path.join(root, 'implicit_folder'), 'implicit_folder')
 
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'implicit_folder', '.gitkeep')).st_mtime,
+            os.stat(os.path.join(root, 'implicit_folder', '.gitkeep')).st_mtime,
             zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
         )
 
     def test_zip_extract04(self):
         """file"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
 
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
             zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
-        util.fs.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile.txt'), 'file.txt')
+        util.fs.zip_extract(zfile, os.path.join(root, 'zipfile.txt'), 'file.txt')
 
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'zipfile.txt')).st_mtime,
+            os.stat(os.path.join(root, 'zipfile.txt')).st_mtime,
             zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
         )
 
     def test_zip_extract05(self):
         """target exists"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
 
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
             zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
             zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1987, 1, 3, 0, 0, 0)), '123456')
             zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
 
         with self.assertRaises(FileExistsError):
-            util.fs.zip_extract(zip_filename, temp_dir, '')
+            util.fs.zip_extract(zfile, root, '')
 
     def test_zip_extract06(self):
         """timezone adjust"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
 
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
 
         test_offset = -12345  # use a timezone offset which is unlikely really used
-        util.fs.zip_extract(zip_filename, os.path.join(temp_dir, 'zipfile'), tzoffset=test_offset)
+        util.fs.zip_extract(zfile, os.path.join(root, 'zipfile'), tzoffset=test_offset)
         delta = datetime.now().astimezone().utcoffset().total_seconds()
 
         self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
+            os.stat(os.path.join(root, 'zipfile', 'file.txt')).st_mtime,
             zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta,
         )
 
