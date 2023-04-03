@@ -947,16 +947,21 @@ def zip_compression_params(mimetype=None, compress_type=None, compresslevel=None
     }
 
 
-def zip_tuple_timestamp(zipinfodate):
-    """Get timestamp from a ZipInfo.date_time.
-    """
-    return time.mktime(zipinfodate + (0, 0, -1))
+def zip_timestamp(zinfo_or_tuple):
+    """Get a compatible timestamp from a ZipInfo.
 
+    Args:
+        zinfo_or_tuple: ZipInfo or a tuple as ZipInfo.date_time
 
-def zip_timestamp(zipinfo):
-    """Get timestamp from a ZipInfo.
+    Returns:
+        float: timestamp compatible with os.stat_result.st_mtime
     """
-    return zip_tuple_timestamp(zipinfo.date_time)
+    if isinstance(zinfo_or_tuple, zipfile.ZipInfo):
+        tuple_ = zinfo_or_tuple.date_time
+    else:
+        tuple_ = zinfo_or_tuple
+
+    return time.mktime(tuple_ + (0, 0, -1))
 
 
 def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):

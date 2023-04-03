@@ -19,7 +19,7 @@ import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook.app import make_app
 from webscrapbook.util import frozendict, make_hashable
-from webscrapbook.util.fs import junction, zip_timestamp, zip_tuple_timestamp
+from webscrapbook.util.fs import junction, zip_timestamp
 
 from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
 
@@ -488,7 +488,7 @@ class TestView(unittest.TestCase):
                     path='/archive.zip!/',
                     pathparts=['/archive.zip', ''],
                     subentries={
-                        ('index.html', 'file', 19, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
+                        ('index.html', 'file', 19, zip_timestamp((1987, 1, 1, 0, 0, 0))),
                     },
                 )
 
@@ -834,7 +834,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'explicit_dir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 1, 0, 0, 0)),
                         'mime': None,
                     },
                 })
@@ -849,7 +849,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'explicit_dir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 1, 0, 0, 0)),
                         'mime': None,
                     },
                 })
@@ -909,7 +909,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
                         'mime': 'text/html',
                     },
                 })
@@ -939,7 +939,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 3,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 5, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 5, 0, 0, 0)),
                         'mime': 'text/html',
                     },
                 })
@@ -1079,13 +1079,13 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
                     }),
                     frozendict({
                         'name': 'subdir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
                     }),
                 })
 
@@ -1103,13 +1103,13 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
                     }),
                     frozendict({
                         'name': 'subdir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
                     }),
                 })
 
@@ -1127,7 +1127,7 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 22,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
                     }),
                     frozendict({
                         'name': 'subdir',
@@ -1151,7 +1151,7 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 22,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
                     }),
                     frozendict({
                         'name': 'subdir',
@@ -1190,7 +1190,7 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 3,
-                        'last_modified': zip_tuple_timestamp((1987, 1, 5, 0, 0, 0)),
+                        'last_modified': zip_timestamp((1987, 1, 5, 0, 0, 0)),
                     }),
                 })
         finally:
@@ -1306,13 +1306,13 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
-                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+                    'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
+                    'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
                 }), sse)
                 self.assertIn(('complete', None), sse)
 
@@ -1328,13 +1328,13 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
-                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 0, 0, 0)),
+                    'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': zip_tuple_timestamp((1987, 1, 2, 1, 0, 0)),
+                    'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
                 }), sse)
                 self.assertIn(('complete', None), sse)
 
@@ -1350,7 +1350,7 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
-                    'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
+                    'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
@@ -1372,7 +1372,7 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
-                    'last_modified': zip_tuple_timestamp((1987, 1, 3, 0, 0, 0)),
+                    'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
