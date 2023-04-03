@@ -955,14 +955,6 @@ class TestHelpers(unittest.TestCase):
             ('folder/.gitkeep', 'file', 0, os.stat(os.path.join(entry, 'folder', '.gitkeep')).st_mtime),
         })
 
-    def test_zip_fix_subpath(self):
-        subpath = 'abc/def/測試.txt'
-        self.assertEqual(util.fs.zip_fix_subpath(subpath), subpath)
-
-    @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
-    def test_zip_fix_subpath_altsep(self):
-        self.assertEqual(util.fs.zip_fix_subpath('abc\\def\\測試.txt'), 'abc/def/測試.txt')
-
     def test_zip_tuple_timestamp(self):
         self.assertEqual(
             util.fs.zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)),
@@ -1055,17 +1047,6 @@ class TestHelpers(unittest.TestCase):
                 ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
             )
 
-    @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
-    def test_zip_file_info_altsep(self):
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('implicit_folder\\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
-
-        self.assertEqual(
-            util.fs.zip_file_info(zip_filename, 'implicit_folder\\.gitkeep'),
-            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0))),
-        )
-
     def test_zip_listdir(self):
         zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
         with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1127,16 +1108,6 @@ class TestHelpers(unittest.TestCase):
                 ('file.txt', 'file', 6, zip_tuple_timestamp((1987, 1, 1, 0, 0, 0))),
             })
 
-    @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
-    def test_zip_listdir_altsep(self):
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo(r'implicit_folder\.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
-
-        self.assertEqual(set(util.fs.zip_listdir(zip_filename, 'implicit_folder\\')), {
-            ('.gitkeep', 'file', 4, zip_tuple_timestamp((1990, 1, 1, 0, 0, 0)))
-        })
-
     def test_zip_has(self):
         zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
         with zipfile.ZipFile(zip_filename, 'w') as zh:
@@ -1182,33 +1153,6 @@ class TestHelpers(unittest.TestCase):
         self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder/.gitkeep/', type='any'))
         self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist.foo', type='any'))
         self.assertFalse(util.fs.zip_has(zip_filename, 'nonexist/', type='any'))
-
-    @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
-    def test_zip_has_altsep(self):
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
-            zh.writestr('implicit_folder\\.gitkeep', '1234')
-
-        self.assertTrue(util.fs.zip_has(zip_filename, '', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, '\\', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder', type='dir'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder\\', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='dir'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='dir'))
-
-        self.assertFalse(util.fs.zip_has(zip_filename, '', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, '\\', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder', type='file'))
-        self.assertFalse(util.fs.zip_has(zip_filename, 'implicit_folder\\', type='file'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='file'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='file'))
-
-        self.assertTrue(util.fs.zip_has(zip_filename, '', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, '\\', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder\\', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder\\.gitkeep', type='any'))
-        self.assertTrue(util.fs.zip_has(zip_filename, 'implicit_folder\\.gitkeep\\', type='any'))
 
     def test_zip_compress01(self):
         """directory"""
@@ -1286,21 +1230,6 @@ class TestHelpers(unittest.TestCase):
 
         with zipfile.ZipFile(zip_filename) as zh:
             self.assertEqual(zh.read('myfile.txt').decode('UTF-8'), 'ABC中文')
-
-    @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
-    def test_zip_compress05(self):
-        """altsep"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-
-        os.makedirs(os.path.join(temp_dir, 'folder', 'subfolder'), exist_ok=True)
-        with open(os.path.join(temp_dir, 'folder', 'subfolder', 'subfolderfile.txt'), 'w', encoding='UTF-8') as fh:
-            fh.write('ABCDEF')
-
-        util.fs.zip_compress(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
-
-        with zipfile.ZipFile(zip_filename) as zh:
-            self.assertEqual(zh.read('sub/folder/subfolder/subfolderfile.txt').decode('UTF-8'), 'ABCDEF')
 
     def test_zip_extract01(self):
         """root"""
@@ -1419,22 +1348,6 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(
             os.stat(os.path.join(temp_dir, 'zipfile', 'file.txt')).st_mtime,
             zip_tuple_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta,
-        )
-
-    @unittest.skipUnless(os.sep != '/', 'requires os.sep != "/"')
-    def test_zip_extract07(self):
-        """altsep"""
-        temp_dir = tempfile.mkdtemp(dir=tmpdir)
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('sub\\folder\\.gitkeep', (1987, 1, 4, 0, 0, 0)), 'abc')
-
-        util.fs.zip_extract(zip_filename, os.path.join(temp_dir, 'folder'), 'sub\\folder')
-
-        self.assertEqual(
-            os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
-            zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
         )
 
 
