@@ -402,9 +402,11 @@ def mkzip(cpath):
 
             with open_archive_path(cpath, 'a') as zh:
                 if cur == ZIP_SUBPATH_FILE:
-                    zip_remove(zh, cpath[-1])
-
-                zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
+                    zinfo = zh.getinfo(cpath[-1])
+                    zip_remove(zh, zinfo)
+                    zinfo.date_time = time.localtime()
+                else:
+                    zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
                 zinfo.compress_type = zipfile.ZIP_STORED
                 buf = io.BytesIO()
                 with zipfile.ZipFile(buf, 'w'):

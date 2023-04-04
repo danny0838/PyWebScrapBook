@@ -1111,6 +1111,8 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
             zinfo = zipfile.ZipInfo('nested/subarchive.zip', (1980, 1, 2, 0, 0, 0))
+            zinfo.external_attr = 0o770 << 16
+            zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
         dst = [zfile, 'nested/subarchive.zip']
         util.fs.mkzip(dst)
@@ -1118,6 +1120,8 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+            self.assertEqual(oct(zip_mode(zinfo)), oct(0o770))
+            self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             with zh.open(dst[-1]) as fh:
                 self.assertTrue(zipfile.is_zipfile(fh))
 
