@@ -1229,17 +1229,21 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
                 else:
                     entries = [subpath]
 
-            # extract entries and keep datetime
+            # extract entries and recover mtime
             zh.extractall(tempdir, entries)
             for entry in entries:
                 file = os.path.join(tempdir, entry)
-                ts = zip_timestamp(zh.getinfo(entry))
+                zinfo = zh.getinfo(entry)
 
+                ts = zip_timestamp(zinfo)
                 if tzoffset is not None:
                     delta = datetime.now().astimezone().utcoffset().total_seconds()
                     ts = ts - tzoffset + delta
-
                 os.utime(file, (ts, ts))
+
+                # @TODO: recover mode?
+                # It may be ignored in some OS and setting the mode for a file
+                # can prevent another file from being set.
 
         # move to target path
         if not subpath:
