@@ -10,7 +10,7 @@ from datetime import datetime
 from webscrapbook import util
 from webscrapbook.util.fs import zip_tuple_timestamp
 
-from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
+from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR, test_file_cleanup
 
 test_root = os.path.join(ROOT_DIR, 'test_util_fs')
 
@@ -816,12 +816,8 @@ class TestHelpers(unittest.TestCase):
         # junction
         entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
         util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
-
-        try:
+        with test_file_cleanup(entry):
             self.assertTrue(util.fs.file_is_link(entry))
-        finally:
-            # prevent tree cleanup issue for junction in Python 3.7
-            os.remove(entry)
 
         # directory
         entry = os.path.join(test_root, 'file_info', 'folder')
@@ -873,29 +869,21 @@ class TestHelpers(unittest.TestCase):
     def test_file_info_junction_dir(self):
         entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
         util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
-
-        try:
+        with test_file_cleanup(entry):
             self.assertEqual(
                 util.fs.file_info(entry),
                 ('junction', 'link', None, os.lstat(entry).st_mtime),
             )
-        finally:
-            # prevent tree cleanup issue for junction in Python 3.7
-            os.remove(entry)
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_info_junction_nonexist(self):
         entry = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'junction')
         util.fs.junction(os.path.join(test_root, 'file_info', 'nonexist'), entry)
-
-        try:
+        with test_file_cleanup(entry):
             self.assertEqual(
                 util.fs.file_info(entry),
                 ('junction', 'link', None, os.lstat(entry).st_mtime),
             )
-        finally:
-            # prevent tree cleanup issue for junction in Python 3.7
-            os.remove(entry)
 
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')

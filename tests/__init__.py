@@ -1,5 +1,6 @@
 import os
 import tempfile
+from contextlib import contextmanager
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -24,3 +25,19 @@ def _():
 
 
 SYMLINK_SUPPORTED = _()
+
+
+@contextmanager
+def test_file_cleanup(*paths):
+    """Call os.remove() afterwards for given paths.
+
+    - Mainly to prevent tree cleanup issue for junctions in Python 3.7
+    """
+    try:
+        yield
+    finally:
+        for path in paths:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
