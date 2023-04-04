@@ -1200,12 +1200,43 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), self.dummy_bytes)
 
+    def test_zip_nonexist_auto_compress_type(self):
+        """Don't compress a non-compressible file type."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w'):
+            pass
+        dst = [zfile, 'nested/image.jpg']
+        util.fs.save(dst, self.dummy_bytes)
+        with zipfile.ZipFile(zfile) as zh:
+            zinfo = zh.getinfo(dst[-1])
+            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+            with zh.open(zinfo) as fh:
+                self.assertEqual(fh.read(), self.dummy_bytes)
+
     def test_zip_nonexist_stream(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/file.txt']
+        stream = io.BytesIO(self.dummy_bytes)
+        util.fs.save(dst, stream)
+        with zipfile.ZipFile(zfile) as zh:
+            zinfo = zh.getinfo(dst[-1])
+            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            with zh.open(zinfo) as fh:
+                self.assertEqual(fh.read(), self.dummy_bytes)
+
+    def test_zip_nonexist_stream_auto_compress_type(self):
+        """Don't compress a non-compressible file type."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w'):
+            pass
+        dst = [zfile, 'nested/image.jpg']
         stream = io.BytesIO(self.dummy_bytes)
         util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
@@ -1239,13 +1270,17 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
             zinfo = zipfile.ZipInfo('nested/file.txt', (1980, 1, 2, 0, 0, 0))
+            zinfo.external_attr = 0o770 << 16
+            zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
         dst = [zfile, 'nested/file.txt']
         util.fs.save(dst, self.dummy_bytes)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
-            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(oct(zip_mode(zinfo)), oct(0o770))
+            self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), self.dummy_bytes)
 
@@ -1254,6 +1289,8 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
             zinfo = zipfile.ZipInfo('nested/file.txt', (1980, 1, 2, 0, 0, 0))
+            zinfo.external_attr = 0o770 << 16
+            zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
         dst = [zfile, 'nested/file.txt']
         stream = io.BytesIO(self.dummy_bytes)
@@ -1261,7 +1298,9 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
-            self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+            self.assertEqual(oct(zip_mode(zinfo)), oct(0o770))
+            self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), self.dummy_bytes)
 

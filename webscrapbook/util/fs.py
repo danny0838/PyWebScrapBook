@@ -434,20 +434,8 @@ def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
             except OSError as exc:
                 raise FSBadParentError(cpath) from exc
 
-            if isinstance(src, bytes):
-                with open(dst, 'wb') as fh:
-                    fh.write(src)
-                return
-
-            try:
-                assert callable(src.read)
-            except (AssertionError, AttributeError):
-                pass
-            else:
-                with open(dst, 'wb') as fh:
-                    for chunk in iter(functools.partial(src.read, buffer_size), b''):
-                        fh.write(chunk)
-                return
+            with open(dst, 'wb') as fh:
+                _save_write(fh, src, buffer_size=buffer_size)
 
         else:
             # 'r' mode to check if zip is valid
@@ -460,29 +448,39 @@ def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
 
             with open_archive_path(cpath, 'a') as zh:
                 if cur == ZIP_SUBPATH_FILE:
-                    zip_remove(zh, cpath[-1])
-
-                zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
-
-                if isinstance(src, bytes):
-                    zh.writestr(zinfo, src, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-                    return
-
-                try:
-                    assert callable(src.read)
-                except (AssertionError, AttributeError):
-                    pass
+                    zinfo = zh.getinfo(cpath[-1])
+                    zip_remove(zh, zinfo)
+                    zinfo.date_time = time.localtime()
                 else:
-                    with zh.open(zinfo, 'w') as fh:
-                        for chunk in iter(functools.partial(src.read, buffer_size), b''):
-                            fh.write(chunk)
-                    return
+                    zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
+                    comp = zip_compression_params(mimetypes.guess_type(cpath[-1])[0])
+                    zinfo.compress_type = comp['compress_type']
+                    zinfo._compresslevel = comp['compresslevel']
 
-        raise ValueError('src must be bytes or a stream')
+                with zh.open(zinfo, 'w') as fh:
+                    _save_write(fh, src, buffer_size=buffer_size)
+
     except FSError:
         raise
     except Exception as exc:
         raise _map_exc(exc, cpath) from exc
+
+
+def _save_write(fh, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+    if isinstance(src, bytes):
+        fh.write(src)
+        return
+
+    try:
+        assert callable(src.read)
+    except (AssertionError, AttributeError):
+        pass
+    else:
+        for chunk in iter(functools.partial(src.read, buffer_size), b''):
+            fh.write(chunk)
+        return
+
+    raise ValueError('src must be bytes or a stream')
 
 
 def delete(cpath):
