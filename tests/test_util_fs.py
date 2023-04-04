@@ -3353,6 +3353,16 @@ class TestHelpers(unittest.TestCase):
                 'ABC中文'
             )
 
+    def test_zip_compress_file_to_root(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'file.txt')
+        zfile = os.path.join(root, 'zipfile.zip')
+        with open(src, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+
+        with self.assertRaises(ValueError):
+            util.fs.zip_compress(zfile, src, '')
+
     def test_zip_compress_auto_compress_type(self):
         """Auto determime compress type"""
         root = tempfile.mkdtemp(dir=tmpdir)

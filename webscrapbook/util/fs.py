@@ -1,6 +1,7 @@
 """Virtual filesystem for complex file operation."""
 import functools
 import io
+import itertools
 import os
 import re
 import shutil
@@ -1177,7 +1178,7 @@ def zip_check_subpath(zip, subpath, allow_invalid=False):
     return ZIP_SUBPATH_NONE
 
 
-def zip_compress(zip, filename, subpath, filter=None):
+def zip_compress(zip, filename, subpath, filter=None, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
     """Compress src to be the subpath in the zip.
 
     Args:
@@ -1192,67 +1193,61 @@ def zip_compress(zip, filename, subpath, filter=None):
     """
     filename = os.path.abspath(filename)
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'w') as zh:
-        if os.path.isdir(filename):
-            errors = []
+        errors = []
 
-            subpath = subpath + '/' if subpath else ''
-            src = filename
-            dst = subpath
-            if dst:
-                try:
-                    zinfo = zipfile.ZipInfo.from_file(src, dst)
+        for src, dst in _zip_compress_iter(filename, subpath, filter):
+            try:
+                zinfo = zipfile.ZipInfo.from_file(src, dst)
+                if zinfo.is_dir():
                     zh.writestr(zinfo, b'')
-                except OSError as why:
-                    errors.append((src, dst, why))
+                else:
+                    comp = zip_compression_params(mimetypes.guess_type(dst)[0])
+                    zinfo.compress_type = comp['compress_type']
+                    zinfo._compresslevel = comp['compresslevel']
+                    with open(src, 'rb') as ih, zh.open(zinfo, 'w') as oh:
+                        for chunk in iter(lambda: ih.read(buffer_size), b''):
+                            oh.write(chunk)
+            except OSError as why:
+                errors.append((src, dst, why))
 
-            filter = {os.path.normcase(os.path.join(filename, f)) for f in (filter or [])}
-            filter_d = {os.path.join(f, '') for f in filter}
+        if errors:
+            raise shutil.Error(errors)
 
-            base_cut = len(os.path.join(filename, ''))
-            for root, dirs, files in os.walk(filename, followlinks=True):
-                for dir in dirs:
-                    src = os.path.join(root, dir)
 
-                    # apply the filter
-                    if filter:
-                        src_nc = os.path.normcase(src)
-                        if src_nc not in filter:
-                            if not any(src_nc.startswith(f) for f in filter_d):
-                                continue
+def _zip_compress_iter(filename, subpath, filter=None):
+    if os.path.isfile(filename):
+        if not subpath:
+            raise ValueError("Unable to add a file at ''")
 
-                    dst = src[base_cut:]
-                    if os.sep != '/':
-                        dst = dst.replace(os.sep, '/')
-                    dst = subpath + dst + '/'
-                    try:
-                        zinfo = zipfile.ZipInfo.from_file(src, dst)
-                        zh.writestr(zinfo, b'')
-                    except OSError as why:
-                        errors.append((src, dst, why))
+        yield filename, subpath
+        return
 
-                for file in files:
-                    src = os.path.join(root, file)
+    if subpath:
+        yield filename, subpath
 
-                    # apply the filter
-                    if filter:
-                        src_nc = os.path.normcase(src)
-                        if src_nc not in filter:
-                            if not any(src_nc.startswith(f) for f in filter_d):
-                                continue
+    subpath = subpath + '/' if subpath else ''
+    cut = len(os.path.join(filename, ''))
+    filter = {os.path.normcase(os.path.join(filename, f)) for f in (filter or ())}
+    filter_d = {os.path.join(f, '') for f in filter}
 
-                    dst = src[base_cut:]
-                    if os.sep != '/':
-                        dst = dst.replace(os.sep, '/')
-                    dst = subpath + dst
-                    try:
-                        zh.write(src, dst, **zip_compression_params(mimetypes.guess_type(dst)[0]))
-                    except OSError as why:
-                        errors.append((src, dst, why))
+    for root, dirs, files in os.walk(filename, followlinks=True):
+        for entry in itertools.chain(dirs, files):
+            src = os.path.join(root, entry)
 
-            if errors:
-                raise shutil.Error(errors)
-        else:
-            zh.write(filename, subpath, **zip_compression_params(mimetypes.guess_type(subpath)[0]))
+            # apply the filter
+            if filter:
+                src_nc = os.path.normcase(src)
+                if src_nc not in filter:
+                    if not any(src_nc.startswith(f) for f in filter_d):
+                        continue
+
+            # determine target subpath as dst
+            dst = src[cut:]
+            if os.sep != '/':
+                dst = dst.replace(os.sep, '/')
+            dst = subpath + dst
+
+            yield src, dst
 
 
 def zip_extract(zip, dst, subpath='', tzoffset=None):
