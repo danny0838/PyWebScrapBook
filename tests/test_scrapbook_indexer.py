@@ -1,4 +1,3 @@
-import glob
 import os
 import tempfile
 import unittest
@@ -16,7 +15,7 @@ from webscrapbook.scrapbook.indexer import (
     UnSingleHtmlConverter,
 )
 
-from . import TEMP_DIR
+from . import TEMP_DIR, glob_files
 
 
 def setUpModule():
@@ -1914,7 +1913,7 @@ class TestUnSingleHtmlConverter(Test):
         rewritten = conv.run()
         self.assertEqual(rewritten, expected)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '8d02fbc24fb22ff07cb5aace1337e45688a66f8f.bmp'),
@@ -1983,7 +1982,7 @@ class TestUnSingleHtmlConverter(Test):
         with open(os.path.join(self.test_root, 'f35361f3ed8c3110eb15e3864ca3ff15ad000874.css'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected_css2)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'b7830ea17e3dbf1162c30f2f6339cf4f2c8a6f35.css'),
@@ -2016,7 +2015,7 @@ class TestUnSingleHtmlConverter(Test):
         with open(os.path.join(self.test_root, '46f5e95733b31bc905de15e6bd80c903e6b2096f.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected_html1)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '46f5e95733b31bc905de15e6bd80c903e6b2096f.html'),
@@ -2040,7 +2039,7 @@ class TestUnSingleHtmlConverter(Test):
         with open(os.path.join(self.test_root, '7db93a89332a48e75c089d989ae159643507e322.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected_html1)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '7db93a89332a48e75c089d989ae159643507e322.html'),
@@ -2074,7 +2073,7 @@ class TestUnSingleHtmlConverter(Test):
         with open(os.path.join(self.test_root, '924243d4c3b4637e7e2e5c06c23821f57b3b8d18.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected_html1)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '924243d4c3b4637e7e2e5c06c23821f57b3b8d18.html'),
@@ -2103,7 +2102,7 @@ class TestUnSingleHtmlConverter(Test):
         with open(os.path.join(self.test_root, '5ef62168ce3226f71e06187764b98e93827b7a1b.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected_html1)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '5ef62168ce3226f71e06187764b98e93827b7a1b.html'),
@@ -2138,7 +2137,7 @@ class TestUnSingleHtmlConverter(Test):
         rewritten = conv.run()
         self.assertEqual(rewritten, expected)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'e41c1a658ec99284dce1fa1231c473860e8534a4.bmp'),
@@ -2168,7 +2167,7 @@ class TestUnSingleHtmlConverter(Test):
         with open(os.path.join(self.test_root, 'fdd362b3a207d77938171f188e32aeb39d04aa26.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), expected_html1)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'fdd362b3a207d77938171f188e32aeb39d04aa26.html'),
@@ -2216,7 +2215,7 @@ class TestUnSingleHtmlConverter(Test):
         rewritten = conv.run()
         self.assertEqual(rewritten, expected)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '313d6864fa48b411d082f7692efd0c0892788fc4.js'),
@@ -2267,7 +2266,7 @@ class TestUnSingleHtmlConverter(Test):
         rewritten = conv.run()
         self.assertEqual(rewritten, expected)
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_root, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_root), {
             os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.svg'),
             os.path.join(self.test_root, '313d6864fa48b411d082f7692efd0c0892788fc4.js'),

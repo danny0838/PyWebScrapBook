@@ -1,4 +1,3 @@
-import glob
 import os
 import tempfile
 import unittest
@@ -9,7 +8,7 @@ from unittest import mock
 from webscrapbook.scrapbook.convert import file2wsb
 from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR
+from . import TEMP_DIR, glob_files
 
 
 def setUpModule():
@@ -121,7 +120,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -192,7 +191,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -264,7 +263,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.html'),
         })
@@ -315,7 +314,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -367,7 +366,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.html'),
         })
@@ -423,7 +422,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -483,7 +482,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -544,7 +543,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -605,7 +604,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -685,7 +684,7 @@ page content
                 id_item2,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -751,7 +750,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.htz'),
         })
@@ -812,7 +811,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.maff'),
         })
@@ -861,7 +860,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, id_item),
             os.path.join(self.test_output, id_item, 'index.html'),
@@ -912,7 +911,7 @@ page content
                 id_item,
             ],
         })
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, f'{id_item}.txt'),
         })

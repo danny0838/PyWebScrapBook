@@ -1,4 +1,3 @@
-import glob
 import os
 import tempfile
 import unittest
@@ -8,7 +7,7 @@ from unittest import mock
 from webscrapbook import WSB_DIR
 from webscrapbook.scrapbook.convert import migrate
 
-from . import TEMP_DIR
+from . import TEMP_DIR, glob_files
 
 
 def setUpModule():
@@ -658,7 +657,7 @@ Page3 content
         for _info in migrate.run(self.test_input, self.test_output, convert_legacy=True):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),

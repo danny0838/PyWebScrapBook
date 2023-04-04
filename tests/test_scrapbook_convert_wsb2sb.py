@@ -1,4 +1,3 @@
-import glob
 import os
 import tempfile
 import unittest
@@ -13,7 +12,7 @@ from webscrapbook import WSB_DIR, util
 from webscrapbook.scrapbook.convert import wsb2sb
 from webscrapbook.scrapbook.convert.wsb2sb import NC, NS1, RDF
 
-from . import TEMP_DIR
+from . import TEMP_DIR, glob_files
 
 
 def setUpModule():
@@ -795,7 +794,7 @@ scrapbook.meta({
             pass
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
@@ -824,7 +823,7 @@ scrapbook.meta({
             pass
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
@@ -852,7 +851,7 @@ scrapbook.meta({
             pass
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
@@ -884,7 +883,7 @@ scrapbook.meta({
             pass
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
@@ -912,7 +911,7 @@ scrapbook.meta({
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
         })
@@ -945,7 +944,7 @@ some content
             pass
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),

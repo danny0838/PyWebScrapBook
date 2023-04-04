@@ -1,4 +1,3 @@
-import glob
 import os
 import tempfile
 import unittest
@@ -11,7 +10,7 @@ from webscrapbook import WSB_DIR, util
 from webscrapbook.scrapbook.convert import items as conv_items
 from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR
+from . import TEMP_DIR, glob_files
 
 
 def setUpModule():
@@ -87,7 +86,7 @@ scrapbook.meta({
                     for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=[type]):
                         pass
 
-                    self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+                    self.assertEqual(glob_files(self.test_output), {
                         os.path.join(self.test_output, ''),
                         os.path.join(self.test_output, '20200101000000000.htz'),
                     })
@@ -113,7 +112,7 @@ scrapbook.meta({
                     for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=[]):
                         pass
 
-                    self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+                    self.assertEqual(glob_files(self.test_output), {
                         os.path.join(self.test_output, ''),
                         os.path.join(self.test_output, '20200101000000000'),
                         os.path.join(self.test_output, '20200101000000000', 'index.html'),
@@ -202,7 +201,7 @@ my page content
         for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
@@ -303,13 +302,13 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -350,13 +349,13 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -396,13 +395,13 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='folder', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -427,7 +426,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.htz'),
             os.path.join(self.test_output, '20200101000000002.htz'),
@@ -527,12 +526,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.htz'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
         })
@@ -573,12 +572,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='htz', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.htz'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -618,12 +617,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -648,7 +647,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.maff'),
             os.path.join(self.test_output, '20200101000000002.maff'),
@@ -813,7 +812,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
@@ -863,12 +862,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
         })
@@ -908,12 +907,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -953,12 +952,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='maff', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -981,7 +980,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.html'),
             os.path.join(self.test_output, '20200101000000002.html'),
@@ -1088,12 +1087,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
         })
@@ -1133,12 +1132,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -1179,12 +1178,12 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', '**'), recursive=True)), {
+        self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
@@ -1226,7 +1225,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
@@ -1276,7 +1275,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.svg'),
         })
@@ -1320,7 +1319,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
@@ -1358,7 +1357,7 @@ scrapbook.meta({
         for _info in conv_items.run(self.test_input, self.test_output, format='single_file', types=['']):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })

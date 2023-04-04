@@ -1,4 +1,3 @@
-import glob
 import os
 import tempfile
 import unittest
@@ -7,7 +6,7 @@ from unittest import mock
 from webscrapbook import WSB_DIR
 from webscrapbook.scrapbook.convert import wsb2file
 
-from . import TEMP_DIR
+from . import TEMP_DIR, glob_files
 
 
 def setUpModule():
@@ -132,7 +131,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-Page item - folder.htd'),
             os.path.join(self.test_output, '1-Page item - folder.htd', 'index.html'),
@@ -242,7 +241,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output, prefix=False):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'Page item - folder.htd'),
             os.path.join(self.test_output, 'Page item - folder.htd', 'index.html'),
@@ -330,7 +329,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-Folder1'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder1 sub.htd'),
@@ -403,7 +402,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output, prefix=False):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'Folder1'),
             os.path.join(self.test_output, 'Folder1', 'Folder1 sub.htd'),
@@ -453,7 +452,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-File1'),
             os.path.join(self.test_output, '1-File1', '1-Bookmark1.htm'),
@@ -526,7 +525,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '01-Folder1'),
             os.path.join(self.test_output, '02-Folder2'),
@@ -616,7 +615,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output, prefix=False):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'myitem.htd'),
             os.path.join(self.test_output, 'myitem.htd', 'index.html'),
@@ -658,7 +657,7 @@ scrapbook.toc({
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass
 
-        self.assertEqual(set(glob.iglob(os.path.join(self.test_output, '**'), recursive=True)), {
+        self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-Folder1'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder2'),

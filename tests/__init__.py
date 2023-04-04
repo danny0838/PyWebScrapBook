@@ -1,3 +1,4 @@
+import glob
 import os
 import tempfile
 from contextlib import contextmanager
@@ -41,3 +42,17 @@ def test_file_cleanup(*paths):
                 os.remove(path)
             except OSError:
                 pass
+
+
+def glob_files(path):
+    """Get a set of files and directories under the path (inclusive).
+
+    - Note that the path itself in the glob result will be appended an os.sep,
+      and shuould usually be matched with os.path.join(path, '')
+    - Hidden ('.'-leading) files are not included unless include_hidden=True,
+      which is supported since Python 3.11, is provided to glob.
+
+    Returns:
+        set: files and directories under the path (inclusive)
+    """
+    return {*glob.iglob(os.path.join(glob.escape(path), '**'), recursive=True)}
