@@ -212,6 +212,118 @@ def view_in_explorer(cpath):
             launch(os.path.dirname(path))
 
 
+def _open_archive_path_filter(path, filters):
+    for filter in filters:
+        filter = filter.rstrip('/')
+        if path == filter:
+            return True
+        if path.startswith(filter + ('/' if filter else '')):
+            return True
+    return False
+
+
+@contextmanager
+def open_archive_path(cpath, mode='r', filters=None):
+    """Open the innermost zip handler for reading or writing.
+
+    e.g. reading from ['/path/to/foo.zip', 'subdir/file.txt']:
+
+        with open_archive_path(cpath) as zh:
+            with zh.open(cpath[-1]) as fh:
+                print(fh.read())
+
+    e.g. writing to ['/path/to/foo.zip', 'subdir/file.txt']:
+
+        with open_archive_path(cpath, 'w') as zh:
+            zh.writestr(cpath[-1], 'foo')
+
+    e.g. deleting ['/path/to/foo.zip', 'subdir/']:
+
+        with open_archive_path(cpath, 'w', [cpath[-1]]) as zh:
+            pass
+
+    Args:
+        cpath
+        mode: 'r' for reading, 'w' for modifying
+        filters: a list of file or folder to remove
+    """
+    cpath = CPath(cpath)
+
+    last = len(cpath) - 1
+    if last < 1:
+        raise ValueError('length of paths must > 1')
+
+    filtered = False
+    stack = []
+    try:
+        zh = zipfile.ZipFile(cpath[0])
+        stack.append(zh)
+        for i in range(1, last):
+            fh = zh.open(cpath[i])
+            stack.append(fh)
+            zh = zipfile.ZipFile(fh)
+            stack.append(zh)
+
+        if mode == 'r':
+            yield zh
+
+        elif mode == 'w':
+            # create a buffer for writing
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, 'w') as zh:
+                yield zh
+
+            # copy zip file
+            for i in reversed(range(1, last + 1)):
+                zh0 = stack.pop()
+                with zipfile.ZipFile(buffer, 'a') as zh:
+                    zh.comment = zh0.comment
+                    for info in zh0.infolist():
+                        if filters and i == last:
+                            if _open_archive_path_filter(info.filename, filters):
+                                filtered = True
+                                continue
+
+                        try:
+                            zh.getinfo(info.filename)
+                        except KeyError:
+                            pass
+                        else:
+                            continue
+
+                        zh.writestr(info, zh0.read(info),
+                                    compress_type=info.compress_type,
+                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
+                                    )
+
+                if filters and not any(f == '' for f in filters) and not filtered:
+                    raise KeyError('paths to filter do not exist')
+
+                if i == 1:
+                    break
+
+                # writer to another buffer for the parent zip
+                buffer2 = io.BytesIO()
+                with zipfile.ZipFile(buffer2, 'w') as zh:
+                    zh.writestr(cpath[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
+                buffer.close()
+                buffer = buffer2
+
+                # pop a file handler
+                stack.pop()
+
+            # write to the outermost zip
+            # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
+            buffer.seek(0)
+            with open(cpath[0], 'r+b') as fw, buffer as fr:
+                fw.truncate()
+                for chunk in iter(functools.partial(fr.read, 8192), b''):
+                    fw.write(chunk)
+    finally:
+        for fh in reversed(stack):
+            fh.close()
+
+
 #########################################################################
 # Filesystem handling
 #########################################################################
@@ -619,118 +731,6 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
             shutil.rmtree(tempdir)
         except OSError:
             pass
-
-
-def _open_archive_path_filter(path, filters):
-    for filter in filters:
-        filter = filter.rstrip('/')
-        if path == filter:
-            return True
-        if path.startswith(filter + ('/' if filter else '')):
-            return True
-    return False
-
-
-@contextmanager
-def open_archive_path(cpath, mode='r', filters=None):
-    """Open the innermost zip handler for reading or writing.
-
-    e.g. reading from ['/path/to/foo.zip', 'subdir/file.txt']:
-
-        with open_archive_path(cpath) as zh:
-            with zh.open(cpath[-1]) as fh:
-                print(fh.read())
-
-    e.g. writing to ['/path/to/foo.zip', 'subdir/file.txt']:
-
-        with open_archive_path(cpath, 'w') as zh:
-            zh.writestr(cpath[-1], 'foo')
-
-    e.g. deleting ['/path/to/foo.zip', 'subdir/']:
-
-        with open_archive_path(cpath, 'w', [cpath[-1]]) as zh:
-            pass
-
-    Args:
-        cpath
-        mode: 'r' for reading, 'w' for modifying
-        filters: a list of file or folder to remove
-    """
-    cpath = CPath(cpath)
-
-    last = len(cpath) - 1
-    if last < 1:
-        raise ValueError('length of paths must > 1')
-
-    filtered = False
-    stack = []
-    try:
-        zh = zipfile.ZipFile(cpath[0])
-        stack.append(zh)
-        for i in range(1, last):
-            fh = zh.open(cpath[i])
-            stack.append(fh)
-            zh = zipfile.ZipFile(fh)
-            stack.append(zh)
-
-        if mode == 'r':
-            yield zh
-
-        elif mode == 'w':
-            # create a buffer for writing
-            buffer = io.BytesIO()
-            with zipfile.ZipFile(buffer, 'w') as zh:
-                yield zh
-
-            # copy zip file
-            for i in reversed(range(1, last + 1)):
-                zh0 = stack.pop()
-                with zipfile.ZipFile(buffer, 'a') as zh:
-                    zh.comment = zh0.comment
-                    for info in zh0.infolist():
-                        if filters and i == last:
-                            if _open_archive_path_filter(info.filename, filters):
-                                filtered = True
-                                continue
-
-                        try:
-                            zh.getinfo(info.filename)
-                        except KeyError:
-                            pass
-                        else:
-                            continue
-
-                        zh.writestr(info, zh0.read(info),
-                                    compress_type=info.compress_type,
-                                    compresslevel=None if info.compress_type == zipfile.ZIP_STORED else 9,
-                                    )
-
-                if filters and not any(f == '' for f in filters) and not filtered:
-                    raise KeyError('paths to filter do not exist')
-
-                if i == 1:
-                    break
-
-                # writer to another buffer for the parent zip
-                buffer2 = io.BytesIO()
-                with zipfile.ZipFile(buffer2, 'w') as zh:
-                    zh.writestr(cpath[i - 1], buffer.getvalue(), compress_type=zipfile.ZIP_STORED)
-                buffer.close()
-                buffer = buffer2
-
-                # pop a file handler
-                stack.pop()
-
-            # write to the outermost zip
-            # use 'r+b' as 'wb' causes PermissionError for hidden file in Windows
-            buffer.seek(0)
-            with open(cpath[0], 'r+b') as fw, buffer as fr:
-                fw.truncate()
-                for chunk in iter(functools.partial(fr.read, 8192), b''):
-                    fw.write(chunk)
-    finally:
-        for fh in reversed(stack):
-            fh.close()
 
 
 class ZipStream(io.RawIOBase):

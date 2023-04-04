@@ -672,6 +672,145 @@ class TestCPath(unittest.TestCase):
         )
 
 
+class TestOpenArchivePath(unittest.TestCase):
+    def test_open_archive_path_read(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                buf11 = io.BytesIO()
+                with zipfile.ZipFile(buf11, 'w') as zh2:
+                    zh2.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('entry2.zip', buf11.getvalue())
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'Hello World!')
+
+        with self.assertRaises(ValueError):
+            with util.fs.open_archive_path([zip_file]) as zh:
+                pass
+
+    def test_open_archive_path_write(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            zh.comment = 'test zip comment 測試'.encode('UTF-8')
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.comment = 'test zip comment 1 測試'.encode('UTF-8')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w') as zh:
+            # existed
+            zh.writestr('subdir/index.html', 'rewritten 測試')
+
+            # new
+            zh.writestr('newdir/test.txt', 'new file 測試')
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            # existed
+            self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
+
+            # new
+            self.assertEqual(zh.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
+
+        # check comments are kept
+        with util.fs.open_archive_path([zip_file, '']) as zh:
+            self.assertEqual(zh.comment.decode('UTF-8'), 'test zip comment 測試')
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.comment.decode('UTF-8'), 'test zip comment 1 測試')
+
+    def test_open_archive_path_delete(self):
+        # file
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir/index.html']):
+            pass
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.namelist(), ['subdir/', 'subdir2/test.txt'])
+
+        # explicit directory
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir']):
+            pass
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.namelist(), ['subdir2/test.txt'])
+
+        # implicit directory
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir2']):
+            pass
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.namelist(), ['subdir/', 'subdir/index.html'])
+
+        # root (as an implicit directory)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['']):
+            pass
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.namelist(), [])
+
+        # multiple
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zip_file = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zip_file, 'w') as zh:
+            buf1 = io.BytesIO()
+            with zipfile.ZipFile(buf1, 'w') as zh1:
+                zh1.writestr('subdir/', '')
+                zh1.writestr('subdir/index.html', 'Hello World!')
+                zh1.writestr('subdir2/test.txt', 'dummy')
+            zh.writestr('entry1.zip', buf1.getvalue())
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir', 'subdir2']):
+            pass
+
+        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
+            self.assertEqual(zh.namelist(), [])
+
+
 class TestHelpers(unittest.TestCase):
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_is_link(self):
@@ -1334,143 +1473,6 @@ class TestHelpers(unittest.TestCase):
             os.stat(os.path.join(temp_dir, 'folder', '.gitkeep')).st_mtime,
             zip_tuple_timestamp((1987, 1, 4, 0, 0, 0)),
         )
-
-    def test_open_archive_path_read(self):
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w') as zh2:
-                    zh2.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'Hello World!')
-
-        with self.assertRaises(ValueError):
-            with util.fs.open_archive_path([zip_file]) as zh:
-                pass
-
-    def test_open_archive_path_write(self):
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            zh.comment = 'test zip comment 測試'.encode('UTF-8')
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                zh1.comment = 'test zip comment 1 測試'.encode('UTF-8')
-                zh1.writestr('subdir/index.html', 'Hello World!')
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w') as zh:
-            # existed
-            zh.writestr('subdir/index.html', 'rewritten 測試')
-
-            # new
-            zh.writestr('newdir/test.txt', 'new file 測試')
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            # existed
-            self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
-
-            # new
-            self.assertEqual(zh.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
-
-        # check comments are kept
-        with util.fs.open_archive_path([zip_file, '']) as zh:
-            self.assertEqual(zh.comment.decode('UTF-8'), 'test zip comment 測試')
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.comment.decode('UTF-8'), 'test zip comment 1 測試')
-
-    def test_open_archive_path_delete(self):
-        # file
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                zh1.writestr('subdir/', '')
-                zh1.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('subdir2/test.txt', 'dummy')
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir/index.html']):
-            pass
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.namelist(), ['subdir/', 'subdir2/test.txt'])
-
-        # explicit directory
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                zh1.writestr('subdir/', '')
-                zh1.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('subdir2/test.txt', 'dummy')
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir']):
-            pass
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.namelist(), ['subdir2/test.txt'])
-
-        # implicit directory
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                zh1.writestr('subdir/', '')
-                zh1.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('subdir2/test.txt', 'dummy')
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir2']):
-            pass
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.namelist(), ['subdir/', 'subdir/index.html'])
-
-        # root (as an implicit directory)
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                zh1.writestr('subdir/', '')
-                zh1.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('subdir2/test.txt', 'dummy')
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['']):
-            pass
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.namelist(), [])
-
-        # multiple
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zip_file = os.path.join(root, 'entry.zip')
-        with zipfile.ZipFile(zip_file, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                zh1.writestr('subdir/', '')
-                zh1.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('subdir2/test.txt', 'dummy')
-            zh.writestr('entry1.zip', buf1.getvalue())
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html'], 'w', ['subdir', 'subdir2']):
-            pass
-
-        with util.fs.open_archive_path([zip_file, 'entry1.zip', 'subdir/index.html']) as zh:
-            self.assertEqual(zh.namelist(), [])
 
 
 if __name__ == '__main__':
