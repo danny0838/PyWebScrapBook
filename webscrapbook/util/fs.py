@@ -1126,7 +1126,7 @@ def zip_listdir(zip, subpath, recursive=False):
                 yield info
 
 
-def zip_check_subpath(zip, subpath):
+def zip_check_subpath(zip, subpath, allow_invalid=False):
     """Check what is at the subpath in the ZIP.
 
     Args:
@@ -1141,15 +1141,16 @@ def zip_check_subpath(zip, subpath):
 
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
         # check if an ancestor is a file
-        parts = base.split('/')
-        for i in range(len(parts) - 1):
-            chk = '/'.join(parts[:i + 1])
-            try:
-                zh.getinfo(chk)
-            except KeyError:
-                pass
-            else:
-                return ZIP_SUBPATH_INVALID
+        if not allow_invalid:
+            parts = base.split('/')
+            for i in range(len(parts) - 1):
+                chk = '/'.join(parts[:i + 1])
+                try:
+                    zh.getinfo(chk)
+                except KeyError:
+                    pass
+                else:
+                    return ZIP_SUBPATH_INVALID
 
         # check file
         try:

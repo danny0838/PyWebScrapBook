@@ -3078,6 +3078,41 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/.gitkeep/nonexist'), util.fs.ZIP_SUBPATH_INVALID)
         self.assertEqual(util.fs.zip_check_subpath(zfile, 'implicit_folder/.gitkeep/nonexist/'), util.fs.ZIP_SUBPATH_INVALID)
 
+    def test_zip_check_subpath_allow_invalid(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('file.txt', '123456')
+            zh.writestr('explicit_folder/', '')
+            zh.writestr('implicit_folder/.gitkeep', '1234')
+            zh.writestr('file.txt/badsubfile.txt', '123456')
+
+        zip_check_subpath = functools.partial(util.fs.zip_check_subpath, allow_invalid=True)
+
+        self.assertEqual(zip_check_subpath(zfile, ''), util.fs.ZIP_SUBPATH_DIR_ROOT)
+        self.assertEqual(zip_check_subpath(zfile, '/'), util.fs.ZIP_SUBPATH_DIR_ROOT)
+        self.assertEqual(zip_check_subpath(zfile, 'file.txt'), util.fs.ZIP_SUBPATH_FILE)
+        self.assertEqual(zip_check_subpath(zfile, 'file.txt/'), util.fs.ZIP_SUBPATH_FILE)
+        self.assertEqual(zip_check_subpath(zfile, 'explicit_folder'), util.fs.ZIP_SUBPATH_DIR)
+        self.assertEqual(zip_check_subpath(zfile, 'explicit_folder/'), util.fs.ZIP_SUBPATH_DIR)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder'), util.fs.ZIP_SUBPATH_DIR_IMPLICIT)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/'), util.fs.ZIP_SUBPATH_DIR_IMPLICIT)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/.gitkeep'), util.fs.ZIP_SUBPATH_FILE)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/.gitkeep/'), util.fs.ZIP_SUBPATH_FILE)
+
+        self.assertEqual(zip_check_subpath(zfile, 'nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'explicit_folder/nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'explicit_folder/nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+
+        self.assertEqual(zip_check_subpath(zfile, 'file.txt/nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'file.txt/nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/.gitkeep/nonexist'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'implicit_folder/.gitkeep/nonexist/'), util.fs.ZIP_SUBPATH_NONE)
+        self.assertEqual(zip_check_subpath(zfile, 'file.txt/badsubfile.txt'), util.fs.ZIP_SUBPATH_FILE)
+
     def test_zip_compress_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'folder')
