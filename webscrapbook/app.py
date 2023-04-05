@@ -316,26 +316,13 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
     if format == 'sse':
         def gen():
             for entry in subentries:
-                data = {
-                    'name': entry.name,
-                    'type': entry.type,
-                    'size': entry.size,
-                    'last_modified': entry.last_modified,
-                }
-
+                data = entry._asdict()
                 yield json.dumps(data, ensure_ascii=False)
 
         return http_response(gen(), headers=headers, format=format)
 
     if format == 'json':
-        data = []
-        for entry in subentries:
-            data.append({
-                'name': entry.name,
-                'type': entry.type,
-                'size': entry.size,
-                'last_modified': entry.last_modified,
-            })
+        data = [e._asdict() for e in subentries]
         return http_response(data, headers=headers, format=format)
 
     body = render_template('index.html',
@@ -764,13 +751,8 @@ def action_info():
     else:
         info = file_info(localpaths[0])
 
-    data = {
-        'name': info.name,
-        'type': info.type,
-        'size': info.size,
-        'last_modified': info.last_modified,
-        'mime': mimetype,
-    }
+    data = info._asdict()
+    data['mime'] = mimetype
     return http_response(data, format=format)
 
 
