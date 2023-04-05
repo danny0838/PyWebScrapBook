@@ -610,6 +610,59 @@ class TestFilesystemHelpers(unittest.TestCase):
             ('folder', 'dir', None, os.stat(dst2).st_mtime),
         )
 
+        # with base
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'deep', 'subdir', 'file.txt')
+        os.makedirs(os.path.dirname(dst))
+        with open(dst, 'w') as fh:
+            fh.write('123')
+
+        self.assertEqual(
+            wsbapp.file_info(dst, base=root),
+            ('deep/subdir/file.txt', 'file', 3, os.stat(dst).st_mtime),
+        )
+
+        self.assertEqual(
+            wsbapp.file_info(dst, base=os.path.join(root, 'deep')),
+            ('subdir/file.txt', 'file', 3, os.stat(dst).st_mtime),
+        )
+
+        self.assertEqual(
+            wsbapp.file_info(dst, base=os.path.join(root, 'deep', 'subdir')),
+            ('file.txt', 'file', 3, os.stat(dst).st_mtime),
+        )
+
+        # invalid base
+        with self.assertRaises(ValueError):
+            wsbapp.file_info(dst, base=os.path.join(root, 'nonexist'))
+
+        with self.assertRaises(ValueError):
+            wsbapp.file_info(dst, base=os.path.join(root, 'deep', 'subdir', 'file'))
+
+        with self.assertRaises(ValueError):
+            wsbapp.file_info(dst, base=os.path.join(root, 'deep', 'subdir', 'file.txt'))
+
+    @unittest.skipUnless(os.sep == '/', "requires os.sep == '/'")
+    def test_file_info_no_altsep(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'deep', 'subdir', r'file\name.txt')
+        os.makedirs(os.path.dirname(dst))
+        with open(dst, 'w') as fh:
+            fh.write('123')
+
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            (r'file\name.txt', 'file', 3, os.stat(dst).st_mtime),
+        )
+
+        self.assertEqual(
+            wsbapp.file_info(dst, base=os.path.join(root, 'deep')),
+            (r'subdir/file\name.txt', 'file', 3, os.stat(dst).st_mtime),
+        )
+
+        with self.assertRaises(ValueError):
+            wsbapp.file_info(dst, base='file')
+
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_file_info_junction(self):
         # dir
@@ -796,6 +849,57 @@ class TestFilesystemHelpers(unittest.TestCase):
                 wsbapp.zip_file_info(zh, 'file.txt'),
                 ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
             )
+
+        # with base
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('deep/subdir/file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/', (1988, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base=''),
+            ('deep/subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='/'),
+            ('deep/subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/'),
+            ('subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep'),
+            ('subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/subdir/'),
+            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/subdir'),
+            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        # invalid base
+        with self.assertRaises(ValueError):
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='nonexist')
+
+        with self.assertRaises(ValueError):
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='nonexist/')
+
+        with self.assertRaises(ValueError):
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/subdir/file')
+
+        with self.assertRaises(ValueError):
+            wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/subdir/file.txt')
 
     def test_zip_listdir(self):
         root = tempfile.mkdtemp(dir=tmpdir)

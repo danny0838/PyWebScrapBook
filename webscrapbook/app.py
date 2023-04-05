@@ -1521,11 +1521,21 @@ FileInfo = namedtuple('FileInfo', ('name', 'type', 'size', 'last_modified'))
 
 def file_info(file, base=None):
     """Read basic file information.
+
+    Args:
+        file: path of the file
+        base: path that the result filename is based under
     """
     if base is None:
         name = os.path.basename(file)
     else:
-        name = file[len(base) + 1:].replace('\\', '/')
+        base = os.path.join(base, '')
+        if not file.startswith(base):
+            raise ValueError('file not under base')
+
+        name = file[len(base):]
+        if os.sep != '/':
+            name = name.replace(os.sep, '/')
 
     try:
         statinfo = os.lstat(file)
@@ -1596,11 +1606,18 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
     Args:
         zip: path, file-like object, or zipfile.ZipFile
         subpath: 'dir' and 'dir/' are both supported
+        base: path that the result filename is based under,
+            'dir' and 'dir/' are both supported
     """
     subpath = subpath.rstrip('/')
     if base is None:
         name = os.path.basename(subpath)
     else:
+        base = base.rstrip('/')
+        base = base + ('/' if base else '')
+        if not subpath.startswith(base):
+            raise ValueError('subpath not under base')
+
         name = subpath[len(base):]
 
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
