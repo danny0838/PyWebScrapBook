@@ -1136,7 +1136,8 @@ def zip_compress(zip, filename, subpath, filter=None, *, buffer_size=io.DEFAULT_
     """Compress src to be the subpath in the zip.
 
     Args:
-        zip: path, file-like object, or zipfile.ZipFile
+        zip: path, file-like object, or zipfile.ZipFile, or None to generate
+            bytes of the output ZIP file
         filename: path of the source file or directory
         subpath: internal path to a file or folder (without trailing slash)
         filter: an iterable of permitted subentries if filename is a directory
@@ -1146,7 +1147,28 @@ def zip_compress(zip, filename, subpath, filter=None, *, buffer_size=io.DEFAULT_
         shutil.Error: if any child file cannot be added to the zip
     """
     filename = os.path.abspath(filename)
-    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'w') as zh:
+
+    if zip is None:
+        zs = ZipStream()
+        cm = zipfile.ZipFile(zs, 'w')
+        return _zip_compress_gen(cm, filename, subpath, filter,
+                                 stream=zs, buffer_size=buffer_size)
+
+    if isinstance(zip, zipfile.ZipFile):
+        zs = None
+        cm = nullcontext(zip)
+    else:
+        zs = None
+        cm = zipfile.ZipFile(zip, 'w')
+
+    for _ in _zip_compress_gen(cm, filename, subpath, filter,
+                               buffer_size=buffer_size):
+        pass
+
+
+def _zip_compress_gen(zh, filename, subpath, filter, *,
+                      stream=None, buffer_size=io.DEFAULT_BUFFER_SIZE):
+    with zh as zh:
         errors = []
 
         for src, dst in _zip_compress_iter(filename, subpath, filter):
@@ -1154,18 +1176,26 @@ def zip_compress(zip, filename, subpath, filter=None, *, buffer_size=io.DEFAULT_
                 zinfo = zipfile.ZipInfo.from_file(src, dst)
                 if zinfo.is_dir():
                     zh.writestr(zinfo, b'')
+                    if stream:
+                        yield stream.get()
                 else:
-                    comp = zip_compression_params(mimetypes.guess_type(dst)[0])
-                    zinfo.compress_type = comp['compress_type']
-                    zinfo._compresslevel = comp['compresslevel']
+                    if not stream:
+                        comp = zip_compression_params(mimetypes.guess_type(dst)[0])
+                        zinfo.compress_type = comp['compress_type']
+                        zinfo._compresslevel = comp['compresslevel']
                     with open(src, 'rb') as ih, zh.open(zinfo, 'w') as oh:
                         for chunk in iter(lambda: ih.read(buffer_size), b''):
                             oh.write(chunk)
+                            if stream:
+                                yield stream.get()
             except OSError as why:
                 errors.append((src, dst, why))
 
         if errors:
             raise shutil.Error(errors)
+
+    if stream:
+        yield stream.get()
 
 
 def _zip_compress_iter(filename, subpath, filter=None):
@@ -1210,7 +1240,8 @@ def zip_copy(zsrc, base, zdst, subpath, filter=None, *, buffer_size=io.DEFAULT_B
     Args:
         zsrc: path, file-like object, or zipfile.ZipFile
         base: internal path to a file or folder (without trailing slash)
-        zdst: path, file-like object, or zipfile.ZipFile
+        zdst: path, file-like object, or zipfile.ZipFile, or None to generate
+            bytes of the output ZIP file
         subpath: internal path to a file or folder (without trailing slash)
         filter: an iterable of permitted subentries if zsrcpath is a directory
             (without trailing slash)
@@ -1219,19 +1250,55 @@ def zip_copy(zsrc, base, zdst, subpath, filter=None, *, buffer_size=io.DEFAULT_B
         set: names that are copied
     """
     base = base.rstrip('/')
+    if zdst is None:
+        zs = ZipStream()
+        cm = zipfile.ZipFile(zs, 'w')
+        return _zip_copy_gen(zsrc, base, cm, subpath, filter,
+                             stream=zs, buffer_size=buffer_size)
+
+    if isinstance(zdst, zipfile.ZipFile):
+        cm = nullcontext(zdst)
+    else:
+        cm = zipfile.ZipFile(zdst, 'w')
+
+    copied = None
+
+    def gen():
+        nonlocal copied
+        copied = yield from _zip_copy_gen(zsrc, base, cm, subpath, filter,
+                                          buffer_size=buffer_size)
+
+    for _ in gen():
+        pass
+
+    return copied
+
+
+def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
+                  stream=None, buffer_size=io.DEFAULT_BUFFER_SIZE):
     copied = set()
     with nullcontext(zsrc) if isinstance(zsrc, zipfile.ZipFile) else zipfile.ZipFile(zsrc) as zi,\
-         nullcontext(zdst) if isinstance(zdst, zipfile.ZipFile) else zipfile.ZipFile(zdst, 'w') as zh:
+         zdst as zh:
         for zinfo, dst in _zip_copy_iter(zi, base, subpath, filter):
             copied.add(zinfo.filename)
             zinfo2 = _copy.copy(zinfo)
             zinfo2.filename = dst
             if zinfo.is_dir():
                 zh.writestr(zinfo2, b'')
+                if stream:
+                    yield stream.get()
             else:
+                if stream:
+                    zinfo2.compress_type = zipfile.ZIP_STORED
                 with zi.open(zinfo) as ih, zh.open(zinfo2, 'w') as oh:
                     for chunk in iter(lambda: ih.read(buffer_size), b''):
                         oh.write(chunk)
+                        if stream:
+                            yield stream.get()
+
+    if stream:
+        yield stream.get()
+
     return copied
 
 

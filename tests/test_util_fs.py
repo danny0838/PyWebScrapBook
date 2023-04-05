@@ -3395,6 +3395,45 @@ class TestHelpers(unittest.TestCase):
                 zipfile.ZIP_DEFLATED,
             )
 
+    def test_zip_compress_dir_stream(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'folder')
+        src2 = os.path.join(root, 'folder', 'subfolder')
+        src3 = os.path.join(root, 'folder', 'subfolder', 'subfolderfile.txt')
+        src4 = os.path.join(root, 'folder', 'subfile.txt')
+        src5 = os.path.join(root, 'file.txt')
+        os.makedirs(src, exist_ok=True)
+        os.makedirs(src2, exist_ok=True)
+        with open(src3, 'w', encoding='UTF-8') as fh:
+            fh.write('ABCDEF')
+        with open(src4, 'w', encoding='UTF-8') as fh:
+            fh.write('123456')
+        with open(src5, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+
+        buf = io.BytesIO()
+        for chunk in util.fs.zip_compress(None, src, 'myfolder'):
+            buf.write(chunk)
+
+        with zipfile.ZipFile(buf) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'myfolder/',
+                    'myfolder/subfolder/',
+                    'myfolder/subfolder/subfolderfile.txt',
+                    'myfolder/subfile.txt',
+                },
+            )
+            self.assertEqual(
+                zh.getinfo('myfolder/subfolder/subfolderfile.txt').compress_type,
+                zipfile.ZIP_STORED,
+            )
+            self.assertEqual(
+                zh.getinfo('myfolder/subfile.txt').compress_type,
+                zipfile.ZIP_STORED,
+            )
+
     def test_zip_copy_dir_to_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
@@ -3681,7 +3720,40 @@ class TestHelpers(unittest.TestCase):
         with zipfile.ZipFile(zfile) as zi,\
              zipfile.ZipFile(zfile2, 'a') as zh:
             with self.assertRaises(ValueError):
-                copied = util.fs.zip_copy(zi, 'file.txt', zh, '')
+                util.fs.zip_copy(zi, 'file.txt', zh, '')
+
+    def test_zip_copy_dir_stream(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/', b'')
+            zh.writestr('deep/subdir/file.txt', b'abc', compress_type=zipfile.ZIP_BZIP2)
+            zh.writestr('deep/subdir/explicit_dir/', b'')
+            zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz', compress_type=zipfile.ZIP_BZIP2)
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(zfile) as zi:
+            for chunk in util.fs.zip_copy(zi, 'deep/subdir', None, 'deep/subdir2'):
+                buf.write(chunk)
+
+        with zipfile.ZipFile(buf) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'deep/subdir2/',
+                    'deep/subdir2/file.txt',
+                    'deep/subdir2/explicit_dir/',
+                    'deep/subdir2/implicit_dir/subfile.txt',
+                },
+            )
+            self.assertEqual(
+                zh.getinfo('deep/subdir2/file.txt').compress_type,
+                zipfile.ZIP_STORED,
+            )
+            self.assertEqual(
+                zh.getinfo('deep/subdir2/implicit_dir/subfile.txt').compress_type,
+                zipfile.ZIP_STORED,
+            )
 
     def test_zip_extract_root(self):
         root = tempfile.mkdtemp(dir=tmpdir)
