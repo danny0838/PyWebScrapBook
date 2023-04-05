@@ -632,7 +632,7 @@ def checksum(file, method='sha1', chunk_size=4096):
             fh.close()
 
 
-def format_filesize(bytes, si=False):
+def format_filesize(bytes, si=False, space=' '):
     """Convert file size from bytes to human readable presentation.
     """
     try:
@@ -650,8 +650,8 @@ def format_filesize(bytes, si=False):
     e = math.floor(math.log(max(1, bytes)) / math.log(thresh))
     e = min(e, len(units) - 1)
     n = bytes / thresh ** e
-    tpl = '{:.1f}\xA0{}' if (e >= 1 and n < 10) else '{:.0f}\xA0{}'  # noqa: P103
-    return tpl.format(n, units[e])
+    tpl = '{:.1f}{}{}' if (e >= 1 and n < 10) else '{:.0f}{}{}'  # noqa: P103
+    return tpl.format(n, space, units[e])
 
 
 COMPRESSIBLE_TYPES = {

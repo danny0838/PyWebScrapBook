@@ -1502,7 +1502,7 @@ def make_app(root='.', config=None):
         'os': os,
         'time': time,
         'get_breadcrumbs': get_breadcrumbs,
-        'format_filesize': util.format_filesize,
+        'format_filesize': functools.partial(util.format_filesize, space='\xA0'),
         'quote_path': quote_path,
         'static_url': static_url,
         'i18n': _host.get_i18n(_host.config['app']['locale']),
