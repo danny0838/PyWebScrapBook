@@ -81,12 +81,18 @@ class TestUtils(unittest.TestCase):
         )
 
     def test_import_module_file(self):
-        mod = util.import_module_file('webscrapbook._test_import_module_file', os.path.join(test_root, 'import_module_file.py'))
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'import_module_file.py')
+        with open(dst, 'w', encoding='UTF-8') as fh:
+            fh.write("""test_key = 'test_value'""")
+
+        # import
+        mod = util.import_module_file('webscrapbook._test_import_module_file', dst)
         self.assertEqual(mod.__name__, 'webscrapbook._test_import_module_file')
         self.assertEqual(mod.test_key, 'test_value')
 
         # reuse if imported
-        mod2 = util.import_module_file('webscrapbook._test_import_module_file', os.path.join(test_root, 'import_module_file.py'))
+        mod2 = util.import_module_file('webscrapbook._test_import_module_file', dst)
         self.assertIs(mod2, mod)
 
     def test_datetime_to_id(self):
@@ -441,13 +447,19 @@ ul  >  li  :not([hidden])  {
         )
 
     def test_checksum(self):
+        # file
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'checksum.txt')
+        with open(dst, 'w'):
+            pass
+
         self.assertEqual(
-            util.checksum(os.path.join(test_root, 'checksum', 'checksum.txt')),
+            util.checksum(dst),
             'da39a3ee5e6b4b0d3255bfef95601890afd80709',
         )
 
         self.assertEqual(
-            util.checksum(os.path.join(test_root, 'checksum', 'checksum.txt'), method='sha256'),
+            util.checksum(dst, method='sha256'),
             'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         )
 

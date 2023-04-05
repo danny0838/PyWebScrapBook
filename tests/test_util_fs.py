@@ -15,15 +15,7 @@ from webscrapbook import util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.util.fs import zip_mode, zip_timestamp
 
-from . import (
-    ROOT_DIR,
-    SYMLINK_SUPPORTED,
-    TEMP_DIR,
-    glob_files,
-    test_file_cleanup,
-)
-
-test_root = os.path.join(ROOT_DIR, 'test_util_fs')
+from . import SYMLINK_SUPPORTED, TEMP_DIR, glob_files, test_file_cleanup
 
 
 def setUpModule():
@@ -2773,108 +2765,145 @@ class TestHelpers(unittest.TestCase):
         os.symlink(ref, dst, False)
         self.assertFalse(util.fs.isjunction(dst))
 
-    def test_file_info_nonexist(self):
-        entry = os.path.join(test_root, 'file_info', 'nonexist.file')
+    def test_file_info(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'listdir')
+        dst2 = os.path.join(root, 'listdir', 'folder')
+        dst3 = os.path.join(root, 'listdir', 'folder', '.gitkeep')
+        dst4 = os.path.join(root, 'listdir', 'file.txt')
+        os.makedirs(dst)
+        os.makedirs(dst2)
+        with open(dst3, 'w'):
+            pass
+        with open(dst4, 'w') as fh:
+            fh.write('123')
+
+        # nonexist
         self.assertEqual(
-            util.fs.file_info(entry),
+            util.fs.file_info(os.path.join(dst, 'nonexist.file')),
+            ('nonexist.file', None, None, None),
+        )
+        self.assertEqual(
+            util.fs.file_info(os.path.join(dst, 'deep', 'nonexist.file')),
             ('nonexist.file', None, None, None),
         )
 
-    def test_file_info_file(self):
-        entry = os.path.join(test_root, 'file_info', 'file.txt')
+        # file
         self.assertEqual(
-            util.fs.file_info(entry),
-            ('file.txt', 'file', 3, os.stat(entry).st_mtime),
+            util.fs.file_info(dst4),
+            ('file.txt', 'file', 3, os.stat(dst4).st_mtime),
         )
 
-    def test_file_info_dir(self):
-        entry = os.path.join(test_root, 'file_info', 'folder')
+        # dir
         self.assertEqual(
-            util.fs.file_info(entry),
-            ('folder', 'dir', None, os.stat(entry).st_mtime),
+            util.fs.file_info(dst2),
+            ('folder', 'dir', None, os.stat(dst2).st_mtime),
         )
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    def test_file_info_junction_dir(self):
+    def test_file_info_junction(self):
+        # dir
         root = tempfile.mkdtemp(dir=tmpdir)
-        entry = os.path.join(root, 'junction')
-        util.fs.junction(os.path.join(test_root, 'file_info', 'folder'), entry)
-        with test_file_cleanup(entry):
+        ref = os.path.join(root, 'folder')
+        dst = os.path.join(root, 'junction')
+        os.makedirs(ref)
+        util.fs.junction(ref, dst)
+        with test_file_cleanup(dst):
             self.assertEqual(
-                util.fs.file_info(entry),
-                ('junction', 'link', None, os.lstat(entry).st_mtime),
+                util.fs.file_info(dst),
+                ('junction', 'link', None, os.lstat(dst).st_mtime),
             )
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    def test_file_info_junction_nonexist(self):
+        # file (invalid)
         root = tempfile.mkdtemp(dir=tmpdir)
-        entry = os.path.join(root, 'junction')
-        util.fs.junction(os.path.join(test_root, 'file_info', 'nonexist'), entry)
-        with test_file_cleanup(entry):
+        ref = os.path.join(root, 'file.txt')
+        dst = os.path.join(root, 'junction')
+        with open(ref, 'w') as fh:
+            fh.write('123')
+        util.fs.junction(ref, dst)
+        with test_file_cleanup(dst):
             self.assertEqual(
-                util.fs.file_info(entry),
-                ('junction', 'link', None, os.lstat(entry).st_mtime),
+                util.fs.file_info(dst),
+                ('junction', 'link', None, os.lstat(dst).st_mtime),
+            )
+
+        # nonexist
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'junction')
+        util.fs.junction(ref, dst)
+        with test_file_cleanup(dst):
+            self.assertEqual(
+                util.fs.file_info(dst),
+                ('junction', 'link', None, os.lstat(dst).st_mtime),
             )
 
     @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
                      'requires administrator or Developer Mode on Windows')
-    def test_file_info_symlink_file(self):
+    def test_file_info_symlink(self):
+        # file
         root = tempfile.mkdtemp(dir=tmpdir)
-        entry = os.path.join(root, 'symlink')
-
-        # target file
-        os.symlink(
-            os.path.join(test_root, 'file_info', 'file.txt'),
-            entry,
-        )
-
+        ref = os.path.join(root, 'file.txt')
+        dst = os.path.join(root, 'symlink')
+        with open(ref, 'w') as fh:
+            fh.write('123')
+        os.symlink(ref, dst)
         self.assertEqual(
-            util.fs.file_info(entry),
-            ('symlink', 'link', None, os.lstat(entry).st_mtime),
+            util.fs.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
         )
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
-    def test_file_info_symlink_dir(self):
+        # dir
         root = tempfile.mkdtemp(dir=tmpdir)
-        entry = os.path.join(root, 'symlink')
-
-        os.symlink(
-            os.path.join(test_root, 'file_info', 'folder'),
-            entry,
-        )
-
+        ref = os.path.join(root, 'folder')
+        dst = os.path.join(root, 'symlink')
+        os.makedirs(ref)
+        os.symlink(ref, dst)
         self.assertEqual(
-            util.fs.file_info(entry),
-            ('symlink', 'link', None, os.lstat(entry).st_mtime),
+            util.fs.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
         )
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
-    def test_file_info_symlink_nonexist(self):
+        # nonexist (file)
         root = tempfile.mkdtemp(dir=tmpdir)
-        entry = os.path.join(root, 'symlink')
-
-        os.symlink(
-            os.path.join(test_root, 'file_info', 'nonexist'),
-            entry,
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'symlink')
+        os.symlink(ref, dst, target_is_directory=False)
+        self.assertEqual(
+            util.fs.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
         )
 
+        # nonexist (dir)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'symlink')
+        os.symlink(ref, dst, target_is_directory=True)
         self.assertEqual(
-            util.fs.file_info(entry),
-            ('symlink', 'link', None, os.lstat(entry).st_mtime),
+            util.fs.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
         )
 
     def test_listdir(self):
-        entry = os.path.join(test_root, 'listdir')
-        self.assertEqual(set(util.fs.listdir(entry)), {
-            ('file.txt', 'file', 3, os.stat(os.path.join(entry, 'file.txt')).st_mtime),
-            ('folder', 'dir', None, os.stat(os.path.join(entry, 'folder')).st_mtime),
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'listdir')
+        dst2 = os.path.join(root, 'listdir', 'folder')
+        dst3 = os.path.join(root, 'listdir', 'folder', '.gitkeep')
+        dst4 = os.path.join(root, 'listdir', 'file.txt')
+        os.makedirs(dst)
+        os.makedirs(dst2)
+        with open(dst3, 'w'):
+            pass
+        with open(dst4, 'w') as fh:
+            fh.write('123')
+        self.assertEqual(set(util.fs.listdir(dst)), {
+            ('folder', 'dir', None, os.stat(dst2).st_mtime),
+            ('file.txt', 'file', 3, os.stat(dst4).st_mtime),
         })
-        self.assertEqual(set(util.fs.listdir(entry, recursive=True)), {
-            ('file.txt', 'file', 3, os.stat(os.path.join(entry, 'file.txt')).st_mtime),
-            ('folder', 'dir', None, os.stat(os.path.join(entry, 'folder')).st_mtime),
-            ('folder/.gitkeep', 'file', 0, os.stat(os.path.join(entry, 'folder', '.gitkeep')).st_mtime),
+        self.assertEqual(set(util.fs.listdir(dst, recursive=True)), {
+            ('folder', 'dir', None, os.stat(dst2).st_mtime),
+            ('folder/.gitkeep', 'file', 0, os.stat(dst3).st_mtime),
+            ('file.txt', 'file', 3, os.stat(dst4).st_mtime),
         })
 
     def test_zip_timestamp(self):
