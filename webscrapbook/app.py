@@ -1691,7 +1691,7 @@ def zip_listdir(zip, subpath, recursive=False):
                     entries.setdefault(entry, True)
 
         if not entries and not dir_exist:
-            raise ZipDirNotFoundError(f'Directory "{base}/" does not exist in the zip.')
+            raise ZipDirNotFoundError(f'Directory "{base}" does not exist in the zip.')
 
         for entry in entries:
             info = zip_file_info(zh, base + entry, base)
