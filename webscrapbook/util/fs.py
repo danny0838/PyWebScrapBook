@@ -1,4 +1,5 @@
 """Virtual filesystem for complex file operation."""
+import copy as _copy
 import functools
 import io
 import itertools
@@ -674,35 +675,11 @@ def move(csrc, cdst):
             else:
                 with open_archive_path(csrc) as zh,\
                      open_archive_path(cdst, 'a') as zh2:
-                    base = csrc[-1]
-                    cut = len(csrc[-1])
-
-                    zinfos = []
-                    new_subpaths = []
-                    infos_to_remove = set()
-                    for zinfo in zh.infolist():
-                        if not (zinfo.filename == base or zinfo.filename.startswith(base + '/')):
-                            continue
-                        zinfos.append(zinfo)
-                        subpath = cdst[-1] + zinfo.filename[cut:]
-                        new_subpaths.append(subpath)
-                        try:
-                            infos_to_remove.add(zh2.getinfo(subpath))
-                        except KeyError:
-                            pass
-                    _zip_remove_members(zh2, infos_to_remove)
-
-                    znames = {i.filename for i in zinfos}
-
-                    for i, zinfo in enumerate(zinfos):
-                        zinfo.filename = new_subpaths[i]
-                        zh2.writestr(zinfo, zh.read(zinfo),
-                                     compress_type=zinfo.compress_type,
-                                     compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
-                                     )
+                    copied = zip_copy(zh, csrc[-1], zh2, cdst[-1])
 
                 with open_archive_path(csrc, 'a') as zh:
-                    zinfos = {i for i in zh.infolist() if i.filename in znames}
+                    # go through infolist as zinfo may have same name
+                    zinfos = {i for i in zh.infolist() if i.filename in copied}
                     _zip_remove_members(zh, zinfos)
 
     except FSError:
@@ -761,30 +738,7 @@ def copy(csrc, cdst):
             else:
                 with open_archive_path(csrc) as zh,\
                      open_archive_path(cdst, 'a') as zh2:
-                    base = csrc[-1]
-                    cut = len(csrc[-1])
-
-                    zinfos = []
-                    new_subpaths = []
-                    infos_to_remove = set()
-                    for zinfo in zh.infolist():
-                        if not (zinfo.filename == base or zinfo.filename.startswith(base + '/')):
-                            continue
-                        zinfos.append(zinfo)
-                        subpath = cdst[-1] + zinfo.filename[cut:]
-                        new_subpaths.append(subpath)
-                        try:
-                            infos_to_remove.add(zh2.getinfo(subpath))
-                        except KeyError:
-                            pass
-                    _zip_remove_members(zh2, infos_to_remove)
-
-                    for i, zinfo in enumerate(zinfos):
-                        zinfo.filename = new_subpaths[i]
-                        zh2.writestr(zinfo, zh.read(zinfo),
-                                     compress_type=zinfo.compress_type,
-                                     compresslevel=None if zinfo.compress_type == zipfile.ZIP_STORED else 9,
-                                     )
+                    zip_copy(zh, csrc[-1], zh2, cdst[-1])
 
     except FSError:
         raise
@@ -1248,6 +1202,73 @@ def _zip_compress_iter(filename, subpath, filter=None):
             dst = subpath + dst
 
             yield src, dst
+
+
+def zip_copy(zsrc, base, zdst, subpath, filter=None, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+    """Coopy entries from zsrc to be the subpath in zdst.
+
+    Args:
+        zsrc: path, file-like object, or zipfile.ZipFile
+        base: internal path to a file or folder (without trailing slash)
+        zdst: path, file-like object, or zipfile.ZipFile
+        subpath: internal path to a file or folder (without trailing slash)
+        filter: an iterable of permitted subentries if zsrcpath is a directory
+            (without trailing slash)
+
+    Returns:
+        set: names that are copied
+    """
+    base = base.rstrip('/')
+    copied = set()
+    with nullcontext(zsrc) if isinstance(zsrc, zipfile.ZipFile) else zipfile.ZipFile(zsrc) as zi,\
+         nullcontext(zdst) if isinstance(zdst, zipfile.ZipFile) else zipfile.ZipFile(zdst, 'w') as zh:
+        for zinfo, dst in _zip_copy_iter(zi, base, subpath, filter):
+            copied.add(zinfo.filename)
+            zinfo2 = _copy.copy(zinfo)
+            zinfo2.filename = dst
+            if zinfo.is_dir():
+                zh.writestr(zinfo2, b'')
+            else:
+                with zi.open(zinfo) as ih, zh.open(zinfo2, 'w') as oh:
+                    for chunk in iter(lambda: ih.read(buffer_size), b''):
+                        oh.write(chunk)
+    return copied
+
+
+def _zip_copy_iter(zh, base, subpath, filter=None):
+    if base:
+        try:
+            zinfo = zh.getinfo(base)
+        except KeyError:
+            pass
+        else:
+            if not subpath:
+                raise ValueError("Unable to add a file at ''")
+
+            yield zinfo, subpath
+            return
+
+    base = base + '/' if base else ''
+    subpath = subpath + '/' if subpath else ''
+    cut = len(base)
+    filter = {base + f for f in (filter or ())}
+    filter_d = {f + '/' for f in filter}
+
+    for zinfo in zh.infolist():
+        src = zinfo.filename
+        if not src.startswith(base):
+            continue
+
+        # apply the filter
+        if filter:
+            if src not in filter:
+                if not any(src.startswith(f) for f in filter_d):
+                    continue
+
+        # determine target subpath as dst
+        dst = subpath + src[cut:]
+        if dst:
+            yield zinfo, dst
 
 
 def zip_extract(zip, dst, subpath='', tzoffset=None):

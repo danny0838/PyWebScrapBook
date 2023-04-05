@@ -3395,6 +3395,294 @@ class TestHelpers(unittest.TestCase):
                 zipfile.ZIP_DEFLATED,
             )
 
+    def test_zip_copy_dir_to_dir(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/', b'')
+            zh.writestr('deep/subdir/file.txt', b'abc')
+            zh.writestr('deep/subdir/explicit_dir/', b'')
+            zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            copied = util.fs.zip_copy(zi, 'deep/subdir', zh, 'deep/subdir2')
+
+        self.assertEqual(
+            copied,
+            {
+                'deep/subdir/',
+                'deep/subdir/file.txt',
+                'deep/subdir/explicit_dir/',
+                'deep/subdir/implicit_dir/subfile.txt',
+            },
+        )
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'deep/subdir2/',
+                    'deep/subdir2/file.txt',
+                    'deep/subdir2/explicit_dir/',
+                    'deep/subdir2/implicit_dir/subfile.txt',
+                },
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/').date_time,
+                zh.getinfo('deep/subdir2/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/file.txt').date_time,
+                zh.getinfo('deep/subdir2/file.txt').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/explicit_dir/').date_time,
+                zh.getinfo('deep/subdir2/explicit_dir/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/implicit_dir/subfile.txt').date_time,
+                zh.getinfo('deep/subdir2/implicit_dir/subfile.txt').date_time,
+            )
+
+    def test_zip_copy_dir_to_root(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/', b'')
+            zh.writestr('deep/subdir/file.txt', b'abc')
+            zh.writestr('deep/subdir/explicit_dir/', b'')
+            zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            copied = util.fs.zip_copy(zi, 'deep/subdir', zh, '')
+
+        self.assertEqual(
+            copied,
+            {
+                'deep/subdir/file.txt',
+                'deep/subdir/explicit_dir/',
+                'deep/subdir/implicit_dir/subfile.txt',
+            },
+        )
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'file.txt',
+                    'explicit_dir/',
+                    'implicit_dir/subfile.txt',
+                },
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/file.txt').date_time,
+                zh.getinfo('file.txt').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/explicit_dir/').date_time,
+                zh.getinfo('explicit_dir/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/implicit_dir/subfile.txt').date_time,
+                zh.getinfo('implicit_dir/subfile.txt').date_time,
+            )
+
+    def test_zip_copy_root_to_dir(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/', b'')
+            zh.writestr('deep/subdir/file.txt', b'abc')
+            zh.writestr('deep/subdir/explicit_dir/', b'')
+            zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            copied = util.fs.zip_copy(zi, '', zh, 'newdir')
+
+        self.assertEqual(
+            copied,
+            {
+                'deep/subdir/',
+                'deep/subdir/file.txt',
+                'deep/subdir/explicit_dir/',
+                'deep/subdir/implicit_dir/subfile.txt',
+            },
+        )
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'newdir/deep/subdir/',
+                    'newdir/deep/subdir/file.txt',
+                    'newdir/deep/subdir/explicit_dir/',
+                    'newdir/deep/subdir/implicit_dir/subfile.txt',
+                },
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/').date_time,
+                zh.getinfo('newdir/deep/subdir/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/file.txt').date_time,
+                zh.getinfo('newdir/deep/subdir/file.txt').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/explicit_dir/').date_time,
+                zh.getinfo('newdir/deep/subdir/explicit_dir/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/implicit_dir/subfile.txt').date_time,
+                zh.getinfo('newdir/deep/subdir/implicit_dir/subfile.txt').date_time,
+            )
+
+    def test_zip_copy_root_to_root(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/subdir/', b'')
+            zh.writestr('deep/subdir/file.txt', b'abc')
+            zh.writestr('deep/subdir/explicit_dir/', b'')
+            zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            copied = util.fs.zip_copy(zi, '', zh, '')
+
+        self.assertEqual(
+            copied,
+            {
+                'deep/subdir/',
+                'deep/subdir/file.txt',
+                'deep/subdir/explicit_dir/',
+                'deep/subdir/implicit_dir/subfile.txt',
+            },
+        )
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'deep/subdir/',
+                    'deep/subdir/file.txt',
+                    'deep/subdir/explicit_dir/',
+                    'deep/subdir/implicit_dir/subfile.txt',
+                },
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/').date_time,
+                zh.getinfo('deep/subdir/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/file.txt').date_time,
+                zh.getinfo('deep/subdir/file.txt').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/explicit_dir/').date_time,
+                zh.getinfo('deep/subdir/explicit_dir/').date_time,
+            )
+            self.assertEqual(
+                zi.getinfo('deep/subdir/implicit_dir/subfile.txt').date_time,
+                zh.getinfo('deep/subdir/implicit_dir/subfile.txt').date_time,
+            )
+
+    def test_zip_copy_dir_to_dir_filter(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('deep/file.txt', b'abc')
+            zh.writestr('deep/subdir/', b'')
+            zh.writestr('deep/subdir/subfile.txt', b'abc')
+            zh.writestr('deep/subdir/explicit_dir/', b'')
+            zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            copied = util.fs.zip_copy(zi, 'deep', zh, 'newdir', filter={'subdir'})
+
+        self.assertEqual(
+            copied,
+            {
+                'deep/subdir/',
+                'deep/subdir/subfile.txt',
+                'deep/subdir/explicit_dir/',
+                'deep/subdir/implicit_dir/subfile.txt',
+            },
+        )
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'newdir/subdir/',
+                    'newdir/subdir/subfile.txt',
+                    'newdir/subdir/explicit_dir/',
+                    'newdir/subdir/implicit_dir/subfile.txt',
+                },
+            )
+
+    def test_zip_copy_file(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('file.txt', b'abc')
+            zh.writestr('file.txt/badsubfile.txt', b'abc')
+            zh.writestr('subdir/', b'')
+            zh.writestr('subdir/subfile.txt', b'abc')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            copied = util.fs.zip_copy(zi, 'file.txt', zh, 'newdir/file2.txt')
+
+        self.assertEqual(
+            copied,
+            {
+                'file.txt',
+            },
+        )
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2) as zh:
+            self.assertEqual(
+                set(zh.namelist()),
+                {
+                    'newdir/file2.txt',
+                },
+            )
+            self.assertEqual(
+                zi.getinfo('file.txt').date_time,
+                zh.getinfo('newdir/file2.txt').date_time,
+            )
+
+    def test_zip_copy_file_to_root(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        zfile2 = os.path.join(root, 'archive2.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr('file.txt', b'abc')
+            zh.writestr('file.txt/badsubfile.txt', b'abc')
+            zh.writestr('subdir/', b'')
+            zh.writestr('subdir/subfile.txt', b'abc')
+
+        with zipfile.ZipFile(zfile) as zi,\
+             zipfile.ZipFile(zfile2, 'a') as zh:
+            with self.assertRaises(ValueError):
+                copied = util.fs.zip_copy(zi, 'file.txt', zh, '')
+
     def test_zip_extract_root(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
