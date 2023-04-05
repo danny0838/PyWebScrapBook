@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import tempfile
 import time
@@ -10,8 +11,11 @@ from flask import current_app, request
 import webscrapbook
 from webscrapbook import WSB_DIR
 from webscrapbook import app as wsbapp
+from webscrapbook import util
+from webscrapbook._polyfill import zipfile
+from webscrapbook.util.fs import zip_timestamp
 
-from . import ROOT_DIR, TEMP_DIR
+from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR, test_file_cleanup
 
 
 def setUpModule():
@@ -568,6 +572,292 @@ class TestWebHost(Test):
         handler.token_check_delete_expire(now)
         mock_delete.assert_not_called()
         self.assertEqual(handler.token_last_purge, now - 900)
+
+
+class TestFilesystemHelpers(unittest.TestCase):
+    def test_file_info(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'listdir')
+        dst2 = os.path.join(root, 'listdir', 'folder')
+        dst3 = os.path.join(root, 'listdir', 'folder', '.gitkeep')
+        dst4 = os.path.join(root, 'listdir', 'file.txt')
+        os.makedirs(dst)
+        os.makedirs(dst2)
+        with open(dst3, 'w'):
+            pass
+        with open(dst4, 'w') as fh:
+            fh.write('123')
+
+        # nonexist
+        self.assertEqual(
+            wsbapp.file_info(os.path.join(dst, 'nonexist.file')),
+            ('nonexist.file', None, None, None),
+        )
+        self.assertEqual(
+            wsbapp.file_info(os.path.join(dst, 'deep', 'nonexist.file')),
+            ('nonexist.file', None, None, None),
+        )
+
+        # file
+        self.assertEqual(
+            wsbapp.file_info(dst4),
+            ('file.txt', 'file', 3, os.stat(dst4).st_mtime),
+        )
+
+        # dir
+        self.assertEqual(
+            wsbapp.file_info(dst2),
+            ('folder', 'dir', None, os.stat(dst2).st_mtime),
+        )
+
+    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    def test_file_info_junction(self):
+        # dir
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'folder')
+        dst = os.path.join(root, 'junction')
+        os.makedirs(ref)
+        util.fs.junction(ref, dst)
+        with test_file_cleanup(dst):
+            self.assertEqual(
+                wsbapp.file_info(dst),
+                ('junction', 'link', None, os.lstat(dst).st_mtime),
+            )
+
+        # file (invalid)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'file.txt')
+        dst = os.path.join(root, 'junction')
+        with open(ref, 'w') as fh:
+            fh.write('123')
+        util.fs.junction(ref, dst)
+        with test_file_cleanup(dst):
+            self.assertEqual(
+                wsbapp.file_info(dst),
+                ('junction', 'link', None, os.lstat(dst).st_mtime),
+            )
+
+        # nonexist
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'junction')
+        util.fs.junction(ref, dst)
+        with test_file_cleanup(dst):
+            self.assertEqual(
+                wsbapp.file_info(dst),
+                ('junction', 'link', None, os.lstat(dst).st_mtime),
+            )
+
+    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
+                     'requires administrator or Developer Mode on Windows')
+    def test_file_info_symlink(self):
+        # file
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'file.txt')
+        dst = os.path.join(root, 'symlink')
+        with open(ref, 'w') as fh:
+            fh.write('123')
+        os.symlink(ref, dst)
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
+        )
+
+        # dir
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'folder')
+        dst = os.path.join(root, 'symlink')
+        os.makedirs(ref)
+        os.symlink(ref, dst)
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
+        )
+
+        # nonexist (file)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'symlink')
+        os.symlink(ref, dst, target_is_directory=False)
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
+        )
+
+        # nonexist (dir)
+        root = tempfile.mkdtemp(dir=tmpdir)
+        ref = os.path.join(root, 'nonexist')
+        dst = os.path.join(root, 'symlink')
+        os.symlink(ref, dst, target_is_directory=True)
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('symlink', 'link', None, os.lstat(dst).st_mtime),
+        )
+
+    def test_listdir(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        dst = os.path.join(root, 'listdir')
+        dst2 = os.path.join(root, 'listdir', 'folder')
+        dst3 = os.path.join(root, 'listdir', 'folder', '.gitkeep')
+        dst4 = os.path.join(root, 'listdir', 'file.txt')
+        os.makedirs(dst)
+        os.makedirs(dst2)
+        with open(dst3, 'w'):
+            pass
+        with open(dst4, 'w') as fh:
+            fh.write('123')
+        self.assertEqual(set(wsbapp.listdir(dst)), {
+            ('folder', 'dir', None, os.stat(dst2).st_mtime),
+            ('file.txt', 'file', 3, os.stat(dst4).st_mtime),
+        })
+        self.assertEqual(set(wsbapp.listdir(dst, recursive=True)), {
+            ('folder', 'dir', None, os.stat(dst2).st_mtime),
+            ('folder/.gitkeep', 'file', 0, os.stat(dst3).st_mtime),
+            ('file.txt', 'file', 3, os.stat(dst4).st_mtime),
+        })
+
+    def test_zip_file_info(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'file.txt'),
+            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'folder'),
+            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'folder/'),
+            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'folder/.gitkeep'),
+            ('.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, ''),
+            ('', None, None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'implicit_folder'),
+            ('implicit_folder', None, None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'implicit_folder/'),
+            ('implicit_folder', None, None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, '', check_implicit_dir=True),
+            ('', 'dir', None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'implicit_folder', check_implicit_dir=True),
+            ('implicit_folder', 'dir', None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'implicit_folder/', check_implicit_dir=True),
+            ('implicit_folder', 'dir', None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'implicit_folder/.gitkeep'),
+            ('.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0))),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'nonexist'),
+            ('nonexist', None, None, None),
+        )
+
+        self.assertEqual(
+            wsbapp.zip_file_info(zfile, 'nonexist/'),
+            ('nonexist', None, None, None),
+        )
+
+        # take zipfile.ZipFile
+        with zipfile.ZipFile(zfile, 'r') as zh:
+            self.assertEqual(
+                wsbapp.zip_file_info(zh, 'file.txt'),
+                ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            )
+
+    def test_zip_listdir(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
+            zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, '')), {
+            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('implicit_folder', 'dir', None, None),
+            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        })
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, '/')), {
+            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('implicit_folder', 'dir', None, None),
+            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        })
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, '', recursive=True)), {
+            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('folder/.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0))),
+            ('implicit_folder', 'dir', None, None),
+            ('implicit_folder/.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+        })
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, 'folder')), {
+            ('.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0)))
+        })
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, 'folder/')), {
+            ('.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0)))
+        })
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, 'implicit_folder')), {
+            ('.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0)))
+        })
+
+        self.assertEqual(set(wsbapp.zip_listdir(zfile, 'implicit_folder/')), {
+            ('.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0)))
+        })
+
+        with self.assertRaises(wsbapp.ZipDirNotFoundError):
+            set(wsbapp.zip_listdir(zfile, 'nonexist'))
+
+        with self.assertRaises(wsbapp.ZipDirNotFoundError):
+            set(wsbapp.zip_listdir(zfile, 'nonexist/'))
+
+        with self.assertRaises(wsbapp.ZipDirNotFoundError):
+            set(wsbapp.zip_listdir(zfile, 'file.txt'))
+
+        # take zipfile.ZipFile
+        with zipfile.ZipFile(zfile, 'r') as zh:
+            self.assertEqual(set(wsbapp.zip_listdir(zh, '')), {
+                ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+                ('implicit_folder', 'dir', None, None),
+                ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            })
 
 
 if __name__ == '__main__':

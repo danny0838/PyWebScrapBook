@@ -5,6 +5,7 @@ import json
 import os
 import time
 import traceback
+from collections import namedtuple
 from contextlib import nullcontext
 from secrets import token_urlsafe
 from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
@@ -300,7 +301,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
         }
 
         with nullcontext(zh) if zh else util.fs.open_archive_path(localpaths) as zh:
-            subentries = util.fs.zip_listdir(zh, localpaths[-1])
+            subentries = zip_listdir(zh, localpaths[-1])
 
     else:
         # disallow cache to reflect any content file change
@@ -310,7 +311,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
             'Last-Modified': http_date(stats.st_mtime),
         }
 
-        subentries = util.fs.listdir(localpaths[0])
+        subentries = listdir(localpaths[0])
 
     if format == 'sse':
         def gen():
@@ -590,7 +591,7 @@ def action_view():
             if request.path.endswith('/'):
                 try:
                     return handle_directory_listing(localpaths, zh, redirect_slash=False)
-                except util.fs.ZipDirNotFoundError:
+                except ZipDirNotFoundError:
                     abort(404)
 
             try:
@@ -759,9 +760,9 @@ def action_info():
 
     if len(localpaths) > 1:
         with util.fs.open_archive_path(localpaths) as zh:
-            info = util.fs.zip_file_info(zh, localpaths[-1], check_implicit_dir=True)
+            info = zip_file_info(zh, localpaths[-1], check_implicit_dir=True)
     else:
-        info = util.fs.file_info(localpaths[0])
+        info = file_info(localpaths[0])
 
     data = {
         'name': info.name,
@@ -785,7 +786,7 @@ def action_list():
     if len(localpaths) > 1:
         try:
             return handle_directory_listing(localpaths, redirect_slash=False, format=format)
-        except util.fs.ZipDirNotFoundError:
+        except ZipDirNotFoundError:
             abort(404, 'Directory does not exist.')
 
     if os.path.isdir(localpaths[0]):
@@ -1509,3 +1510,176 @@ def make_app(root='.', config=None):
     })
 
     return app
+
+
+#########################################################################
+# Filesystem helpers
+#########################################################################
+
+FileInfo = namedtuple('FileInfo', ('name', 'type', 'size', 'last_modified'))
+
+
+def file_info(file, base=None):
+    """Read basic file information.
+    """
+    if base is None:
+        name = os.path.basename(file)
+    else:
+        name = file[len(base) + 1:].replace('\\', '/')
+
+    try:
+        statinfo = os.lstat(file)
+    except OSError:
+        # unexpected error when getting stat info
+        statinfo = None
+        size = None
+        last_modified = None
+    else:
+        size = statinfo.st_size
+        last_modified = statinfo.st_mtime
+
+    if not os.path.lexists(file):
+        type = None
+    elif os.path.islink(file) or util.fs.isjunction(file):
+        type = 'link'
+    elif os.path.isdir(file):
+        type = 'dir'
+    elif os.path.isfile(file):
+        type = 'file'
+    else:
+        type = 'unknown'
+
+    if type != 'file':
+        size = None
+
+    return FileInfo(name=name, type=type, size=size, last_modified=last_modified)
+
+
+def listdir(base, recursive=False):
+    """Generates FileInfo(s) and omit invalid entries.
+    """
+    if not recursive:
+        with os.scandir(base) as entries:
+            for entry in entries:
+                info = file_info(entry.path)
+                if info.type is None:
+                    continue
+                yield info
+
+    else:
+        for root, dirs, files in os.walk(base):
+            for dir in dirs:
+                file = os.path.join(root, dir)
+                info = file_info(file, base)
+                if info.type is None:
+                    continue
+                yield info
+            for file in files:
+                file = os.path.join(root, file)
+                info = file_info(file, base)
+                if info.type is None:
+                    continue
+                yield info
+
+
+#########################################################################
+# ZIP helpers
+#########################################################################
+
+class ZipDirNotFoundError(Exception):
+    pass
+
+
+def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
+    """Read basic file information from ZIP.
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+        subpath: 'dir' and 'dir/' are both supported
+    """
+    subpath = subpath.rstrip('/')
+    if base is None:
+        name = os.path.basename(subpath)
+    else:
+        name = subpath[len(base):]
+
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+        try:
+            info = zh.getinfo(subpath)
+        except KeyError:
+            pass
+        else:
+            return FileInfo(
+                name=name, type='file',
+                size=info.file_size,
+                last_modified=util.fs.zip_timestamp(info),
+            )
+
+        try:
+            info = zh.getinfo(subpath + '/')
+        except KeyError:
+            pass
+        else:
+            return FileInfo(
+                name=name, type='dir', size=None,
+                last_modified=util.fs.zip_timestamp(info),
+            )
+
+        if check_implicit_dir:
+            base = subpath + ('/' if subpath else '')
+            for entry in zh.namelist():
+                if entry.startswith(base):
+                    return FileInfo(name=name, type='dir', size=None, last_modified=None)
+
+    return FileInfo(name=name, type=None, size=None, last_modified=None)
+
+
+def zip_listdir(zip, subpath, recursive=False):
+    """Generates FileInfo(s) and omit invalid entries.
+
+    Raise ZipDirNotFoundError if subpath does not exist.
+
+    NOTE: It is possible that entry mydir/ does not exist while mydir/foo.bar
+    exists. Check for matching subentries to make sure whether the implicit
+    directory exists.
+
+    Args:
+        zip: path, file-like object, or zipfile.ZipFile
+        subpath: the subpath in the ZIP, with or without trailing slash
+    """
+    base = subpath.rstrip('/')
+    if base:
+        base += '/'
+    base_len = len(base)
+    dir_exist = not base
+    entries = {}
+
+    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+        for filename in zh.namelist():
+            if not filename.startswith(base):
+                continue
+
+            if filename == base:
+                dir_exist = True
+                continue
+
+            entry = filename[base_len:]
+            if not recursive:
+                entry, _, _ = entry.partition('/')
+                entries.setdefault(entry, True)
+            else:
+                parts = entry.rstrip('/').split('/')
+                for i in range(0, len(parts)):
+                    entry = '/'.join(parts[0:i + 1])
+                    entries.setdefault(entry, True)
+
+        if not entries and not dir_exist:
+            raise ZipDirNotFoundError(f'Directory "{base}/" does not exist in the zip.')
+
+        for entry in entries:
+            info = zip_file_info(zh, base + entry, base)
+
+            if info.type is None:
+                yield FileInfo(name=entry, type='dir', size=None, last_modified=None)
+            else:
+                yield info

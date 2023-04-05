@@ -718,7 +718,7 @@ class TestInfo(unittest.TestCase):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check(self, mock_abort):
-        with app.test_client() as c, mock.patch('webscrapbook.util.fs.file_info', side_effect=PermissionError('Forbidden')):
+        with app.test_client() as c, mock.patch('webscrapbook.app.file_info', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'info', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
