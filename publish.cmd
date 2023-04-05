@@ -4,12 +4,12 @@
 :: * OS: Windows
 ::
 @echo off
-python -m pip install --user --upgrade setuptools wheel twine
+python -m pip install --upgrade build twine
 
-:: prevent removed files from being included in the distribution
-set src="webscrapbook.egg-info\SOURCES.txt"
-if exist %src% del %src%
-python setup.py clean --all
+:: Purge previously built files by bdist (wheel) to prevent deleted files
+:: being included in the package.
+set src="build"
+if exist %src% rmdir /s /q %src%
 
-python setup.py sdist bdist_wheel
+python -m build --sdist --wheel
 python -m twine upload --skip-existing dist/*
