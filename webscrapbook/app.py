@@ -719,7 +719,7 @@ def action_download():
 
                 # directory (explicit or implicit): stream as ZIP
                 streaming = True
-                filename = (localpaths[-1] or os.path.basename(localpaths[-2])) + '.zip'
+                filename = (os.path.basename(localpaths[-1]) or os.path.basename(localpaths[-2])) + '.zip'
                 mimetype, _ = mimetypes.guess_type(filename)
                 cut = len(base)
 
