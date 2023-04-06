@@ -12,17 +12,21 @@ PROG_DIR = os.path.normpath(os.path.join(ROOT_DIR, '..', 'webscrapbook'))
 TEMP_DIR = None
 
 
-def _():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        try:
-            os.symlink(__file__, os.path.join(tmpdir, 'temp.link'))
-        except OSError:
-            return False
-        else:
-            return True
+# lazy global attributes
+def __getattr__(name):
+    if name == 'SYMLINK_SUPPORTED':
+        with tempfile.TemporaryDirectory() as tmpdir:
+            try:
+                os.symlink(__file__, os.path.join(tmpdir, 'temp.link'))
+            except OSError:
+                value = False
+            else:
+                value = True
 
+        globals()['SYMLINK_SUPPORTED'] = value
+        return value
 
-SYMLINK_SUPPORTED = _()
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 @contextmanager
