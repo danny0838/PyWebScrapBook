@@ -280,6 +280,8 @@ def cmd_help(args):
 
     if args['topic'] == 'config':
         file = os.path.join(root, 'config.md')
+    elif args['topic'] == 'themes':
+        file = os.path.join(root, 'themes.md')
     elif args['topic'] == 'mimetypes':
         file = os.path.join(root, 'mimetypes.md')
 
@@ -995,12 +997,13 @@ conversion—item metadata are not preserved and interlinkings may be broken.
         epilog="""\
 Available TOPICs:
   "config"
+  "themes"
   "mimetypes"
 """)
     parser_help.set_defaults(func=cmd_help)
     parser_help.add_argument(
         'topic', metavar='TOPIC', default=None, action='store',
-        choices=['config', 'mimetypes'],
+        choices=['config', 'themes', 'mimetypes'],
         help="""the topic for details""")
 
     # subcommand: view

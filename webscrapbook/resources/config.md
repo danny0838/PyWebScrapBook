@@ -75,14 +75,7 @@ the top level of breadcrumbs, etc.
 #### `theme`
 
 The theme name of the served website. A custom theme can be defined at
-`<host>/.wsb/themes/<name>`, which contains:
-- a `templates` sub-directory for template files;
-- a `static` sub-directory for static files;
-- a `locales` sub-directory for localizations.
-
-If the custom theme has a same name as the built-in one, the application
-will look up for a resource first from custom one and fallback to the
-default one when not found.
+`<root>/.wsb/themes/<name>`. Run `wsb help themes` for more details.
 
 (default: `default`)
 
