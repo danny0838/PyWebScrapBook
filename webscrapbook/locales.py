@@ -8,7 +8,6 @@ Usage:
 @TODO: Consider using official gettext for i18n.
 """
 import hashlib
-import locale
 import os
 
 from . import util
@@ -42,8 +41,6 @@ class I18N:
 
         Loads <dir>/<lang>/<domain>.py where <dir> is listed in dirs.
         """
-        if not lang:
-            lang, _ = locale.getdefaultlocale()
         if not lang:
             lang = DEFAULT_LANG
 

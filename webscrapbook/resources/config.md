@@ -89,8 +89,11 @@ default one when not found.
 
 #### `locale`
 
-The locale name of web interface of the served website. Use system locale if
-left empty.
+The locale code of web interface of the served website. It should follow
+RFC 1766 format case insensitively and can use `-` or `_` as the tag separator.
+The localized string will be searched from the theme or package in a
+hierarchical way. For example, `zh_TW` will be looked up in `zh_TW`, `zh`, and
+then `en` as the final fallback.
 
 (default: )
 
