@@ -3797,8 +3797,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink1(self):
         """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
@@ -3828,8 +3827,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink2(self):
         """Delete the link entity rather than the referenced file."""
         os.makedirs(self.test_dir, exist_ok=True)
@@ -3858,8 +3856,7 @@ class TestDelete(TestActions):
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'test.txt')))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink3(self):
         """Delete the link entity even if target not exist."""
         os.makedirs(self.test_dir, exist_ok=True)
@@ -3885,8 +3882,7 @@ class TestDelete(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_deep(self):
         """Delete symlink entities without altering the referenced directory.
         """
@@ -4306,8 +4302,7 @@ class TestMove(TestActions):
                 is_move=True,
             )
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink(self):
         """Moving the entity rather than the referenced directory/file."""
         os.symlink(
@@ -5090,8 +5085,7 @@ class TestCopy(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'junction2')))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink1(self):
         """Copy symlink as a new regular directory."""
         os.symlink(
@@ -5123,8 +5117,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir', 'test.txt')},
             )
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_symlink2(self, mock_abort):
         """Raises when copying a broken symlink."""
@@ -5143,8 +5136,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_symlink_deep(self, mock_abort):
@@ -5452,8 +5444,7 @@ class TestCopy(TestActions):
                 with self.assertRaises(KeyError):
                     zh.getinfo('clone/junction2/')
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_symlink_deep(self, mock_abort):

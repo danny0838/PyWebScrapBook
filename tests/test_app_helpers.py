@@ -701,8 +701,7 @@ class TestFilesystemHelpers(unittest.TestCase):
                 ('junction', 'link', None, os.lstat(dst).st_mtime),
             )
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_file_info_symlink(self):
         # file
         root = tempfile.mkdtemp(dir=tmpdir)

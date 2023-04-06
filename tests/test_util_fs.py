@@ -1390,8 +1390,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertTrue(os.path.isdir(ref))
         self.assertTrue(os.path.isfile(ref2))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink1(self):
         """Delete the symlink entity rather than the referenced directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1405,8 +1404,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertTrue(os.path.isdir(ref))
         self.assertTrue(os.path.isfile(ref2))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink2(self):
         """Delete the symlink entity rather than the referenced file."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1418,8 +1416,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertFalse(os.path.lexists(dst))
         self.assertTrue(os.path.isfile(ref))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink3(self):
         """Delete the symlink entity even if target not exist."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1429,8 +1426,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_deep(self):
         """Delete symlink entities under a directory without altering the
         referenced directory.
@@ -1758,8 +1754,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertFalse(os.path.lexists(src))
             self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_to_nonexist(self):
         """Move the entity rather than the referenced directory/file."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2217,8 +2212,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertFalse(os.path.lexists(dst2))
             self.assert_file_equal({'file': src3}, {'file': dst3})
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_to_nonexist1(self):
         """Copy symlink as a new regular directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2233,8 +2227,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref}, {'file': dst})
         self.assert_file_equal({'file': ref2}, {'file': dst2})
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_to_nonexist2(self):
         """Raises when copying a broken symlink."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2245,8 +2238,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         with self.assertRaises(util.fs.FSEntryNotFoundError):
             util.fs.copy(src, dst)
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_to_nonexist_deep1(self):
         """Copy inner symlinks as new regular directories/files.
 
@@ -2274,8 +2266,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref2}, {'file': dst3})
         self.assert_file_equal({'file': ref3}, {'file': dst4})
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_to_nonexist_deep2(self):
         """Raise for broken symlinks, which are not copied."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2364,8 +2355,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assert_file_equal({}, {'file': dst2})
             self.assert_file_equal({}, {'file': dst3})
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_disk_to_zip_symlink_to_nonexist_deep1(self):
         """Copy inner symlinks as new regular directories/files."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2391,8 +2381,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref2}, {'file': dst3})
         self.assert_file_equal({'file': ref3}, {'file': dst4})
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_disk_to_zip_symlink_to_nonexist_deep2(self):
         """Raise for broken symlinks, which are not copied."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2730,8 +2719,7 @@ class TestHelpers(unittest.TestCase):
         dst = os.path.join(root, 'nonexist')
         self.assertFalse(util.fs.isjunction(dst))
 
-    @unittest.skipIf(platform.system() == 'Windows' and not SYMLINK_SUPPORTED,
-                     'requires administrator or Developer Mode on Windows')
+    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_isjunction2(self):
         # symlink (directory, target exists)
