@@ -3,9 +3,11 @@ import os
 import tempfile
 from contextlib import contextmanager
 
+import webscrapbook
+
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-PROG_DIR = os.path.normpath(os.path.join(ROOT_DIR, '..', 'webscrapbook'))
+PROG_DIR = os.path.abspath(os.path.dirname(webscrapbook.__file__))
 
 # The root directory for placing temp directories and files.
 # None for auto-detection from the local system.
