@@ -17,7 +17,7 @@ from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook._polyfill import zipfile
 from webscrapbook.app import make_app
 from webscrapbook.util import frozendict, make_hashable
-from webscrapbook.util.fs import junction, zip_timestamp
+from webscrapbook.util.fs import junction
 
 from . import (
     DUMMY_TS,
@@ -36,6 +36,7 @@ from . import (
     DUMMY_ZIP_DT8,
     ROOT_DIR,
     TEMP_DIR,
+    TestFileMixin,
     glob_files,
     require_junction,
     require_junction_deletion,
@@ -79,7 +80,7 @@ def token(c):
     return c.post('/', data={'a': 'token'}).data.decode('UTF-8')
 
 
-class TestActions(unittest.TestCase):
+class TestActions(TestFileMixin, unittest.TestCase):
     def rmtree_error_handler(self, func, path, ex):
         """Error handler for shutil.rmtree.
 
@@ -90,120 +91,6 @@ class TestActions(unittest.TestCase):
         type, value, trace = ex
         if type is not FileNotFoundError:
             raise
-
-    def get_file_data(self, data, follow_symlinks=False):
-        """Convert file data to a comparable format.
-
-        Args:
-            data: a dict with {'bytes': bytes, 'stat': os.stat_result},
-                {'file': file-like}, or {'zip': ZipFile, 'filename': str}
-        """
-        if 'file' in data:
-            rv = {
-                'stat': os.stat(data['file']) if follow_symlinks else os.lstat(data['file']),
-            }
-            if os.path.isfile(data['file']):
-                with open(data['file'], 'rb') as fh:
-                    rv['bytes'] = fh.read()
-            else:
-                rv['bytes'] = None
-        elif 'zip' in data:
-            rv = {}
-            try:
-                rv['stat'] = data['zip'].getinfo(data['filename'])
-            except KeyError:
-                rv['stat'] = None
-                rv['bytes'] = None
-            else:
-                rv['bytes'] = None if rv['stat'].is_dir() else data['zip'].read(rv['stat'])
-        else:
-            rv = data
-        return rv
-
-    def assert_file_equal(self, *datas):
-        """Assert if file datas are equivalent.
-
-        Args:
-            *datas: compatible data format with get_file_data()
-        """
-        # Such bits may be changed by the API when copying among ZIP files,
-        # and we don't really care about them.
-        excluded_flag_bits = 1 << 3
-
-        datas = [self.get_file_data(data) for data in datas]
-        for i in range(1, len(datas)):
-            self.assertEqual(datas[0].get('bytes'), datas[i].get('bytes'), msg='bytes not equal')
-
-            st0 = datas[0].get('stat')
-            sti = datas[i].get('stat')
-
-            if isinstance(st0, os.stat_result):
-                if isinstance(sti, os.stat_result):
-                    stat0 = {
-                        'mode': st0.st_mode,
-                        'uid': st0.st_uid,
-                        'gid': st0.st_gid,
-                        'mtime': st0.st_mtime,
-                    }
-                else:
-                    stat0 = {
-                        'mtime': st0.st_mtime,
-                    }
-
-            elif isinstance(st0, zipfile.ZipInfo):
-                if isinstance(sti, zipfile.ZipInfo):
-                    stat0 = {
-                        'mtime': zip_timestamp(st0),
-                        'compress_type': st0.compress_type,
-                        'comment': st0.comment,
-                        'extra': st0.extra,
-                        'flag_bits': st0.flag_bits & ~excluded_flag_bits,
-                        'internal_attr': st0.internal_attr,
-                        'external_attr': st0.external_attr,
-                    }
-                else:
-                    stat0 = {
-                        'mtime': zip_timestamp(st0),
-                    }
-            else:
-                stat0 = {}
-
-            if isinstance(sti, os.stat_result):
-                if isinstance(st0, os.stat_result):
-                    stati = {
-                        'mode': sti.st_mode,
-                        'uid': sti.st_uid,
-                        'gid': sti.st_gid,
-                        'mtime': sti.st_mtime,
-                    }
-                else:
-                    stati = {
-                        'mtime': sti.st_mtime,
-                    }
-
-            elif isinstance(sti, zipfile.ZipInfo):
-                if isinstance(st0, zipfile.ZipInfo):
-                    stati = {
-                        'mtime': zip_timestamp(sti),
-                        'compress_type': sti.compress_type,
-                        'comment': sti.comment,
-                        'extra': sti.extra,
-                        'flag_bits': sti.flag_bits & ~excluded_flag_bits,
-                        'internal_attr': sti.internal_attr,
-                        'external_attr': sti.external_attr,
-                    }
-                else:
-                    stati = {
-                        'mtime': zip_timestamp(sti),
-                    }
-            else:
-                stati = {}
-
-            for i in {*stat0, *stati}:
-                if i == 'mtime':
-                    self.assertAlmostEqual(stat0.get(i), stati.get(i), delta=2, msg=f"stat['{i}'] not equal")
-                else:
-                    self.assertEqual(stat0.get(i), stati.get(i), msg=f"stat['{i}'] not equal")
 
     def parse_sse(self, content):
         """Quick parser of SSE.

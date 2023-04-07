@@ -26,6 +26,7 @@ from . import (
     DUMMY_ZIP_DT3,
     DUMMY_ZIP_DT4,
     TEMP_DIR,
+    TestFileMixin,
     glob_files,
     require_case_insensitive,
     require_junction,
@@ -692,127 +693,8 @@ class TestCPath(unittest.TestCase):
         )
 
 
-class TestFsUtilBase(unittest.TestCase):
-    def get_file_data(self, data, follow_symlinks=False):
-        """Convert file data to a comparable format.
-
-        Args:
-            data: a dict with {'file': cpath}
-                or {'bytes': bytes, 'stat': os.stat_result or zipfile.ZipInfo}
-        """
-        if 'file' in data:
-            cpath = util.fs.CPath(data['file'])
-            if len(cpath.path) == 1:
-                file = cpath.file
-                st = os.stat(file) if follow_symlinks else os.lstat(file)
-                if os.path.isfile(file):
-                    with open(file, 'rb') as fh:
-                        bytes_ = fh.read()
-                else:
-                    bytes_ = None
-                rv = {'stat': st, 'bytes': bytes_}
-            else:
-                with util.fs.open_archive_path(cpath) as zh:
-                    try:
-                        st = zh.getinfo(cpath[-1])
-                    except KeyError:
-                        try:
-                            st = zh.getinfo(cpath[-1] + '/')
-                        except KeyError:
-                            st = bytes_ = None
-                        else:
-                            bytes_ = None
-                    else:
-                        bytes_ = zh.read(st)
-                rv = {'stat': st, 'bytes': bytes_}
-        else:
-            rv = data
-        return rv
-
-    def assert_file_equal(self, *datas):
-        """Assert if file datas are equivalent.
-
-        Args:
-            *datas: compatible data format with get_file_data()
-        """
-        # Such bits may be changed by the API when copying among ZIP files,
-        # and we don't really care about them.
-        excluded_flag_bits = 1 << 3
-
-        datas = [self.get_file_data(data) for data in datas]
-        for i in range(1, len(datas)):
-            self.assertEqual(datas[0].get('bytes'), datas[i].get('bytes'), msg='bytes not equal')
-
-            st0 = datas[0].get('stat')
-            sti = datas[i].get('stat')
-
-            if isinstance(st0, os.stat_result):
-                if isinstance(sti, os.stat_result):
-                    stat0 = {
-                        'mode': st0.st_mode,
-                        'uid': st0.st_uid,
-                        'gid': st0.st_gid,
-                        'mtime': st0.st_mtime,
-                    }
-                else:
-                    stat0 = {
-                        'mtime': st0.st_mtime,
-                    }
-
-            elif isinstance(st0, zipfile.ZipInfo):
-                if isinstance(sti, zipfile.ZipInfo):
-                    stat0 = {
-                        'mtime': zip_timestamp(st0),
-                        'compress_type': st0.compress_type,
-                        'comment': st0.comment,
-                        'extra': st0.extra,
-                        'flag_bits': st0.flag_bits & ~excluded_flag_bits,
-                        'internal_attr': st0.internal_attr,
-                        'external_attr': st0.external_attr,
-                    }
-                else:
-                    stat0 = {
-                        'mtime': zip_timestamp(st0),
-                    }
-            else:
-                stat0 = {}
-
-            if isinstance(sti, os.stat_result):
-                if isinstance(st0, os.stat_result):
-                    stati = {
-                        'mode': sti.st_mode,
-                        'uid': sti.st_uid,
-                        'gid': sti.st_gid,
-                        'mtime': sti.st_mtime,
-                    }
-                else:
-                    stati = {
-                        'mtime': sti.st_mtime,
-                    }
-
-            elif isinstance(sti, zipfile.ZipInfo):
-                if isinstance(st0, zipfile.ZipInfo):
-                    stati = {
-                        'mtime': zip_timestamp(sti),
-                        'compress_type': sti.compress_type,
-                        'comment': sti.comment,
-                        'extra': sti.extra,
-                        'flag_bits': sti.flag_bits & ~excluded_flag_bits,
-                        'internal_attr': sti.internal_attr,
-                        'external_attr': sti.external_attr,
-                    }
-                else:
-                    stati = {
-                        'mtime': zip_timestamp(sti),
-                    }
-            else:
-                stati = {}
-
-            for i in {*stat0, *stati}:
-                if i == 'mtime':
-                    self.assertAlmostEqual(stat0.get(i), stati.get(i), delta=2, msg=f"stat['{i}'] not equal")
-                else:
-                    self.assertEqual(stat0.get(i), stati.get(i), msg=f"stat['{i}'] not equal")
+class TestFsUtilBase(TestFileMixin, unittest.TestCase):
+    """Base test class for common fs utils."""
 
 
 class TestFsUtilBasicMixin:
