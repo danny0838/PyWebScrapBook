@@ -1,7 +1,7 @@
 import os
 import tempfile
-import time
 import unittest
+from datetime import datetime
 from unittest import mock
 
 from webscrapbook import WSB_DIR, util
@@ -276,7 +276,7 @@ class TestRun(unittest.TestCase):
         os.makedirs(os.path.dirname(index_file))
         with open(index_file, 'w', encoding='UTF-8') as fh:
             pass
-        t = time.mktime((2020, 1, 3, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 1, 3, 0, 0, 0).timestamp()
         os.utime(index_file, (t, t))
 
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:
@@ -310,7 +310,7 @@ class TestRun(unittest.TestCase):
         os.makedirs(os.path.dirname(index_file))
         with open(index_file, 'w', encoding='UTF-8') as fh:
             pass
-        t = time.mktime((2020, 1, 3, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 1, 3, 0, 0, 0).timestamp()
         os.utime(index_file, (t, t))
 
         with open(self.test_input_rdf, 'w', encoding='UTF-8') as fh:

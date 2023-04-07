@@ -1,7 +1,6 @@
 import collections
 import os
 import tempfile
-import time
 import unittest
 from datetime import datetime, timezone
 from unittest import mock
@@ -1045,9 +1044,9 @@ Linked page content 3.
 </html>
 """.encode('UTF-8'))
 
-        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 2, 2, 0, 0, 0).timestamp()
         os.utime(self.test_fulltext, (t, t))
-        t = time.mktime((2020, 3, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 3, 2, 0, 0, 0).timestamp()
         os.utime(archive_file, (t, t))
 
         book = Host(self.test_root).books['']
@@ -1129,9 +1128,9 @@ Linked page content 3.
 </html>
 """.encode('UTF-8'))
 
-        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 2, 2, 0, 0, 0).timestamp()
         os.utime(self.test_fulltext, (t, t))
-        t = time.mktime((2020, 1, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 1, 2, 0, 0, 0).timestamp()
         os.utime(archive_file, (t, t))
 
         book = Host(self.test_root).books['']
@@ -1182,9 +1181,9 @@ scrapbook.fulltext({
         with open(archive_file, 'wb'):
             pass
 
-        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 2, 2, 0, 0, 0).timestamp()
         os.utime(self.test_fulltext, (t, t))
-        t = time.mktime((2020, 3, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 3, 2, 0, 0, 0).timestamp()
         os.utime(archive_file, (t, t))
 
         book = Host(self.test_root).books['']
@@ -1260,9 +1259,9 @@ Linked page content 3.
 </html>
 """.encode('UTF-8'))
 
-        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 2, 2, 0, 0, 0).timestamp()
         os.utime(self.test_fulltext, (t, t))
-        t = time.mktime((2020, 3, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 3, 2, 0, 0, 0).timestamp()
         os.utime(archive_file, (t, t))
 
         book = Host(self.test_root).books['']
@@ -1354,9 +1353,9 @@ Linked page content 3.
 </html>
 """.encode('UTF-8'))
 
-        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 2, 2, 0, 0, 0).timestamp()
         os.utime(self.test_fulltext, (t, t))
-        t = time.mktime((2020, 1, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 1, 2, 0, 0, 0).timestamp()
         os.utime(archive_file, (t, t))
 
         book = Host(self.test_root).books['']
@@ -1407,9 +1406,9 @@ scrapbook.fulltext({
         with open(archive_file, 'w'):
             pass
 
-        t = time.mktime((2020, 2, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 2, 2, 0, 0, 0).timestamp()
         os.utime(self.test_fulltext, (t, t))
-        t = time.mktime((2020, 3, 2, 0, 0, 0, 0, 0, -1))
+        t = datetime(2020, 3, 2, 0, 0, 0).timestamp()
         os.utime(archive_file, (t, t))
 
         book = Host(self.test_root).books['']
