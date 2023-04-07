@@ -150,11 +150,14 @@ class TestFileMixin:
             cpath = util.fs.CPath(data['file'])
             if len(cpath.path) == 1:
                 file = cpath.file
-                st = os.stat(file) if follow_symlinks else os.lstat(file)
-                if os.path.isfile(file):
+                try:
+                    st = os.stat(file) if follow_symlinks else os.lstat(file)
+                except OSError:
+                    st = None
+                try:
                     with open(file, 'rb') as fh:
                         bytes_ = fh.read()
-                else:
+                except Exception:
                     bytes_ = None
                 return {'stat': st, 'bytes': bytes_}
             else:
@@ -182,87 +185,109 @@ class TestFileMixin:
 
         return data
 
-    def assert_file_equal(self, *datas):
+    def assert_file_equal(self, data1, data2):
         """Assert if file datas are equivalent.
 
         Args:
-            *datas: compatible data format with get_file_data()
+            data1, data2: compatible data format with get_file_data()
         """
+        stat1, stat2 = self._assert_file_equal_get_common_stats(
+            self.get_file_data(data1),
+            self.get_file_data(data2),
+        )
+
+        try:
+            for i in {*stat1, *stat2}:
+                msg = f'{i} not equal'
+                v1, v2 = stat1.get(i), stat2.get(i)
+                if i == 'mtime':
+                    msg = f'{i} not match'
+                    try:
+                        self.assertAlmostEqual(v1, v2, delta=2, msg=msg)
+                    except TypeError:
+                        # a value is not int or float
+                        self.assertEqual(v1, v2, msg=msg)
+                else:
+                    self.assertEqual(v1, v2, msg=msg)
+        except self.failureException as exc:
+            # emulate a dict error for better representation
+            try:
+                self.assertDictEqual(dict(stat1), dict(stat2), msg=str(exc))
+            except self.failureException as exc2:
+                msg = str(exc2)
+                raise self.failureException(msg) from None
+
+    def _assert_file_equal_get_common_stats(self, data1, data2):
         # Such bits may be changed by the API when copying among ZIP files,
         # and we don't really care about them.
         excluded_flag_bits = 1 << 3
 
-        datas = [self.get_file_data(data) for data in datas]
-        for i in range(1, len(datas)):
-            self.assertEqual(datas[0].get('bytes'), datas[i].get('bytes'), msg='bytes not equal')
+        st1 = data1.get('stat')
+        st2 = data2.get('stat')
 
-            st0 = datas[0].get('stat')
-            sti = datas[i].get('stat')
-
-            if isinstance(st0, os.stat_result):
-                if isinstance(sti, os.stat_result):
-                    stat0 = {
-                        'mode': st0.st_mode,
-                        'uid': st0.st_uid,
-                        'gid': st0.st_gid,
-                        'mtime': st0.st_mtime,
-                    }
-                else:
-                    stat0 = {
-                        'mtime': st0.st_mtime,
-                    }
-
-            elif isinstance(st0, zipfile.ZipInfo):
-                if isinstance(sti, zipfile.ZipInfo):
-                    stat0 = {
-                        'mtime': zip_timestamp(st0),
-                        'compress_type': st0.compress_type,
-                        'comment': st0.comment,
-                        'extra': st0.extra,
-                        'flag_bits': st0.flag_bits & ~excluded_flag_bits,
-                        'internal_attr': st0.internal_attr,
-                        'external_attr': st0.external_attr,
-                    }
-                else:
-                    stat0 = {
-                        'mtime': zip_timestamp(st0),
-                    }
+        if isinstance(st1, os.stat_result):
+            if isinstance(st2, os.stat_result):
+                stat1 = {
+                    'mode': st1.st_mode,
+                    'uid': st1.st_uid,
+                    'gid': st1.st_gid,
+                    'mtime': st1.st_mtime,
+                }
             else:
-                stat0 = {}
+                stat1 = {
+                    'mtime': st1.st_mtime,
+                }
 
-            if isinstance(sti, os.stat_result):
-                if isinstance(st0, os.stat_result):
-                    stati = {
-                        'mode': sti.st_mode,
-                        'uid': sti.st_uid,
-                        'gid': sti.st_gid,
-                        'mtime': sti.st_mtime,
-                    }
-                else:
-                    stati = {
-                        'mtime': sti.st_mtime,
-                    }
-
-            elif isinstance(sti, zipfile.ZipInfo):
-                if isinstance(st0, zipfile.ZipInfo):
-                    stati = {
-                        'mtime': zip_timestamp(sti),
-                        'compress_type': sti.compress_type,
-                        'comment': sti.comment,
-                        'extra': sti.extra,
-                        'flag_bits': sti.flag_bits & ~excluded_flag_bits,
-                        'internal_attr': sti.internal_attr,
-                        'external_attr': sti.external_attr,
-                    }
-                else:
-                    stati = {
-                        'mtime': zip_timestamp(sti),
-                    }
+        elif isinstance(st1, zipfile.ZipInfo):
+            if isinstance(st2, zipfile.ZipInfo):
+                stat1 = {
+                    'mtime': zip_timestamp(st1),
+                    'compress_type': st1.compress_type,
+                    'comment': st1.comment,
+                    'extra': st1.extra,
+                    'flag_bits': st1.flag_bits & ~excluded_flag_bits,
+                    'internal_attr': st1.internal_attr,
+                    'external_attr': st1.external_attr,
+                }
             else:
-                stati = {}
+                stat1 = {
+                    'mtime': zip_timestamp(st1),
+                }
+        else:
+            stat1 = {}
 
-            for i in {*stat0, *stati}:
-                if i == 'mtime':
-                    self.assertAlmostEqual(stat0.get(i), stati.get(i), delta=2, msg=f"stat['{i}'] not equal")
-                else:
-                    self.assertEqual(stat0.get(i), stati.get(i), msg=f"stat['{i}'] not equal")
+        if isinstance(st2, os.stat_result):
+            if isinstance(st1, os.stat_result):
+                stat2 = {
+                    'mode': st2.st_mode,
+                    'uid': st2.st_uid,
+                    'gid': st2.st_gid,
+                    'mtime': st2.st_mtime,
+                }
+            else:
+                stat2 = {
+                    'mtime': st2.st_mtime,
+                }
+
+        elif isinstance(st2, zipfile.ZipInfo):
+            if isinstance(st1, zipfile.ZipInfo):
+                stat2 = {
+                    'mtime': zip_timestamp(st2),
+                    'compress_type': st2.compress_type,
+                    'comment': st2.comment,
+                    'extra': st2.extra,
+                    'flag_bits': st2.flag_bits & ~excluded_flag_bits,
+                    'internal_attr': st2.internal_attr,
+                    'external_attr': st2.external_attr,
+                }
+            else:
+                stat2 = {
+                    'mtime': zip_timestamp(st2),
+                }
+        else:
+            stat2 = {}
+
+        stat1['bytes'] = data1.get('bytes')
+        stat2['bytes'] = data2.get('bytes')
+
+        return stat1, stat2
