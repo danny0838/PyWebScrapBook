@@ -2164,6 +2164,8 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir')
         dst2 = os.path.join(root, 'subdir', 'file.txt')
         util.fs.save(ref2, DUMMY_BYTES)
+        os.utime(ref, (0, DUMMY_TS))
+        os.utime(ref2, (0, DUMMY_TS2))
         util.fs.junction(ref, src)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': ref}, {'file': dst})
@@ -2199,6 +2201,14 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         with test_file_cleanup(src2):
             util.fs.save(ref2, DUMMY_BYTES)
             util.fs.mkdir(src)
+
+            # For Python 3.11 on Windows, os.copytree() on the parent of a
+            # junction seems not follow link when setting the stat of the dest,
+            # which seems to be a bug.  Currently skip the check.
+            #
+            # os.utime(ref, (0, DUMMY_TS))
+            # os.utime(ref2, (0, DUMMY_TS2))
+
             util.fs.junction(ref, src2)
             util.fs.copy(src, dst)
             self.assert_file_equal({'file': src}, {'file': dst})
@@ -2235,6 +2245,8 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir')
         dst2 = os.path.join(root, 'subdir', 'file.txt')
         util.fs.save(ref2, DUMMY_BYTES)
+        os.utime(ref, (0, DUMMY_TS))
+        os.utime(ref2, (0, DUMMY_TS2))
         os.symlink(ref, src)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': ref}, {'file': dst})
@@ -2270,6 +2282,9 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst4 = os.path.join(root, 'newdir', 'symlink2')
         util.fs.save(ref2, DUMMY_BYTES)
         util.fs.save(ref3, DUMMY_BYTES2)
+        os.utime(ref, (0, DUMMY_TS))
+        os.utime(ref2, (0, DUMMY_TS2))
+        os.utime(ref3, (0, DUMMY_TS3))
         util.fs.mkdir(src)
         os.symlink(ref, src2)
         os.symlink(ref3, src3)
@@ -2339,6 +2354,8 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/newdir/junction']
         dst3 = [os.path.join(root, 'archive.zip'), 'deep/newdir/junction/test.txt']
         util.fs.save(ref2, DUMMY_BYTES)
+        os.utime(ref, (0, DUMMY_TS))
+        os.utime(ref2, (0, DUMMY_TS2))
         util.fs.mkdir(src)
         util.fs.junction(ref, src2)
         util.fs.mkzip(dst[0])
@@ -2384,6 +2401,9 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst4 = [os.path.join(root, 'archive.zip'), 'deep/newdir/symlink2']
         util.fs.save(ref2, DUMMY_BYTES)
         util.fs.save(ref3, DUMMY_BYTES2)
+        os.utime(ref, (0, DUMMY_TS))
+        os.utime(ref2, (0, DUMMY_TS2))
+        os.utime(ref3, (0, DUMMY_TS3))
         util.fs.mkdir(src)
         os.symlink(ref, src2)
         os.symlink(ref3, src3)
