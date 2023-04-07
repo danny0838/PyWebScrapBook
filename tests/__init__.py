@@ -1,6 +1,9 @@
 import glob
 import os
+import platform
+import sys
 import tempfile
+import unittest
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -52,21 +55,49 @@ DUMMY_ZIP_DT8 = (1998, 1, 2, 0, 0, 0)
 DUMMY_ZIP_DT9 = (1999, 1, 2, 0, 0, 0)
 
 
-# lazy global attributes
-def __getattr__(name):
-    if name == 'SYMLINK_SUPPORTED':
+# common requirement checking decorators
+def require_sep(reason="requires '/' as filesystem path separator "
+                       '(e.g. POSIX)'):
+    support = os.sep == '/'
+    return unittest.skipUnless(support, reason)
+
+
+def require_case_insensitive(reason='requires case insensitive filesystem '
+                                    '(e.g. Windows)'):
+    support = os.path.normcase('ABC') == os.path.normcase('abc')
+    return unittest.skipUnless(support, reason)
+
+
+def require_posix_mode(reason='requires POSIX mode support'):
+    support = os.name == 'posix'
+    return unittest.skipUnless(support, reason)
+
+
+def require_junction(reason='requires junction creation support'):
+    support = platform.system() == 'Windows'
+    return unittest.skipUnless(support, reason)
+
+
+def require_junction_deletion(reason='requires good junction deletion support '
+                                     '(e.g. Python >= 3.8)'):
+    support = sys.version_info >= (3, 8)
+    return unittest.skipUnless(support, reason)
+
+
+def require_symlink(reason='requires symlink creation support '
+                           '(Windows requires Administrator or Developer Mode)'):
+    try:
+        support = require_symlink.support
+    except AttributeError:
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 os.symlink(__file__, os.path.join(tmpdir, 'temp.link'))
             except OSError:
-                value = False
+                support = False
             else:
-                value = True
-
-        globals()['SYMLINK_SUPPORTED'] = value
-        return value
-
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+                support = True
+        require_symlink.support = support
+    return unittest.skipUnless(support, reason)
 
 
 @contextmanager

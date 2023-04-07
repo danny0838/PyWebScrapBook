@@ -2,8 +2,6 @@ import functools
 import io
 import itertools
 import os
-import platform
-import sys
 import tempfile
 import unittest
 import warnings
@@ -27,9 +25,13 @@ from . import (
     DUMMY_ZIP_DT2,
     DUMMY_ZIP_DT3,
     DUMMY_ZIP_DT4,
-    SYMLINK_SUPPORTED,
     TEMP_DIR,
     glob_files,
+    require_case_insensitive,
+    require_junction,
+    require_junction_deletion,
+    require_posix_mode,
+    require_symlink,
     test_file_cleanup,
 )
 
@@ -913,7 +915,7 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst)
         self.assertTrue(os.path.isdir(dst))
 
-    @unittest.skipUnless(os.name == 'posix', 'requires POSIX')
+    @require_posix_mode()
     def test_nonexist_mode(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'subdir')
@@ -1359,7 +1361,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction1(self):
         """Delete the junction entity rather than the referenced directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1373,7 +1375,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertTrue(os.path.isdir(ref))
         self.assertTrue(os.path.isfile(ref2))
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction2(self):
         """Delete the junction entity even if target not exist."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1383,8 +1385,8 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    @unittest.skipUnless(sys.version_info >= (3, 8), 'requires Python >= 3.8')
+    @require_junction()
+    @require_junction_deletion()
     def test_junction_deep(self):
         """Delete junction entities under a directory without altering the
         referenced directory.
@@ -1402,7 +1404,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertTrue(os.path.isdir(ref))
         self.assertTrue(os.path.isfile(ref2))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink1(self):
         """Delete the symlink entity rather than the referenced directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1416,7 +1418,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertTrue(os.path.isdir(ref))
         self.assertTrue(os.path.isfile(ref2))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink2(self):
         """Delete the symlink entity rather than the referenced file."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1428,7 +1430,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertFalse(os.path.lexists(dst))
         self.assertTrue(os.path.isfile(ref))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink3(self):
         """Delete the symlink entity even if target not exist."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1438,7 +1440,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_deep(self):
         """Delete symlink entities under a directory without altering the
         referenced directory.
@@ -1716,8 +1718,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             {os.path.join(src, ''), src2},
         )
 
-    @unittest.skipUnless(os.path.normcase('ABC') == os.path.normcase('abc'),
-                         'requires case insensitive filesystem such as Windows')
+    @require_case_insensitive()
     def test_dir_to_child_ci(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'subdir', 'folder')
@@ -1734,8 +1735,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             {os.path.join(src, ''), src2},
         )
 
-    @unittest.skipUnless(os.path.normcase('ABC') == os.path.normcase('abc'),
-                         'requires case insensitive filesystem such as Windows')
+    @require_case_insensitive()
     def test_dir_to_child_self_ci(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'subdir', 'folder')
@@ -1752,7 +1752,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             {os.path.join(src, ''), src2},
         )
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction_to_nonexist(self):
         """Move the entity rather than the referenced directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1766,7 +1766,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertFalse(os.path.lexists(src))
             self.assert_file_equal(orig_src, {'file': dst})
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_to_nonexist(self):
         """Move the entity rather than the referenced directory/file."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2153,7 +2153,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.copy(src, dst)
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction_to_nonexist1(self):
         """Copy junction as a new regular directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2170,7 +2170,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref}, {'file': dst})
         self.assert_file_equal({'file': ref2}, {'file': dst2})
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction_to_nonexist2(self):
         """Raises when copying a broken directory junction."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2182,7 +2182,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
             with self.assertRaises(util.fs.FSEntryNotFoundError):
                 util.fs.copy(src, dst)
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction_to_nonexist_deep1(self):
         """Copy inner junctions as new regular directories."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2209,7 +2209,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
 
             self.assert_file_equal({'file': ref2}, {'file': dst3})
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction_to_nonexist_deep2(self):
         """Raise for broken junctions, which are not copied."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2229,7 +2229,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertFalse(os.path.lexists(dst2))
             self.assert_file_equal({'file': src3}, {'file': dst3})
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_to_nonexist1(self):
         """Copy symlink as a new regular directory."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2246,7 +2246,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref}, {'file': dst})
         self.assert_file_equal({'file': ref2}, {'file': dst2})
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_to_nonexist2(self):
         """Raises when copying a broken symlink."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2257,7 +2257,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         with self.assertRaises(util.fs.FSEntryNotFoundError):
             util.fs.copy(src, dst)
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_to_nonexist_deep1(self):
         """Copy inner symlinks as new regular directories/files.
 
@@ -2288,7 +2288,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref2}, {'file': dst3})
         self.assert_file_equal({'file': ref3}, {'file': dst4})
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_to_nonexist_deep2(self):
         """Raise for broken symlinks, which are not copied."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2336,7 +2336,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': src}, {'file': dst})
         self.assert_file_equal({'file': src2}, {'file': dst2})
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_disk_to_zip_junction_to_nonexist_deep1(self):
         """Copy inner junctions as new regular directories."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2358,7 +2358,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref}, {'file': dst2})
         self.assert_file_equal({'file': ref2}, {'file': dst3})
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_disk_to_zip_junction_to_nonexist_deep2(self):
         """Raise for broken junctions, which are not copied."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2379,7 +2379,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assert_file_equal({}, {'file': dst2})
             self.assert_file_equal({}, {'file': dst3})
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_disk_to_zip_symlink_to_nonexist_deep1(self):
         """Copy inner symlinks as new regular directories/files."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2408,7 +2408,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assert_file_equal({'file': ref2}, {'file': dst3})
         self.assert_file_equal({'file': ref3}, {'file': dst4})
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_disk_to_zip_symlink_to_nonexist_deep2(self):
         """Raise for broken symlinks, which are not copied."""
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2710,7 +2710,7 @@ class TestOpenArchivePath(unittest.TestCase):
 
 
 class TestHelpers(unittest.TestCase):
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_isjunction1(self):
         # junction (target exists)
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2746,8 +2746,8 @@ class TestHelpers(unittest.TestCase):
         dst = os.path.join(root, 'nonexist')
         self.assertFalse(util.fs.isjunction(dst))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_symlink()
+    @require_junction()
     def test_isjunction2(self):
         # symlink (directory, target exists)
         root = tempfile.mkdtemp(dir=tmpdir)

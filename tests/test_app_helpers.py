@@ -1,5 +1,4 @@
 import os
-import platform
 import shutil
 import tempfile
 import time
@@ -24,8 +23,10 @@ from . import (
     DUMMY_ZIP_DT3,
     DUMMY_ZIP_DT4,
     ROOT_DIR,
-    SYMLINK_SUPPORTED,
     TEMP_DIR,
+    require_junction,
+    require_sep,
+    require_symlink,
     test_file_cleanup,
 )
 
@@ -654,7 +655,7 @@ class TestFilesystemHelpers(unittest.TestCase):
         with self.assertRaises(ValueError):
             wsbapp.file_info(dst, base=os.path.join(root, 'deep', 'subdir', 'file.txt'))
 
-    @unittest.skipUnless(os.sep == '/', "requires os.sep == '/'")
+    @require_sep()
     def test_file_info_no_altsep(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'subdir', r'file\name.txt')
@@ -675,7 +676,7 @@ class TestFilesystemHelpers(unittest.TestCase):
         with self.assertRaises(ValueError):
             wsbapp.file_info(dst, base='file')
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_file_info_junction(self):
         # dir
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -713,7 +714,7 @@ class TestFilesystemHelpers(unittest.TestCase):
                 ('junction', 'link', None, os.lstat(dst).st_mtime),
             )
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_file_info_symlink(self):
         # file
         root = tempfile.mkdtemp(dir=tmpdir)

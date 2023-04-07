@@ -4,9 +4,7 @@
 import io
 import json
 import os
-import platform
 import shutil
-import sys
 import tempfile
 import time
 import unittest
@@ -37,9 +35,11 @@ from . import (
     DUMMY_ZIP_DT7,
     DUMMY_ZIP_DT8,
     ROOT_DIR,
-    SYMLINK_SUPPORTED,
     TEMP_DIR,
     glob_files,
+    require_junction,
+    require_junction_deletion,
+    require_symlink,
 )
 
 
@@ -3726,7 +3726,7 @@ class TestDelete(TestActions):
             })
             self.assertFalse(os.path.isfile(self.test_dir))
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction1(self):
         """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
@@ -3756,7 +3756,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction2(self):
         """Delete the link entity even if target not exist."""
         os.makedirs(self.test_dir, exist_ok=True)
@@ -3782,8 +3782,8 @@ class TestDelete(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
-    @unittest.skipUnless(sys.version_info >= (3, 8), 'requires Python >= 3.8')
+    @require_junction()
+    @require_junction_deletion()
     def test_junction_deep(self):
         """Delete junction entities without altering the referenced directory.
         """
@@ -3815,7 +3815,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink1(self):
         """Delete the link entity rather than the referenced directory."""
         os.makedirs(os.path.join(self.test_dir, 'subdir'), exist_ok=True)
@@ -3845,7 +3845,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(os.path.join(self.test_dir, 'subdir')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'subdir', 'test.txt')))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink2(self):
         """Delete the link entity rather than the referenced file."""
         os.makedirs(self.test_dir, exist_ok=True)
@@ -3874,7 +3874,7 @@ class TestDelete(TestActions):
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
             self.assertTrue(os.path.isfile(os.path.join(self.test_dir, 'test.txt')))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink3(self):
         """Delete the link entity even if target not exist."""
         os.makedirs(self.test_dir, exist_ok=True)
@@ -3900,7 +3900,7 @@ class TestDelete(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink_deep(self):
         """Delete symlink entities without altering the referenced directory.
         """
@@ -4283,7 +4283,7 @@ class TestMove(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
             )
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction(self):
         """Moving the entity rather than the referenced directory."""
         junction(
@@ -4314,7 +4314,7 @@ class TestMove(TestActions):
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
             )
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink(self):
         """Moving the entity rather than the referenced directory/file."""
         os.symlink(
@@ -4998,7 +4998,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
             )
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     def test_junction1(self):
         """Copy junction as a new regular directory."""
         junction(
@@ -5030,7 +5030,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir', 'test.txt')},
             )
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_junction2(self, mock_abort):
         """Raises when copying a broken directory junction."""
@@ -5049,7 +5049,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_junction_deep(self, mock_abort):
@@ -5100,7 +5100,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'clone', 'junction', 'test.txt')},
             )
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     def test_symlink1(self):
         """Copy symlink as a new regular directory."""
         os.symlink(
@@ -5132,7 +5132,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir', 'test.txt')},
             )
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_symlink2(self, mock_abort):
         """Raises when copying a broken symlink."""
@@ -5151,7 +5151,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_symlink_deep(self, mock_abort):
@@ -5423,7 +5423,7 @@ class TestCopy(TestActions):
                 )
                 self.assertEqual(zh.getinfo('deep/newdir/test.txt').compress_type, zipfile.ZIP_DEFLATED)
 
-    @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
+    @require_junction()
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_junction_deep(self, mock_abort):
@@ -5465,7 +5465,7 @@ class TestCopy(TestActions):
                 with self.assertRaises(KeyError):
                     zh.getinfo('clone/junction2/')
 
-    @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
+    @require_symlink()
     @mock.patch('sys.stderr', io.StringIO())
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_symlink_deep(self, mock_abort):
