@@ -727,18 +727,17 @@ class TestFsUtilBase(unittest.TestCase):
             rv = data
         return rv
 
-    def assert_file_equal(self, *datas, is_move=False):
+    def assert_file_equal(self, *datas):
         """Assert if file datas are equivalent.
 
         Args:
             *datas: compatible data format with get_file_data()
-            is_move: whether it's a move
         """
         # Such bits may be changed by the API when copying among ZIP files,
         # and we don't really care about them.
         excluded_flag_bits = 1 << 3
 
-        datas = [self.get_file_data(data, follow_symlinks=not is_move) for data in datas]
+        datas = [self.get_file_data(data) for data in datas]
         for i in range(1, len(datas)):
             self.assertEqual(datas[0].get('bytes'), datas[i].get('bytes'), msg='bytes not equal')
 
@@ -1566,7 +1565,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
 
     def test_file_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1588,7 +1587,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
-        self.assert_file_equal(orig_src, {'file': dst2}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst2})
 
     def test_file_to_dir_with_same_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1623,8 +1622,8 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src2 = self.get_file_data({'file': src2})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
-        self.assert_file_equal(orig_src2, {'file': dst2}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
+        self.assert_file_equal(orig_src2, {'file': dst2})
 
     def test_dir_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1649,8 +1648,8 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src2 = self.get_file_data({'file': src2})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
-        self.assert_file_equal(orig_src, {'file': dst2}, is_move=True)
-        self.assert_file_equal(orig_src2, {'file': dst3}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst2})
+        self.assert_file_equal(orig_src2, {'file': dst3})
 
     def test_dir_to_dir_with_same_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1765,7 +1764,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
             orig_src = self.get_file_data({'file': src})
             util.fs.move(src, dst)
             self.assertFalse(os.path.lexists(src))
-            self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
+            self.assert_file_equal(orig_src, {'file': dst})
 
     @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink_to_nonexist(self):
@@ -1778,7 +1777,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
 
     def test_disk_to_zip(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1818,7 +1817,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.save(src, DUMMY_BYTES)
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
 
     def test_zip_file_to_nonexist_nested(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1831,7 +1830,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkzip(dst[:2])
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
 
     def test_zip_file_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1853,7 +1852,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst)
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
-        self.assert_file_equal(orig_src, {'file': dst2}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst2})
 
     def test_zip_file_to_dir_with_same_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1897,10 +1896,10 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src3 = self.get_file_data({'file': src3})
         orig_src4 = self.get_file_data({'file': src4})
         util.fs.move(src, dst)
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
-        self.assert_file_equal(orig_src2, {'file': dst2}, is_move=True)
-        self.assert_file_equal(orig_src3, {'file': dst3}, is_move=True)
-        self.assert_file_equal(orig_src4, {'file': dst4}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
+        self.assert_file_equal(orig_src2, {'file': dst2})
+        self.assert_file_equal(orig_src3, {'file': dst3})
+        self.assert_file_equal(orig_src4, {'file': dst4})
 
     def test_zip_dir_to_nonexist_nested(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1917,8 +1916,8 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
         util.fs.move(src, dst)
-        self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
-        self.assert_file_equal(orig_src2, {'file': dst2}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst})
+        self.assert_file_equal(orig_src2, {'file': dst2})
 
     def test_zip_dir_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1944,8 +1943,8 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
         util.fs.move(src, dst)
-        self.assert_file_equal(orig_src, {'file': dst2}, is_move=True)
-        self.assert_file_equal(orig_src2, {'file': dst3}, is_move=True)
+        self.assert_file_equal(orig_src, {'file': dst2})
+        self.assert_file_equal(orig_src2, {'file': dst3})
 
     def test_zip_dir_to_dir_with_same_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2185,11 +2184,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
     def test_junction_to_nonexist_deep1(self):
-        """Copy inner junctions as new regular directories.
-
-        - May use stat of the junction entity (Python 3.8) or the referenced
-          directory (Python < 3.8).
-        """
+        """Copy inner junctions as new regular directories."""
         root = tempfile.mkdtemp(dir=tmpdir)
         ref = os.path.join(root, 'reference')
         ref2 = os.path.join(root, 'reference', 'test.txt')
@@ -2201,18 +2196,17 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         with test_file_cleanup(src2):
             util.fs.save(ref2, DUMMY_BYTES)
             util.fs.mkdir(src)
-
-            # For Python 3.11 on Windows, os.copytree() on the parent of a
-            # junction seems not follow link when setting the stat of the dest,
-            # which seems to be a bug.  Currently skip the check.
-            #
-            # os.utime(ref, (0, DUMMY_TS))
-            # os.utime(ref2, (0, DUMMY_TS2))
-
+            os.utime(ref, (0, DUMMY_TS))
+            os.utime(ref2, (0, DUMMY_TS2))
             util.fs.junction(ref, src2)
             util.fs.copy(src, dst)
             self.assert_file_equal({'file': src}, {'file': dst})
-            self.assert_file_equal({'file': ref}, {'file': dst2})
+
+            # stat of the copy is the link target in Python 3.7 and the link
+            # itself in Python 3.8~3.11
+            # self.assert_file_equal({'file': ref}, {'file': dst2})
+            self.assertTrue(os.path.lexists(dst2))
+
             self.assert_file_equal({'file': ref2}, {'file': dst3})
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')

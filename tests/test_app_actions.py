@@ -39,6 +39,7 @@ from . import (
     ROOT_DIR,
     SYMLINK_SUPPORTED,
     TEMP_DIR,
+    glob_files,
 )
 
 
@@ -119,18 +120,17 @@ class TestActions(unittest.TestCase):
             rv = data
         return rv
 
-    def assert_file_equal(self, *datas, is_move=False):
+    def assert_file_equal(self, *datas):
         """Assert if file datas are equivalent.
 
         Args:
             *datas: compatible data format with get_file_data()
-            is_move: requires strict equivalent of stat
         """
         # Such bits may be changed by the API when copying among ZIP files,
         # and we don't really care about them.
         excluded_flag_bits = 1 << 3
 
-        datas = [self.get_file_data(data, follow_symlinks=not is_move) for data in datas]
+        datas = [self.get_file_data(data) for data in datas]
         for i in range(1, len(datas)):
             self.assertEqual(datas[0].get('bytes'), datas[i].get('bytes'), msg='bytes not equal')
 
@@ -4223,7 +4223,6 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
-                is_move=True,
             )
 
     def test_directory(self):
@@ -4249,12 +4248,10 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir')},
-                is_move=True,
             )
             self.assert_file_equal(
                 orig_data2,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
-                is_move=True,
             )
 
     def test_directory_slash(self):
@@ -4280,12 +4277,10 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir')},
-                is_move=True,
             )
             self.assert_file_equal(
                 orig_data2,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subsubdir', 'test.txt')},
-                is_move=True,
             )
 
     @unittest.skipUnless(platform.system() == 'Windows', 'requires Windows')
@@ -4317,7 +4312,6 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
-                is_move=True,
             )
 
     @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
@@ -4349,7 +4343,6 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
-                is_move=True,
             )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4387,7 +4380,6 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
-                is_move=True,
             )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4446,7 +4438,6 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test.txt')},
-                is_move=True,
             )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4504,12 +4495,10 @@ class TestMove(TestActions):
             self.assert_file_equal(
                 orig_data,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subdir')},
-                is_move=True,
             )
             self.assert_file_equal(
                 orig_data2,
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subdir', 'test.txt')},
-                is_move=True,
             )
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
@@ -4608,7 +4597,6 @@ class TestMove(TestActions):
                         self.assert_file_equal(
                             orig_data,
                             {'zip': zh2, 'filename': 'deep/newdir/index2.html'},
-                            is_move=True,
                         )
 
     def test_zip_to_zip_dir(self):
@@ -5034,7 +5022,7 @@ class TestCopy(TestActions):
             })
 
             self.assert_file_equal(
-                {'file': os.path.join(self.test_dir, 'junction')},
+                {'file': os.path.join(self.test_dir, 'subdir')},
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
             )
             self.assert_file_equal(
@@ -5067,8 +5055,6 @@ class TestCopy(TestActions):
     def test_junction_deep(self, mock_abort):
         """Copy junction entities with referenced directory content.
 
-        - May use stat of the junction entity (Python 3.8) or the referenced
-          directory (Python < 3.8).
         - Broken junctions are not copied.
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
@@ -5093,14 +5079,26 @@ class TestCopy(TestActions):
             })
 
             mock_abort.assert_called_once_with(500, 'Fail to copy some files.')
-
-            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'junction')))
-            self.assert_file_equal(
-                {'file': os.path.join(self.test_dir, 'subdir2', 'junction', 'test.txt')},
-                {'file': os.path.join(self.test_dir, 'clone', 'junction', 'test.txt')},
+            self.assertEqual(
+                glob_files(os.path.join(self.test_dir, 'clone')),
+                {
+                    os.path.join(self.test_dir, 'clone', ''),
+                    os.path.join(self.test_dir, 'clone', 'junction'),
+                    os.path.join(self.test_dir, 'clone', 'junction', 'test.txt'),
+                },
             )
 
-            self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'junction2')))
+            # stat of the copy is the link target in Python 3.7 and the link
+            # itself in Python 3.8~3.11
+            # self.assert_file_equal(
+            #     {'file': os.path.join(self.test_dir, 'subdir')},
+            #     {'file': os.path.join(self.test_dir, 'clone', 'junction')},
+            # )
+
+            self.assert_file_equal(
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'clone', 'junction', 'test.txt')},
+            )
 
     @unittest.skipUnless(SYMLINK_SUPPORTED, 'requires symlink creation support')
     def test_symlink1(self):
@@ -5126,7 +5124,7 @@ class TestCopy(TestActions):
             })
 
             self.assert_file_equal(
-                {'file': os.path.join(self.test_dir, 'symlink')},
+                {'file': os.path.join(self.test_dir, 'subdir')},
                 {'file': os.path.join(self.test_dir, 'deep', 'subdir')},
             )
             self.assert_file_equal(
@@ -5184,13 +5182,20 @@ class TestCopy(TestActions):
             })
 
             mock_abort.assert_called_once_with(500, 'Fail to copy some files.')
-
+            self.assertEqual(
+                glob_files(os.path.join(self.test_dir, 'clone')),
+                {
+                    os.path.join(self.test_dir, 'clone', ''),
+                    os.path.join(self.test_dir, 'clone', 'symlink'),
+                    os.path.join(self.test_dir, 'clone', 'symlink', 'test.txt'),
+                },
+            )
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir')},
                 {'file': os.path.join(self.test_dir, 'clone', 'symlink')},
             )
             self.assert_file_equal(
-                {'file': os.path.join(self.test_dir, 'subdir2', 'symlink', 'test.txt')},
+                {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
                 {'file': os.path.join(self.test_dir, 'clone', 'symlink', 'test.txt')},
             )
 
