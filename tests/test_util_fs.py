@@ -15,7 +15,14 @@ from webscrapbook import util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.util.fs import zip_mode, zip_timestamp
 
-from . import SYMLINK_SUPPORTED, TEMP_DIR, glob_files, test_file_cleanup
+from . import (
+    DUMMY_BYTES,
+    DUMMY_BYTES2,
+    SYMLINK_SUPPORTED,
+    TEMP_DIR,
+    glob_files,
+    test_file_cleanup,
+)
 
 
 def setUpModule():
@@ -675,9 +682,6 @@ class TestCPath(unittest.TestCase):
 
 
 class TestFsUtilBase(unittest.TestCase):
-    dummy_bytes = b'Lorem ipsum dolor sit amet'
-    dummy_bytes2 = b'Duis aute irure dolor'
-
     def get_file_data(self, data, follow_symlinks=True):
         """Convert file data to a comparable format.
 
@@ -1148,22 +1152,22 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
 class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
     @property
     def func(self):
-        return functools.partial(util.fs.save, src=self.dummy_bytes)
+        return functools.partial(util.fs.save, src=DUMMY_BYTES)
 
     def test_nonexist(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'file.txt')
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with open(dst, 'rb') as fh:
-            self.assertEqual(fh.read(), self.dummy_bytes)
+            self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_nonexist_stream(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'file.txt')
-        stream = io.BytesIO(self.dummy_bytes)
+        stream = io.BytesIO(DUMMY_BYTES)
         util.fs.save(dst, stream)
         with open(dst, 'rb') as fh:
-            self.assertEqual(fh.read(), self.dummy_bytes)
+            self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1171,16 +1175,16 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         with open(dst, 'w'):
             pass
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with open(dst, 'rb') as fh:
-            self.assertEqual(fh.read(), self.dummy_bytes)
+            self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'file.txt')
         os.makedirs(dst, exist_ok=True)
         with self.assertRaises(util.fs.FSIsADirectoryError):
-            util.fs.save(dst, self.dummy_bytes)
+            util.fs.save(dst, DUMMY_BYTES)
 
     def test_zip_nonexist(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1188,13 +1192,13 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/file.txt']
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
             with zh.open(zinfo) as fh:
-                self.assertEqual(fh.read(), self.dummy_bytes)
+                self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_zip_nonexist_auto_compress_type(self):
         """Don't compress a non-compressible file type."""
@@ -1203,13 +1207,13 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/image.jpg']
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
-                self.assertEqual(fh.read(), self.dummy_bytes)
+                self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_zip_nonexist_stream(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1217,14 +1221,14 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/file.txt']
-        stream = io.BytesIO(self.dummy_bytes)
+        stream = io.BytesIO(DUMMY_BYTES)
         util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
             with zh.open(zinfo) as fh:
-                self.assertEqual(fh.read(), self.dummy_bytes)
+                self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_zip_nonexist_stream_auto_compress_type(self):
         """Don't compress a non-compressible file type."""
@@ -1233,14 +1237,14 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/image.jpg']
-        stream = io.BytesIO(self.dummy_bytes)
+        stream = io.BytesIO(DUMMY_BYTES)
         util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
-                self.assertEqual(fh.read(), self.dummy_bytes)
+                self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_zip_nonexist_nested(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1251,7 +1255,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             with zipfile.ZipFile(buf, 'w'):
                 pass
             zh.writestr(dst[1], buf.getvalue())
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             with zh.open(dst[1]) as fh:
                 with zipfile.ZipFile(fh) as zh2:
@@ -1259,7 +1263,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
                     self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
                     self.assertEqual(zinfo2.compress_type, zipfile.ZIP_DEFLATED)
                     with zh2.open(zinfo2) as fh2:
-                        self.assertEqual(fh2.read(), self.dummy_bytes)
+                        self.assertEqual(fh2.read(), DUMMY_BYTES)
 
     def test_zip_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1270,7 +1274,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
         dst = [zfile, 'nested/file.txt']
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
@@ -1278,7 +1282,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
-                self.assertEqual(fh.read(), self.dummy_bytes)
+                self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_zip_file_stream(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1289,7 +1293,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
         dst = [zfile, 'nested/file.txt']
-        stream = io.BytesIO(self.dummy_bytes)
+        stream = io.BytesIO(DUMMY_BYTES)
         util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
@@ -1298,7 +1302,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
-                self.assertEqual(fh.read(), self.dummy_bytes)
+                self.assertEqual(fh.read(), DUMMY_BYTES)
 
     def test_zip_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1307,7 +1311,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             zh.writestr('nested/file.txt/', '')
         dst = [zfile, 'nested/file.txt']
         with self.assertRaises(util.fs.FSIsADirectoryError):
-            util.fs.save(dst, self.dummy_bytes)
+            util.fs.save(dst, DUMMY_BYTES)
 
     def test_zip_dir_implicit(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1316,7 +1320,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             zh.writestr('nested/file.txt/subfile.txt', '123')
         dst = [zfile, 'nested/file.txt']
         with self.assertRaises(util.fs.FSIsADirectoryError):
-            util.fs.save(dst, self.dummy_bytes)
+            util.fs.save(dst, DUMMY_BYTES)
 
     def test_zip_dir_root(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1325,7 +1329,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             pass
         dst = [zfile, '']
         with self.assertRaises(util.fs.FSIsADirectoryError):
-            util.fs.save(dst, self.dummy_bytes)
+            util.fs.save(dst, DUMMY_BYTES)
 
 
 class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
@@ -1336,7 +1340,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
     def test_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'file.txt')
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
 
@@ -1354,7 +1358,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         ref = os.path.join(root, 'subdir')
         ref2 = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'junction')
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         util.fs.junction(ref, dst)
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
@@ -1382,7 +1386,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         ref2 = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         link = os.path.join(root, 'subdir2', 'junction')
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         util.fs.mkdir(os.path.dirname(link))
         util.fs.junction(ref, link)
         util.fs.delete(dst)
@@ -1397,7 +1401,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         ref = os.path.join(root, 'subdir')
         ref2 = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'symlink')
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         os.symlink(ref, dst)
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
@@ -1410,7 +1414,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         ref = os.path.join(root, 'test.txt')
         dst = os.path.join(root, 'symlink')
-        util.fs.save(ref, self.dummy_bytes)
+        util.fs.save(ref, DUMMY_BYTES)
         os.symlink(ref, dst)
         util.fs.delete(dst)
         self.assertFalse(os.path.lexists(dst))
@@ -1436,7 +1440,7 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         ref2 = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         link = os.path.join(root, 'subdir2', 'symlink')
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         util.fs.mkdir(dst)
         os.symlink(ref, link)
         util.fs.delete(dst)
@@ -1549,7 +1553,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2', 'test2.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
@@ -1559,7 +1563,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir', 'test2.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst, b'')
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.move(src, dst)
@@ -1570,7 +1574,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'test.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst)
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
@@ -1582,7 +1586,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'test.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst2, b'')
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.move(src, dst)
@@ -1593,7 +1597,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'test.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst2)
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.move(src, dst)
@@ -1605,7 +1609,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = os.path.join(root, 'subdir2', 'subdir')
         dst2 = os.path.join(root, 'subdir2', 'subdir', 'file.txt')
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
         util.fs.move(src, dst)
@@ -1630,7 +1634,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'folder')
         dst3 = os.path.join(root, 'subdir2', 'folder', 'file.txt')
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkdir(dst)
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
@@ -1672,7 +1676,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = os.path.join(root, 'subdir', 'folder', 'subfolder')
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
@@ -1694,7 +1698,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = os.path.join(root, 'subdir', 'folder')
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
@@ -1712,7 +1716,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = os.path.join(root, 'subdir', 'Folder', 'subfolder')
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
@@ -1730,7 +1734,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = os.path.join(root, 'Subdir', 'folder')
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
@@ -1772,7 +1776,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'folder')
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[0])
         with self.assertRaises(util.fs.FSMoveAcrossZipError):
             util.fs.move(src, dst)
@@ -1785,7 +1789,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir')
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveAcrossZipError):
             util.fs.move(src, dst)
 
@@ -1802,7 +1806,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir/file2.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
         self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
@@ -1813,7 +1817,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive2.zip'), 'deep/subarchive2.zip', 'deep/file2.txt']
         util.fs.mkzip(src[:1])
         util.fs.mkzip(src[:2])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkzip(dst[:1])
         util.fs.mkzip(dst[:2])
         orig_src = self.get_file_data({'file': src})
@@ -1825,7 +1829,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir/file2.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst, b'')
         with self.assertRaises(util.fs.FSFileExistsError):
             util.fs.move(src, dst)
@@ -1836,7 +1840,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst)
         orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
@@ -1848,7 +1852,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst2, b'')
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.move(src, dst)
@@ -1859,7 +1863,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst2)
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.move(src, dst)
@@ -1876,9 +1880,9 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst4 = [os.path.join(root, 'archive.zip'), 'deep/subdir2/subdir3/implicit_dir/subfile.txt']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkdir(src3)
-        util.fs.save(src4, self.dummy_bytes2)
+        util.fs.save(src4, DUMMY_BYTES2)
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
         orig_src3 = self.get_file_data({'file': src3})
@@ -1898,7 +1902,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkzip(src[:1])
         util.fs.mkzip(src[:2])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[:1])
         util.fs.mkzip(dst[:2])
         orig_src = self.get_file_data({'file': src})
@@ -1913,7 +1917,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir2/file.txt']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSFileExistsError):
             util.fs.move(src, dst)
 
@@ -1926,7 +1930,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst3 = [os.path.join(root, 'archive.zip'), 'deep/subdir2/subdir/file.txt']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkdir(dst)
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
@@ -1965,7 +1969,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir/subdir2']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
@@ -1999,7 +2003,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSMoveInsideError):
             util.fs.move(src, dst)
 
@@ -2016,7 +2020,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = [os.path.join(root, 'archive.zip'), 'subdir/file.txt']
         dst = [os.path.join(root, 'archive2.zip'), 'deep/subdir2']
         util.fs.mkzip(src[0])
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[0])
         with self.assertRaises(util.fs.FSEntryNotFoundError):
             util.fs.move(src, dst)
@@ -2045,7 +2049,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2', 'test2.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
 
@@ -2053,7 +2057,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir', 'test2.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst, b'')
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.copy(src, dst)
@@ -2063,7 +2067,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'test.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst2})
@@ -2073,7 +2077,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'test.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst2, b'')
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.copy(src, dst)
@@ -2083,7 +2087,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'subdir', 'test.txt')
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'test.txt')
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst2)
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.copy(src, dst)
@@ -2094,7 +2098,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'subdir', 'folder', 'file.txt')
         dst = os.path.join(root, 'subdir2', 'subdir')
         dst2 = os.path.join(root, 'subdir2', 'subdir', 'file.txt')
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
         self.assert_file_equal({'file': src2}, {'file': dst2})
@@ -2115,7 +2119,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'subdir2')
         dst2 = os.path.join(root, 'subdir2', 'folder')
         dst3 = os.path.join(root, 'subdir2', 'folder', 'file.txt')
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkdir(dst)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst2})
@@ -2150,7 +2154,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'junction')
         dst = os.path.join(root, 'subdir')
         dst2 = os.path.join(root, 'subdir', 'file.txt')
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         util.fs.junction(ref, src)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': ref}, {'file': dst})
@@ -2184,7 +2188,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst2 = os.path.join(root, 'newdir', 'junction')
         dst3 = os.path.join(root, 'newdir', 'junction', 'test.txt')
         with test_file_cleanup(src2):
-            util.fs.save(ref2, self.dummy_bytes)
+            util.fs.save(ref2, DUMMY_BYTES)
             util.fs.mkdir(src)
             util.fs.junction(ref, src2)
             util.fs.copy(src, dst)
@@ -2205,7 +2209,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         with test_file_cleanup(src2):
             util.fs.mkdir(src)
             util.fs.junction(os.path.join(root, 'nonexist'), src2)
-            util.fs.save(src3, self.dummy_bytes)
+            util.fs.save(src3, DUMMY_BYTES)
             with self.assertRaises(util.fs.FSPartialError):
                 util.fs.copy(src, dst)
             self.assert_file_equal({'file': src}, {'file': dst})
@@ -2221,7 +2225,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'symlink')
         dst = os.path.join(root, 'subdir')
         dst2 = os.path.join(root, 'subdir', 'file.txt')
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         os.symlink(ref, src)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': ref}, {'file': dst})
@@ -2255,8 +2259,8 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst2 = os.path.join(root, 'newdir', 'symlink')
         dst3 = os.path.join(root, 'newdir', 'symlink', 'test.txt')
         dst4 = os.path.join(root, 'newdir', 'symlink2')
-        util.fs.save(ref2, self.dummy_bytes)
-        util.fs.save(ref3, self.dummy_bytes2)
+        util.fs.save(ref2, DUMMY_BYTES)
+        util.fs.save(ref3, DUMMY_BYTES2)
         util.fs.mkdir(src)
         os.symlink(ref, src2)
         os.symlink(ref3, src3)
@@ -2278,7 +2282,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst3 = os.path.join(root, 'newdir', 'file.txt')
         util.fs.mkdir(src)
         os.symlink(os.path.join(root, 'nonexist'), src2)
-        util.fs.save(src3, self.dummy_bytes)
+        util.fs.save(src3, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSPartialError):
             util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
@@ -2297,7 +2301,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = os.path.join(root, 'deep', 'file.txt')
         dst = [os.path.join(root, 'archive.zip'), 'deep2/file2.txt']
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkzip(dst[0])
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
@@ -2308,7 +2312,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = os.path.join(root, 'deep', 'folder', 'file.txt')
         dst = [os.path.join(root, 'archive.zip'), 'deep/newdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/newdir/file.txt']
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[0])
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
@@ -2325,7 +2329,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/newdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/newdir/junction']
         dst3 = [os.path.join(root, 'archive.zip'), 'deep/newdir/junction/test.txt']
-        util.fs.save(ref2, self.dummy_bytes)
+        util.fs.save(ref2, DUMMY_BYTES)
         util.fs.mkdir(src)
         util.fs.junction(ref, src2)
         util.fs.mkzip(dst[0])
@@ -2348,7 +2352,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
             util.fs.mkdir(src)
             util.fs.junction(os.path.join(root, 'nonexist'), src2)
             util.fs.mkzip(dst[0])
-            util.fs.save(src3, self.dummy_bytes)
+            util.fs.save(src3, DUMMY_BYTES)
             with self.assertRaises(util.fs.FSPartialError):
                 util.fs.copy(src, dst)
             self.assert_file_equal({'file': src}, {'file': dst})
@@ -2369,8 +2373,8 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/newdir/symlink']
         dst3 = [os.path.join(root, 'archive.zip'), 'deep/newdir/symlink/test.txt']
         dst4 = [os.path.join(root, 'archive.zip'), 'deep/newdir/symlink2']
-        util.fs.save(ref2, self.dummy_bytes)
-        util.fs.save(ref3, self.dummy_bytes2)
+        util.fs.save(ref2, DUMMY_BYTES)
+        util.fs.save(ref3, DUMMY_BYTES2)
         util.fs.mkdir(src)
         os.symlink(ref, src2)
         os.symlink(ref3, src3)
@@ -2394,7 +2398,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(src)
         os.symlink(os.path.join(root, 'nonexist'), src2)
         util.fs.mkzip(dst[0])
-        util.fs.save(src3, self.dummy_bytes)
+        util.fs.save(src3, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSPartialError):
             util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
@@ -2414,7 +2418,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
         dst = os.path.join(root, 'deep2', 'file2.txt')
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
 
@@ -2426,7 +2430,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst2 = os.path.join(root, 'deep', 'newdir', 'file.txt')
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
         self.assert_file_equal({'file': src2}, {'file': dst2})
@@ -2437,7 +2441,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = [os.path.join(root, 'archive.zip'), 'subdir/file.txt']
         dst = os.path.join(root, 'deep', 'newdir')
         util.fs.mkzip(src[0])
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSEntryNotFoundError):
             util.fs.copy(src, dst)
 
@@ -2454,7 +2458,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir/file2.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
 
@@ -2464,7 +2468,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive2.zip'), 'deep/subarchive2.zip', 'deep/file2.txt']
         util.fs.mkzip(src[:1])
         util.fs.mkzip(src[:2])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkzip(dst[:1])
         util.fs.mkzip(dst[:2])
         util.fs.copy(src, dst)
@@ -2475,7 +2479,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir/file2.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst, b'')
         with self.assertRaises(util.fs.FSFileExistsError):
             util.fs.copy(src, dst)
@@ -2486,7 +2490,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst2})
@@ -2497,7 +2501,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.save(dst2, b'')
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.copy(src, dst)
@@ -2508,7 +2512,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
         util.fs.mkzip(src[0])
-        util.fs.save(src, self.dummy_bytes)
+        util.fs.save(src, DUMMY_BYTES)
         util.fs.mkdir(dst2)
         with self.assertRaises(util.fs.FSEntryExistsError):
             util.fs.copy(src, dst)
@@ -2525,9 +2529,9 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst4 = [os.path.join(root, 'archive.zip'), 'deep/subdir2/subdir3/implicit_dir/subfile.txt']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkdir(src3)
-        util.fs.save(src4, self.dummy_bytes2)
+        util.fs.save(src4, DUMMY_BYTES2)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
         self.assert_file_equal({'file': src2}, {'file': dst2})
@@ -2543,7 +2547,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkzip(src[:1])
         util.fs.mkzip(src[:2])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[:1])
         util.fs.mkzip(dst[:2])
         util.fs.copy(src, dst)
@@ -2556,7 +2560,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/subdir2/file.txt']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(dst, self.dummy_bytes)
+        util.fs.save(dst, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSFileExistsError):
             util.fs.copy(src, dst)
 
@@ -2569,7 +2573,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst3 = [os.path.join(root, 'archive.zip'), 'deep/subdir2/subdir/file.txt']
         util.fs.mkzip(src[0])
         util.fs.mkdir(src)
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkdir(dst)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst2})
@@ -2605,7 +2609,7 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         src2 = [os.path.join(root, 'archive.zip'), 'subdir/file.txt']
         dst = [os.path.join(root, 'archive2.zip'), 'deep/subdir2']
         util.fs.mkzip(src[0])
-        util.fs.save(src2, self.dummy_bytes)
+        util.fs.save(src2, DUMMY_BYTES)
         with self.assertRaises(util.fs.FSEntryNotFoundError):
             util.fs.copy(src, dst)
 

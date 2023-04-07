@@ -13,6 +13,18 @@ PROG_DIR = os.path.abspath(os.path.dirname(webscrapbook.__file__))
 # None for auto-detection from the local system.
 TEMP_DIR = None
 
+DUMMY_BYTES = 'Lorem ipsum dolor sit amet 崽芺穵縡葥螑扤一鈜珽凈竻氻衶乇'.encode('UTF-8')
+DUMMY_BYTES1 = 'Duis aute irure dolor 傜帙伔鮈鳭魻邘一崷絊珖旽忉俉屮'.encode('UTF-8')
+DUMMY_BYTES2 = 'Quisque quis maximus dui. 毌狴极脞洝爣滒鉡邔扥垵犽炂妺庉瘃丌秅僔跬。'.encode('UTF-8')
+DUMMY_BYTES3 = ('Proin porta ante tortor, dapibus venenatis sem volutpat vel. '
+                '梊佫朸縟蛵錂邗一堥婃戙咇屳昴乇，滉揘兀杶秖楱呯氕屮佷綧柊仂芺。').encode('UTF-8')
+DUMMY_BYTES4 = ('Proin porta ante tortor, dapibus venenatis sem volutpat vel.'
+                'Donec imperdiet rutrum tellus, nec scelerisque turpis finibus id.'
+                'In suscipit imperdiet eros ac interdum. Nullam porttitor vestibulum ultrices.'
+                '梊佫朸縟蛵錂邗一堥婃戙咇屳昴乇，滉揘兀杶秖楱呯氕屮佷綧柊仂芺。'
+                '稂侄仵諤溠糑匟一菆崌浯玠肊洼乇，嵊裋屮迕勀戣岤仜亍玤滫峗尐沴。'
+                '烺一柶粘崵溡乇碤澯旡，捰乜玸惃愓溙乇榞旡宄。').encode('UTF-8')
+
 
 # lazy global attributes
 def __getattr__(name):
