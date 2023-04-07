@@ -90,7 +90,7 @@ class TestActions(unittest.TestCase):
         if type is not FileNotFoundError:
             raise
 
-    def get_file_data(self, data, follow_symlinks=True):
+    def get_file_data(self, data, follow_symlinks=False):
         """Convert file data to a comparable format.
 
         Args:
@@ -4296,7 +4296,7 @@ class TestMove(TestActions):
             os.path.join(self.test_dir, 'junction'),
         )
 
-        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')}, follow_symlinks=False)
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')})
 
         with app.test_client() as c:
             r = c.post('/temp/junction', data={
@@ -4328,7 +4328,7 @@ class TestMove(TestActions):
             os.path.join(self.test_dir, 'symlink')
         )
 
-        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'symlink')}, follow_symlinks=False)
+        orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'symlink')})
 
         with app.test_client() as c:
             r = c.post('/temp/symlink', data={

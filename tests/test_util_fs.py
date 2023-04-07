@@ -691,7 +691,7 @@ class TestCPath(unittest.TestCase):
 
 
 class TestFsUtilBase(unittest.TestCase):
-    def get_file_data(self, data, follow_symlinks=True):
+    def get_file_data(self, data, follow_symlinks=False):
         """Convert file data to a comparable format.
 
         Args:
@@ -1762,7 +1762,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'folder')
         with test_file_cleanup(src, dst):
             util.fs.junction(ref, src)
-            orig_src = self.get_file_data({'file': src}, follow_symlinks=False)
+            orig_src = self.get_file_data({'file': src})
             util.fs.move(src, dst)
             self.assertFalse(os.path.lexists(src))
             self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
@@ -1775,7 +1775,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         src = os.path.join(root, 'symlink')
         dst = os.path.join(root, 'folder')
         os.symlink(ref, src)
-        orig_src = self.get_file_data({'file': src}, follow_symlinks=False)
+        orig_src = self.get_file_data({'file': src})
         util.fs.move(src, dst)
         self.assertFalse(os.path.lexists(src))
         self.assert_file_equal(orig_src, {'file': dst}, is_move=True)
