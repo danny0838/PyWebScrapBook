@@ -21,7 +21,25 @@ from webscrapbook.app import make_app
 from webscrapbook.util import frozendict, make_hashable
 from webscrapbook.util.fs import junction, zip_timestamp
 
-from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR
+from . import (
+    DUMMY_TS,
+    DUMMY_TS2,
+    DUMMY_TS3,
+    DUMMY_TS4,
+    DUMMY_TS5,
+    DUMMY_TS7,
+    DUMMY_ZIP_DT,
+    DUMMY_ZIP_DT2,
+    DUMMY_ZIP_DT3,
+    DUMMY_ZIP_DT4,
+    DUMMY_ZIP_DT5,
+    DUMMY_ZIP_DT6,
+    DUMMY_ZIP_DT7,
+    DUMMY_ZIP_DT8,
+    ROOT_DIR,
+    SYMLINK_SUPPORTED,
+    TEMP_DIR,
+)
 
 
 def setUpModule():
@@ -319,7 +337,7 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.htz')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
             with app.test_client() as c:
                 r = c.get('/archive.htz', buffered=True)
@@ -336,7 +354,7 @@ class TestView(unittest.TestCase):
         try:
             # 1 page
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('19870101/index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('19870101/index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
             with app.test_client() as c:
                 r = c.get('/archive.maff', buffered=True)
@@ -364,8 +382,8 @@ class TestView(unittest.TestCase):
 
             # 2+ pages
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('19870101/index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
-                zh.writestr(zipfile.ZipInfo('19870201/index.html', (1987, 1, 2, 0, 0, 0)), 'Hello World! 你好嗎')
+                zh.writestr(zipfile.ZipInfo('19870101/index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('19870201/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好嗎')
 
             with app.test_client() as c, mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
                 r = c.get('/archive.maff', buffered=True)
@@ -394,7 +412,7 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
             with app.test_client() as c:
                 r = c.get('/archive.zip', buffered=True)
@@ -466,7 +484,7 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/', buffered=True)
@@ -488,7 +506,7 @@ class TestView(unittest.TestCase):
                     path='/archive.zip!/',
                     pathparts=['/archive.zip', ''],
                     subentries={
-                        ('index.html', 'file', 19, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+                        ('index.html', 'file', 19, DUMMY_TS),
                     },
                 )
 
@@ -517,8 +535,8 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT), '')
+                zh.writestr(zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
 
             with app.test_client() as c:
                 c.get('/archive.zip!/subdir', buffered=True)
@@ -533,7 +551,7 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.html', (1987, 1, 1, 0, 0, 0)), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/index.html', buffered=True)
@@ -580,8 +598,8 @@ class TestView(unittest.TestCase):
             with zipfile.ZipFile(zip_filename, 'w') as zh:
                 buf1 = io.BytesIO()
                 with zipfile.ZipFile(buf1, 'w') as zh1:
-                    zh1.writestr(zipfile.ZipInfo('index.html', (1987, 1, 5, 0, 0, 0)), 'Hello World')
-                zh.writestr(zipfile.ZipInfo('entry1.htz', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
+                    zh1.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT2), 'Hello World')
+                zh.writestr(zipfile.ZipInfo('entry1.htz', DUMMY_ZIP_DT), buf1.getvalue())
 
             with app.test_client() as c:
                 r = c.get('/archive.htz!/entry1.htz')
@@ -608,7 +626,7 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('index.md', (1987, 1, 1, 0, 0, 0)), '## Header\n\nHello 你好')
+                zh.writestr(zipfile.ZipInfo('index.md', DUMMY_ZIP_DT), '## Header\n\nHello 你好')
 
             with app.test_client() as c:
                 with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
@@ -655,7 +673,7 @@ class TestView(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('refresh.htm', (1987, 1, 1, 0, 0, 0)), '<meta http-equiv="refresh" content="0;url=index.html">')
+                zh.writestr(zipfile.ZipInfo('refresh.htm', DUMMY_ZIP_DT), '<meta http-equiv="refresh" content="0;url=index.html">')
 
             with app.test_client() as c:
                 r = c.get('/archive.zip!/refresh.htm', buffered=True)
@@ -814,14 +832,14 @@ class TestInfo(unittest.TestCase):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('explicit_dir/', (1987, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', (1987, 1, 2, 0, 0, 0)), 'Hello World! 你好')
-                zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 3, 0, 0, 0)), 'Hello World! 你好嗎')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/', DUMMY_ZIP_DT), '')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT3), 'Hello World! 你好嗎')
 
                 buf1 = io.BytesIO()
                 with zipfile.ZipFile(buf1, 'w') as zh1:
-                    zh1.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 5, 0, 0, 0)), 'ABC')
-                zh.writestr(zipfile.ZipInfo('entry1.zip', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
+                    zh1.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT5), 'ABC')
+                zh.writestr(zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT4), buf1.getvalue())
 
             with app.test_client() as c:
                 # directory
@@ -834,7 +852,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'explicit_dir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_timestamp((1987, 1, 1, 0, 0, 0)),
+                        'last_modified': DUMMY_TS,
                         'mime': None,
                     },
                 })
@@ -849,7 +867,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'explicit_dir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_timestamp((1987, 1, 1, 0, 0, 0)),
+                        'last_modified': DUMMY_TS,
                         'mime': None,
                     },
                 })
@@ -909,7 +927,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
+                        'last_modified': DUMMY_TS2,
                         'mime': 'text/html',
                     },
                 })
@@ -939,7 +957,7 @@ class TestInfo(unittest.TestCase):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 3,
-                        'last_modified': zip_timestamp((1987, 1, 5, 0, 0, 0)),
+                        'last_modified': DUMMY_TS5,
                         'mime': 'text/html',
                     },
                 })
@@ -1053,16 +1071,16 @@ class TestList(TestActions):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('explicit_dir/', (1987, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', (1987, 1, 2, 0, 0, 0)), 'Hello World! 你好')
-                zh.writestr(zipfile.ZipInfo('explicit_dir/subdir/', (1987, 1, 2, 1, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 3, 0, 0, 0)), 'Hello World! 你好嗎')
-                zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', (1987, 1, 3, 1, 0, 0)), 'Hello World!')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/', DUMMY_ZIP_DT), '')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/subdir/', DUMMY_ZIP_DT3), '')
+                zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT4), 'Hello World! 你好嗎')
+                zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', DUMMY_ZIP_DT5), 'Hello World!')
 
                 buf1 = io.BytesIO()
                 with zipfile.ZipFile(buf1, 'w') as zh1:
-                    zh1.writestr(zipfile.ZipInfo('index.html', (1987, 1, 5, 0, 0, 0)), 'ABC')
-                zh.writestr(zipfile.ZipInfo('entry1.zip', (1987, 1, 4, 0, 0, 0)), buf1.getvalue())
+                    zh1.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT7), 'ABC')
+                zh.writestr(zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT6), buf1.getvalue())
 
             with app.test_client() as c:
                 # explicit dir (no slash)
@@ -1079,13 +1097,13 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
+                        'last_modified': DUMMY_TS2,
                     }),
                     frozendict({
                         'name': 'subdir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
+                        'last_modified': DUMMY_TS3,
                     }),
                 })
 
@@ -1103,13 +1121,13 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 19,
-                        'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
+                        'last_modified': DUMMY_TS2,
                     }),
                     frozendict({
                         'name': 'subdir',
                         'type': 'dir',
                         'size': None,
-                        'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
+                        'last_modified': DUMMY_TS3,
                     }),
                 })
 
@@ -1127,7 +1145,7 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 22,
-                        'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
+                        'last_modified': DUMMY_TS4,
                     }),
                     frozendict({
                         'name': 'subdir',
@@ -1151,7 +1169,7 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 22,
-                        'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
+                        'last_modified': DUMMY_TS4,
                     }),
                     frozendict({
                         'name': 'subdir',
@@ -1190,7 +1208,7 @@ class TestList(TestActions):
                         'name': 'index.html',
                         'type': 'file',
                         'size': 3,
-                        'last_modified': zip_timestamp((1987, 1, 5, 0, 0, 0)),
+                        'last_modified': DUMMY_TS7,
                     }),
                 })
         finally:
@@ -1287,11 +1305,11 @@ class TestList(TestActions):
         zip_filename = os.path.join(tmpdir, 'archive.zip')
         try:
             with zipfile.ZipFile(zip_filename, 'w') as zh:
-                zh.writestr(zipfile.ZipInfo('explicit_dir/', (1987, 1, 1, 0, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', (1987, 1, 2, 0, 0, 0)), 'Hello World! 你好')
-                zh.writestr(zipfile.ZipInfo('explicit_dir/subdir/', (1987, 1, 2, 1, 0, 0)), '')
-                zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', (1987, 1, 3, 0, 0, 0)), 'Hello World! 你好嗎')
-                zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', (1987, 1, 3, 1, 0, 0)), 'Hello World!')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/', DUMMY_ZIP_DT), '')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
+                zh.writestr(zipfile.ZipInfo('explicit_dir/subdir/', DUMMY_ZIP_DT3), '')
+                zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT4), 'Hello World! 你好嗎')
+                zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', DUMMY_ZIP_DT5), 'Hello World!')
 
             with app.test_client() as c:
                 # explicit dir (no slash)
@@ -1306,13 +1324,13 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
-                    'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
+                    'last_modified': DUMMY_TS2,
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
+                    'last_modified': DUMMY_TS3,
                 }), sse)
                 self.assertIn(('complete', None), sse)
 
@@ -1328,13 +1346,13 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
-                    'last_modified': zip_timestamp((1987, 1, 2, 0, 0, 0)),
+                    'last_modified': DUMMY_TS2,
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': zip_timestamp((1987, 1, 2, 1, 0, 0)),
+                    'last_modified': DUMMY_TS3,
                 }), sse)
                 self.assertIn(('complete', None), sse)
 
@@ -1350,7 +1368,7 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
-                    'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
+                    'last_modified': DUMMY_TS4,
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
@@ -1372,7 +1390,7 @@ class TestList(TestActions):
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
-                    'last_modified': zip_timestamp((1987, 1, 3, 0, 0, 0)),
+                    'last_modified': DUMMY_TS4,
                 }), sse)
                 self.assertIn(('message', {
                     'name': 'subdir',
@@ -4095,34 +4113,34 @@ class TestMove(TestActions):
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, 'w') as z:
                 z.writestr(
-                    zipfile.ZipInfo('subdir/', (1987, 1, 2, 0, 0, 0)),
+                    zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT4),
                     ''
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir/index.html', (1987, 1, 2, 1, 0, 0)),
+                    zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT5),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
+                    zipfile.ZipInfo('subdir2/index.html', DUMMY_ZIP_DT6),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir3/index.html/', (1987, 1, 2, 3, 0, 0)),
+                    zipfile.ZipInfo('subdir3/index.html/', DUMMY_ZIP_DT7),
                     '',
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir4/subdir', (1987, 1, 2, 4, 0, 0)),
+                    zipfile.ZipInfo('subdir4/subdir', DUMMY_ZIP_DT8),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
             fh.writestr('entry.maff', buf.getvalue())
             fh.writestr(
-                zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
+                zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT),
                 ''
             )
-            info = zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 1, 0, 0))
+            info = zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT2)
             info.comment = 'dummy comment'.encode('UTF-8')
             fh.writestr(
                 info,
@@ -4130,7 +4148,7 @@ class TestMove(TestActions):
                 compress_type=zipfile.ZIP_DEFLATED,
             )
             fh.writestr(
-                zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
+                zipfile.ZipInfo('subdir2/index.html', DUMMY_ZIP_DT3),
                 'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
             )
@@ -4832,34 +4850,34 @@ class TestCopy(TestActions):
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, 'w') as z:
                 z.writestr(
-                    zipfile.ZipInfo('subdir/', (1987, 1, 2, 0, 0, 0)),
+                    zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT4),
                     ''
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir/index.html', (1987, 1, 2, 1, 0, 0)),
+                    zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT5),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir2/index.html', (1987, 1, 2, 2, 0, 0)),
+                    zipfile.ZipInfo('subdir2/index.html', DUMMY_ZIP_DT6),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir3/index.html/', (1987, 1, 2, 3, 0, 0)),
+                    zipfile.ZipInfo('subdir3/index.html/', DUMMY_ZIP_DT7),
                     '',
                 )
                 z.writestr(
-                    zipfile.ZipInfo('subdir4/subdir', (1987, 1, 2, 4, 0, 0)),
+                    zipfile.ZipInfo('subdir4/subdir', DUMMY_ZIP_DT8),
                     'Nested maff 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
             fh.writestr('entry.maff', buf.getvalue())
             fh.writestr(
-                zipfile.ZipInfo('subdir/', (1987, 1, 1, 0, 0, 0)),
+                zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT),
                 ''
             )
-            info = zipfile.ZipInfo('subdir/index.html', (1987, 1, 1, 1, 0, 0))
+            info = zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT2)
             info.comment = 'dummy comment'.encode('UTF-8')
             fh.writestr(
                 info,
@@ -4867,7 +4885,7 @@ class TestCopy(TestActions):
                 compress_type=zipfile.ZIP_DEFLATED,
             )
             fh.writestr(
-                zipfile.ZipInfo('subdir2/index.html', (1987, 1, 1, 2, 0, 0)),
+                zipfile.ZipInfo('subdir2/index.html', DUMMY_ZIP_DT3),
                 'Maff content 測試',
                 compress_type=zipfile.ZIP_DEFLATED,
             )
@@ -5055,8 +5073,7 @@ class TestCopy(TestActions):
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        t = time.mktime((1971, 1, 1, 0, 0, 0, 0, 0, -1))
-        os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
+        os.utime(os.path.join(self.test_dir, 'subdir'), (0, DUMMY_TS))
 
         junction(
             os.path.join(self.test_dir, 'subdir'),
@@ -5147,8 +5164,7 @@ class TestCopy(TestActions):
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        t = time.mktime((1971, 1, 1, 0, 0, 0, 0, 0, -1))
-        os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
+        os.utime(os.path.join(self.test_dir, 'subdir'), (0, DUMMY_TS))
 
         os.symlink(
             os.path.join(self.test_dir, 'subdir'),
@@ -5455,8 +5471,7 @@ class TestCopy(TestActions):
         """
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        t = time.mktime((1981, 1, 1, 0, 0, 0, 0, 0, -1))
-        os.utime(os.path.join(self.test_dir, 'subdir'), (t, t))
+        os.utime(os.path.join(self.test_dir, 'subdir'), (0, DUMMY_TS))
 
         os.symlink(
             os.path.join(self.test_dir, 'subdir'),

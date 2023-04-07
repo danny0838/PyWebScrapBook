@@ -2,6 +2,7 @@ import glob
 import os
 import tempfile
 from contextlib import contextmanager
+from datetime import datetime
 
 import webscrapbook
 
@@ -24,6 +25,31 @@ DUMMY_BYTES4 = ('Proin porta ante tortor, dapibus venenatis sem volutpat vel.'
                 '梊佫朸縟蛵錂邗一堥婃戙咇屳昴乇，滉揘兀杶秖楱呯氕屮佷綧柊仂芺。'
                 '稂侄仵諤溠糑匟一菆崌浯玠肊洼乇，嵊裋屮迕勀戣岤仜亍玤滫峗尐沴。'
                 '烺一柶粘崵溡乇碤澯旡，捰乜玸惃愓溙乇榞旡宄。').encode('UTF-8')
+
+# compatible with os.stat_result.st_mtime or os.utime
+DUMMY_TS = datetime(1990, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS1 = datetime(1991, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS2 = datetime(1992, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS3 = datetime(1993, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS4 = datetime(1994, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS5 = datetime(1995, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS6 = datetime(1996, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS7 = datetime(1997, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS8 = datetime(1998, 1, 2, 0, 0, 0).timestamp()
+DUMMY_TS9 = datetime(1999, 1, 2, 0, 0, 0).timestamp()
+
+# compatible with ZipInfo.date_time
+# corresponds to above DUMMY_TS
+DUMMY_ZIP_DT = (1990, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT1 = (1991, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT2 = (1992, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT3 = (1993, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT4 = (1994, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT5 = (1995, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT6 = (1996, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT7 = (1997, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT8 = (1998, 1, 2, 0, 0, 0)
+DUMMY_ZIP_DT9 = (1999, 1, 2, 0, 0, 0)
 
 
 # lazy global attributes

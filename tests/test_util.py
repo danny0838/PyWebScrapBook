@@ -12,7 +12,7 @@ from webscrapbook import util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.util import frozendict
 
-from . import ROOT_DIR, TEMP_DIR
+from . import DUMMY_ZIP_DT, ROOT_DIR, TEMP_DIR
 
 test_root = os.path.join(ROOT_DIR, 'test_util')
 
@@ -1256,7 +1256,7 @@ foo   中文<br/>
     def test_parse_maff_index_rdf(self):
         maff_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'tempfile.maff')
         with zipfile.ZipFile(maff_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('19870101/index.rdf', (1987, 1, 1, 0, 0, 0)), """<?xml version="1.0"?>
+            zh.writestr(zipfile.ZipInfo('19870101/index.rdf', DUMMY_ZIP_DT), """<?xml version="1.0"?>
 <RDF:RDF xmlns:MAF="http://maf.mozdev.org/metadata/rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -1279,7 +1279,7 @@ foo   中文<br/>
     def test_get_maff_pages(self):
         maff_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'tempfile.maff')
         with zipfile.ZipFile(maff_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('webpage1/index.rdf', (1987, 1, 1, 0, 0, 0)), """<?xml version="1.0"?>
+            zh.writestr(zipfile.ZipInfo('webpage1/index.rdf', DUMMY_ZIP_DT), """<?xml version="1.0"?>
 <RDF:RDF xmlns:MAF="http://maf.mozdev.org/metadata/rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -1291,8 +1291,8 @@ foo   中文<br/>
     <MAF:charset RDF:resource="UTF-8"/>
   </RDF:Description>
 </RDF:RDF>""")
-            zh.writestr(zipfile.ZipInfo('webpage2/index.html', (1987, 1, 1, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('webpage3/index.svg', (1987, 1, 1, 0, 0, 0)), '')
+            zh.writestr(zipfile.ZipInfo('webpage2/index.html', DUMMY_ZIP_DT), '')
+            zh.writestr(zipfile.ZipInfo('webpage3/index.svg', DUMMY_ZIP_DT), '')
 
         self.assertEqual(util.get_maff_pages(maff_filename), [
             ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'webpage1/index.html', 'UTF-8'),

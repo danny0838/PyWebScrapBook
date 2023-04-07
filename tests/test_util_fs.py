@@ -5,7 +5,6 @@ import os
 import platform
 import sys
 import tempfile
-import time
 import unittest
 import warnings
 from datetime import datetime
@@ -18,6 +17,16 @@ from webscrapbook.util.fs import zip_mode, zip_timestamp
 from . import (
     DUMMY_BYTES,
     DUMMY_BYTES2,
+    DUMMY_TS,
+    DUMMY_TS2,
+    DUMMY_TS3,
+    DUMMY_TS4,
+    DUMMY_TS5,
+    DUMMY_TS6,
+    DUMMY_ZIP_DT,
+    DUMMY_ZIP_DT2,
+    DUMMY_ZIP_DT3,
+    DUMMY_ZIP_DT4,
     SYMLINK_SUPPORTED,
     TEMP_DIR,
     glob_files,
@@ -978,14 +987,14 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('deep/subdir/', (1980, 1, 2, 0, 0, 0))
+            zinfo = zipfile.ZipInfo('deep/subdir/', DUMMY_ZIP_DT)
             zh.writestr(zinfo, '')
         dst = [zfile, 'deep/subdir']
         util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
             zinfo = zh.getinfo('deep/subdir/')
-            self.assertEqual(zip_timestamp(zinfo), zip_timestamp((1980, 1, 2, 0, 0, 0)))
+            self.assertEqual(zip_timestamp(zinfo), DUMMY_TS)
 
     def test_zip_dir_not_exist_ok(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1106,7 +1115,7 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('nested/subarchive.zip', (1980, 1, 2, 0, 0, 0))
+            zinfo = zipfile.ZipInfo('nested/subarchive.zip', DUMMY_ZIP_DT)
             zinfo.external_attr = 0o770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
@@ -1269,7 +1278,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('nested/file.txt', (1980, 1, 2, 0, 0, 0))
+            zinfo = zipfile.ZipInfo('nested/file.txt', DUMMY_ZIP_DT)
             zinfo.external_attr = 0o770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
@@ -1288,7 +1297,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('nested/file.txt', (1980, 1, 2, 0, 0, 0))
+            zinfo = zipfile.ZipInfo('nested/file.txt', DUMMY_ZIP_DT)
             zinfo.external_attr = 0o770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
@@ -2648,7 +2657,7 @@ class TestOpenArchivePath(unittest.TestCase):
         zfile = os.path.join(root, 'entry.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
             zh.comment = 'test zip comment 測試'.encode('UTF-8')
-            zinfo = zipfile.ZipInfo('entry1.zip', (1987, 1, 2, 0, 0, 0))
+            zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT)
             zinfo.compress_type = zipfile.ZIP_BZIP2
             zinfo.external_attr = 0o700 << 16
             buf = io.BytesIO()
@@ -2760,14 +2769,14 @@ class TestHelpers(unittest.TestCase):
     def test_zip_timestamp(self):
         # zinfo
         self.assertEqual(
-            util.fs.zip_timestamp(zipfile.ZipInfo('dummy', (1987, 1, 1, 0, 0, 0))),
-            time.mktime((1987, 1, 1, 0, 0, 0, 0, 0, -1)),
+            util.fs.zip_timestamp(zipfile.ZipInfo('dummy', DUMMY_ZIP_DT)),
+            DUMMY_TS,
         )
 
         # tuple
         self.assertEqual(
-            util.fs.zip_timestamp((1987, 1, 1, 0, 0, 0)),
-            time.mktime((1987, 1, 1, 0, 0, 0, 0, 0, -1)),
+            util.fs.zip_timestamp(DUMMY_ZIP_DT),
+            DUMMY_TS,
         )
 
     def test_zip_mode(self):
@@ -2866,13 +2875,12 @@ class TestHelpers(unittest.TestCase):
             fh.write('123456')
         with open(src5, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        t = time.mktime((1993, 1, 2, 0, 0, 0, 5, 2, -1))
-        os.utime(src, (t, t))
-        os.utime(src2, (t, t + 10))
-        os.utime(src3, (t, t + 20))
-        os.utime(src3, (t, t + 30))
-        os.utime(src4, (t, t + 40))
-        os.utime(src5, (t, t + 50))
+        os.utime(src, (0, DUMMY_TS))
+        os.utime(src2, (0, DUMMY_TS2))
+        os.utime(src3, (0, DUMMY_TS3))
+        os.utime(src3, (0, DUMMY_TS4))
+        os.utime(src4, (0, DUMMY_TS5))
+        os.utime(src5, (0, DUMMY_TS6))
 
         util.fs.zip_compress(zfile, src, 'myfolder')
 
@@ -2943,13 +2951,12 @@ class TestHelpers(unittest.TestCase):
             fh.write('123456')
         with open(src5, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        t = time.mktime((1993, 1, 2, 0, 0, 0, 5, 2, -1))
-        os.utime(src, (t, t))
-        os.utime(src2, (t, t + 10))
-        os.utime(src3, (t, t + 20))
-        os.utime(src3, (t, t + 30))
-        os.utime(src4, (t, t + 40))
-        os.utime(src5, (t, t + 50))
+        os.utime(src, (0, DUMMY_TS))
+        os.utime(src2, (0, DUMMY_TS2))
+        os.utime(src3, (0, DUMMY_TS3))
+        os.utime(src3, (0, DUMMY_TS4))
+        os.utime(src4, (0, DUMMY_TS5))
+        os.utime(src5, (0, DUMMY_TS6))
 
         util.fs.zip_compress(zfile, src, '')
 
@@ -3011,13 +3018,12 @@ class TestHelpers(unittest.TestCase):
             fh.write('123456')
         with open(src5, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        t = time.mktime((1993, 1, 2, 0, 0, 0, 5, 2, -1))
-        os.utime(src, (t, t))
-        os.utime(src2, (t, t + 10))
-        os.utime(src3, (t, t + 20))
-        os.utime(src3, (t, t + 30))
-        os.utime(src4, (t, t + 40))
-        os.utime(src5, (t, t + 50))
+        os.utime(src, (0, DUMMY_TS))
+        os.utime(src2, (0, DUMMY_TS2))
+        os.utime(src3, (0, DUMMY_TS3))
+        os.utime(src3, (0, DUMMY_TS4))
+        os.utime(src4, (0, DUMMY_TS5))
+        os.utime(src5, (0, DUMMY_TS6))
 
         util.fs.zip_compress(zfile, src, 'myfolder', filter={'subfolder'})
 
@@ -3065,8 +3071,7 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         with open(src, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        t = time.mktime((1993, 1, 2, 0, 0, 0, 5, 2, -1))
-        os.utime(src, (t, t))
+        os.utime(src, (0, DUMMY_TS))
 
         util.fs.zip_compress(zfile, src, 'myfile.txt')
 
@@ -3497,10 +3502,10 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'zipfile')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', (1987, 1, 3, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', (1987, 1, 4, 0, 0, 0)), 'abc')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
 
         util.fs.zip_extract(zfile, dst)
 
@@ -3517,19 +3522,19 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'file.txt')).st_mtime,
-            zip_timestamp((1987, 1, 1, 0, 0, 0)),
+            DUMMY_TS,
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'folder')).st_mtime,
-            zip_timestamp((1987, 1, 2, 0, 0, 0)),
+            DUMMY_TS2,
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'folder', 'subfile.txt')).st_mtime,
-            zip_timestamp((1987, 1, 3, 0, 0, 0)),
+            DUMMY_TS3,
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'implicit_folder', 'subfile.txt')).st_mtime,
-            zip_timestamp((1987, 1, 4, 0, 0, 0)),
+            DUMMY_TS4,
         )
 
     def test_zip_extract_dir(self):
@@ -3537,10 +3542,10 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'folder')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', (1987, 1, 3, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', (1987, 1, 4, 0, 0, 0)), 'abc')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
 
         util.fs.zip_extract(zfile, dst, 'folder')
 
@@ -3553,11 +3558,11 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(
             os.stat(dst).st_mtime,
-            zip_timestamp((1987, 1, 2, 0, 0, 0)),
+            DUMMY_TS2,
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'subfile.txt')).st_mtime,
-            zip_timestamp((1987, 1, 3, 0, 0, 0)),
+            DUMMY_TS3,
         )
 
     def test_zip_extract_dir_implicit(self):
@@ -3565,10 +3570,10 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'implicit_folder')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', (1987, 1, 3, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', (1987, 1, 4, 0, 0, 0)), 'abc')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
 
         util.fs.zip_extract(zfile, dst, 'implicit_folder')
 
@@ -3581,7 +3586,7 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'subfile.txt')).st_mtime,
-            zip_timestamp((1987, 1, 4, 0, 0, 0)),
+            DUMMY_TS4,
         )
 
     def test_zip_extract_file(self):
@@ -3589,10 +3594,10 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'zipfile.txt')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', (1987, 1, 3, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', (1987, 1, 4, 0, 0, 0)), 'abc')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
 
         util.fs.zip_extract(zfile, dst, 'file.txt')
 
@@ -3604,7 +3609,7 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(
             os.stat(dst).st_mtime,
-            zip_timestamp((1987, 1, 1, 0, 0, 0)),
+            DUMMY_TS,
         )
 
     def test_zip_extract_file_to_file(self):
@@ -3612,10 +3617,10 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'subdir')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', (1987, 1, 2, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', (1987, 1, 3, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', (1987, 1, 4, 0, 0, 0)), 'abc')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
         os.makedirs(dst)
 
         with self.assertRaises(FileExistsError):
@@ -3634,7 +3639,7 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'zipfile')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), 'ABC中文')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
 
         test_offset = -12345  # use a timezone offset which is unlikely really used
         util.fs.zip_extract(zfile, dst, tzoffset=test_offset)
@@ -3649,7 +3654,7 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'file.txt')).st_mtime,
-            zip_timestamp((1987, 1, 1, 0, 0, 0)) - test_offset + delta,
+            DUMMY_TS - test_offset + delta,
         )
 
 

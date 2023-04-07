@@ -13,9 +13,21 @@ from webscrapbook import WSB_DIR
 from webscrapbook import app as wsbapp
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
-from webscrapbook.util.fs import zip_timestamp
 
-from . import ROOT_DIR, SYMLINK_SUPPORTED, TEMP_DIR, test_file_cleanup
+from . import (
+    DUMMY_TS,
+    DUMMY_TS2,
+    DUMMY_TS3,
+    DUMMY_TS4,
+    DUMMY_ZIP_DT,
+    DUMMY_ZIP_DT2,
+    DUMMY_ZIP_DT3,
+    DUMMY_ZIP_DT4,
+    ROOT_DIR,
+    SYMLINK_SUPPORTED,
+    TEMP_DIR,
+    test_file_cleanup,
+)
 
 
 def setUpModule():
@@ -772,29 +784,29 @@ class TestFilesystemHelpers(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), '123456')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', DUMMY_ZIP_DT3), '123')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', DUMMY_ZIP_DT4), '1234')
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'file.txt'),
-            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, DUMMY_TS),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'folder'),
-            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('folder', 'dir', None, DUMMY_TS2),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'folder/'),
-            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('folder', 'dir', None, DUMMY_TS2),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'folder/.gitkeep'),
-            ('.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0))),
+            ('.gitkeep', 'file', 3, DUMMY_TS3),
         )
 
         self.assertEqual(
@@ -829,7 +841,7 @@ class TestFilesystemHelpers(unittest.TestCase):
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'implicit_folder/.gitkeep'),
-            ('.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0))),
+            ('.gitkeep', 'file', 4, DUMMY_TS4),
         )
 
         self.assertEqual(
@@ -846,45 +858,45 @@ class TestFilesystemHelpers(unittest.TestCase):
         with zipfile.ZipFile(zfile, 'r') as zh:
             self.assertEqual(
                 wsbapp.zip_file_info(zh, 'file.txt'),
-                ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+                ('file.txt', 'file', 6, DUMMY_TS),
             )
 
         # with base
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('deep/subdir/file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/', (1988, 1, 1, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
+            zh.writestr(zipfile.ZipInfo('deep/subdir/file.txt', DUMMY_ZIP_DT), '123456')
+            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/.gitkeep', DUMMY_ZIP_DT3), '123')
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base=''),
-            ('deep/subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('deep/subdir/file.txt', 'file', 6, DUMMY_TS),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='/'),
-            ('deep/subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('deep/subdir/file.txt', 'file', 6, DUMMY_TS),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/'),
-            ('subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('subdir/file.txt', 'file', 6, DUMMY_TS),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep'),
-            ('subdir/file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('subdir/file.txt', 'file', 6, DUMMY_TS),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/subdir/'),
-            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, DUMMY_TS),
         )
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base='deep/subdir'),
-            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, DUMMY_TS),
         )
 
         # invalid base
@@ -904,45 +916,45 @@ class TestFilesystemHelpers(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', (1987, 1, 1, 0, 0, 0)), '123456')
-            zh.writestr(zipfile.ZipInfo('folder/', (1988, 1, 1, 0, 0, 0)), '')
-            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', (1989, 1, 1, 0, 0, 0)), '123')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', (1990, 1, 1, 0, 0, 0)), '1234')
+            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), '123456')
+            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
+            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', DUMMY_ZIP_DT3), '123')
+            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', DUMMY_ZIP_DT4), '1234')
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, '')), {
-            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('folder', 'dir', None, DUMMY_TS2),
             ('implicit_folder', 'dir', None, None),
-            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, DUMMY_TS),
         })
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, '/')), {
-            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+            ('folder', 'dir', None, DUMMY_TS2),
             ('implicit_folder', 'dir', None, None),
-            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('file.txt', 'file', 6, DUMMY_TS),
         })
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, '', recursive=True)), {
-            ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
-            ('folder/.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0))),
+            ('folder', 'dir', None, DUMMY_TS2),
+            ('folder/.gitkeep', 'file', 3, DUMMY_TS3),
             ('implicit_folder', 'dir', None, None),
-            ('implicit_folder/.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0))),
-            ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+            ('implicit_folder/.gitkeep', 'file', 4, DUMMY_TS4),
+            ('file.txt', 'file', 6, DUMMY_TS),
         })
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, 'folder')), {
-            ('.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0)))
+            ('.gitkeep', 'file', 3, DUMMY_TS3)
         })
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, 'folder/')), {
-            ('.gitkeep', 'file', 3, zip_timestamp((1989, 1, 1, 0, 0, 0)))
+            ('.gitkeep', 'file', 3, DUMMY_TS3)
         })
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, 'implicit_folder')), {
-            ('.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0)))
+            ('.gitkeep', 'file', 4, DUMMY_TS4)
         })
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, 'implicit_folder/')), {
-            ('.gitkeep', 'file', 4, zip_timestamp((1990, 1, 1, 0, 0, 0)))
+            ('.gitkeep', 'file', 4, DUMMY_TS4)
         })
 
         with self.assertRaises(wsbapp.ZipDirNotFoundError):
@@ -957,9 +969,9 @@ class TestFilesystemHelpers(unittest.TestCase):
         # take zipfile.ZipFile
         with zipfile.ZipFile(zfile, 'r') as zh:
             self.assertEqual(set(wsbapp.zip_listdir(zh, '')), {
-                ('folder', 'dir', None, zip_timestamp((1988, 1, 1, 0, 0, 0))),
+                ('folder', 'dir', None, DUMMY_TS2),
                 ('implicit_folder', 'dir', None, None),
-                ('file.txt', 'file', 6, zip_timestamp((1987, 1, 1, 0, 0, 0))),
+                ('file.txt', 'file', 6, DUMMY_TS),
             })
 
 
