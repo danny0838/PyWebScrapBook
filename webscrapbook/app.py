@@ -177,11 +177,11 @@ def get_localpath(path):
     return os.path.normpath(host.chroot + os.sep + path)
 
 
-def get_breadcrumbs(paths, base='', topname='.'):
+def get_breadcrumbs(localpaths, base='', topname='.'):
     """Generate (label, subpath, sep, is_last) tuples.
     """
     base = base.rstrip('/') + '/'
-    paths = paths.copy()
+    paths = list(localpaths)
     paths[0] = paths[0].strip('/')
 
     if not paths[0]:
@@ -265,7 +265,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
     """List contents in a directory.
 
     Args:
-        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: a CPath
         zh: an opened zipfile.ZipFile object for faster reading
     """
     # ensure directory has trailing '/'
@@ -340,7 +340,7 @@ def handle_archive_viewing(localpaths, mimetype):
     """Handle direct visit of HTZ/MAFF file.
 
     Args:
-        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: a CPath
     """
     def list_maff_pages(pages):
         """List available web pages in a MAFF file.
@@ -388,7 +388,7 @@ def handle_markdown_output(localpaths, zh=None):
     """Output processed markdown.
 
     Args:
-        localpaths: [path-to-zip-file, subpath1, subpath2, ...]
+        localpaths: a CPath
         zh: an opened zipfile.ZipFile object for faster reading
     """
     if len(localpaths) > 1:
@@ -457,7 +457,7 @@ class Request(flask.Request):
     @cached_property
     def paths(self):
         """Like request.path, but with ZIP subpaths resolved."""
-        return util.fs.CPath.resolve(self.path, get_localpath).path
+        return util.fs.CPath.resolve(self.path, get_localpath)
 
     @cached_property
     def localpath(self):
@@ -467,9 +467,10 @@ class Request(flask.Request):
     @cached_property
     def localpaths(self):
         """Like localpath, but with ZIP subpaths resolved."""
-        paths = self.paths.copy()
-        paths[0] = get_localpath(paths[0])
-        return paths
+        return util.fs.CPath(
+            get_localpath(self.paths[0]),
+            *self.paths[1:],
+        )
 
     @cached_property
     def localrealpath(self):
