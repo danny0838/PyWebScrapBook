@@ -1162,16 +1162,16 @@ foo   中文<br/>
             [],
         )
 
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
 
-        with zipfile.ZipFile(zip_filename, 'r') as zh:
-            with zh.open('refresh.html') as fh:
-                self.assertEqual(
-                    list(util.iter_meta_refresh(fh)),
-                    [(0, 'target.html', None)],
-                )
+        with zipfile.ZipFile(zfile, 'r') as zh, zh.open('refresh.html') as fh:
+            self.assertEqual(
+                list(util.iter_meta_refresh(fh)),
+                [(0, 'target.html', None)],
+            )
 
     def test_get_meta_refresh(self):
         root = os.path.join(test_root, 'get_meta_refresh')
@@ -1206,16 +1206,16 @@ foo   中文<br/>
             (0, 'target.html', None),
         )
 
-        zip_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'zipfile.zip')
-        with zipfile.ZipFile(zip_filename, 'w') as zh:
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr('refresh.html', '<meta http-equiv="refresh" content="0;url=target.html">')
 
-        with zipfile.ZipFile(zip_filename, 'r') as zh:
-            with zh.open('refresh.html') as fh:
-                self.assertEqual(
-                    util.get_meta_refresh(fh),
-                    (0, 'target.html', None),
-                )
+        with zipfile.ZipFile(zfile, 'r') as zh, zh.open('refresh.html') as fh:
+            self.assertEqual(
+                util.get_meta_refresh(fh),
+                (0, 'target.html', None),
+            )
 
     def test_get_meta_refreshed_file(self):
         root = os.path.join(test_root, 'get_meta_refreshed_file')
