@@ -2,7 +2,6 @@
 """
 import os
 import re
-import sys
 from collections import OrderedDict
 from configparser import ConfigParser
 from copy import deepcopy
@@ -171,34 +170,34 @@ class Config():
                 except KeyError:
                     sectionobj[key] = conf[section][key]
 
-    def _load_config(self, file, conf):
+    @classmethod
+    def _load_config(cls, file, conf):
         if not os.path.isfile(file):
             return
 
+        parser = ConfigParser(interpolation=None)
         try:
-            parser = ConfigParser(interpolation=None)
             parser.read(file, encoding='UTF-8')
-        except Exception:
-            print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
-            raise
-        else:
-            for section in parser.sections():
-                # Handle subsected sections formatted as [section "subsection"].
-                # Also normalize [section] and [section  ""  ] to [section ""].
-                m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
-                if m:
-                    sec, subsec = m.group(1), m.group(2) or ''
-                    if sec in self.SUBSECTED:
-                        newsection = f'{sec} "{subsec}"'
-                        conf.setdefault(newsection, self.DEFAULT.get(f'{sec} ""', OrderedDict()))
-                        conf[newsection].update(parser[section])
-                        continue
+        except Exception as exc:
+            raise RuntimeError(f'Unable to load config from "{file}"') from exc
 
-                # conf.setdefault(...).update(...) doesn't work here as the
-                # setdefault may return the default value rather then a
-                # Section object.
-                conf.setdefault(section, OrderedDict())
-                conf[section].update(parser[section])
+        for section in parser.sections():
+            # Handle subsected sections formatted as [section "subsection"].
+            # Also normalize [section] and [section  ""  ] to [section ""].
+            m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
+            if m:
+                sec, subsec = m.group(1), m.group(2) or ''
+                if sec in cls.SUBSECTED:
+                    newsection = f'{sec} "{subsec}"'
+                    conf.setdefault(newsection, cls.DEFAULT.get(f'{sec} ""', OrderedDict()))
+                    conf[newsection].update(parser[section])
+                    continue
+
+            # conf.setdefault(...).update(...) doesn't work here as the
+            # setdefault may return the default value rather then a
+            # Section object.
+            conf.setdefault(section, OrderedDict())
+            conf[section].update(parser[section])
 
 
 config = Config()
