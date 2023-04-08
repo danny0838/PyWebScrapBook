@@ -3,6 +3,19 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.10.0] - 2023-04-08
+* Fixed a web interface issue that moved or copied files are misplaced if the target directory has a subdirectory with same name.
+* Fixed an issue that downoloading a collection in a ZIP may get a bad filename.
+* Fixed an issue that a file or directory can be unrestrictedly created at a subpath of a file in a ZIP.
+* Fixed an issue that a directory can be unrestrictedly moved to a path under self and causes a further error in some cases.
+* Fixed an issue that permissions are not preserved when copying a directory into a ZIP.
+* Fixed an issue that metadata are not preserved when modifying a file in a ZIP.
+* A directory entry is now generated at the target if there is no explicit directory entry when creating a directory in a ZIP.
+* Locale now defaults to "en" if not defined, to prevent an issue of using a deprecated API.
+* Fixed a packaging issue causing unusable test files be included in a source distribution.
+* Improved packinging configs and scripts.
+* Miscellaneous API error fix, documentation improvement, and code optimization and refactoring.
+
 ## [1.9.0] - 2023-03-26
 * Suppoort streaming when downloading multiple files/directories as a ZIP.
 * Miscellaneous documentation improvements and code optimization.
