@@ -138,45 +138,16 @@ class Config():
 
         project config > user config > default config
         """
-        def load_config(file):
-            if not os.path.isfile(file):
-                return
-
-            try:
-                parser = ConfigParser(interpolation=None)
-                parser.read(file, encoding='UTF-8')
-            except Exception:
-                print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
-                raise
-            else:
-                for section in parser.sections():
-                    # Handle subsected sections formatted as [section "subsection"].
-                    # Also normalize [section] and [section  ""  ] to [section ""].
-                    m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
-                    if m:
-                        sec, subsec = m.group(1), m.group(2) or ''
-                        if sec in self.SUBSECTED:
-                            newsection = f'{sec} "{subsec}"'
-                            conf.setdefault(newsection, self.DEFAULT.get(f'{sec} ""', OrderedDict()))
-                            conf[newsection].update(parser[section])
-                            continue
-
-                    # conf.setdefault(...).update(...) doesn't work here as the
-                    # setdefault may return the default value rather then a
-                    # Section object.
-                    conf.setdefault(section, OrderedDict())
-                    conf[section].update(parser[section])
-
         # default config
         self._conf = conf = ConfigParser(interpolation=None)
         conf.read_dict(self.DEFAULT)
 
         # user config
-        load_config(os.path.join(WSB_USER_DIR, WSB_CONFIG))
-        load_config(WSB_USER_CONFIG)
+        self._load_config(os.path.join(WSB_USER_DIR, WSB_CONFIG), conf)
+        self._load_config(WSB_USER_CONFIG, conf)
 
         # book config
-        load_config(os.path.join(root, WSB_DIR, WSB_CONFIG))
+        self._load_config(os.path.join(root, WSB_DIR, WSB_CONFIG), conf)
 
         # map subsections
         self._data = OrderedDict()
@@ -199,6 +170,35 @@ class Config():
                     sectionobj[key] = getattr(conf[section], self.TYPES[section][key])(key)
                 except KeyError:
                     sectionobj[key] = conf[section][key]
+
+    def _load_config(self, file, conf):
+        if not os.path.isfile(file):
+            return
+
+        try:
+            parser = ConfigParser(interpolation=None)
+            parser.read(file, encoding='UTF-8')
+        except Exception:
+            print(f'Error: Unable to load config from "{file}".', file=sys.stderr)
+            raise
+        else:
+            for section in parser.sections():
+                # Handle subsected sections formatted as [section "subsection"].
+                # Also normalize [section] and [section  ""  ] to [section ""].
+                m = re.search(r'^(\S*)(?:\s*"([^"\]]*)"\s*)?$', section)
+                if m:
+                    sec, subsec = m.group(1), m.group(2) or ''
+                    if sec in self.SUBSECTED:
+                        newsection = f'{sec} "{subsec}"'
+                        conf.setdefault(newsection, self.DEFAULT.get(f'{sec} ""', OrderedDict()))
+                        conf[newsection].update(parser[section])
+                        continue
+
+                # conf.setdefault(...).update(...) doesn't work here as the
+                # setdefault may return the default value rather then a
+                # Section object.
+                conf.setdefault(section, OrderedDict())
+                conf[section].update(parser[section])
 
 
 config = Config()
