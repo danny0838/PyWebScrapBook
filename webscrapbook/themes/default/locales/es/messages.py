@@ -124,7 +124,7 @@ cache_search_help_desc = """\
    • location: artículos con información de geolocalización.
    • file: elementos cuyo nombre de archivo contiene la palabra clave.
    • root: elementos bajo el elemento de ID. Múltiples valores están conectados “or”.
-   • book: artículos en el álbum de recortes específico (por nombre). Múltiples valores están conectados “or”.
+   • book: artículos en el álbum de recortes específico (por ID). Múltiples valores están conectados “or”.
    • sort: ordenar los resultados de la búsqueda usando la condición específica, que puede ser id, title, comment, file, content, source, type, create o modify. Por ejemplo, “sort:id -sort:modify” significa ordenar por ID en orden ascendente y luego ordenar por tiempo de modificación en orden descendente.
    • limit: establece un límite en el número de resultados de búsqueda. Por ejemplo, “limit:10” significa mostrar los primeros 10 resultados, “limit:-20” significa eliminar los últimos 20 resultados y “limit:0” o “-limit:” significa anular el límite."""
 cache_search_result = 'Encontrado %length% resultados:'

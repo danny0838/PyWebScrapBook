@@ -140,15 +140,15 @@ a.scrapbook-external > img {
 <link rel="stylesheet" href="search.css">
 <script>
 const conf = {
-  scrapbooks: [
-    {
-      name: "",
+  scrapbooks: {
+    '': {
+      name: {{ bookname | tojson }},
       path: {{ path | tojson }},
       dataDir: {{ data_dir | tojson }},
       treeDir: {{ tree_dir | tojson }},
       indexPage: {{ index | tojson }}
-    }
-  ],
+    },
+  },
   allowHttp: 0,  // whether to load js cache from HTTP(S)? -1: deny, 0: ask; 1: allow
   defaultSearch: "-type:folder -type:separator",  // the constant string to add before the input keyword
   viewInMapTitle: {{ i18n('cache_search_view_in_map') | tojson }},  // title for "view in map"
@@ -182,8 +182,9 @@ const scrapbook = {
       this.helperFill();
     });
 
-    scrapbook.books = conf.scrapbooks.map(
-      book => Object.assign({}, book, {
+    this.books = Object.entries(conf.scrapbooks).map(
+      ([id, book]) => Object.assign(book, {
+      	id,
         toc: {},
         meta: {},
         fulltext: {},
@@ -197,14 +198,14 @@ const scrapbook = {
 
   loadBooks() {
     let p = Promise.resolve();
-    scrapbook.books.forEach((book) => {
+    for (const book of this.books) {
       p = p.then(() => {
         return this.loadBook(book);
       }).catch((ex) => {
         console.error(ex);
         this.addMsg("Error: " + ex.message);
       });
-    });
+    }
     return p;
   },
 
@@ -345,7 +346,7 @@ const scrapbook = {
       length: results.length,
     };
 
-    if (book.name) {
+    if (book.id) {
       this.addMsg(this.formatString({{ i18n('cache_search_result_named') | tojson }}, info));
     } else {
       this.addMsg(this.formatString({{ i18n('cache_search_result') | tojson }}, info));
@@ -678,16 +679,16 @@ const searchEngine = {
   },
 
   search(query) {
-    const books = new Set(scrapbook.books);
-    if (query.books.include.length) {
-      for (const book of books) {
-        if (!query.books.include.includes(book.name)) {
-          books.delete(book);
-        }
-      }
-    }
+  	let books = new Set(scrapbook.books);
+  	if (query.books.include.length) {
+  	  books = new Set(
+        query.books.include
+          .map(id => conf.scrapbooks[id])
+          .filter(book => books.has(book))
+      );
+  	}
     for (const book of books) {
-      if (query.books.exclude.includes(book.name)) {
+      if (query.books.exclude.includes(book.id)) {
         books.delete(book);
       }
     }

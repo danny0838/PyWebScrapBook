@@ -124,7 +124,7 @@ cache_search_help_desc = """\
   • location：搜尋含有地理位置資訊的項目。
   • file：搜尋檔名含有關鍵詞的項目。
   • root：搜尋此 ID 項目下的子項目。多次指定時以「或」連接。
-  • book：搜尋指定剪貼簿（依名稱）中的項目。多次指定時以「或」連接。
+  • book：搜尋指定剪貼簿（依 ID）中的項目。多次指定時以「或」連接。
   • sort：將搜尋結果按指定方式排序，負號表示倒序。可填入 id、title、comment、file、content、source、type、create、modify。例如「sort:id -sort:modify」表示先按 ID 遞增排序再按修改時間遞減排序。
   • limit：設定搜尋結果筆數限制。例如「limit:10」表示只呈現前 10 筆搜尋結果，「limit:-20」表示不呈現最後 20 筆搜尋結果，「limit:0」或「-limit:」表示移除之前設定的限制。"""
 cache_search_result = '找到 %length% 筆結果：'

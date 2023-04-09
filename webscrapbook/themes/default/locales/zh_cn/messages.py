@@ -124,7 +124,7 @@ cache_search_help_desc = """\
   • location：搜索含有地理位置信息的项目。
   • file：搜索文件名含有关键词的项目。
   • root：搜索此 ID 项目下的子项目。多次指定时以“或”连接。
-  • book：搜索指定剪贴簿（依名称）中的项目。多次指定时以“或”连接。
+  • book：搜索指定剪贴簿（依 ID）中的项目。多次指定时以“或”连接。
   • sort：将搜索结果按指定方式排序，负号表示倒序。可填入 id、title、comment、file、content、source、type、create、modify。例如“sort:id -sort:modify”表示先按 ID 递增排序再按修改时间递减排序。
   • limit：设置搜索结果笔数限制。例如“limit:10”表示只呈现前 10 笔搜索结果，“limit:-20”表示不呈现最后 20 笔搜索结果，“limit:0”或“-limit:”表示移除之前设置的限制。"""
 cache_search_result = '找到 %length% 笔结果：'
