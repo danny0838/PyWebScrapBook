@@ -117,8 +117,8 @@ cache_search_help_desc = """\
    • source: elementos cuya URL fuente contiene la palabra clave.
    • icon: elementos cuyo icono URL contiene la palabra clave.
    • charset: elementos cuyo juego de caracteres contiene la palabra clave.
-   • create: elementos cuyo tiempo de creación coincide con la condición. La condición de tiempo es un intervalo con 0-17 dígitos, seguido de un signo menos opcionalmente, y luego seguido de 0-17 dígitos. Los dos números de 17 dígitos significan el año (4 dígitos), mes (01-12), día (01-31), horas (00-59), minutos (00-59), segundos (00-59) y milisegundos (000-999) en fecha y hora local. Se supone que cada dígito omitido es un "0", excepto que se asume "999..." si se omite totalmente la fecha y hora de finalización. Por ejemplo, “create:2014-2015” significa desde 2014 hasta 2015; “create:-201309” significa antes de septiembre de 2013; y “create:20110825” significa después del 25 de agosto de 2011.
-   • modify: elementos cuyo tiempo de modificación coincide con la condición. El formato de hora es el mismo que crear.
+   • create: elementos cuyo tiempo de creación coincide con la condición. Múltiples valores están conectados “or”. La condición de tiempo es un intervalo con 0-17 dígitos, seguido de un signo menos opcionalmente, y luego seguido de 0-17 dígitos. Los dos números de 17 dígitos significan el año (4 dígitos), mes (01-12), día (01-31), horas (00-59), minutos (00-59), segundos (00-59) y milisegundos (000-999) en fecha y hora local. Se supone que cada dígito omitido es un "0", excepto que se asume "999..." si se omite totalmente la fecha y hora de finalización. Por ejemplo, “create:2014-2015” significa desde 2014 hasta 2015; “create:-201309” significa antes de septiembre de 2013; y “create:20110825” significa después del 25 de agosto de 2011.
+   • modify: elementos cuyo tiempo de modificación coincide con la condición. Múltiples valores están conectados “or”. El formato de hora es el mismo que crear.
    • marked: elementos marcados.
    • locked: elementos bloqueados.
    • location: artículos con información de geolocalización.
