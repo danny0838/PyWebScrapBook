@@ -310,6 +310,51 @@ def cmd_convert(args):
             log(f'{info.type.upper()}: {info.msg}')
 
 
+def cmd_search(args):
+    """Search for data items in the scrapbook(s)."""
+    kwargs = args.copy()
+    root = kwargs.pop('root')
+    input_ = kwargs.pop('input')
+    kwargs['context'] = {
+        'title': kwargs.pop('title'),
+        'file': kwargs.pop('file'),
+        'fulltext': kwargs.pop('fulltext'),
+        'comment': kwargs.pop('comment'),
+        'source': kwargs.pop('source'),
+    }
+
+    import json
+    from contextlib import nullcontext
+
+    from .scrapbook import search
+
+    if input_ is None:
+        cm = nullcontext(sys.stdin)
+    else:
+        try:
+            cm = open(input_, 'r', encoding='UTF-8-SIG')
+        except OSError:
+            raise RuntimeError('Failed to read the input file') from None
+
+    with cm as fh:
+        query = fh.read()
+
+    try:
+        for item in search.search(root, query, **kwargs):
+            msg = json.dumps({
+                'book_id': item.book_id,
+                'id': item.id,
+                'file': item.file,
+                'context': item.context,
+            }, ensure_ascii=False)
+            log(msg)
+    except search.QueryError as exc:
+        die(exc)
+    except Exception as exc:
+        traceback.print_exc()
+        die(exc)
+
+
 def cmd_help(args):
     """Show detailed information about certain topics."""
     root = os.path.join(os.path.dirname(__file__), 'resources')
@@ -997,6 +1042,40 @@ order (default: %(default)s)""")
     parser_convert_wsb2file.add_argument(
         '--debug', default=False, action='store_true',
         help="""include debug output""")
+
+    # subcommand: search
+    parser_search = subparsers.add_parser(
+        'search', aliases=['r'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_search),
+        help="""search for data items in the scrapbook(s)""",
+        epilog="""\
+The output is a line-separated list of JSON objects with following
+properties:
+  "book_id": ID of the book
+  "id": ID of the matched item
+  "file": matched filename of the item
+  "context": context snippets of the match
+""")
+    parser_search.set_defaults(func=cmd_search)
+    parser_search.add_argument(
+        'input', action='store', nargs='?',
+        help="""the input file with search query (default: stdin)""")
+    parser_search.add_argument(
+        '--title', metavar='LEN', type=int, action='store',
+        help="""length of the context title (default: None)""")
+    parser_search.add_argument(
+        '--file', metavar='LEN', type=int, action='store',
+        help="""length of the context filename (default: None)""")
+    parser_search.add_argument(
+        '--fulltext', metavar='LEN', type=int, action='store',
+        help="""length of the context fulltext (default: None)""")
+    parser_search.add_argument(
+        '--comment', metavar='LEN', type=int, action='store',
+        help="""length of the context comment (default: None)""")
+    parser_search.add_argument(
+        '--source', metavar='LEN', type=int, action='store',
+        help="""length of the context source (default: None)""")
 
     # subcommand: help
     parser_help = subparsers.add_parser(

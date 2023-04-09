@@ -293,7 +293,7 @@ class TestFunctions(Test):
                 self.assertTrue(wsbapp.verify_authorization('read', action))
                 self.assertTrue(wsbapp.verify_authorization('all', action))
 
-        for action in {'list', 'edit', 'editx', 'exec', 'browse', 'config'}:
+        for action in {'list', 'edit', 'editx', 'exec', 'browse', 'config', 'search'}:
             with self.subTest(action=action):
                 self.assertFalse(wsbapp.verify_authorization('', action))
                 self.assertFalse(wsbapp.verify_authorization('view', action))

@@ -405,3 +405,30 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
         # enforce LF to prevent bad parsing for legacy ScrapBook
         with open(file, 'w', encoding='UTF-8', newline='\n') as fh:
             fh.write(data)
+
+    def get_reachable_items(self, item_id, dict=None):
+        """Get a flattened set of reachable items, including self.
+
+        Args:
+            item_id: the item id to search from
+            dict: a dict to store the final result, or None to generate one
+        """
+        if dict is None:
+            dict = {}
+
+        self._get_reachable_items(item_id, dict)
+        return dict
+
+    def _get_reachable_items(self, item_id, dict):
+        if item_id in dict:
+            return
+
+        dict[item_id] = True
+
+        try:
+            child_ids = self.toc[item_id]
+        except KeyError:
+            return
+
+        for child_id in child_ids:
+            self._get_reachable_items(child_id, dict)

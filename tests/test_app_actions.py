@@ -35,6 +35,7 @@ from . import (
     PROG_DIR,
     ROOT_DIR,
     TEMP_DIR,
+    TestBookMixin,
     TestFileMixin,
     glob_files,
     require_junction,
@@ -75,7 +76,7 @@ def token(c):
     return c.post('/', data={'a': 'token'}).data.decode('UTF-8')
 
 
-class TestActions(TestFileMixin, unittest.TestCase):
+class TestActions(TestBookMixin, TestFileMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # init an app for the class
@@ -5788,6 +5789,261 @@ class TestCheck(TestActions):
             })
 
             mock_abort.assert_called_once_with(500, 'An unexpected error happened.')
+
+
+class TestSearch(TestActions):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+
+        # init an app for the class
+        cls.root = tempfile.mkdtemp(dir=tmpdir)
+        cls.init_host(
+            cls.root,
+            config="""\
+[book ""]
+name = scrapbook1
+top_dir = scrapbook1
+data_dir = data
+tree_dir = tree
+index = tree/map.html
+no_tree = false
+
+[book "b2"]
+name = scrapbook2
+top_dir = scrapbook2
+data_dir = data
+tree_dir = tree
+index = tree/map.html
+no_tree = false
+""")
+        book1 = cls.init_book(
+            cls.root,
+            book_id='',
+            meta={
+                '20000101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder 1',
+                },
+                '20000101000000002': {
+                    'type': '',
+                    'title': 'Item 1',
+                    'index': '20000101000000002/index.html',
+                    'create': '20000101000000002',
+                    'modify': '20000101000000002',
+                    'comment': 'Ut enim ad minim veniam',
+                },
+            },
+            toc={
+                'root': [
+                    '20000101000000001',
+                ],
+                '20000101000000001': [
+                    '20000101000000002',
+                ],
+            },
+            fulltext={
+                '20000101000000002': {
+                    'index.html': {
+                        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                    },
+                },
+            },
+        )
+        book2 = cls.init_book(
+            cls.root,
+            book_id='b2',
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'title': 'item 1',
+                    'index': '20200101000000001/index.html',
+                    'create': '20200101000000001',
+                    'modify': '20200101000000001',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+            fulltext={
+                '20200101000000001': {
+                    'index.html': {
+                        'content': 'Lorem ipsum dolor sit amet. 郹姎伅醏搋燀扤，嗍軵亍枑挔慅姇氕亍枘嵺祋巿呾。',
+                    },
+                },
+            },
+        )
+        file = os.path.join(book1.data_dir, '20000101000000002', 'index.html')
+        os.makedirs(os.path.dirname(file))
+        with open(file, 'w', encoding='UTF-8') as fh:
+            fh.write('Lorem ipsum dolor sit amet, consectetur adipiscing elit.')
+        file = os.path.join(book2.data_dir, '20200101000000001', 'index.html')
+        os.makedirs(os.path.dirname(file))
+        with open(file, 'w', encoding='UTF-8') as fh:
+            fh.write('Lorem ipsum dolor sit amet. 郹姎伅醏搋燀扤，嗍軵亍枑挔慅姇氕亍枘嵺祋巿呾。')
+
+        cls.app = wsb_app.make_app(cls.root)
+        cls.app.testing = True
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'server'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'locks'))
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_format_check(self, mock_abort):
+        """Require format"""
+        with self.app.test_client() as c:
+            c.post('/', data={'a': 'search'})
+            mock_abort.assert_called_once_with(400, 'Action not supported.')
+
+    @mock.patch('webscrapbook.app.wsb_search.search', wraps=wsb_app.wsb_search.search)
+    def test_basic_sse(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            r = c.get('/', query_string={
+                'a': 'search', 'f': 'sse',
+                'q': 'book: book:b2 ipsum',
+                'no_lock': 1,
+                'fulltext': 300,
+                'comment': 200,
+                'source': 100,
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                query='book: book:b2 ipsum',
+                lock=False,
+                context={
+                    'title': -1,
+                    'file': -1,
+                    'fulltext': 300,
+                    'comment': 200,
+                    'source': 100,
+                },
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'type': 'info',
+                    'msg': '',
+                    'data': {
+                        'book_id': '',
+                        'id': '20000101000000002',
+                        'file': 'index.html',
+                        'context': {
+                            'title': 'Item 1',
+                            'file': 'index.html',
+                            'comment': 'Ut enim ad minim veniam',
+                            'source': '',
+                            'fulltext': 'Lorem <mark class="kw0">ipsum</mark> dolor sit amet, consectetur adipiscing elit.',
+                        },
+                    },
+                }),
+                ('message', {
+                    'type': 'info',
+                    'msg': '',
+                    'data': {
+                        'book_id': 'b2',
+                        'id': '20200101000000001',
+                        'file': 'index.html',
+                        'context': {
+                            'title': 'item 1',
+                            'file': 'index.html',
+                            'comment': '',
+                            'source': '',
+                            'fulltext': 'Lorem <mark class="kw0">ipsum</mark> dolor sit amet. 郹姎伅醏搋燀扤，嗍軵亍枑挔慅姇氕亍枘嵺祋巿呾。',
+                        },
+                    },
+                }),
+                ('complete', None),
+            ])
+
+    def test_bad_query_sse(self):
+        with self.app.test_client() as c:
+            r = c.get('/', query_string={'a': 'search', 'f': 'sse', 'q': 'sort:unknown'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'type': 'critical',
+                    'msg': 'Invalid sort: unknown',
+                }),
+                ('complete', None),
+            ])
+
+    @mock.patch('webscrapbook.app.wsb_search.search', wraps=wsb_app.wsb_search.search)
+    def test_basic_json(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            r = c.post('/', data={
+                'a': 'search', 'f': 'json',
+                'q': 'book: book:b2 ipsum',
+                'no_lock': 1,
+                'fulltext': 300,
+                'comment': 200,
+                'source': 100,
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                query='book: book:b2 ipsum',
+                lock=False,
+                context={
+                    'title': -1,
+                    'file': -1,
+                    'fulltext': 300,
+                    'comment': 200,
+                    'source': 100,
+                },
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.json, {'data': {
+                '': [
+                    {
+                        'id': '20000101000000002',
+                        'file': 'index.html',
+                        'context': {
+                            'title': 'Item 1',
+                            'file': 'index.html',
+                            'comment': 'Ut enim ad minim veniam',
+                            'source': '',
+                            'fulltext': 'Lorem <mark class="kw0">ipsum</mark> dolor sit amet, consectetur adipiscing elit.',
+                        },
+                    },
+                ],
+                'b2': [
+                    {
+                        'id': '20200101000000001',
+                        'file': 'index.html',
+                        'context': {
+                            'title': 'item 1',
+                            'file': 'index.html',
+                            'comment': '',
+                            'source': '',
+                            'fulltext': 'Lorem <mark class="kw0">ipsum</mark> dolor sit amet. 郹姎伅醏搋燀扤，嗍軵亍枑挔慅姇氕亍枘嵺祋巿呾。',
+                        },
+                    },
+                ],
+            }})
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_bad_query_json(self, mock_abort):
+        with self.app.test_client() as c:
+            c.post('/', data={'a': 'search', 'f': 'json', 'q': 'sort:unknown'})
+            mock_abort.assert_called_once_with(400, 'Invalid sort: unknown')
 
 
 class TestUnknown(TestActions):

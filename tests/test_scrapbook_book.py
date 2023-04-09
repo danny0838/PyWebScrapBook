@@ -1327,6 +1327,86 @@ scrapbook.fulltext({
         with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), fulltext1)
 
+    def test_get_reachable_items(self):
+        host = Host(self.test_root)
+        book = Book(host)
+
+        # basic: deep first
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+                'item3',
+                'item4',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'item1-1': [
+                'item1-1-1',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items('root')),
+            ['root', 'item1', 'item1-1', 'item1-1-1', 'item1-2', 'item2', 'item3', 'item4'],
+        )
+
+        # no duplicate
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+                'item3',
+                'item2',
+                'item1',
+                'item3',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items('root')),
+            ['root', 'item1', 'item2', 'item3'],
+        )
+
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+                'item3',
+            ],
+            'item1': [
+                'item3',
+                'item4',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items('root')),
+            ['root', 'item1', 'item3', 'item4', 'item2'],
+        )
+
+        # circular
+        book.toc = {
+            'root': [
+                'item1',
+            ],
+            'item1': [
+                'item2',
+            ],
+            'item2': [
+                'item3',
+            ],
+            'item3': [
+                'item4',
+            ],
+            'item4': [
+                'item1',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items('item3')),
+            ['item3', 'item4', 'item1', 'item2'],
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

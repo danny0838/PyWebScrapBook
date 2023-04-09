@@ -1334,6 +1334,102 @@ class TestConvert(Test):
         )
 
 
+class TestSearch(Test):
+    @mock.patch('sys.stdin', io.StringIO('keyword1 keyword2'))
+    @mock.patch('webscrapbook.scrapbook.search.search', autospec=True)
+    @mock.patch('webscrapbook.cli.cmd_search', wraps=cli.cmd_search)
+    def test_default(self, mock_handler, mock_func):
+        cli.main([
+            '--root', self.root,
+            'search',
+        ])
+
+        mock_handler.assert_called_once_with(dict(
+            root=self.root,
+            input=None,
+            title=None,
+            file=None,
+            fulltext=None,
+            comment=None,
+            source=None,
+        ))
+
+        mock_func.assert_called_once_with(
+            self.root,
+            'keyword1 keyword2',
+            context=dict(
+                title=None,
+                file=None,
+                fulltext=None,
+                comment=None,
+                source=None,
+            ),
+        )
+
+    @mock.patch('webscrapbook.scrapbook.search.search', autospec=True)
+    @mock.patch('webscrapbook.cli.cmd_search', wraps=cli.cmd_search)
+    def test_basic(self, mock_handler, mock_func):
+        file = os.path.join(self.root, 'input.txt')
+        with open(file, 'w', encoding='UTF-8') as fh:
+            fh.write('book: mc: foo bar -baz')
+
+        cli.main([
+            '--root', self.root,
+            'search',
+            file,
+            '--title', '50',
+            '--file', '30',
+            '--fulltext', '120',
+            '--comment', '100',
+            '--source', '80',
+        ])
+
+        mock_handler.assert_called_once_with(dict(
+            root=self.root,
+            input=file,
+            title=50,
+            file=30,
+            fulltext=120,
+            comment=100,
+            source=80,
+        ))
+
+        mock_func.assert_called_once_with(
+            self.root,
+            'book: mc: foo bar -baz',
+            context={
+                'title': 50,
+                'file': 30,
+                'fulltext': 120,
+                'comment': 100,
+                'source': 80,
+            },
+        )
+
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    @mock.patch('sys.stdin', io.StringIO('sort:unknown'))
+    @mock.patch('webscrapbook.cli.cmd_search', wraps=cli.cmd_search)
+    def test_error(self, mock_handler, mock_stderr):
+        with self.assertRaises(SystemExit) as cm:
+            cli.main([
+                '--root', self.root,
+                'search',
+            ])
+
+        mock_handler.assert_called_once_with(dict(
+            root=self.root,
+            input=None,
+            title=None,
+            file=None,
+            fulltext=None,
+            comment=None,
+            source=None,
+        ))
+
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(mock_stderr.getvalue(), 'Error: Invalid sort: unknown\n')
+
+
 class TestHelp(Test):
     def test_basic(self):
         topics = {
