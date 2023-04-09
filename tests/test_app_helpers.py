@@ -291,14 +291,14 @@ class TestFunctions(Test):
             self.assertEqual(mock_encrypt.call_args_list[1][0], ('pass1', 'salt', 'plain'))
 
     def test_verify_authorization(self):
-        for action in {'view', 'info', 'source', 'download', 'static'}:
+        for action in {'view', 'info', 'source', 'download', 'static', 'unknown'}:
             with self.subTest(action=action):
                 self.assertFalse(wsbapp.verify_authorization('', action))
                 self.assertTrue(wsbapp.verify_authorization('view', action))
                 self.assertTrue(wsbapp.verify_authorization('read', action))
                 self.assertTrue(wsbapp.verify_authorization('all', action))
 
-        for action in {'list', 'edit', 'editx', 'exec', 'browse', 'config', 'unknown'}:
+        for action in {'list', 'edit', 'editx', 'exec', 'browse', 'config'}:
             with self.subTest(action=action):
                 self.assertFalse(wsbapp.verify_authorization('', action))
                 self.assertFalse(wsbapp.verify_authorization('view', action))

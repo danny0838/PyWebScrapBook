@@ -256,7 +256,7 @@ def verify_authorization(perm, action):
         }
 
     if perm == 'view':
-        return action in {'view', 'info', 'source', 'download', 'static'}
+        return action in {'view', 'info', 'source', 'download', 'static', 'unknown'}
 
     return False
 
@@ -488,6 +488,8 @@ class Request(flask.Request):
         """Shortcut of the requested action."""
         rv = request.values.get('a', default='view')
         rv = request.values.get('action', default=rv)
+        if not globals().get(f'action_{rv}'):
+            rv = 'unknown'
         return rv
 
     @cached_property
@@ -1340,7 +1342,7 @@ def handle_request(filepath=''):
     """Handle an HTTP request (HEAD, GET, POST).
     """
     try:
-        handler = globals().get(f'action_{request.action}') or action_unknown
+        handler = globals()[f'action_{request.action}']
         return handler()
     except PermissionError:
         abort(403)
