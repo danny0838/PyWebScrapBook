@@ -3,6 +3,15 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.11.0] - 2023-04-10
+* Fixes and updates for the search page:
+  * Fixed outdated browser support information.
+  * `create:` and `modify:` conditions are now "or"-connected.
+  * `book:` conditions are now matched by book ID.
+  * Search results are now shown in the order of provided `book:` conditions.
+  * A bad input for `sort:` and `limit:` is now forbidden.
+* Fixed bad response for a user without read permission when visiting with an unknown action.
+
 ## [1.10.1] - 2023-04-08
 * Fixed a packaging error causing a missing subpackage.
 
