@@ -1370,7 +1370,7 @@ def handle_error(exc):
                 'status': exc.code,
                 'message': exc.description,
             },
-        })
+        }, ensure_ascii=False)
         response.content_type = 'application/json'
         return response
 
