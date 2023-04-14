@@ -257,6 +257,31 @@ class TestUtils(unittest.TestCase):
             util.validate_filename('123%.dat', force_ascii=True),
             '123%.dat')
 
+    def test_cropped(self):
+        self.assertEqual(util.cropped('dummy text', 10), ('dummy text', ''))
+        self.assertEqual(util.cropped('dummy text', 9), ('dummy ', '...'))
+        self.assertEqual(util.cropped('dummy text', 8), ('dummy', '...'))
+        self.assertEqual(util.cropped('dummy text', 7), ('dumm', '...'))
+        self.assertEqual(util.cropped('dummy text', 4), ('d', '...'))
+        self.assertEqual(util.cropped('dummy text', 3), ('', '...'))
+        self.assertEqual(util.cropped('dummy text', 2), ('', '...'))
+        self.assertEqual(util.cropped('dummy text', 1), ('', '...'))
+        self.assertEqual(util.cropped('dummy text', 0), ('', '...'))
+
+        self.assertEqual(util.cropped('中文字串𠀀', 5), ('中文字串𠀀', ''))
+        self.assertEqual(util.cropped('中文字串𠀀', 4), ('中', '...'))
+
+        # ellipsis
+        self.assertEqual(util.cropped('dummy text', 10, ellipsis='…'), ('dummy text', ''))
+        self.assertEqual(util.cropped('dummy text', 9, ellipsis='…'), ('dummy te', '…'))
+        self.assertEqual(util.cropped('dummy text', 8, ellipsis='…'), ('dummy t', '…'))
+        self.assertEqual(util.cropped('dummy text', 2, ellipsis='…'), ('d', '…'))
+        self.assertEqual(util.cropped('dummy text', 1, ellipsis='…'), ('', '…'))
+        self.assertEqual(util.cropped('dummy text', 0, ellipsis='…'), ('', '…'))
+
+        self.assertEqual(util.cropped('中文字串𠀀', 5, ellipsis='…'), ('中文字串𠀀', ''))
+        self.assertEqual(util.cropped('中文字串𠀀', 4, ellipsis='…'), ('中文字', '…'))
+
     def test_crop(self):
         self.assertEqual(util.crop('dummy text', 10), 'dummy text')
         self.assertEqual(util.crop('dummy text', 9), 'dummy ...')

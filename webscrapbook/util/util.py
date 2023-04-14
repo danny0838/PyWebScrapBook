@@ -178,10 +178,14 @@ def validate_filename(filename, force_ascii=False):
 # String handling
 #########################################################################
 
-def crop(text, width=70, ellipsis='...'):
+def cropped(text, width=70, ellipsis='...'):
     if len(text) > width:
-        return text[:max(width - len(ellipsis), 0)] + ellipsis
-    return text
+        return (text[:max(width - len(ellipsis), 0)], ellipsis)
+    return (text, '')
+
+
+def crop(text, width=70, ellipsis='...'):
+    return ''.join(cropped(text, width, ellipsis))
 
 
 REGEX_FORMAT_STRING = re.compile(r'%(\w*)%')
