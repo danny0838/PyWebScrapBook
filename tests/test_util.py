@@ -271,6 +271,17 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.crop('中文字串𠀀', 5), '中文字串𠀀')
         self.assertEqual(util.crop('中文字串𠀀', 4), '中...')
 
+        # ellipsis
+        self.assertEqual(util.crop('dummy text', 10, ellipsis='…'), 'dummy text')
+        self.assertEqual(util.crop('dummy text', 9, ellipsis='…'), 'dummy te…')
+        self.assertEqual(util.crop('dummy text', 8, ellipsis='…'), 'dummy t…')
+        self.assertEqual(util.crop('dummy text', 2, ellipsis='…'), 'd…')
+        self.assertEqual(util.crop('dummy text', 1, ellipsis='…'), '…')
+        self.assertEqual(util.crop('dummy text', 0, ellipsis='…'), '…')
+
+        self.assertEqual(util.crop('中文字串𠀀', 5, ellipsis='…'), '中文字串𠀀')
+        self.assertEqual(util.crop('中文字串𠀀', 4, ellipsis='…'), '中文字…')
+
     def test_format_string(self):
         # %% => %
         self.assertEqual(util.format_string('format %%', {}), 'format %')
