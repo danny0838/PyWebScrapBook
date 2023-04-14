@@ -7,6 +7,7 @@ from collections import namedtuple
 from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 
+from .. import util
 from .host import Host
 
 Item = namedtuple('Item', ('book_id', 'id', 'file', 'meta', 'fulltext', 'context'))
@@ -37,6 +38,8 @@ class Query:
     PARSE_DATE_REGEX = re.compile(r'^(\d{0,17})(?:-(\d{0,17}))?$')
 
     TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+
+    ELLIPSIS = '…'
 
     def __init__(self, query_text):
         """Inatialize a new query.
@@ -346,32 +349,38 @@ class Query:
             return ''
 
         regexes = self.markers.get(marker_type, [])
-        return SnippetGenerator(text, regexes, ln).run()
-
-
-class SnippetGenerator:
-    def __init__(self, text, keywords, snippet_len=200):
-        self.text = text
-        self.keywords = keywords
-        self.snippet_len = snippet_len if snippet_len >= 0 else None
-
-    def run(self):
-        self.hits_map = self._get_hits_map()
-        if self.snippet_len is not None:
-            snippet = self._get_best_snippet()
-            snippet = self._adjust_snippet(snippet)
+        if ln >= 0:
+            if marker_type == 'source':
+                text, ellipsis = util.cropped(text, ln, self.ELLIPSIS)
+            else:
+                text, ellipsis = self._crop_at_first_hit(text, regexes, ln)
         else:
-            snippet = None
-        return ''.join(self._gen_marked_text(snippet))
+            ellipsis = ''
+        return ''.join(self._gen_marked_text(text, regexes)) + self._gen_marked_text_marker(ellipsis)
 
-    def _get_hits_map(self):
-        text = self.text
+    @classmethod
+    def _crop_at_first_hit(cls, text, regexes, length, context_ratio=0.25):
+        min_hit = inf = float('inf')
+        for regex in regexes:
+            m = regex.search(text)
+            if not m:
+                continue
+            start = m.start(0)
+            if start < min_hit:
+                min_hit = start
+        if min_hit < inf:
+            start = max(int(min_hit - length * context_ratio), 0)
+            text = text[start:]
+        return util.cropped(text, length, cls.ELLIPSIS)
+
+    @classmethod
+    def _gen_marked_text(cls, text, regexes):
         ln = len(text)
-        map_ = {}
-        for idx, keyword in enumerate(self.keywords):
-            hits = []
+
+        hits = []
+        for idx, regex in enumerate(regexes):
             pos = 0
-            m = keyword.search(text, pos)
+            m = regex.search(text, pos)
             while m:
                 start, end = m.span(0)
                 hit = (start, end, idx)
@@ -379,109 +388,24 @@ class SnippetGenerator:
                 pos = max(hit[1], pos + 1)
                 if pos > ln:
                     break
-                m = keyword.search(text, pos)
-            if hits:
-                map_[keyword] = hits
-        return map_
+                m = regex.search(text, pos)
 
-    def _get_best_snippet(self):
-        text_len = len(self.text)
-        snippet = (0, 0)
-        best_snippet = snippet
-        best_keywords = {}
-        cache = {}
-        while snippet[1] <= text_len:
-            keywords = self._get_snippet_keywords(snippet, cache)
+        hits = sorted(hits, key=cls._gen_marked_text_sortkey)
 
-            # quickly break for a feasible snippet
-            if len(keywords) == len(self.hits_map):
-                best_snippet = snippet
-                best_keywords = keywords
-                break
-
-            # compare and update the best snippet
-            if len(keywords) > len(best_keywords):
-                best_snippet = snippet
-                best_keywords = keywords
-
-            snippet = (snippet[0], snippet[1] + 1)
-            if snippet[1] - snippet[0] > self.snippet_len:
-                snippet = (snippet[0] + 1, snippet[1])
-
-        # shrink the range to first start and last end of the first occurrence of all keywords
-        if best_keywords:
-            min_start = float('inf')
-            max_end = float('-inf')
-            for hit in best_keywords.values():
-                if hit[0] < min_start:
-                    min_start = hit[0]
-                if hit[1] > max_end:
-                    max_end = hit[1]
-            return (min_start, max_end)
-
-        return best_snippet
-
-    def _get_snippet_keywords(self, snippet, cache=None):
-        contained_keywords = {}
-        for keyword, hits in self.hits_map.items():
-            found_first_hit = False
-            start = cache.get(keyword, 0) if cache else 0
-            for i, hit in enumerate(hits):
-                if hit[0] < snippet[0]:
-                    continue
-                if not found_first_hit:
-                    if i >= start and cache:
-                        cache[keyword] = i
-                    found_first_hit = True
-                if hit[0] >= snippet[1]:
-                    break
-                if snippet[0] <= hit[0] and hit[1] <= snippet[1]:
-                    contained_keywords[keyword] = hit
-                    break
-        return contained_keywords
-
-    def _adjust_snippet(self, snippet):
-        text_len = len(self.text)
-        context_length = int((self.snippet_len - (snippet[1] - snippet[0])) / 2)
-
-        start_avail = snippet[0] - 0
-        end_avail = text_len - snippet[1]
-        start_context_len = min(context_length + max(context_length - end_avail, 0), start_avail)
-        end_context_len = min(self.snippet_len - (snippet[1] - snippet[0]) - start_context_len, end_avail)
-
-        new_start = max(snippet[0] - start_context_len, snippet[1] - self.snippet_len, 0)
-        new_end = min(snippet[1] + end_context_len, new_start + self.snippet_len, text_len)
-        return (new_start, new_end)
-
-    def _gen_marked_text(self, snippet=None, ellipsis='…'):
-        hits = sorted(
-            (hit for hits in self.hits_map.values() for hit in hits),
-            key=self._gen_marked_text_sortkey,
-        )
-        start, end = snippet or (0, None)
-        if end is not None and len(self.text) > end:
-            end = max(end - len(ellipsis), 0)
-        else:
-            ellipsis = ''
-
-        pos = start
+        pos = 0
         for hit in hits:
             if hit[0] < pos:
                 continue
-            if end is not None and hit[1] > end:
-                continue
-            delta = self.text[pos:hit[0]]
+            delta = text[pos:hit[0]]
             if delta:
-                yield self._gen_marked_text_marker(delta)
-            match = self.text[hit[0]:hit[1]]
+                yield cls._gen_marked_text_marker(delta)
+            match = text[hit[0]:hit[1]]
             if match:
-                yield self._gen_marked_text_marker(match, hit[2])
+                yield cls._gen_marked_text_marker(match, hit[2])
             pos = hit[1]
-        delta = self.text[pos:end]
+        delta = text[pos:]
         if delta:
-            yield self._gen_marked_text_marker(delta)
-        if ellipsis:
-            yield self._gen_marked_text_marker(ellipsis)
+            yield cls._gen_marked_text_marker(delta)
 
     @staticmethod
     def _gen_marked_text_sortkey(hit):

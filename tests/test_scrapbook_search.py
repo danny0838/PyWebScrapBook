@@ -1141,8 +1141,12 @@ class TestQuery(unittest.TestCase):
                     )
 
                     # crop near the keyword
+                    # "source" always crop from start
                     input = """Praesent sagittis vitae enim sed luctus. Duis egestas molestie leo, a hendrerit nulla ultrices eget."""
-                    expected = """is egestas <mark class="kw0">molestie</mark> leo, a he…"""
+                    if field == 'source':
+                        expected = """Praesent sagittis vitae enim …"""
+                    else:
+                        expected = """egestas <mark class="kw0">molestie</mark> leo, a hendr…"""
                     query = search.Query(f'{field}:molestie')
                     self.assertEqual(
                         query.get_snippet(input, field, 30),
@@ -1151,7 +1155,10 @@ class TestQuery(unittest.TestCase):
 
                     # tail ellipsis shouln't be marked
                     input = """Praesent sagittis vitae enim sed luctus. … Duis egestas molestie leo, a hendrerit nulla ultrices eget."""
-                    expected = """m sed luctus. <mark class="kw0">…</mark> Duis egestas …"""
+                    if field == 'source':
+                        expected = """Praesent sagittis vitae enim …"""
+                    else:
+                        expected = """luctus. <mark class="kw0">…</mark> Duis egestas molest…"""
                     query = search.Query(f'{field}:…')
                     self.assertEqual(
                         query.get_snippet(input, field, 30),
