@@ -16,7 +16,6 @@ import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook._polyfill import zipfile
 from webscrapbook.app import make_app
-from webscrapbook.util import frozendict, make_hashable
 from webscrapbook.util.fs import junction
 
 from . import (
@@ -841,40 +840,40 @@ class TestList(TestActions):
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'file.txt',
                     'type': 'file',
                     'size': 3,
                     'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
-                }),
-                frozendict({
+                },
+                {
                     'name': 'sub',
                     'type': 'dir',
                     'size': None,
                     'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
-                }),
-            })
+                },
+            ])
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'file.txt',
                     'type': 'file',
                     'size': 3,
                     'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
-                }),
-                frozendict({
+                },
+                {
                     'name': 'sub',
                     'type': 'dir',
                     'size': None,
                     'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
-                }),
-            })
+                },
+            ])
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file(self, mock_abort):
@@ -911,20 +910,20 @@ class TestList(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
                     'last_modified': DUMMY_TS2,
-                }),
-                frozendict({
+                },
+                {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': DUMMY_TS3,
-                }),
-            })
+                },
+            ])
 
             # explicit dir
             r = c.get('/deep/archive.zip!/explicit_dir/', query_string={'a': 'list', 'f': 'json'})
@@ -935,20 +934,20 @@ class TestList(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 19,
                     'last_modified': DUMMY_TS2,
-                }),
-                frozendict({
+                },
+                {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': DUMMY_TS3,
-                }),
-            })
+                },
+            ])
 
             # implicit dir (no slash)
             r = c.get('/deep/archive.zip!/implicit_dir', query_string={'a': 'list', 'f': 'json'})
@@ -959,20 +958,20 @@ class TestList(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
                     'last_modified': DUMMY_TS4,
-                }),
-                frozendict({
+                },
+                {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': None,
-                }),
-            })
+                },
+            ])
 
             # implicit dir
             r = c.get('/deep/archive.zip!/implicit_dir/', query_string={'a': 'list', 'f': 'json'})
@@ -983,20 +982,20 @@ class TestList(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 22,
                     'last_modified': DUMMY_TS4,
-                }),
-                frozendict({
+                },
+                {
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
                     'last_modified': None,
-                }),
-            })
+                },
+            ])
 
             etag = r.headers['ETag']
             lm = r.headers['Last-Modified']
@@ -1022,14 +1021,14 @@ class TestList(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
             data = r.json
             self.assertTrue(data['success'])
-            self.assertEqual(set(make_hashable(data['data'])), {
-                frozendict({
+            self.assertCountEqual(data['data'], [
+                {
                     'name': 'index.html',
                     'type': 'file',
                     'size': 3,
                     'last_modified': DUMMY_TS7,
-                }),
-            })
+                },
+            ])
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_nonexist(self, mock_abort):
