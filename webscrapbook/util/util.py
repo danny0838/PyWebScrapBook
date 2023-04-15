@@ -2,7 +2,6 @@
 """
 import binascii
 import codecs
-import collections
 import hashlib
 import importlib
 import math
@@ -28,59 +27,6 @@ from .._polyfill import mimetypes, zipfile
 
 # common namedtuple for yielded messages for certain classes
 Info = namedtuple('Info', ('type', 'msg', 'data', 'exc'), defaults=(None, None))
-
-
-class frozendict(collections.abc.Mapping):  # noqa: N801
-    """Implementation of a frozen dict, which is hashable if all values
-       are hashable.
-    """
-    def __init__(self, *args, **kwargs):
-        self._d = dict(*args, **kwargs)
-        self._hash = None
-
-    def __repr__(self):
-        return f'{type(self).__name__}({self._d.__repr__()})'
-
-    def __iter__(self):
-        return iter(self._d)
-
-    def __len__(self):
-        return len(self._d)
-
-    def __getitem__(self, key):
-        return self._d[key]
-
-    def __reversed__(self):
-        try:
-            return reversed(self._d)
-        except TypeError:
-            # reversed(dict) not supported in Python < 3.8
-            # shim via reversing a list
-            return reversed(list(self._d))
-
-    def __hash__(self):
-        if self._hash is None:
-            self._hash = hash(frozenset(self.items()))
-        return self._hash
-
-    def copy(self):
-        return self.__class__(self._d.copy())
-
-
-def make_hashable(obj):
-    if isinstance(obj, collections.abc.Hashable):
-        return obj
-
-    if isinstance(obj, collections.abc.Set):
-        return frozenset(make_hashable(v) for v in obj)
-
-    if isinstance(obj, collections.abc.Sequence):
-        return tuple(make_hashable(v) for v in obj)
-
-    if isinstance(obj, collections.abc.Mapping):
-        return frozendict((k, make_hashable(v)) for k, v in obj.items())
-
-    raise TypeError(f"unable to make '{type(obj).__name__}' hashable")
 
 
 def import_module_file(ns, file):

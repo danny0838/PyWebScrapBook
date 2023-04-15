@@ -1,4 +1,3 @@
-import collections
 import io
 import os
 import tempfile
@@ -10,7 +9,6 @@ import lxml.html
 
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
-from webscrapbook.util import frozendict
 
 from . import DUMMY_ZIP_DT, ROOT_DIR, TEMP_DIR
 
@@ -33,52 +31,6 @@ class TestUtils(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
-
-    def test_frozendict(self):
-        dict_ = {'a': 1, 'b': 2, 'c': 3}
-        frozendict_ = frozendict(dict_)
-
-        self.assertTrue(isinstance(frozendict_, collections.abc.Hashable))
-        self.assertTrue(isinstance(frozendict_, collections.abc.Mapping))
-        self.assertFalse(isinstance(frozendict_, collections.abc.MutableMapping))
-
-        self.assertEqual(eval(repr(frozendict_)), frozendict_)
-        self.assertRegex(repr(frozendict_), r'^frozendict\([^)]*\)$')
-
-        self.assertTrue(frozendict_ == dict_)
-        self.assertIn('a', frozendict_)
-        self.assertEqual(set(frozendict_), {'a', 'b', 'c'})
-        self.assertEqual(list(reversed(frozendict_)), list(frozendict_)[::-1])
-
-        with self.assertRaises(TypeError):
-            frozendict_['a'] = 2
-        with self.assertRaises(TypeError):
-            del frozendict_['a']
-
-        frozendict2 = frozendict_.copy()
-        self.assertEqual(frozendict_, frozendict2)
-        self.assertIsNot(frozendict_, frozendict2)
-
-    def test_make_hashable(self):
-        self.assertEqual(
-            type(util.make_hashable({1, 2, 3})),
-            frozenset
-        )
-
-        self.assertEqual(
-            type(util.make_hashable(['foo', 'bar', 'baz'])),
-            tuple
-        )
-
-        self.assertEqual(
-            type(util.make_hashable({'a': 123, 'b': 456, 'c': 789})),
-            frozendict
-        )
-
-        self.assertEqual(
-            set(util.make_hashable([{'a': 123, 'b': 456}, [1, 2, 3]])),
-            {(1, 2, 3), frozendict({'a': 123, 'b': 456})}
-        )
 
     def test_import_module_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
