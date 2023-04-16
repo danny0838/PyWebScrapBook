@@ -5534,7 +5534,6 @@ class TestBackup(TestActions):
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir', 'test.txt'),
             backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
-            base=None,
             move=False,
         )
 
@@ -5559,7 +5558,6 @@ class TestBackup(TestActions):
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir', 'test.txt'),
             backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
-            base=None,
             move=True,
         )
 
@@ -5584,7 +5582,6 @@ class TestBackup(TestActions):
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir', 'test.txt'),
             backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
-            base=None,
             move=False,
         )
 
@@ -5608,7 +5605,6 @@ class TestBackup(TestActions):
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir'),
             backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
-            base=None,
             move=False,
         )
 
@@ -5633,7 +5629,6 @@ class TestBackup(TestActions):
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir'),
             backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
-            base=None,
             move=True,
         )
 

@@ -336,38 +336,68 @@ name = mybook2
 
         self.assertFalse(os.path.lexists(test_backup_dir))
 
+    def test_get_auto_backup_dir01(self):
+        """Test ts param."""
+        host = Host(self.test_root)
+
+        self.assertRegex(
+            host.get_auto_backup_dir(True),
+            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
+        )
+
+        ts = util.datetime_to_id()
+        self.assertEqual(
+            host.get_auto_backup_dir(ts),
+            os.path.join(self.test_root, WSB_DIR, 'backup', ts),
+        )
+
+    def test_get_auto_backup_dir02(self):
+        """Test note param."""
+        host = Host(self.test_root)
+
+        self.assertRegex(
+            host.get_auto_backup_dir(True, 'foo~bar'),
+            r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo~bar',
+        )
+
+        ts = util.datetime_to_id()
+        self.assertEqual(
+            host.get_auto_backup_dir(ts, note='foo:bar:中文?'),
+            os.path.join(self.test_root, WSB_DIR, 'backup', ts + '-foo_bar_中文_'),
+        )
+
     def test_init_auto_backup01(self):
         """Test ts param."""
         host = Host(self.test_root)
 
-        host.init_auto_backup(True)
+        self.assertEqual(host.init_auto_backup(True), host._auto_backup_dir)
         self.assertRegex(
             host._auto_backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
         )
 
         ts = util.datetime_to_id()
-        host.init_auto_backup(ts)
+        self.assertEqual(host.init_auto_backup(ts), host._auto_backup_dir)
         self.assertEqual(
             host._auto_backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts),
         )
 
-        host.init_auto_backup(False)
+        self.assertEqual(host.init_auto_backup(False), host._auto_backup_dir)
         self.assertIsNone(host._auto_backup_dir)
 
     def test_init_auto_backup02(self):
         """Test note param."""
         host = Host(self.test_root)
 
-        host.init_auto_backup(True, 'foo~bar')
+        self.assertEqual(host.init_auto_backup(True, 'foo~bar'), host._auto_backup_dir)
         self.assertRegex(
             host._auto_backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo~bar',
         )
 
         ts = util.datetime_to_id()
-        host.init_auto_backup(ts, note='foo:bar:中文?')
+        self.assertEqual(host.init_auto_backup(ts, note='foo:bar:中文?'), host._auto_backup_dir)
         self.assertEqual(
             host._auto_backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts + '-foo_bar_中文_'),

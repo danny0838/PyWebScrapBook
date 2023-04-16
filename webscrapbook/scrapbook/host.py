@@ -460,24 +460,44 @@ class Host:
         except FileNotFoundError:
             pass
 
-    def init_auto_backup(self, ts=True, note=None):
-        """Setup a backup dir for following auto backups until next set.
+    def get_auto_backup_dir(self, ts=True, note=None):
+        """Get the path of a subdir for backup.
 
         Args:
             ts: a webscrapbook ID as timestamp. True to generate one from
-                the current time. False to disable auto backup.
+                the current time.
             note: a note text for the backup, sanitized to a valid filename
-        """
-        if ts is False:
-            self._auto_backup_dir = None
-            return
 
+        Returns:
+            str: the backup dir path
+        """
         if ts is True:
             ts = util.datetime_to_id()
 
         filename = ts + (f'-{util.validate_filename(note)}' if note else '')
 
-        self._auto_backup_dir = os.path.join(self.backup_dir, filename)
+        return os.path.join(self.backup_dir, filename)
+
+    def init_auto_backup(self, ts=True, note=None):
+        """Setup a backup dir for following auto backups until next set.
+
+        NOTE: This is not thread-safe and should only be used on a thread-specific
+            Host object.
+
+        Args:
+            ts: a webscrapbook ID as timestamp. True to generate one from
+                the current time. False to disable auto backup.
+            note: a note text for the backup, sanitized to a valid filename
+
+        Returns:
+            str: the backup dir path
+        """
+        if ts is False:
+            self._auto_backup_dir = None
+        else:
+            self._auto_backup_dir = self.get_auto_backup_dir(ts, note)
+
+        return self._auto_backup_dir
 
     def auto_backup(self, file, base=None, move=False):
         """Perform an auto backup if inited.
