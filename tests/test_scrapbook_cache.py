@@ -232,14 +232,14 @@ no_tree = true
         mock_rss.assert_not_called()
 
     @mock.patch('webscrapbook.scrapbook.host.Host.get_subpath', lambda *_: '')
-    @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
+    @mock.patch('webscrapbook.scrapbook.host.Host.init_auto_backup')
     def test_no_backup01(self, mock_func):
         for _info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
             pass
 
         self.assertEqual(mock_func.call_args_list, [mock.call(note='cache'), mock.call(False)])
 
-    @mock.patch('webscrapbook.scrapbook.host.Host.init_backup')
+    @mock.patch('webscrapbook.scrapbook.host.Host.init_auto_backup')
     def test_no_backup02(self, mock_func):
         for _info in wsb_cache.generate(self.test_root, static_site=True, no_backup=True):
             pass

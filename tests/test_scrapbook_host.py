@@ -336,38 +336,38 @@ name = mybook2
 
         self.assertFalse(os.path.lexists(test_backup_dir))
 
-    def test_init_backup01(self):
+    def test_init_auto_backup01(self):
         """Test ts param."""
         host = Host(self.test_root)
 
-        host.init_backup(True)
+        host.init_auto_backup(True)
         self.assertRegex(
             host._auto_backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
         )
 
         ts = util.datetime_to_id()
-        host.init_backup(ts)
+        host.init_auto_backup(ts)
         self.assertEqual(
             host._auto_backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts),
         )
 
-        host.init_backup(False)
+        host.init_auto_backup(False)
         self.assertIsNone(host._auto_backup_dir)
 
-    def test_init_backup02(self):
+    def test_init_auto_backup02(self):
         """Test note param."""
         host = Host(self.test_root)
 
-        host.init_backup(True, 'foo~bar')
+        host.init_auto_backup(True, 'foo~bar')
         self.assertRegex(
             host._auto_backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo~bar',
         )
 
         ts = util.datetime_to_id()
-        host.init_backup(ts, note='foo:bar:中文?')
+        host.init_auto_backup(ts, note='foo:bar:中文?')
         self.assertEqual(
             host._auto_backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts + '-foo_bar_中文_'),
@@ -381,7 +381,7 @@ name = mybook2
             fh.write('abc')
 
         host = Host(self.test_root)
-        host.init_backup()
+        host.init_auto_backup()
         host.auto_backup(test_file)
 
         with open(os.path.join(host._auto_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
@@ -397,7 +397,7 @@ name = mybook2
             fh.write('def')
 
         host = Host(self.test_root)
-        host.init_backup()
+        host.init_auto_backup()
         host.auto_backup(test_dir)
 
         with open(os.path.join(host._auto_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:

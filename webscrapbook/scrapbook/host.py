@@ -460,7 +460,7 @@ class Host:
         except FileNotFoundError:
             pass
 
-    def init_backup(self, ts=True, note=None):
+    def init_auto_backup(self, ts=True, note=None):
         """Setup a backup dir for following auto backups until next set.
 
         Args:

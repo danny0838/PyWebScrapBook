@@ -910,7 +910,7 @@ def generate(root, book_ids=None, item_ids=None, *,
     host = Host(root, config)
 
     if not no_backup:
-        host.init_backup(note='cache')
+        host.init_auto_backup(note='cache')
         yield Info('info', f'Prepared backup at "{host.get_subpath(host._auto_backup_dir)}".')
 
     try:
@@ -965,7 +965,7 @@ def generate(root, book_ids=None, item_ids=None, *,
             yield Info('info', '----------------------------------------------------------------------')
     finally:
         if not no_backup:
-            host.init_backup(False)
+            host.init_auto_backup(False)
 
     elapsed = time.time() - start
     yield Info('info', f'Time spent: {elapsed} seconds.')

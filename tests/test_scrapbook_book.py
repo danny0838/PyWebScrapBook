@@ -1306,7 +1306,7 @@ scrapbook.fulltext({
 
         host = Host(self.test_root)
         book = Book(host)
-        host.init_backup()
+        host.init_auto_backup()
         book.load_meta_files()
         book.load_toc_files()
         book.load_fulltext_files()

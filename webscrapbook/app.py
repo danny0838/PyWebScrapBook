@@ -1184,12 +1184,12 @@ def action_backup():
     note = request.values.get('note')
     move = request.values.get('move', default=False, type=bool)
 
-    host.init_backup(ts, note=note)
+    host.init_auto_backup(ts, note=note)
     try:
         host.auto_backup(localpaths[0], move=move)
         return http_response(os.path.basename(host._auto_backup_dir), format=request.format)
     finally:
-        host.init_backup(False)
+        host.init_auto_backup(False)
 
 
 @handle_action_advanced
@@ -1204,12 +1204,12 @@ def action_unbackup():
     ts = request.values.get('ts') or util.datetime_to_id()
     note = request.values.get('note')
 
-    host.init_backup(ts, note=note)
+    host.init_auto_backup(ts, note=note)
     try:
         host.unbackup(host._auto_backup_dir)
         return http_response(os.path.basename(host._auto_backup_dir), format=request.format)
     finally:
-        host.init_backup(False)
+        host.init_auto_backup(False)
 
 
 @handle_action_token
