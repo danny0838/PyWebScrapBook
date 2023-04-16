@@ -185,8 +185,9 @@ See `allowed_x_proto` for convention of usage.
 ### `[book]` section(s)
 
 The book section(s) define scrapbooks of a host. It can be subsected as
-`[book "identifier"]`. The primary scrapbook (`[book]` or `[book ""]`)
-is used by default. Additional scrapbooks can be defined and be switched into.
+`[book "identifier"]` (with an identifier being alphanumeric and starts with an
+alphabet). The primary scrapbook (`[book]` or `[book ""]`) is used by default.
+Additional scrapbooks can be defined and be switched into.
 
 
 #### `name`
@@ -244,9 +245,10 @@ Set true to disable virtual tree and index of the book.
 ### `[auth]` section(s)
 
 The `[auth]` section(s) define authorization rules. It can be subsected as
-`[auth "identifier"]`. Authorization requirement is activated when at least one
-`[auth]` section exists. Each section defines a rule, and the user must
-fullfill at least one to be allowed to access.
+`[auth "identifier"]` (with an identifier being alphanumeric and starts with an
+alphabet). Authorization requirement is activated when at least one `[auth]`
+section exists. Each section defines a rule, and the user must fullfill at
+least one to be allowed to access.
 
 An encrypted password can be generated via the `encrypt` sub-command, For
 example:
