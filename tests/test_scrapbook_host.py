@@ -342,19 +342,19 @@ name = mybook2
 
         host.init_backup(True)
         self.assertRegex(
-            host._backup_dir,
+            host._auto_backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}$',
         )
 
         ts = util.datetime_to_id()
         host.init_backup(ts)
         self.assertEqual(
-            host._backup_dir,
+            host._auto_backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts),
         )
 
         host.init_backup(False)
-        self.assertIsNone(host._backup_dir)
+        self.assertIsNone(host._auto_backup_dir)
 
     def test_init_backup02(self):
         """Test note param."""
@@ -362,14 +362,14 @@ name = mybook2
 
         host.init_backup(True, 'foo~bar')
         self.assertRegex(
-            host._backup_dir,
+            host._auto_backup_dir,
             r'^' + re.escape(os.path.join(self.test_root, WSB_DIR, 'backup', '')) + r'\d{17}-foo~bar',
         )
 
         ts = util.datetime_to_id()
         host.init_backup(ts, note='foo:bar:中文?')
         self.assertEqual(
-            host._backup_dir,
+            host._auto_backup_dir,
             os.path.join(self.test_root, WSB_DIR, 'backup', ts + '-foo_bar_中文_'),
         )
 
@@ -384,7 +384,7 @@ name = mybook2
         host.init_backup()
         host.auto_backup(test_file)
 
-        with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
 
     def test_auto_backup02(self):
@@ -400,13 +400,13 @@ name = mybook2
         host.init_backup()
         host.auto_backup(test_dir)
 
-        with open(os.path.join(host._backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
-        with open(os.path.join(host._backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, 'tree', 'toc.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'def')
 
     def test_auto_backup03(self):
-        """Pass if _backup_dir not set."""
+        """Pass if _auto_backup_dir not set."""
         test_file = os.path.join(self.test_wsbdir, 'icon', 'test.txt')
         os.makedirs(os.path.dirname(test_file))
         with open(test_file, 'w', encoding='UTF-8') as fh:

@@ -366,7 +366,7 @@ class Host:
 
         self.books = BooksProxy(self)
 
-        self._backup_dir = None  # directory for auto backup
+        self._auto_backup_dir = None  # directory for auto backup
 
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)
@@ -469,7 +469,7 @@ class Host:
             note: a note text for the backup, sanitized to a valid filename
         """
         if ts is False:
-            self._backup_dir = None
+            self._auto_backup_dir = None
             return
 
         if ts is True:
@@ -477,12 +477,12 @@ class Host:
 
         filename = ts + (f'-{util.validate_filename(note)}' if note else '')
 
-        self._backup_dir = os.path.join(self.backup_dir, filename)
+        self._auto_backup_dir = os.path.join(self.backup_dir, filename)
 
     def auto_backup(self, file, base=None, move=False):
         """Perform an auto backup if inited.
         """
-        if not self._backup_dir:
+        if not self._auto_backup_dir:
             return
 
-        self.backup(file, backup_dir=self._backup_dir, base=base, move=move)
+        self.backup(file, backup_dir=self._auto_backup_dir, base=base, move=move)

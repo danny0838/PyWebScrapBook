@@ -1314,17 +1314,17 @@ scrapbook.fulltext({
         book.save_toc_files()
         book.save_fulltext_files()
 
-        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), meta0)
-        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'meta1.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'meta1.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), meta1)
-        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'toc.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'toc.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), toc0)
-        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'toc1.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'toc1.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), toc1)
-        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), fulltext0)
-        with open(os.path.join(host._backup_dir, WSB_DIR, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
+        with open(os.path.join(host._auto_backup_dir, WSB_DIR, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), fulltext1)
 
 

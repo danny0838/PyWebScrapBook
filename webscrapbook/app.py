@@ -1187,7 +1187,7 @@ def action_backup():
     host.init_backup(ts, note=note)
     try:
         host.auto_backup(localpaths[0], move=move)
-        return http_response(os.path.basename(host._backup_dir), format=request.format)
+        return http_response(os.path.basename(host._auto_backup_dir), format=request.format)
     finally:
         host.init_backup(False)
 
@@ -1206,8 +1206,8 @@ def action_unbackup():
 
     host.init_backup(ts, note=note)
     try:
-        host.unbackup(host._backup_dir)
-        return http_response(os.path.basename(host._backup_dir), format=request.format)
+        host.unbackup(host._auto_backup_dir)
+        return http_response(os.path.basename(host._auto_backup_dir), format=request.format)
     finally:
         host.init_backup(False)
 
