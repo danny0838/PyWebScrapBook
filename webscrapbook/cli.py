@@ -4,10 +4,10 @@ import argparse
 import os
 import shutil
 import sys
+import time
 import traceback
 from getpass import getpass
 from inspect import getdoc
-from time import time_ns
 
 from . import WSB_CONFIG, WSB_DIR, WSB_USER_CONFIG, __version__, config, util
 
@@ -338,7 +338,7 @@ def view_archive_files(files):
                 dest_dir = entry.path
 
                 # update atime
-                atime = time_ns()
+                atime = time.time_ns()
                 stat = os.stat(entry)
                 os.utime(entry, ns=(atime, stat.st_mtime_ns))
                 break
@@ -360,7 +360,7 @@ def view_archive_files(files):
 
     # remove stale caches
     if not use_jar:
-        t = time_ns()
+        t = time.time_ns()
         with os.scandir(temp_dir) as entries:
             for entry in entries:
                 if not entry.name.startswith(cache_prefix):
