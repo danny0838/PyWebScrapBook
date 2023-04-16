@@ -9,15 +9,7 @@ from getpass import getpass
 from inspect import getdoc
 from time import time_ns
 
-from . import (
-    WSB_CONFIG,
-    WSB_DIR,
-    WSB_USER_CONFIG,
-    __version__,
-    config,
-    server,
-    util,
-)
+from . import WSB_CONFIG, WSB_DIR, WSB_USER_CONFIG, __version__, config, util
 
 
 def log(*args):
@@ -60,7 +52,9 @@ def cmd_serve(args):
 
     Note that this built-in server is designed only for local hosting, or remote
     hosting for personal or few people usage. For an opened world wide web hosting,
-    a more specialized server should be used."""
+    a more specialized server should be used.
+    """
+    from . import server
     server.serve(**args)
 
 

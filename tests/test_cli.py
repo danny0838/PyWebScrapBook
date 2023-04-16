@@ -35,7 +35,7 @@ class Test(unittest.TestCase):
 
 class TestServe(Test):
     @mock.patch('sys.stdout', io.StringIO)
-    @mock.patch('webscrapbook.cli.server.serve', autospec=True)
+    @mock.patch('webscrapbook.server.serve', autospec=True)
     def test_call(self, mock_serve):
         cli.cmd_serve({
             'root': self.root,
