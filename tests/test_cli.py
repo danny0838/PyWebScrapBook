@@ -483,8 +483,10 @@ class TestImport(Test):
 class TestConvert(Test):
     def setUp(self):
         """Set up temp directories for testing."""
-        self.input = tempfile.mkdtemp(dir=tmpdir)
-        self.output = tempfile.mkdtemp(dir=tmpdir)
+        super().setUp()
+        self.input = os.path.join(self.root, 'input')
+        self.output = os.path.join(self.root, 'output')
+        os.makedirs(self.input)
 
     @mock.patch('webscrapbook.scrapbook.convert.sb2wsb.run', autospec=True)
     def test_sb2wsb(self, mock_func):
