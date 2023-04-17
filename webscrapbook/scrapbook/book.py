@@ -1,12 +1,19 @@
 """Scrapbook book handler.
 """
+import functools
+import glob
 import json
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote, urlsplit
+from urllib.request import pathname2url
 
 from .. import util
 from .._polyfill import zipfile
+
+# A shortcut for getting an ID at current time. Also for easier mock testing.
+_id_now = functools.partial(util.datetime_to_id, None)
 
 
 class TreeFileError(ValueError):
@@ -69,11 +76,14 @@ class Book:
         'icon': None,
         'comment': None,
     }
-    SPECIAL_ITEM_ID = {
-        'root',
-        'hidden',
-        'recycle',
-    }
+    ROOT_ITEM_ID = 'root'
+    HIDDEN_ITEM_ID = 'hidden'
+    RECYCLE_ITEM_ID = 'recycle'
+    SPECIAL_ITEM_ID = dict.fromkeys((
+        ROOT_ITEM_ID,
+        HIDDEN_ITEM_ID,
+        RECYCLE_ITEM_ID,
+    ))
     ITEM_TYPES_WITH_OPTIONAL_INDEX = {
         'folder',
         'separator',
@@ -432,3 +442,862 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
         for child_id in child_ids:
             self._get_reachable_items(child_id, dict)
+
+    def get_unique_id(self, item_id=None):
+        """Get an unique item ID.
+
+        Args:
+            item_id: a pre-generated item ID in the format of datetime_to_id()
+        """
+        if item_id is None:
+            item_id = _id_now()
+
+        while (item_id in self.meta
+               or os.path.lexists(os.path.join(self.data_dir, item_id))
+               or next(glob.iglob(glob.escape(os.path.join(self.data_dir, item_id)) + '.*'), None)
+               ):
+            try:
+                dt += timedelta(milliseconds=1)  # noqa: F821
+            except UnboundLocalError:
+                dt = util.id_to_datetime(item_id) or datetime.now(timezone.utc)
+                dt += timedelta(milliseconds=1)
+            item_id = util.datetime_to_id(dt)
+
+        return item_id
+
+    def get_item(self, item_id, include_parents=False):
+        """Singular version shortcut of get_items()."""
+        return self.get_items((item_id,), include_parents).get(item_id)
+
+    def get_items(self, items, include_parents=False):
+        """Get information about items in the book.
+
+        Args:
+            items: an iterable of item IDs
+            include_parents: whether to include parents information
+
+        Returns:
+            dict: information of the items
+        """
+        reverse_toc = {}
+        if include_parents:
+            for parent_id, toc in self.toc.items():
+                for i, item_id in enumerate(toc):
+                    reverse_toc.setdefault(item_id, []).append(
+                        (parent_id, i),
+                    )
+
+        results = {}
+        for item_id in items:
+            result = {}
+
+            meta = self.meta.get(item_id)
+            if meta is not None:
+                result['meta'] = meta
+
+            children = self.toc.get(item_id)
+            if children is not None:
+                result['children'] = children
+
+            if include_parents:
+                parents = reverse_toc.get(item_id)
+                if parents is not None:
+                    result['parents'] = parents
+
+            if result:
+                results[item_id] = result
+
+        return results
+
+    def add_item(self, item=None, target_parent_id=ROOT_ITEM_ID, target_index=None):
+        """Singular version shortcut of add_items()."""
+        return self.add_items((item,), target_parent_id, target_index)
+
+    def add_items(self, items, target_parent_id=ROOT_ITEM_ID, target_index=None):
+        """Add items to the book.
+
+        Args:
+            items: an iterable of dict with item properties (or None to
+                generate a new item).
+            target_parent_id: None to not insert to any parent
+            target_index: None to append to last
+
+        Returns:
+            dict: ID and meta of the added items
+
+        Raises:
+            ValueError: if the provided item ID already exists, the target
+                parent does not exist, the target index is invalid, etc.
+        """
+        if not (target_parent_id is None
+                or target_parent_id in self.meta
+                or target_parent_id in self.SPECIAL_ITEM_ID):
+            raise ValueError(f'Invalid target parent ID: {target_parent_id!r}')
+
+        if not (target_index is None or target_index >= 0):
+            raise ValueError(f'Invalid target index: {target_index!r}')
+
+        added = {}
+        for item in items:
+            if item is None:
+                continue
+
+            try:
+                item_id = item['id']
+            except KeyError:
+                continue
+
+            if item_id in self.SPECIAL_ITEM_ID:
+                raise ValueError(f'Item ID is preserved: {item_id!r}')
+
+            if item_id in self.meta:
+                raise ValueError(f'Item already exists: {item_id!r}')
+
+            if item_id in added:
+                raise ValueError(f'Item is duplicated: {item_id!r}')
+
+            added[item_id] = True
+
+        # add to meta (uniquify ID)
+        rv = {}
+        for item in items:
+            item_id = self._add_item(item)
+            rv[item_id] = self.meta[item_id]
+
+        # add to TOC if target parent is provided
+        if rv and target_parent_id is not None:
+            # adjust target_index
+            if target_index is None:
+                target_index = float('inf')
+            target_index = min(target_index, len(self.toc.get(target_parent_id, ())))
+
+            self.toc.setdefault(target_parent_id, [])[target_index:target_index] = rv
+
+        return rv
+
+    def _add_item(self, meta):
+        # prepare new item meta
+        item = self.DEFAULT_META.copy()
+        if meta is not None:
+            item.update(meta)
+
+        if item.get('id') is None:
+            # use the same base timestamp for id and create
+            item_id = _id_now()
+            item['id'] = self.get_unique_id(item_id)
+            if item.get('create') is None:
+                item['create'] = item_id
+        elif item.get('create') is None:
+            item['create'] = _id_now()
+
+        if item.get('modify') is None:
+            item['modify'] = item['create']
+
+        # remove None keys
+        for key in tuple(item):
+            if item[key] is None:
+                del item[key]
+
+        # add to meta
+        self.meta[item['id']] = item
+
+        # remove ID field
+        item_id = item.pop('id')
+
+        return item_id
+
+    def update_item(self, item, auto_modify=True):
+        """Singular version shortcut of update_items()."""
+        return self.update_items((item,), auto_modify=auto_modify)
+
+    def update_items(self, items, auto_modify=True):
+        """Update items.
+
+        Args:
+            items: an iterable of dict with item properties
+            auto_modify: automatically update the 'modify' property (overwrites
+                the property value of the provided item)
+
+        Returns:
+            dict: ID and meta of the updated items
+
+        Raises:
+            ValueError: if the item ID is not specified, the provided item
+                does not exist, etc.
+        """
+        # prepare items to handle
+        tasks = {}
+        for item in items:
+            try:
+                item_id = item['id']
+            except KeyError:
+                raise ValueError(f'Item ID not specified: {item!r}')
+
+            if item_id not in self.meta:
+                raise ValueError(f'Item not exist: {item_id!r}')
+
+            # Prevent handling the same item again.
+            if item_id in tasks:
+                continue
+
+            tasks[item_id] = item
+
+        # perform the tasks
+        if auto_modify:
+            modify_ts = _id_now()
+
+        rv = {}
+        for item_id, item in tasks.items():
+            # update meta
+            self.meta[item_id].update(item)
+
+            # update modify
+            if auto_modify:
+                self.meta[item_id]['modify'] = modify_ts
+
+            # remove ID field
+            del self.meta[item_id]['id']
+
+            rv[item_id] = self.meta[item_id]
+
+        return rv
+
+    def move_item(self, current_parent_id, current_index,
+                  target_parent_id, target_index=None):
+        """Singular version shortcut of move_items()."""
+        return self.move_items(((current_parent_id, current_index),),
+                               target_parent_id, target_index)
+
+    def move_items(self, items, target_parent_id, target_index=None):
+        """Move items.
+
+        Args:
+            items: an iterable of tuple (current_parent_id, current_index) in
+                tree order
+            target_parent_id: the parent to insert at
+            target_index: the position to insert at, or None to append to last
+
+        Returns:
+            int: index that the items are inserted at
+
+        Raises:
+            ValueError: if the item does not exist, the target parent does not
+                exist, the target index is invalid, etc.
+        """
+        if not (target_parent_id in self.meta or target_parent_id in self.SPECIAL_ITEM_ID):
+            raise ValueError(f'Invalid target parent ID: {target_parent_id!r}')
+
+        if not (target_index is None or target_index >= 0):
+            raise ValueError(f'Invalid target index: {target_index!r}')
+
+        # adjust target_index
+        if target_index is None:
+            target_index = float('inf')
+        target_index = min(target_index, len(self.toc.get(target_parent_id, ())))
+
+        # prepare items to handle
+        tasks = {}
+        for current_parent_id, current_index in items:
+            if not (current_index >= 0):
+                raise ValueError(f'Invalid item index: {current_index!r}')
+
+            try:
+                item_id = self.toc[current_parent_id][current_index]
+            except (KeyError, IndexError):
+                raise ValueError(
+                    f'Item not exist: {current_parent_id!r}[{current_index!r}]'
+                ) from None
+
+            item = (item_id, current_parent_id, current_index)
+
+            # Prevent handling the same item again, which may happen when the
+            # user selects a recursive tree.
+            #
+            # For example:
+            #
+            #     root
+            #       item1
+            #         item2
+            #           item1
+            #             item2
+            #
+            # In this case the user may select:
+            #
+            #     [('root', 0) ('item1', 0), ('item2', 0), ('item1', 0)]
+            #
+            # and the last item should be ignored.
+            #
+            if item in tasks:
+                continue
+
+            # Silently ignore moving into a descendant as it will become
+            # non-reachable (unless move within the same parent).
+            if (target_parent_id in self.get_reachable_items(item_id)
+                    and current_parent_id != target_parent_id):
+                continue
+
+            tasks[item] = True
+
+        # perform the tasks
+        if tasks:
+            try:
+                it = reversed(tasks)
+            except TypeError:
+                # Python 3.7 does not support dict reverse
+                it = reversed(tuple(tasks))
+
+            for _, current_parent_id, current_index in it:
+                # remove from parent TOC
+                del self.toc[current_parent_id][current_index]
+                if not self.toc[current_parent_id]:
+                    del self.toc[current_parent_id]
+
+                # fix when moving within the same parent
+                if current_parent_id == target_parent_id and current_index < target_index:
+                    target_index -= 1
+
+            self.toc.setdefault(target_parent_id, [])[target_index:target_index] = (
+                item_id for item_id, _, _ in tasks
+            )
+
+        return target_index
+
+    def link_item(self, current_parent_id, current_index,
+                  target_parent_id, target_index=None):
+        """Singular version shortcut of link_items()."""
+        return self.link_items(((current_parent_id, current_index),),
+                               target_parent_id, target_index)
+
+    def link_items(self, items, target_parent_id, target_index=None):
+        """Create links for items.
+
+        Args:
+            items: an iterable of tuple (current_parent_id, current_index) in
+                tree order
+            target_parent_id: the parent to insert at
+            target_index: the position to insert at, or None to append to last
+
+        Returns:
+            int: index that the items are inserted at
+
+        Raises:
+            ValueError: if the item does not exist, the target parent does not
+                exist, the target index is invalid, etc.
+        """
+        if not (target_parent_id in self.meta or target_parent_id in self.SPECIAL_ITEM_ID):
+            raise ValueError(f'Invalid target parent ID: {target_parent_id!r}')
+
+        if not (target_index is None or target_index >= 0):
+            raise ValueError(f'Invalid target index: {target_index!r}')
+
+        # adjust target_index
+        if target_index is None:
+            target_index = float('inf')
+        target_index = min(target_index, len(self.toc.get(target_parent_id, ())))
+
+        # prepare items to handle
+        tasks = {}
+        for current_parent_id, current_index in items:
+            if not (current_index >= 0):
+                raise ValueError(f'Invalid item index: {current_index!r}')
+
+            try:
+                item_id = self.toc[current_parent_id][current_index]
+            except (KeyError, IndexError):
+                raise ValueError(
+                    f'Item not exist: {current_parent_id!r}[{current_index!r}]'
+                ) from None
+
+            item = (item_id, current_parent_id, current_index)
+
+            # Prevent handling the same item again, as move_items().
+            if item in tasks:
+                continue
+
+            tasks[item] = True
+
+        # perform the tasks
+        if tasks:
+            self.toc.setdefault(target_parent_id, [])[target_index:target_index] = (
+                item_id for item_id, _, _ in tasks
+            )
+
+        return target_index
+
+    def copy_item(self, current_parent_id, current_index,
+                  target_parent_id, target_index=None, *,
+                  target_book_id=None, recursively=True):
+        """Singular version shortcut of copy_items()."""
+        return self.copy_items(((current_parent_id, current_index),),
+                               target_parent_id, target_index,
+                               target_book_id=target_book_id,
+                               recursively=recursively,
+                               )
+
+    def copy_items(self, items, target_parent_id, target_index=None, *,
+                   target_book_id=None, recursively=True):
+        """Copy items.
+
+        Args:
+            items: an iterable of tuple (current_parent_id, current_index) in
+                tree order
+            target_parent_id: the parent to insert at
+            target_index: the position to insert at, or None to append to last
+            target_book_id: the ID of the scrapbook copy to
+            recursively: also copy descendant items
+
+        Returns:
+            int: index that the items are inserted at
+
+        Raises:
+            ValueError: if the item does not exist, the target parent does not
+                exist, the target index is invalid, etc.
+        """
+        if target_book_id is None:
+            target_book_id = self.id
+
+        if target_book_id == self.id:
+            target_book = self
+        else:
+            try:
+                target_book = self.host.books[target_book_id]
+            except KeyError:
+                raise ValueError(f'Invalid target book ID: {target_book_id!r}')
+
+            target_book.load_meta_files()
+            target_book.load_toc_files()
+
+        if not (target_parent_id in target_book.meta or target_parent_id in self.SPECIAL_ITEM_ID):
+            raise ValueError(f'Invalid target parent ID: {target_parent_id!r}')
+
+        if not (target_index is None or target_index >= 0):
+            raise ValueError(f'Invalid target index: {target_index!r}')
+
+        # adjust target_index
+        if target_index is None:
+            target_index = float('inf')
+        target_index = min(target_index, len(target_book.toc.get(target_parent_id, ())))
+
+        # prepare items to handle
+        tasks = {}
+        for current_parent_id, current_index in items:
+            if not (current_index >= 0):
+                raise ValueError(f'Invalid item index: {current_index!r}')
+
+            try:
+                item_id = self.toc[current_parent_id][current_index]
+            except (KeyError, IndexError):
+                raise ValueError(
+                    f'Item not exist: {current_parent_id!r}[{current_index!r}]'
+                ) from None
+
+            if item_id not in self.meta:
+                raise ValueError(f'Item not exist: {item_id!r}')
+
+            item = (item_id, current_parent_id, current_index)
+
+            # Prevent handling the same item again, as move_items().
+            if item in tasks:
+                continue
+
+            # Silently ignore copying into a descendant recursively, to prevent
+            # an infinite loop.
+            if (target_book_id == self.id
+                    and target_parent_id in self.get_reachable_items(item_id)):
+                continue
+
+            tasks[item] = True
+
+        # perform the tasks
+        _target_index = target_index
+        id_map = {}
+        for item_id, _, _ in tasks:
+            self._copy_item_tree(item_id, target_parent_id, _target_index, target_book,
+                                 recursively, id_map)
+            _target_index += 1
+
+        return target_index
+
+    def _copy_item_tree(self, item_id, target_parent_id, target_index, target_book,
+                        recursively, id_map):
+        # already copied, simply link to it
+        if item_id in id_map:
+            _item_id = id_map[item_id]
+            target_book.toc.setdefault(target_parent_id, []).insert(target_index, _item_id)
+            return
+
+        new_item_id = self._copy_item_data(item_id, target_parent_id, target_index, target_book,
+                                           id_map)
+
+        if recursively:
+            for i, child_item_id in enumerate(self.toc.get(item_id, ())):
+                self._copy_item_tree(child_item_id, new_item_id, i, target_book,
+                                     recursively, id_map)
+
+    def _copy_item_data(self, item_id, target_parent_id, target_index, target_book,
+                        id_map):
+        try:
+            item = self.meta[item_id]
+        except KeyError:
+            return
+
+        # add new item and get its ID
+        _item = item if item_id in target_book.meta else {**item, 'id': item_id}
+        new_item_id = next(iter(target_book.add_item(_item, target_parent_id, target_index)))
+        new_item = target_book.meta[new_item_id]
+
+        # add to map
+        id_map[item_id] = new_item_id
+
+        # copy data files
+        if item.get('index'):
+            if item['index'].endswith('/index.html'):
+                old_index = item['index'][:-len('/index.html')]
+                new_index = util.validate_filename(new_item_id)
+                new_item['index'] = f'{new_index}/index.html'
+            else:
+                old_index = item['index']
+                new_index = util.validate_filename(new_item_id) + os.path.splitext(old_index)[1]
+                new_item['index'] = new_index
+
+            old_index_file = os.path.normpath(os.path.join(self.data_dir, old_index))
+            new_index_file = os.path.normpath(os.path.join(target_book.data_dir, new_index))
+            if os.path.lexists(old_index_file):
+                util.fs.copy(old_index_file, new_index_file)
+
+        # copy cached favicon
+        if target_book.id != self.id:
+            for _ in range(1):
+                old_icon_file = self.get_icon_file(item)
+                if not old_icon_file:
+                    break
+
+                favicon_dir = os.path.join(self.tree_dir, 'favicon', '')
+                if not os.path.normcase(old_icon_file).startswith(os.path.normcase(favicon_dir)):
+                    break
+
+                try:
+                    new_base = os.path.dirname(new_index_file)
+                except UnboundLocalError:
+                    new_base = target_book.data_dir
+                new_icon_file = os.path.join(target_book.tree_dir, 'favicon', os.path.basename(old_icon_file))
+                new_item['icon'] = pathname2url(os.path.relpath(new_icon_file, new_base))
+                if os.path.lexists(old_icon_file) and not os.path.lexists(new_icon_file):
+                    util.fs.copy(old_icon_file, new_icon_file)
+
+        return new_item_id
+
+    def recycle_item(self, current_parent_id, current_index):
+        """Singular version shortcut of recycle_items()."""
+        return self.recycle_items(((current_parent_id, current_index),))
+
+    def recycle_items(self, items):
+        """Move items to the recycle bin and set metadata.
+
+        Args:
+            items: an iterable of tuple (current_parent_id, current_index) in
+                tree order
+
+        Returns:
+            dict: ID and original parent ID of the recycled items
+
+        Raises:
+            ValueError: if the item does not exist
+        """
+        # prepare items to handle
+        tasks = {}
+        for current_parent_id, current_index in items:
+            if not (current_index >= 0):
+                raise ValueError(f'Invalid item index: {current_index!r}')
+
+            try:
+                item_id = self.toc[current_parent_id][current_index]
+            except (KeyError, IndexError):
+                raise ValueError(
+                    f'Item not exist: {current_parent_id!r}[{current_index!r}]'
+                ) from None
+
+            if item_id not in self.meta:
+                raise ValueError(f'Item not exist: {item_id!r}')
+
+            item = (item_id, current_parent_id, current_index)
+
+            # Prevent handling the same item again, as move_items().
+            if item in tasks:
+                continue
+
+            tasks[item] = True
+
+        # perform the tasks
+        recycle_ts = _id_now()
+
+        try:
+            it = reversed(tasks)
+        except TypeError:
+            # Python 3.7 does not support dict reverse
+            it = reversed(tuple(tasks))
+
+        for _, current_parent_id, current_index in it:
+            # remove from parent TOC
+            del self.toc[current_parent_id][current_index]
+            if not self.toc[current_parent_id]:
+                del self.toc[current_parent_id]
+
+        # handle unreachable items
+        reachable_items = {}
+        for root_id in self.SPECIAL_ITEM_ID:
+            self.get_reachable_items(root_id, reachable_items)
+
+        recycled = {}
+        for item_id, current_parent_id, _ in tasks:
+            if item_id not in reachable_items and item_id not in recycled:
+                recycled[item_id] = current_parent_id
+                self.meta[item_id]['parent'] = current_parent_id
+                self.meta[item_id]['recycled'] = recycle_ts
+                self.toc.setdefault(self.RECYCLE_ITEM_ID, []).append(item_id)
+
+        return recycled
+
+    def unrecycle_item(self, current_parent_id, current_index):
+        """Singular version shortcut of unrecycle_items()."""
+        return self.unrecycle_items(((current_parent_id, current_index),))
+
+    def unrecycle_items(self, items):
+        """Move items from the recycle bin to the original parent.
+
+        Args:
+            items: an iterable of tuple (current_parent_id, current_index) in
+                tree order
+
+        Returns:
+            dict: ID and parent ID of the unrecycled items
+
+        Raises:
+            ValueError: if the item does not exist
+        """
+        # prepare items to handle
+        tasks = {}
+        for current_parent_id, current_index in items:
+            if not (current_index >= 0):
+                raise ValueError(f'Invalid item index: {current_index!r}')
+
+            try:
+                item_id = self.toc[current_parent_id][current_index]
+            except (KeyError, IndexError):
+                raise ValueError(
+                    f'Item not exist: {current_parent_id!r}[{current_index!r}]'
+                ) from None
+
+            if item_id not in self.meta:
+                raise ValueError(f'Item not exist: {item_id!r}')
+
+            item = (item_id, current_parent_id, current_index)
+
+            # Prevent handling the same item again, as move_items().
+            if item in tasks:
+                continue
+
+            tasks[item] = True
+
+        # perform the tasks
+        try:
+            it = reversed(tasks)
+        except TypeError:
+            # Python 3.7 does not support dict reverse
+            it = reversed(tuple(tasks))
+
+        for _, current_parent_id, current_index in it:
+            # remove from parent TOC
+            del self.toc[current_parent_id][current_index]
+            if not self.toc[current_parent_id]:
+                del self.toc[current_parent_id]
+
+        unrecycled = {}
+        for item_id, _, _ in tasks:
+            # Ignore the duplicated entry in case multiple entries of item_id
+            # is seen (which should generally not happen).
+            if item_id in unrecycled:
+                continue
+
+            try:
+                target_parent_id = self.meta[item_id].pop('parent')
+            except KeyError:
+                target_parent_id = self.ROOT_ITEM_ID
+
+            try:
+                del self.meta[item_id]['recycled']
+            except KeyError:
+                pass
+
+            # insert to root instead if the original parent no more exists
+            if not (target_parent_id in self.meta or target_parent_id in self.SPECIAL_ITEM_ID):
+                target_parent_id = self.ROOT_ITEM_ID
+
+            # add to target TOC
+            self.toc.setdefault(target_parent_id, []).append(item_id)
+
+            # record target in the map
+            unrecycled[item_id] = target_parent_id
+
+        return unrecycled
+
+    def delete_item(self, current_parent_id, current_index):
+        """Singular version shortcut of delete_items()."""
+        return self.delete_items(((current_parent_id, current_index),))
+
+    def delete_items(self, items):
+        """Delete items and purge their data files.
+
+        Args:
+            items: an iterable of tuple (current_parent_id, current_index) in
+                tree order
+
+        Returns:
+            list: ID of the deleted items
+
+        Raises:
+            ValueError: if the item does not exist
+        """
+        # prepare items to handle
+        tasks = {}
+        for current_parent_id, current_index in items:
+            if not (current_index >= 0):
+                raise ValueError(f'Invalid item index: {current_index!r}')
+
+            try:
+                item_id = self.toc[current_parent_id][current_index]
+            except (KeyError, IndexError):
+                raise ValueError(
+                    f'Item not exist: {current_parent_id!r}[{current_index!r}]'
+                ) from None
+
+            item = (item_id, current_parent_id, current_index)
+
+            # Prevent handling the same item again, as move_items().
+            if item in tasks:
+                continue
+
+            tasks[item] = True
+
+        # perform the tasks
+        old_reachable_items = {}
+        for root_id in self.SPECIAL_ITEM_ID:
+            self.get_reachable_items(root_id, old_reachable_items)
+
+        try:
+            it = reversed(tasks)
+        except TypeError:
+            # Python 3.7 does not support dict reverse
+            it = reversed(tuple(tasks))
+
+        for _, current_parent_id, current_index in it:
+            # remove from parent TOC
+            del self.toc[current_parent_id][current_index]
+            if not self.toc[current_parent_id]:
+                del self.toc[current_parent_id]
+
+        reachable_items = {}
+        for root_id in self.SPECIAL_ITEM_ID:
+            self.get_reachable_items(root_id, reachable_items)
+
+        deleted = {item_id: True for item_id in old_reachable_items if item_id not in reachable_items}
+        for item_id in deleted:
+            index = self.meta.get(item_id, {}).get('index')
+            if index:
+                if index.endswith('/index.html'):
+                    index = index[:-len('/index.html')]
+                entry = os.path.join(self.data_dir, index)
+
+                # silently pass if index file does not exist
+                if os.path.lexists(entry):
+                    util.fs.delete(entry)
+
+            try:
+                del self.meta[item_id]
+            except KeyError:
+                pass
+
+            try:
+                del self.toc[item_id]
+            except KeyError:
+                pass
+
+        return list(deleted)
+
+    def sort_item(self, item_id, key=None, reverse=False, recursively=False):
+        return self.sort_items((item_id,), key, reverse, recursively)
+
+    def sort_items(self, items, key=None, reverse=False, recursively=False):
+        """Sort given items.
+
+        Args:
+            items: an iterable of container item_id in tree order
+            key: the key to sort, which can be 'reverse', 'type', 'title',
+                'index', 'source', 'create', 'modify', or 'marked'
+            reverse: sort in reverse order
+            recursively: also sort items in all descendant items
+
+        Raises:
+            ValueError: if the item does not exist
+        """
+        if recursively:
+            item_ids = {}
+            for item_id in items:
+                for desc_item_id in self.get_reachable_items(item_id, item_ids):
+                    item_ids[desc_item_id] = True
+        else:
+            item_ids = items
+
+        for item_id in item_ids:
+            self._sort_item(item_id, key, reverse)
+
+    def _sort_item(self, item_id, key, reverse):
+        try:
+            toc = self.toc[item_id]
+        except KeyError:
+            # no toc to sort
+            return
+
+        if key == 'reverse':
+            toc.reverse()
+        elif key == 'id':
+            toc.sort(reverse=reverse)
+        else:
+            try:
+                keyfunc = getattr(self, f'_sort_items_keyfunc_{key}')
+            except AttributeError:
+                raise ValueError(f'Unknown sort key: {key!r}')
+            toc.sort(key=keyfunc, reverse=reverse)
+
+    _sort_items_map_type_value = {
+        'folder': -1,
+        'bookmark': 1,
+        'postit': 2,
+        'note': 3,
+    }
+
+    def _sort_items_keyfunc_type(self, item_id):
+        type = self.meta.get(item_id, {}).get('type')
+        try:
+            value = self._sort_items_map_type_value[type]
+        except KeyError:
+            value = 0
+        return value
+
+    def _sort_items_keyfunc_title(self, item_id):
+        return self.meta.get(item_id, {}).get('title', '')
+
+    def _sort_items_keyfunc_index(self, item_id):
+        return self.meta.get(item_id, {}).get('index', '')
+
+    def _sort_items_keyfunc_source(self, item_id):
+        return self.meta.get(item_id, {}).get('source', '')
+
+    def _sort_items_keyfunc_create(self, item_id):
+        return self.meta.get(item_id, {}).get('create', '')
+
+    def _sort_items_keyfunc_modify(self, item_id):
+        return self.meta.get(item_id, {}).get('modify', '')
+
+    def _sort_items_keyfunc_marked(self, item_id):
+        return bool(self.meta.get(item_id, {}).get('marked'))

@@ -300,7 +300,11 @@ class TestFunctions(Test):
                 self.assertTrue(wsbapp.verify_authorization('read', action))
                 self.assertTrue(wsbapp.verify_authorization('all', action))
 
-        for action in {'token', 'lock', 'unlock', 'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy', 'backup', 'unbackup', 'cache', 'check'}:
+        for action in {
+            'token', 'lock', 'unlock',
+            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
+            'backup', 'unbackup', 'cache', 'check', 'query',
+        }:
             with self.subTest(action=action):
                 self.assertFalse(wsbapp.verify_authorization('', action))
                 self.assertFalse(wsbapp.verify_authorization('view', action))

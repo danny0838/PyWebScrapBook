@@ -47,6 +47,7 @@ Run `wsb --help` for help about available commands, which looks like:
                    import data items from archive files (*.wsba)
         convert (v)
                    convert scrapbook data between different formats
+        query (q)  perform queries on the scrapbook(s)
         search (r)
                    search for data items in the scrapbook(s)
         help       show detailed information about certain topics

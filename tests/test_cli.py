@@ -9,6 +9,7 @@ from urllib.request import pathname2url
 
 from webscrapbook import WSB_DIR, cli
 from webscrapbook._polyfill import zipfile
+from webscrapbook.scrapbook import util as wsb_util
 
 from . import PROG_DIR, TEMP_DIR
 
@@ -1331,6 +1332,64 @@ class TestConvert(Test):
             output=self.output,
             book_id='book1',
             prefix=False,
+        )
+
+
+class TestQuery(Test):
+    @mock.patch('sys.stdout', new_callable=io.StringIO)
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20210101000000000')
+    @mock.patch('sys.stdin', io.StringIO('[{"cmd": "add_item"}]'))
+    @mock.patch('webscrapbook.scrapbook.util.HostQuery', wraps=wsb_util.HostQuery)
+    @mock.patch('webscrapbook.cli.cmd_query', wraps=cli.cmd_query)
+    def test_default(self, mock_handler, mock_cls, mock_stdout):
+        cli.main([
+            '--root', self.root,
+            'query',
+        ])
+
+        mock_handler.assert_called_once_with(dict(
+            root=self.root,
+            input=None,
+        ))
+
+        mock_cls.assert_called_once_with(
+            self.root,
+            [{'cmd': 'add_item'}],
+        )
+
+        self.assertEqual(
+            mock_stdout.getvalue(),
+            '[{"20210101000000000": {"create": "20210101000000000", "modify": "20210101000000000"}}]' + '\n',
+        )
+
+    @mock.patch('sys.stdout', new_callable=io.StringIO)
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20210101000000000')
+    @mock.patch('webscrapbook.scrapbook.util.HostQuery', wraps=wsb_util.HostQuery)
+    @mock.patch('webscrapbook.cli.cmd_query', wraps=cli.cmd_query)
+    def test_basic(self, mock_handler, mock_cls, mock_stdout):
+        file = os.path.join(self.root, 'input.json')
+        with open(file, 'w', encoding='UTF-8') as fh:
+            fh.write("""[{"book": "", "cmd": "add_item", "args": [{"id": "item1"}]}]""")
+
+        cli.main([
+            '--root', self.root,
+            'query',
+            file,
+        ])
+
+        mock_handler.assert_called_once_with(dict(
+            root=self.root,
+            input=file,
+        ))
+
+        mock_cls.assert_called_once_with(
+            self.root,
+            [{'book': '', 'cmd': 'add_item', 'args': [{'id': 'item1'}]}],
+        )
+
+        self.assertEqual(
+            mock_stdout.getvalue(),
+            '[{"item1": {"create": "20210101000000000", "modify": "20210101000000000"}}]' + '\n',
         )
 
 

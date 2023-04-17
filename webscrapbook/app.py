@@ -41,6 +41,7 @@ from .scrapbook import cache as wsb_cache
 from .scrapbook import check as wsb_check
 from .scrapbook import host as wsb_host
 from .scrapbook import search as wsb_search
+from .scrapbook import util as wsb_util
 from .util.fs import (
     ZIP_SUBPATH_DIR,
     ZIP_SUBPATH_DIR_IMPLICIT,
@@ -264,7 +265,7 @@ def verify_authorization(perm, action):
         return action not in {
             'token', 'lock', 'unlock',
             'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
-            'backup', 'unbackup', 'cache', 'check',
+            'backup', 'unbackup', 'cache', 'check', 'query',
         }
 
     if perm == 'view':
@@ -1316,6 +1317,24 @@ def action_check():
                              )
 
     return Response(stream)
+
+
+@handle_action_advanced
+@handle_action_token
+def action_query():
+    """Perform queries on the scrapbook(s)."""
+    query = request.values.getlist('q', type=json.loads)
+    details = request.values.get('details', default=False, type=bool)
+    lock = not request.values.get('no_lock', default=False, type=bool)
+
+    try:
+        rv = wsb_util.HostQuery((host.root, host.config), query, lock=lock).run()
+    except Exception as exc:
+        traceback.print_exc()
+        abort(500, str(exc))
+
+    if details:
+        return http_response(rv, format=request.format)
 
 
 @handle_action_advanced

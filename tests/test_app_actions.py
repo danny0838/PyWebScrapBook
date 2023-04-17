@@ -5791,6 +5791,191 @@ class TestCheck(TestActions):
             mock_abort.assert_called_once_with(500, 'An unexpected error happened.')
 
 
+class TestQuery(TestActions):
+    @classmethod
+    def setUpClass(cls):
+        # init an app for the class
+        cls.root = tempfile.mkdtemp(dir=tmpdir)
+        cls.init_host(cls.root, config="""\
+[book ""]
+name = scrapbook1
+top_dir = scrapbook1
+data_dir = data
+tree_dir = tree
+index = tree/map.html
+no_tree = false
+
+[book "book2"]
+name = scrapbook2
+top_dir = scrapbook2
+data_dir = data
+tree_dir = tree
+index = tree/map.html
+no_tree = false
+
+[book "book3"]
+name = scrapbook3
+top_dir = scrapbook3
+data_dir = data
+tree_dir = tree
+index = tree/map.html
+no_tree = true
+""")
+
+        cls.app = wsb_app.make_app(cls.root)
+        cls.app.testing = True
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'server'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'locks'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, 'scrapbook1'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, 'scrapbook2'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, 'scrapbook3'))
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_method_check(self, mock_abort):
+        """Require POST."""
+        with self.app.test_client() as c:
+            c.get('/', query_string={
+                'token': token(c),
+                'a': 'query',
+                'f': 'json',
+            })
+
+            mock_abort.assert_called_once_with(405, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with self.app.test_client() as c:
+            c.post('/', data={
+                'a': 'query',
+                'f': 'json',
+            })
+
+            mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.app.wsb_util.HostQuery', autospec=True,
+                return_value=mock.Mock(**{'run.return_value': [['item1']]}))
+    def test_basic(self, mock_cls):
+        with self.app.app_context(), self.app.test_client() as c:
+            query = {
+                'book': '',
+                'cmd': 'add_item',
+                'kwargs': {
+                    'item': {
+                        'id': 'item1',
+                    },
+                },
+            }
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'query',
+                'f': 'json',
+                'q': json.dumps(query),
+                'no_lock': 1,
+            })
+
+            mock_cls.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                [query],
+                lock=False,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {'data': None})
+
+    @mock.patch('webscrapbook.app.wsb_util.HostQuery', autospec=True,
+                return_value=mock.Mock(**{'run.return_value': [['item1']]}))
+    def test_basic_details(self, mock_cls):
+        with self.app.app_context(), self.app.test_client() as c:
+            query = {
+                'book': '',
+                'cmd': 'add_item',
+                'kwargs': {
+                    'item': {
+                        'id': 'item1',
+                    },
+                },
+            }
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'query',
+                'f': 'json',
+                'q': json.dumps(query),
+                'details': 1,
+                'no_lock': 1,
+            })
+
+            mock_cls.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                [query],
+                lock=False,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'data': [['item1']],
+            })
+
+    @mock.patch('webscrapbook.app.wsb_util.HostQuery', autospec=True,
+                return_value=mock.Mock(**{'run.return_value': [['item1']]}))
+    def test_basic_multi(self, mock_cls):
+        with self.app.app_context(), self.app.test_client() as c:
+            query1 = {
+                'book': '',
+                'cmd': 'add_item',
+                'kwargs': {
+                    'item': {
+                        'id': 'item1',
+                    },
+                },
+            }
+            query2 = {
+                'book': '',
+                'cmd': 'add_item',
+                'kwargs': {
+                    'item': {
+                        'id': 'item2',
+                    },
+                },
+            }
+            r = c.post('/', data={
+                'token': token(c),
+                'a': 'query',
+                'f': 'json',
+                'q': [json.dumps(query1), json.dumps(query2)],
+                'no_lock': 1,
+            })
+
+            mock_cls.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                [query1, query2],
+                lock=False,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {'data': None})
+
+
 class TestSearch(TestActions):
     @classmethod
     def setUpClass(cls):

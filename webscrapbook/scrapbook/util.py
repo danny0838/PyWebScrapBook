@@ -1,0 +1,182 @@
+"""Miscellaneous Scrapbook book handler.
+"""
+import copy
+from collections import defaultdict, deque
+from contextlib import nullcontext
+
+from .host import Host
+
+
+class HostQuery:
+    """A utility to perform a series of query on a scrapbook host."""
+    def __init__(self, host, query, *, lock=True):
+        if isinstance(host, Host):
+            pass
+        elif isinstance(host, str):
+            host = Host(host)
+        else:
+            host = Host(*host)
+
+        self.host = host
+        self.query = query
+        self.lock = lock
+
+        self.tasks = []
+        self.loads = defaultdict(set)
+        self.changes = defaultdict(set)
+        self.results = []
+
+    def run(self):
+        for q in self.query:
+            book_id = q.get('book', '')
+            cmd = q.get('cmd', '')
+            args = q.get('args', ())
+            kwargs = q.get('kwargs', {})
+
+            try:
+                book = self.host.books[book_id]
+            except KeyError:
+                raise ValueError(f'Invalid book ID: {book_id!r}') from None
+
+            if book.no_tree:
+                raise ValueError(f'Unable to query on a no_tree book: {book_id!r}')
+
+            try:
+                func = getattr(book, cmd)
+            except AttributeError:
+                raise ValueError(f'Invalid command: {cmd!r}') from None
+
+            task = (book_id, cmd, func, args, kwargs)
+            self.tasks.append(task)
+
+            changes = getattr(self, f'_cmd_{cmd}_changes', ())
+            self.changes[book_id].update(changes)
+
+            loads = getattr(self, f'_cmd_{cmd}_loads', changes)
+            self.loads[book_id].update(loads)
+
+            try:
+                prehandler = getattr(self, f'_cmd_{cmd}_prehandler')
+            except AttributeError:
+                pass
+            else:
+                prehandler(book_id, args, kwargs)
+
+        self.run_tasks()
+        return self.results
+
+    def run_tasks(self):
+        book_ids = deque(self.changes)
+        self._with_next_book(book_ids)
+
+    def _with_next_book(self, book_ids):
+        try:
+            book_id = book_ids.popleft()
+        except IndexError:
+            book_id = None
+
+        if book_id is None:
+            self._run_tasks()
+            return
+
+        book = self.host.books[book_id]
+        lh = book.get_tree_lock().acquire() if self.lock else nullcontext()
+        with lh:
+            if 'meta' in self.loads[book_id]:
+                book.load_meta_files()
+
+            if 'toc' in self.loads[book_id]:
+                book.load_toc_files()
+
+            if 'meta' in self.changes[book_id]:
+                book_meta_orig = copy.deepcopy(book.meta)
+
+            if 'toc' in self.changes[book_id]:
+                book_toc_orig = copy.deepcopy(book.toc)
+
+            self._with_next_book(book_ids)
+
+            if 'meta' in self.changes[book_id]:
+                if book.meta != book_meta_orig:
+                    book.save_meta_files()
+
+            if 'toc' in self.changes[book_id]:
+                if book.toc != book_toc_orig:
+                    book.save_toc_files()
+
+    def _run_tasks(self):
+        for _book_id, _cmd, func, args, kwargs in self.tasks:
+            try:
+                rv = func(*args, **kwargs)
+            except Exception as exc:
+                task_args = []
+                for arg in args:
+                    task_args.append(f'{arg!r}')
+                for k, v in kwargs.items():
+                    task_args.append(f'{k}={v!r}')
+                task_args = ', '.join(task_args)
+                raise RuntimeError(
+                    f'Failed to query: {func.__name__}({task_args}): {exc}'
+                ) from exc
+
+            self.results.append(rv)
+
+    _cmd_get_item_loads = {'meta', 'toc'}
+
+    _cmd_get_items_loads = _cmd_get_item_loads
+
+    _cmd_add_item_changes = {'meta', 'toc'}
+
+    _cmd_add_items_changes = _cmd_add_item_changes
+
+    _cmd_update_item_changes = {'meta'}
+
+    _cmd_update_items_changes = _cmd_update_item_changes
+
+    _cmd_move_item_loads = {'meta', 'toc'}
+
+    _cmd_move_item_changes = {'toc'}
+
+    _cmd_move_items_loads = _cmd_move_item_loads
+
+    _cmd_move_items_changes = _cmd_move_item_changes
+
+    _cmd_link_item_loads = {'meta', 'toc'}
+
+    _cmd_link_item_changes = {'toc'}
+
+    _cmd_link_items_loads = _cmd_link_item_loads
+
+    _cmd_link_items_changes = _cmd_link_item_changes
+
+    _cmd_copy_item_changes = {'meta', 'toc'}
+
+    def _cmd_copy_item_prehandler(self, book_id, args, kwargs):
+        target_book_id = kwargs.get('target_book_id')
+        if target_book_id not in (None, book_id):
+            self.loads[target_book_id].update({'meta', 'toc'})
+            self.changes[target_book_id].update({'meta', 'toc'})
+
+    _cmd_copy_items_changes = _cmd_copy_item_changes
+
+    _cmd_copy_items_prehandler = _cmd_copy_item_prehandler
+
+    _cmd_recycle_item_changes = {'meta', 'toc'}
+
+    _cmd_recycle_items_changes = _cmd_recycle_item_changes
+
+    _cmd_unrecycle_item_changes = {'meta', 'toc'}
+
+    _cmd_unrecycle_items_changes = _cmd_unrecycle_item_changes
+
+    _cmd_delete_item_changes = {'meta', 'toc'}
+
+    _cmd_delete_items_changes = _cmd_delete_item_changes
+
+    _cmd_sort_item_loads = {'meta', 'toc'}
+
+    _cmd_sort_item_changes = {'toc'}
+
+    _cmd_sort_items_loads = _cmd_sort_item_loads
+
+    _cmd_sort_items_changes = _cmd_sort_item_changes

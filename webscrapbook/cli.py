@@ -310,6 +310,35 @@ def cmd_convert(args):
             log(f'{info.type.upper()}: {info.msg}')
 
 
+def cmd_query(args):
+    """Perform queries to the scrapbook(s)."""
+    kwargs = args.copy()
+    root = kwargs.pop('root')
+    input_ = kwargs.pop('input')
+
+    import json
+    from contextlib import nullcontext
+
+    from .scrapbook.util import HostQuery
+
+    if input_ is None:
+        cm = nullcontext(sys.stdin)
+    else:
+        try:
+            cm = open(input_, 'r', encoding='UTF-8-SIG')
+        except OSError:
+            raise RuntimeError('Failed to read the input file') from None
+
+    with cm as fh:
+        try:
+            query = json.loads(fh.read())
+        except Exception as exc:
+            raise RuntimeError(f'Malformed input query: {exc}') from None
+
+    rv = HostQuery(root, query).run()
+    print(json.dumps(rv, ensure_ascii=False))
+
+
 def cmd_search(args):
     """Search for data items in the scrapbook(s)."""
     kwargs = args.copy()
@@ -1042,6 +1071,27 @@ order (default: %(default)s)""")
     parser_convert_wsb2file.add_argument(
         '--debug', default=False, action='store_true',
         help="""include debug output""")
+
+    # subcommand: query
+    parser_query = subparsers.add_parser(
+        'query', aliases=['q'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=getdoc(cmd_query),
+        help="""perform queries on the scrapbook(s)""",
+        epilog="""\
+The input should be a JSON array of objects with following properties:
+  "book": the ID of the book (string)
+  "cmd": the book method to call (string)
+  "args": the positional arguments (array)
+  "kwargs": the keyword arguments (object)
+
+The output is a JSON array with the return values corresponding to each
+command.
+""")
+    parser_query.set_defaults(func=cmd_query)
+    parser_query.add_argument(
+        'input', action='store', nargs='?',
+        help="""the input file with commands to run (default: stdin)""")
 
     # subcommand: search
     parser_search = subparsers.add_parser(
