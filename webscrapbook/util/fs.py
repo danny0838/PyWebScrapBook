@@ -496,17 +496,10 @@ def delete(cpath):
             if not os.path.lexists(dst):
                 raise FSEntryNotFoundError(cpath)
 
-            if os.path.islink(dst):
+            try:
                 os.remove(dst)
-            elif isjunction(dst):
-                os.remove(dst)
-            elif os.path.isfile(dst):
-                os.remove(dst)
-            elif os.path.isdir(dst):
+            except OSError:
                 shutil.rmtree(dst)
-            else:
-                # this should not happen
-                raise RuntimeError('Unable to handle this path.')
 
         else:
             # 'r' mode to check if zip is valid
