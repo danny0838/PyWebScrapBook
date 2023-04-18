@@ -430,7 +430,7 @@ class Host:
         if not os.path.exists(file):
             return
 
-        if not os.path.abspath(file).startswith(os.path.join(base, '')):
+        if not os.path.normcase(os.path.abspath(file)).startswith(os.path.normcase(os.path.join(base, ''))):
             return
 
         dst = os.path.join(backup_dir, os.path.relpath(file, base))

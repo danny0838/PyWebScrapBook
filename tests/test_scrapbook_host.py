@@ -9,7 +9,7 @@ from webscrapbook import WSB_DIR, Config, util
 from webscrapbook.scrapbook import host as wsb_host
 from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR
+from . import TEMP_DIR, require_case_insensitive
 
 
 def setUpModule():
@@ -315,6 +315,22 @@ name = mybook2
         backup_dirname = os.listdir(os.path.join(self.test_wsbdir, 'backup'))[0]
         self.assertRegex(backup_dirname, r'^\d{17}$')
         with open(os.path.join(self.test_wsbdir, 'backup', backup_dirname, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
+    @require_case_insensitive()
+    def test_backup08(self):
+        """Check if different case works."""
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_file = os.path.join(self.test_root, 'tree', 'meta.js').upper()
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        host = Host(self.test_root)
+        host.backup(test_file, test_backup_dir)
+
+        with open(os.path.join(test_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'abc')
 
     def test_unbackup01(self):
