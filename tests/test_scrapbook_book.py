@@ -4800,16 +4800,113 @@ class TestCopyItem(TestCopyItemBase):
         self.assertEqual(book.meta, orig_meta)
         self.assertEqual(book.toc, orig_toc)
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20200101000000000')
     def test_to_descendant(self):
         """Silently fail when copying into a descendant recursively."""
         case = self.create_general_case()
         book = case.book
 
-        orig_meta = copy.deepcopy(book.meta)
-        orig_toc = copy.deepcopy(book.toc)
         self.assertEqual(book.copy_item('root', 0, 'item1-3', None), 0)
-        self.assertEqual(book.meta, orig_meta)
-        self.assertEqual(book.toc, orig_toc)
+        self.assertEqual(book.toc, {
+            'root': [
+                'item1',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+                'item1-3',
+            ],
+            'item1-1': [
+                'item1-1-1',
+            ],
+            'item1-2': [
+                'item1',
+            ],
+            'item1-3': [
+                '20200101000000000',
+            ],
+            '20200101000000000': [
+                '20200101000000001',
+                '20200101000000003',
+                '20200101000000004',
+            ],
+            '20200101000000001': [
+                '20200101000000002',
+            ],
+            '20200101000000003': [
+                '20200101000000000',
+            ],
+        })
+        self.assertEqual(book.meta, {
+            'item1': {
+                'title': 'My Item 1',
+                'create': '20000101000000000',
+                'modify': '20010101000000000',
+                'index': 'item1/index.html',
+                'icon': 'favicon.ico',
+            },
+            'item1-1': {
+                'title': 'My Item 1-1',
+                'create': '20000102000000000',
+                'modify': '20010102000000000',
+                'index': 'item1-1.htz',
+                'icon': '../tree/favicon/b64favicon%231.ico',
+            },
+            'item1-1-1': {
+                'title': 'My Item 1-1-1',
+                'create': '20000103000000000',
+                'modify': '20010103000000000',
+                'type': 'bookmark',
+                'icon': '../tree/favicon/b64favicon%2511.ico',
+            },
+            'item1-2': {
+                'title': 'My Item 1-2',
+                'create': '20000104000000000',
+                'modify': '20010104000000000',
+                'index': 'item1-2.maff',
+                'icon': '',
+            },
+            'item1-3': {
+                'title': 'My Item 1-3',
+                'create': '20000105000000000',
+                'modify': '20010105000000000',
+                'index': 'item1-3.html',
+            },
+            '20200101000000000': {
+                'title': 'My Item 1',
+                'create': '20000101000000000',
+                'modify': '20010101000000000',
+                'index': '20200101000000000/index.html',
+                'icon': 'favicon.ico',
+            },
+            '20200101000000001': {
+                'title': 'My Item 1-1',
+                'create': '20000102000000000',
+                'modify': '20010102000000000',
+                'index': '20200101000000001.htz',
+                'icon': '../tree/favicon/b64favicon%231.ico',
+            },
+            '20200101000000002': {
+                'title': 'My Item 1-1-1',
+                'create': '20000103000000000',
+                'modify': '20010103000000000',
+                'type': 'bookmark',
+                'icon': '../tree/favicon/b64favicon%2511.ico',
+            },
+            '20200101000000003': {
+                'title': 'My Item 1-2',
+                'create': '20000104000000000',
+                'modify': '20010104000000000',
+                'index': '20200101000000003.maff',
+                'icon': '',
+            },
+            '20200101000000004': {
+                'title': 'My Item 1-3',
+                'create': '20000105000000000',
+                'modify': '20010105000000000',
+                'index': '20200101000000004.html',
+            },
+        })
 
 
 class TestCopyItems(TestCopyItemBase):

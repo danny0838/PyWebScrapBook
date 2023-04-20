@@ -900,12 +900,6 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
             if item in tasks:
                 continue
 
-            # Silently ignore copying into a descendant recursively, to prevent
-            # an infinite loop.
-            if (target_book_id == self.id
-                    and target_parent_id in self.get_reachable_items(item_id)):
-                continue
-
             tasks[item] = True
 
         # perform the tasks
@@ -920,11 +914,18 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
     def _copy_item_tree(self, item_id, target_parent_id, target_index, target_book,
                         recursively, id_map):
-        # already copied, simply link to it
-        if item_id in id_map:
+        try:
             _item_id = id_map[item_id]
-            target_book.toc.setdefault(target_parent_id, []).insert(target_index, _item_id)
-            return
+        except KeyError:
+            pass
+        else:
+            if _item_id is not None:
+                # already copied, simply link to the copy
+                target_book.toc.setdefault(target_parent_id, []).insert(target_index, _item_id)
+                return
+            else:
+                # an added copy, ignore it to prevent an infinite loop
+                return
 
         new_item_id = self._copy_item_data(item_id, target_parent_id, target_index, target_book,
                                            id_map)
@@ -948,6 +949,8 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
         # add to map
         id_map[item_id] = new_item_id
+        if new_item_id != item_id and target_book.id == self.id:
+            id_map[new_item_id] = None
 
         # copy data files
         if item.get('index'):
