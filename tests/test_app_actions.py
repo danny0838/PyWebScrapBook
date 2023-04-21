@@ -47,8 +47,7 @@ def setUpModule():
     """Set up a temp directory for testing."""
     global _tmpdir, tmpdir
     _tmpdir = tempfile.TemporaryDirectory(prefix='actions-', dir=TEMP_DIR)
-    tmpdir = os.path.realpath(os.path.join(_tmpdir.name, 'd'))
-    shutil.copytree(os.path.join(ROOT_DIR, 'test_app_actions'), tmpdir)
+    tmpdir = os.path.realpath(_tmpdir.name)
 
     # mock out user config
     global mockings
@@ -59,11 +58,6 @@ def setUpModule():
     ]
     for mocking in mockings:
         mocking.start()
-
-    # init app
-    global app
-    app = wsb_app.make_app(tmpdir)
-    app.testing = True
 
 
 def tearDownModule():
@@ -80,10 +74,19 @@ def token(c):
 
 
 class TestActions(TestFileMixin, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # init an app for the class
+        cls.root = tempfile.mkdtemp(dir=tmpdir)
+        os.rmdir(cls.root)
+        shutil.copytree(os.path.join(ROOT_DIR, 'test_app_actions'), cls.root)
+        cls.app = wsb_app.make_app(cls.root)
+        cls.app.testing = True
+
     def setUp(self):
         # A subpath to place test-specific files,
         # which will be cleaned during tearDown.
-        self.test_dir = os.path.join(tmpdir, 'deep')
+        self.test_dir = os.path.join(self.root, 'deep')
         os.makedirs(self.test_dir)
 
         self.test_html = os.path.join(self.test_dir, 'temp.html')
@@ -93,11 +96,11 @@ class TestActions(TestFileMixin, unittest.TestCase):
 
     def tearDown(self):
         try:
-            shutil.rmtree(os.path.join(tmpdir, WSB_DIR, 'server', 'tokens'))
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'server', 'tokens'))
         except FileNotFoundError:
             pass
         try:
-            shutil.rmtree(os.path.join(tmpdir, WSB_DIR, 'locks'))
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'locks'))
         except FileNotFoundError:
             pass
         try:
@@ -172,7 +175,7 @@ class TestActions(TestFileMixin, unittest.TestCase):
 class TestView(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check1(self, mock_abort):
-        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.html')
             mock_abort.assert_called_once_with(403)
 
@@ -180,13 +183,13 @@ class TestView(TestActions):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.zip!/')
             mock_abort.assert_called_once_with(403)
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_directory(self, mock_template):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/subdir')
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/subdir/')
@@ -206,17 +209,17 @@ class TestView(TestActions):
                 path='/subdir/',
                 pathparts=['/subdir'],
                 subentries={
-                    ('file.txt', 'file', 3, os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime),
-                    ('sub', 'dir', None, os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime),
+                    ('file.txt', 'file', 3, os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime),
+                    ('sub', 'dir', None, os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime),
                 },
             )
 
     def test_file(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.html', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html')
-            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.html')).st_size))
+            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(self.root, 'index.html')).st_size))
             self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -254,7 +257,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.htz', buffered=True)
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/deep/archive.htz!/index.html')
@@ -264,7 +267,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('19870101/index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.maff', buffered=True)
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/deep/archive.maff!/19870101/index.html')
@@ -273,7 +276,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c, mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
+        with self.app.test_client() as c, mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
             r = c.get('/deep/archive.maff', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -293,7 +296,7 @@ class TestView(TestActions):
             zh.writestr(zipfile.ZipInfo('19870101/index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
             zh.writestr(zipfile.ZipInfo('19870201/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好嗎')
 
-        with app.test_client() as c, mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
+        with self.app.test_client() as c, mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
             r = c.get('/deep/archive.maff', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -315,7 +318,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
@@ -327,12 +330,12 @@ class TestView(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
 
     def test_markdown(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
                 r = c.get('/index.md')
                 self.assertEqual(r.status_code, 200)
                 self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
-                self.assertNotEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.md')).st_size))
+                self.assertNotEqual(r.headers['Content-Length'], str(os.stat(os.path.join(self.root, 'index.md')).st_size))
                 self.assertEqual(r.headers['Cache-Control'], 'no-cache')
                 self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
                 self.assertIsNotNone(r.headers['Last-Modified'])
@@ -364,14 +367,14 @@ class TestView(TestActions):
             self.assertEqual(r.status_code, 304)
 
     def test_meta_refresh(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/refresh.htm')
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/index.html')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist')
             mock_abort.assert_called_once_with(404)
 
@@ -380,7 +383,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -425,7 +428,7 @@ class TestView(TestActions):
             zh.writestr(zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT), '')
             zh.writestr(zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/subdir', buffered=True)
             mock_abort.assert_called_once_with(404)
 
@@ -433,7 +436,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/index.html', buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html')
@@ -474,7 +477,7 @@ class TestView(TestActions):
                 zh1.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT2), 'Hello World')
             zh.writestr(zipfile.ZipInfo('entry1.htz', DUMMY_ZIP_DT), buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.htz!/entry1.htz')
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/deep/archive.htz!/entry1.htz!/index.html')
@@ -494,7 +497,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('index.md', DUMMY_ZIP_DT), '## Header\n\nHello 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
                 r = c.get('/deep/archive.zip!/index.md', buffered=True)
                 self.assertEqual(r.status_code, 200)
@@ -534,7 +537,7 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('refresh.htm', DUMMY_ZIP_DT), '<meta http-equiv="refresh" content="0;url=index.html">')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/refresh.htm', buffered=True)
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/deep/archive.zip!/index.html')
@@ -544,31 +547,31 @@ class TestView(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist')
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist/')
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist.txt')
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist.txt/')
             mock_abort.assert_called_once_with(404)
 
     @mock.patch('webscrapbook.app.action_info', return_value='')
     def test_json(self, mock_info):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'f': 'json'})
             mock_info.assert_called_once_with()
 
@@ -577,13 +580,13 @@ class TestInfo(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'info'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check(self, mock_abort):
-        with app.test_client() as c, mock.patch('webscrapbook.app.file_info', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('webscrapbook.app.file_info', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'info', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
@@ -591,12 +594,12 @@ class TestInfo(TestActions):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('webscrapbook.util.fs.open_archive_path', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('webscrapbook.util.fs.open_archive_path', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.zip!/', query_string={'a': 'info', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
     def test_directory(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'info', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -606,7 +609,7 @@ class TestInfo(TestActions):
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir')).st_mtime,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir')).st_mtime,
                     'mime': None,
                 },
             })
@@ -620,7 +623,7 @@ class TestInfo(TestActions):
                     'name': 'subdir',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir')).st_mtime,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir')).st_mtime,
                     'mime': None,
                 },
             })
@@ -648,7 +651,7 @@ class TestInfo(TestActions):
                         pass
                 stat = os.stat(file_path)
 
-                with app.test_client() as c:
+                with self.app.test_client() as c:
                     r = c.get(url_path, query_string={'a': 'info', 'f': 'json'})
                     self.assertEqual(r.status_code, 200)
                     self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -674,7 +677,7 @@ class TestInfo(TestActions):
                 zh1.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT5), 'ABC')
             zh.writestr(zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT4), buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             # directory
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'info', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
@@ -796,7 +799,7 @@ class TestInfo(TestActions):
             })
 
     def test_nonexist(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/nonexist', query_string={'a': 'info', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -815,7 +818,7 @@ class TestInfo(TestActions):
 class TestList(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check1(self, mock_abort):
-        with app.test_client() as c, mock.patch('os.scandir', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('os.scandir', side_effect=PermissionError('Forbidden')):
             c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
@@ -823,19 +826,19 @@ class TestList(TestActions):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.zip!/', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'list'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     def test_directory(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -846,13 +849,13 @@ class TestList(TestActions):
                     'name': 'file.txt',
                     'type': 'file',
                     'size': 3,
-                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
                 },
                 {
                     'name': 'sub',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
                 },
             ])
 
@@ -866,25 +869,25 @@ class TestList(TestActions):
                     'name': 'file.txt',
                     'type': 'file',
                     'size': 3,
-                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
                 },
                 {
                     'name': 'sub',
                     'type': 'dir',
                     'size': None,
-                    'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
                 },
             ])
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
@@ -901,7 +904,7 @@ class TestList(TestActions):
                 zh1.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT7), 'ABC')
             zh.writestr(zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT6), buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             # explicit dir (no slash)
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'list', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
@@ -1036,30 +1039,30 @@ class TestList(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist/', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist.txt', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist.txt/', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
     def test_sse_directory(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
@@ -1068,13 +1071,13 @@ class TestList(TestActions):
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
-                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
+                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
             }), sse)
             self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
-                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
+                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
             }), sse)
             self.assertIn(('complete', None), sse)
 
@@ -1086,25 +1089,25 @@ class TestList(TestActions):
                 'name': 'file.txt',
                 'type': 'file',
                 'size': 3,
-                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'file.txt')).st_mtime,
+                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
             }), sse)
             self.assertIn(('message', {
                 'name': 'sub',
                 'type': 'dir',
                 'size': None,
-                'last_modified': os.stat(os.path.join(tmpdir, 'subdir', 'sub')).st_mtime,
+                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
             }), sse)
             self.assertIn(('complete', None), sse)
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_sse_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'list', 'f': 'sse'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_sse_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'list', 'f': 'sse'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
@@ -1116,7 +1119,7 @@ class TestList(TestActions):
             zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT4), 'Hello World! 你好嗎')
             zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', DUMMY_ZIP_DT5), 'Hello World!')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             # explicit dir (no slash)
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
             self.assertEqual(r.status_code, 200)
@@ -1225,13 +1228,13 @@ class TestSource(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """No format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'source', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check1(self, mock_abort):
-        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'source'})
             mock_abort.assert_called_once_with(403)
 
@@ -1239,18 +1242,18 @@ class TestSource(TestActions):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.zip!/', query_string={'a': 'source'})
             mock_abort.assert_called_once_with(403)
 
     def test_file_normal(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'source'}, buffered=True)
             r.encoding = 'UTF-8'
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
             self.assertEqual(r.headers['Content-Disposition'], 'inline')
-            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.html')).st_size))
+            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(self.root, 'index.html')).st_size))
             self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -1285,12 +1288,12 @@ class TestSource(TestActions):
             self.assertEqual(r.data.decode('UTF-8').replace('\r\n', '\n'), '<!DOCTYPE html>')
 
     def test_file_markdown(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.md', query_string={'a': 'source'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
             self.assertEqual(r.headers['Content-Disposition'], 'inline')
-            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(tmpdir, 'index.md')).st_size))
+            self.assertEqual(r.headers['Content-Length'], str(os.stat(os.path.join(self.root, 'index.md')).st_size))
             self.assertEqual(r.headers['Accept-Ranges'], 'bytes')
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
@@ -1324,7 +1327,7 @@ class TestSource(TestActions):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
             zh.writestr('index.html', 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.htz', query_string={'a': 'source'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
@@ -1337,7 +1340,7 @@ class TestSource(TestActions):
             self.assertIsNotNone(r.headers['ETag'])
 
     def test_file_encoding(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'source', 'e': 'big5'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=big5')
@@ -1360,19 +1363,19 @@ class TestSource(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_directory(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/subdir', query_string={'a': 'source'})
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/subdir/', query_string={'a': 'source'})
             mock_abort.assert_called_once_with(404)
 
@@ -1380,7 +1383,7 @@ class TestSource(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('index.html', 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/index.html', query_string={'a': 'source'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=utf-8')
@@ -1421,25 +1424,25 @@ class TestSource(TestActions):
             zh.writestr('explicit_dir/index.html', 'Hello World! 你好')
             zh.writestr('implicit_dir/index.html', 'Hello World! 你好嗎')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/explicit_dir/', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/implicit_dir', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
         mock_abort.reset_mock()
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/implicit_dir/', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
@@ -1448,7 +1451,7 @@ class TestSource(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
@@ -1457,13 +1460,13 @@ class TestDownload(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """No format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'download', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check1(self, mock_abort):
-        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'download'})
             mock_abort.assert_called_once_with(403)
 
@@ -1471,7 +1474,7 @@ class TestDownload(TestActions):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.zip!/', query_string={'a': 'download'})
             mock_abort.assert_called_once_with(403)
 
@@ -1480,7 +1483,7 @@ class TestDownload(TestActions):
         with zipfile.ZipFile(zfile, 'w') as zh:
             zh.writestr('index.html', 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/中文.htz', query_string={'a': 'download'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/html+zip')
@@ -1500,7 +1503,7 @@ class TestDownload(TestActions):
         with open(os.path.join(root, 'foo.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('ABC')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/中文', query_string={'a': 'download'})
 
         self.assertEqual(r.status_code, 200)
@@ -1534,7 +1537,7 @@ class TestDownload(TestActions):
             fh.write('ABC')
 
         # i=['subdir/bar.txt']
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/中文', query_string={'a': 'download', 'i': 'subdir/bar.txt'})
 
         self.assertEqual(r.status_code, 200)
@@ -1555,7 +1558,7 @@ class TestDownload(TestActions):
                 zh.getinfo('foo.txt')
 
         # i=['foo.txt']
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/中文', query_string={'a': 'download', 'i': 'foo.txt'})
 
         self.assertEqual(r.status_code, 200)
@@ -1576,7 +1579,7 @@ class TestDownload(TestActions):
             )
 
         # i=['subdir/bar.txt', 'foo.txt']
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/中文', query_string=[('a', 'download'), ('i', 'subdir/bar.txt'), ('i', 'foo.txt')])
 
         self.assertEqual(r.status_code, 200)
@@ -1600,7 +1603,7 @@ class TestDownload(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'download'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
@@ -1611,7 +1614,7 @@ class TestDownload(TestActions):
                 pass
             zh.writestr('中文.zip', buf.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/中文.zip', query_string={'a': 'download'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/zip')
@@ -1632,7 +1635,7 @@ class TestDownload(TestActions):
             zh.writestr('implicit_dir/subdir/foo.txt', 'ABC')
             zh.writestr('implicit_dir/bar.txt', '中文')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'download'}, buffered=True)
 
         self.assertEqual(r.status_code, 200)
@@ -1657,7 +1660,7 @@ class TestDownload(TestActions):
                     {'zip': zh2, 'filename': 'bar.txt'},
                 )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/implicit_dir', query_string={'a': 'download'}, buffered=True)
 
         self.assertEqual(r.status_code, 200)
@@ -1689,7 +1692,7 @@ class TestDownload(TestActions):
             zh.writestr('implicit_dir/bar.txt', '中文')
 
         # i=['subdir/foo.txt']
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'download', 'i': 'subdir/foo.txt'}, buffered=True)
 
         self.assertEqual(r.status_code, 200)
@@ -1711,7 +1714,7 @@ class TestDownload(TestActions):
                     zh2.getinfo('bar.txt')
 
         # i=['bar.txt']
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'download', 'i': 'bar.txt'}, buffered=True)
 
         self.assertEqual(r.status_code, 200)
@@ -1733,7 +1736,7 @@ class TestDownload(TestActions):
                 )
 
         # i=['subdir/foo.txt', 'bar.txt']
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/explicit_dir', query_string=[('a', 'download'), ('i', 'subdir/foo.txt'), ('i', 'bar.txt')], buffered=True)
 
         self.assertEqual(r.status_code, 200)
@@ -1761,7 +1764,7 @@ class TestDownload(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip!/nonexist', query_string={'a': 'download'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
@@ -1770,18 +1773,18 @@ class TestStatic(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """No format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.css', query_string={'a': 'static', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check(self, mock_abort):
-        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.css', query_string={'a': 'static'})
             mock_abort.assert_called_once_with(403)
 
     def test_file(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.css', query_string={'a': 'static'}, buffered=True)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/css; charset=utf-8')
@@ -1796,7 +1799,7 @@ class TestStatic(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'static'})
             mock_abort.assert_called_once_with(404)
 
@@ -1805,12 +1808,12 @@ class TestConfig(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'config'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     def test_config(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/', query_string={'a': 'config', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -1849,13 +1852,13 @@ class TestEdit(TestActions):
         with open(self.test_html, 'wb') as fh:
             fh.write('你好𧌒蟲'.encode('UTF-8'))
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'edit', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_permission_check1(self, mock_abort):
-        with app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/deep/temp.html', query_string={'a': 'edit'})
             mock_abort.assert_called_once_with(403)
 
@@ -1863,7 +1866,7 @@ class TestEdit(TestActions):
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.maff!/index.html', query_string={'a': 'edit'})
             mock_abort.assert_called_once_with(403)
 
@@ -1872,7 +1875,7 @@ class TestEdit(TestActions):
         with open(self.test_html, 'wb') as fh:
             fh.write('你好𧌒蟲'.encode('UTF-8'))
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/temp.html', query_string={'a': 'edit'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -1892,7 +1895,7 @@ class TestEdit(TestActions):
         with open(self.test_html, 'wb') as fh:
             fh.write('你好𧌒蟲'.encode('UTF-8'))
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/temp.html', query_string={'a': 'edit', 'e': 'big5'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -1912,7 +1915,7 @@ class TestEdit(TestActions):
         with open(self.test_html, 'wb') as fh:
             fh.write('你好'.encode('Big5'))
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/temp.html', query_string={'a': 'edit'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -1931,7 +1934,7 @@ class TestEdit(TestActions):
         with open(self.test_html, 'wb') as fh:
             fh.write('你好'.encode('Big5'))
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/temp.html', query_string={'a': 'edit', 'e': 'big5'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -1950,7 +1953,7 @@ class TestEdit(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('19870101/index.html', 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.maff!/19870101/index.html', query_string={'a': 'edit'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -1972,7 +1975,7 @@ class TestEdit(TestActions):
                 zh1.writestr('index.html', 'Hello World! 你好')
             zh.writestr('19870101/index.htz', buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.maff!/19870101/index.htz!/index.html', query_string={'a': 'edit'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -1991,7 +1994,7 @@ class TestEditx(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """No format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'editx', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
@@ -1999,13 +2002,13 @@ class TestEditx(TestActions):
     def test_permission_check(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
-        with app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
+        with self.app.test_client() as c, mock.patch('zipfile.ZipFile.__init__', side_effect=PermissionError('Forbidden')):
             c.get('/deep/archive.zip!/index.html', query_string={'a': 'editx'})
             mock_abort.assert_called_once_with(403)
 
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_file(self, mock_template):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'editx'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -2022,7 +2025,7 @@ class TestEditx(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('19870101/index.html', 'Hello World! 你好')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/deep/archive.maff!/19870101/index.html', query_string={'a': 'editx'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
@@ -2038,7 +2041,7 @@ class TestEditx(TestActions):
 class TestExec(TestActions):
     @mock.patch('webscrapbook.util.fs.launch')
     def test_directory(self, mock_exec):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'exec', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -2046,11 +2049,11 @@ class TestExec(TestActions):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_exec.assert_called_once_with(os.path.join(tmpdir, 'subdir'))
+            mock_exec.assert_called_once_with(os.path.join(self.root, 'subdir'))
 
     @mock.patch('webscrapbook.util.fs.launch')
     def test_file(self, mock_exec):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'exec', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -2058,11 +2061,11 @@ class TestExec(TestActions):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_exec.assert_called_once_with(os.path.join(tmpdir, 'index.html'))
+            mock_exec.assert_called_once_with(os.path.join(self.root, 'index.html'))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist.file', query_string={'a': 'exec', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'File does not exist.')
 
@@ -2071,7 +2074,7 @@ class TestExec(TestActions):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
             zh.writestr('index.html', 'Hello World!')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.htz!/index.html', query_string={'a': 'exec', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'File does not exist.')
 
@@ -2079,7 +2082,7 @@ class TestExec(TestActions):
 class TestBrowse(TestActions):
     @mock.patch('webscrapbook.util.fs.view_in_explorer')
     def test_directory(self, mock_browse):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/subdir', query_string={'a': 'browse', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -2087,11 +2090,11 @@ class TestBrowse(TestActions):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_browse.assert_called_once_with(os.path.join(tmpdir, 'subdir'))
+            mock_browse.assert_called_once_with(os.path.join(self.root, 'subdir'))
 
     @mock.patch('webscrapbook.util.fs.view_in_explorer')
     def test_file(self, mock_browse):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.get('/index.html', query_string={'a': 'browse', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
@@ -2099,11 +2102,11 @@ class TestBrowse(TestActions):
                 'success': True,
                 'data': 'Command run successfully.',
             })
-            mock_browse.assert_called_once_with(os.path.join(tmpdir, 'index.html'))
+            mock_browse.assert_called_once_with(os.path.join(self.root, 'index.html'))
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/nonexist.file', query_string={'a': 'browse', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'File does not exist.')
 
@@ -2112,7 +2115,7 @@ class TestBrowse(TestActions):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
             zh.writestr('index.html', 'Hello World!')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.htz!/index.html', query_string={'a': 'browse', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'File does not exist.')
 
@@ -2121,24 +2124,24 @@ class TestToken(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'token'})
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
     def test_token(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={'a': 'token'})
             self.assertEqual(r.status_code, 200)
-            token_file = os.path.join(tmpdir, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
+            token_file = os.path.join(self.root, WSB_DIR, 'server', 'tokens', r.data.decode('UTF-8'))
             self.assertTrue(os.path.isfile(token_file))
 
     def test_token_json(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={'a': 'token', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
             data = r.json
-            token_file = os.path.join(tmpdir, WSB_DIR, 'server', 'tokens', data['data'])
+            token_file = os.path.join(self.root, WSB_DIR, 'server', 'tokens', data['data'])
             self.assertTrue(data['success'])
             self.assertTrue(isinstance(data['data'], str))
             self.assertTrue(os.path.isfile(token_file))
@@ -2147,12 +2150,12 @@ class TestToken(TestActions):
 class TestLock(TestActions):
     def setUp(self):
         super().setUp()
-        self.lock = os.path.join(tmpdir, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        self.lock = os.path.join(self.root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={
                 'token': token(c),
                 'a': 'lock',
@@ -2165,7 +2168,7 @@ class TestLock(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'a': 'lock',
                 'f': 'json',
@@ -2177,7 +2180,7 @@ class TestLock(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_params_check(self, mock_abort):
         """Require name."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2187,7 +2190,7 @@ class TestLock(TestActions):
             mock_abort.assert_called_once_with(400, 'Lock name is not specified.')
 
     def test_normal(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2212,7 +2215,7 @@ class TestLock(TestActions):
         with open(self.lock, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2230,7 +2233,7 @@ class TestLock(TestActions):
         t = time.time() - 300
         os.utime(self.lock, (t, t))
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2252,7 +2255,7 @@ class TestLock(TestActions):
     def test_directory_existed(self, mock_abort):
         os.makedirs(self.lock, exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2268,7 +2271,7 @@ class TestLock(TestActions):
         with open(self.lock, 'w') as fh:
             fh.write('oldid')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2289,7 +2292,7 @@ class TestLock(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_extend_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'lock',
@@ -2304,12 +2307,12 @@ class TestLock(TestActions):
 class TestUnlock(TestActions):
     def setUp(self):
         super().setUp()
-        self.lock = os.path.join(tmpdir, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
+        self.lock = os.path.join(self.root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={
                 'token': token(c),
                 'a': 'unlock',
@@ -2323,7 +2326,7 @@ class TestUnlock(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'a': 'unlock',
                 'f': 'json',
@@ -2336,7 +2339,7 @@ class TestUnlock(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_params_check01(self, mock_abort):
         """Require name."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
@@ -2348,7 +2351,7 @@ class TestUnlock(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_params_check02(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
@@ -2363,7 +2366,7 @@ class TestUnlock(TestActions):
         with open(self.lock, 'w') as fh:
             fh.write('oldid')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
@@ -2386,7 +2389,7 @@ class TestUnlock(TestActions):
         with open(self.lock, 'w') as fh:
             fh.write('oldid')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
@@ -2399,7 +2402,7 @@ class TestUnlock(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
@@ -2414,7 +2417,7 @@ class TestUnlock(TestActions):
     def test_directory_existed(self, mock_abort):
         os.makedirs(self.lock, exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'unlock',
@@ -2430,7 +2433,7 @@ class TestMkdir(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/temp', query_string={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2442,7 +2445,7 @@ class TestMkdir(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/temp', data={
                 'a': 'mkdir',
                 'f': 'json',
@@ -2452,7 +2455,7 @@ class TestMkdir(TestActions):
 
     def test_nonexist(self):
         test_dir = os.path.join(self.test_dir, 'newdir')
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/newdir', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2469,7 +2472,7 @@ class TestMkdir(TestActions):
 
     def test_nonexist_deep(self):
         test_dir = os.path.join(self.test_dir, 'deeper', 'newdir')
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/deeper/newdir', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2487,7 +2490,7 @@ class TestMkdir(TestActions):
     def test_dir(self):
         test_dir = os.path.join(self.test_dir, 'newdir')
         os.makedirs(test_dir)
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/newdir', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2507,7 +2510,7 @@ class TestMkdir(TestActions):
         with open(self.test_html, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2520,7 +2523,7 @@ class TestMkdir(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/temp', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2541,7 +2544,7 @@ class TestMkdir(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2562,7 +2565,7 @@ class TestMkdir(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('temp/subdir/', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2586,7 +2589,7 @@ class TestMkdir(TestActions):
                 pass
             zh.writestr('20200101/entry.zip', buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/20200101/entry.zip!/20200102', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2610,7 +2613,7 @@ class TestMkdir(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('temp/subdir', '123')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/temp/subdir', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2623,7 +2626,7 @@ class TestMkdir(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/', data={
                 'token': token(c),
                 'a': 'mkdir',
@@ -2645,7 +2648,7 @@ class TestMkzip(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/archive.zip', query_string={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2657,7 +2660,7 @@ class TestMkzip(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.zip', data={
                 'a': 'mkzip',
                 'f': 'json',
@@ -2666,7 +2669,7 @@ class TestMkzip(TestActions):
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
     def test_nonexist(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2686,7 +2689,7 @@ class TestMkzip(TestActions):
         with open(self.test_zip, 'w', encoding='UTF-8') as fh:
             fh.write('test')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2705,7 +2708,7 @@ class TestMkzip(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_dir(self, mock_abort):
         os.makedirs(self.test_zip, exist_ok=True)
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2718,7 +2721,7 @@ class TestMkzip(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.zip!/entry.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2739,7 +2742,7 @@ class TestMkzip(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('entry.zip', 'dummy')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.zip!/entry.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2761,7 +2764,7 @@ class TestMkzip(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('entry.zip/', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.zip!/entry.zip', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2775,7 +2778,7 @@ class TestMkzip(TestActions):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.zip!/', data={
                 'token': token(c),
                 'a': 'mkzip',
@@ -2789,7 +2792,7 @@ class TestSave(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/temp.html', query_string={
                 'token': token(c),
                 'a': 'save',
@@ -2802,7 +2805,7 @@ class TestSave(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/temp.html', data={
                 'a': 'save',
                 'f': 'json',
@@ -2812,7 +2815,7 @@ class TestSave(TestActions):
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
     def test_save_nonexist(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2831,7 +2834,7 @@ class TestSave(TestActions):
                 self.assertEqual(fh.read(), 'ABC 你好')
 
     def test_save_nonexist_deep(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2853,7 +2856,7 @@ class TestSave(TestActions):
         with open(self.test_html, 'w', encoding='UTF-8') as fh:
             fh.write('test')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2875,7 +2878,7 @@ class TestSave(TestActions):
     def test_save_dir(self, mock_abort):
         os.makedirs(self.test_html, exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2889,7 +2892,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2910,7 +2913,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2931,7 +2934,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('subdir/index.html', 'dummy')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2955,7 +2958,7 @@ class TestSave(TestActions):
                 pass
             zh.writestr('20200101/entry.zip', buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/20200101/entry.zip!/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2980,7 +2983,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('subdir/index.html/', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -2995,7 +2998,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/', data={
                 'token': token(c),
                 'a': 'save',
@@ -3008,7 +3011,7 @@ class TestSave(TestActions):
     def test_upload_nonexist(self):
         os.makedirs(self.test_dir, exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3027,7 +3030,7 @@ class TestSave(TestActions):
                 self.assertEqual(fh.read(), 'ABC 你好')
 
     def test_upload_nonexist_deep(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3050,7 +3053,7 @@ class TestSave(TestActions):
         with open(self.test_html, 'w', encoding='UTF-8') as fh:
             fh.write('test')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3072,7 +3075,7 @@ class TestSave(TestActions):
     def test_upload_dir(self, mock_abort):
         os.makedirs(self.test_html, exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3086,7 +3089,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3107,7 +3110,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3129,7 +3132,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('subdir/index.html', 'dummy')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3154,7 +3157,7 @@ class TestSave(TestActions):
                 pass
             zh.writestr('20200101/entry.zip', buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/20200101/entry.zip!/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3179,7 +3182,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('subdir/index.html/', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'save',
@@ -3194,7 +3197,7 @@ class TestSave(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/', data={
                 'token': token(c),
                 'a': 'save',
@@ -3212,7 +3215,7 @@ class TestDelete(TestActions):
         with open(self.test_html, 'w', encoding='UTF-8'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/temp.html', query_string={
                 'token': token(c),
                 'a': 'delete',
@@ -3227,7 +3230,7 @@ class TestDelete(TestActions):
         with open(self.test_html, 'w', encoding='UTF-8'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/temp.html', data={
                 'a': 'delete',
                 'f': 'json',
@@ -3239,7 +3242,7 @@ class TestDelete(TestActions):
         with open(self.test_html, 'w', encoding='UTF-8'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/temp.html', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3258,7 +3261,7 @@ class TestDelete(TestActions):
         test_dir = os.path.join(self.test_dir, 'newdir')
         os.makedirs(test_dir)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/newdir', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3277,7 +3280,7 @@ class TestDelete(TestActions):
         with open(self.test_html, 'w', encoding='UTF-8'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3304,7 +3307,7 @@ class TestDelete(TestActions):
             fh.write('dummy')
         junction(ref, dst)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/junction', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3330,7 +3333,7 @@ class TestDelete(TestActions):
 
         junction(ref, dst)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/junction', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3362,7 +3365,7 @@ class TestDelete(TestActions):
         os.makedirs(dst)
         junction(ref, ref3)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir2', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3392,7 +3395,7 @@ class TestDelete(TestActions):
             fh.write('dummy')
         os.symlink(ref, dst)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/symlink', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3420,7 +3423,7 @@ class TestDelete(TestActions):
             fh.write('dummy')
         os.symlink(ref, dst)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/symlink', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3445,7 +3448,7 @@ class TestDelete(TestActions):
 
         os.symlink(ref, dst)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/symlink', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3476,7 +3479,7 @@ class TestDelete(TestActions):
         os.makedirs(dst, exist_ok=True)
         os.symlink(ref, ref3)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir2', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3496,7 +3499,7 @@ class TestDelete(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3510,7 +3513,7 @@ class TestDelete(TestActions):
             zh.writestr('file.txt', 'dummy')
             zh.writestr('subdir/index.html', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3532,7 +3535,7 @@ class TestDelete(TestActions):
             zh.writestr('file.txt', 'dummy')
             zh.writestr('subdir/', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3556,7 +3559,7 @@ class TestDelete(TestActions):
             zh.writestr('subdir/dir/', '')
             zh.writestr('subdir/index.html', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3579,7 +3582,7 @@ class TestDelete(TestActions):
             zh.writestr('subdir/dir/', '')
             zh.writestr('subdir/index.html', '')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3601,7 +3604,7 @@ class TestDelete(TestActions):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('file.txt', 'dummy')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3618,7 +3621,7 @@ class TestDelete(TestActions):
                 zh1.writestr('subdir/index.html', 'ABC 你好')
             zh.writestr('20200101/entry.zip', buf1.getvalue())
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/20200101/entry.zip!/subdir', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3644,7 +3647,7 @@ class TestDelete(TestActions):
             zh.writestr('subdir/index.html', 'dummy')
             zh.writestr('subdir2/test.txt', 'dummy')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/', data={
                 'token': token(c),
                 'a': 'delete',
@@ -3716,7 +3719,7 @@ class TestMove(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/subdir/test.txt', query_string={
                 'a': 'move',
                 'f': 'json',
@@ -3728,7 +3731,7 @@ class TestMove(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'a': 'move',
                 'f': 'json',
@@ -3740,7 +3743,7 @@ class TestMove(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_params_check(self, mock_abort):
         """Require target."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -3752,7 +3755,7 @@ class TestMove(TestActions):
     def test_file(self):
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -3777,7 +3780,7 @@ class TestMove(TestActions):
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir')})
         orig_data2 = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -3806,7 +3809,7 @@ class TestMove(TestActions):
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir')})
         orig_data2 = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/', data={
                 'token': token(c),
                 'a': 'move',
@@ -3841,7 +3844,7 @@ class TestMove(TestActions):
 
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'junction')})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/junction', data={
                 'token': token(c),
                 'a': 'move',
@@ -3872,7 +3875,7 @@ class TestMove(TestActions):
 
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'symlink')})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/symlink', data={
                 'token': token(c),
                 'a': 'move',
@@ -3895,7 +3898,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
                 'token': token(c),
                 'a': 'move',
@@ -3909,7 +3912,7 @@ class TestMove(TestActions):
         """Target must be restricted within the root directory."""
         orig_data = self.get_file_data({'file': os.path.join(self.test_dir, 'subdir', 'test.txt')})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -3936,7 +3939,7 @@ class TestMove(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('你好 XYZ')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -3952,7 +3955,7 @@ class TestMove(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('你好 XYZ')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -3967,7 +3970,7 @@ class TestMove(TestActions):
 
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -3994,7 +3997,7 @@ class TestMove(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'test.txt'), 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -4008,7 +4011,7 @@ class TestMove(TestActions):
     def test_file_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'test.txt'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -4024,7 +4027,7 @@ class TestMove(TestActions):
 
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4055,7 +4058,7 @@ class TestMove(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'subdir'), 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4069,7 +4072,7 @@ class TestMove(TestActions):
     def test_dir_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4083,7 +4086,7 @@ class TestMove(TestActions):
     def test_dir_to_child(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4095,7 +4098,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'move',
@@ -4107,7 +4110,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_disk(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
@@ -4121,7 +4124,7 @@ class TestMove(TestActions):
         with zipfile.ZipFile(self.test_maff) as zh1:
             orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
@@ -4152,7 +4155,7 @@ class TestMove(TestActions):
             orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/'})
             orig_data2 = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4186,7 +4189,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
                 'token': token(c),
                 'a': 'move',
@@ -4198,7 +4201,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
@@ -4210,7 +4213,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4224,7 +4227,7 @@ class TestMove(TestActions):
         with zipfile.ZipFile(self.test_maff) as zh1:
             orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
@@ -4252,7 +4255,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_dir_with_same_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
@@ -4264,7 +4267,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'move',
@@ -4279,7 +4282,7 @@ class TestMove(TestActions):
             orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/'})
             orig_data2 = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4316,7 +4319,7 @@ class TestMove(TestActions):
             orig_data = self.get_file_data({'zip': zh1, 'filename': 'subdir/'})
             orig_data2 = self.get_file_data({'zip': zh1, 'filename': 'subdir/index.html'})
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4350,7 +4353,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4362,7 +4365,7 @@ class TestMove(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'move',
@@ -4427,7 +4430,7 @@ class TestCopy(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/subdir/test.txt', query_string={
                 'token': token(c),
                 'a': 'copy',
@@ -4440,7 +4443,7 @@ class TestCopy(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'a': 'copy',
                 'f': 'json',
@@ -4452,7 +4455,7 @@ class TestCopy(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_params_check(self, mock_abort):
         """Require target."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4462,7 +4465,7 @@ class TestCopy(TestActions):
             mock_abort.assert_called_once_with(400, 'Target is not specified.')
 
     def test_file(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4483,7 +4486,7 @@ class TestCopy(TestActions):
             )
 
     def test_directory(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4508,7 +4511,7 @@ class TestCopy(TestActions):
             )
 
     def test_directory_slash(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4540,7 +4543,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'junction'),
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/junction', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4573,7 +4576,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'junction'),
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/junction', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4604,7 +4607,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'subdir2', 'junction2'),
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir2', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4642,7 +4645,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'symlink')
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/symlink', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4675,7 +4678,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'symlink')
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/symlink', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4707,7 +4710,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'subdir2', 'symlink2')
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir2', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4737,7 +4740,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4749,7 +4752,7 @@ class TestCopy(TestActions):
 
     def test_beyond_root(self):
         """Target must be restricted within the root directory."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4775,7 +4778,7 @@ class TestCopy(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('你好 XYZ')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4791,7 +4794,7 @@ class TestCopy(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('你好 XYZ')
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4804,7 +4807,7 @@ class TestCopy(TestActions):
     def test_file_to_dir(self):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4830,7 +4833,7 @@ class TestCopy(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'test.txt'), 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4844,7 +4847,7 @@ class TestCopy(TestActions):
     def test_file_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'test.txt'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4857,7 +4860,7 @@ class TestCopy(TestActions):
     def test_dir_to_dir(self):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4883,7 +4886,7 @@ class TestCopy(TestActions):
         with open(os.path.join(self.test_dir, 'subdir2', 'subdir'), 'w'):
             pass
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4897,7 +4900,7 @@ class TestCopy(TestActions):
     def test_dir_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4908,7 +4911,7 @@ class TestCopy(TestActions):
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_disk_to_zip_file(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4931,7 +4934,7 @@ class TestCopy(TestActions):
                 self.assertEqual(zh.getinfo('deep/newdir/test2.txt').compress_type, zipfile.ZIP_DEFLATED)
 
     def test_disk_to_zip_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -4976,7 +4979,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'subdir2', 'junction2'),
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir2', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5021,7 +5024,7 @@ class TestCopy(TestActions):
             os.path.join(self.test_dir, 'subdir2', 'symlink2')
         )
 
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir2', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5046,7 +5049,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5058,7 +5061,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_file_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5070,7 +5073,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_disk_to_zip_dir_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5081,7 +5084,7 @@ class TestCopy(TestActions):
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_disk_to_zip_file_to_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5105,7 +5108,7 @@ class TestCopy(TestActions):
                         )
 
     def test_disk_to_zip_dir_to_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5133,7 +5136,7 @@ class TestCopy(TestActions):
                         )
 
     def test_zip_to_disk_file(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5155,7 +5158,7 @@ class TestCopy(TestActions):
                 )
 
     def test_zip_to_disk_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5181,7 +5184,7 @@ class TestCopy(TestActions):
                 )
 
     def test_zip_to_disk_file_to_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5203,7 +5206,7 @@ class TestCopy(TestActions):
                 )
 
     def test_zip_to_disk_dir_to_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5230,7 +5233,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_disk_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5242,7 +5245,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_disk_file_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5254,7 +5257,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_disk_dir_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5265,7 +5268,7 @@ class TestCopy(TestActions):
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_file(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5289,7 +5292,7 @@ class TestCopy(TestActions):
                         )
 
     def test_zip_to_zip_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5318,7 +5321,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_nonexist(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5330,7 +5333,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5342,7 +5345,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5353,7 +5356,7 @@ class TestCopy(TestActions):
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_file_to_dir(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5378,7 +5381,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_dir_with_same_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5390,7 +5393,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5401,7 +5404,7 @@ class TestCopy(TestActions):
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
     def test_zip_to_zip_dir_to_dir1(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5429,7 +5432,7 @@ class TestCopy(TestActions):
                         )
 
     def test_zip_to_zip_dir_to_dir2(self):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5458,7 +5461,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5470,7 +5473,7 @@ class TestCopy(TestActions):
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
                 'token': token(c),
                 'a': 'copy',
@@ -5491,7 +5494,7 @@ class TestBackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/deep/subdir/test.txt', query_string={
                 'token': token(c),
                 'a': 'backup',
@@ -5503,7 +5506,7 @@ class TestBackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'a': 'backup',
@@ -5514,7 +5517,7 @@ class TestBackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
                 'a': 'backup',
                 'f': 'json',
@@ -5524,7 +5527,7 @@ class TestBackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_file01(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5534,7 +5537,7 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir', 'test.txt'),
-            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(self.root, WSB_DIR, 'backup', '20200102030405'),
             move=False,
         )
 
@@ -5547,7 +5550,7 @@ class TestBackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_file02(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5558,7 +5561,7 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir', 'test.txt'),
-            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(self.root, WSB_DIR, 'backup', '20200102030405'),
             move=True,
         )
 
@@ -5571,7 +5574,7 @@ class TestBackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_file03(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir/test.txt', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5582,7 +5585,7 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir', 'test.txt'),
-            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
+            backup_dir=os.path.join(self.root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
             move=False,
         )
 
@@ -5595,7 +5598,7 @@ class TestBackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_directory01(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5605,7 +5608,7 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir'),
-            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(self.root, WSB_DIR, 'backup', '20200102030405'),
             move=False,
         )
 
@@ -5618,7 +5621,7 @@ class TestBackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.backup')
     def test_directory02(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/deep/subdir', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5629,7 +5632,7 @@ class TestBackup(TestActions):
 
         mock_func.assert_called_once_with(
             os.path.join(self.test_dir, 'subdir'),
-            backup_dir=os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
+            backup_dir=os.path.join(self.root, WSB_DIR, 'backup', '20200102030405'),
             move=True,
         )
 
@@ -5645,7 +5648,7 @@ class TestUnbackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={
                 'token': token(c),
                 'a': 'unbackup',
@@ -5657,7 +5660,7 @@ class TestUnbackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'token': token(c),
                 'a': 'unbackup',
@@ -5668,7 +5671,7 @@ class TestUnbackup(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.post('/', data={
                 'a': 'unbackup',
                 'f': 'json',
@@ -5678,7 +5681,7 @@ class TestUnbackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.unbackup')
     def test_params01(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5687,7 +5690,7 @@ class TestUnbackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405'),
+            os.path.join(self.root, WSB_DIR, 'backup', '20200102030405'),
         )
 
         self.assertEqual(r.status_code, 200)
@@ -5699,7 +5702,7 @@ class TestUnbackup(TestActions):
 
     @mock.patch('webscrapbook.scrapbook.host.Host.unbackup')
     def test_params02(self, mock_func):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             r = c.post('/', data={
                 'token': token(c),
                 'ts': '20200102030405',
@@ -5709,7 +5712,7 @@ class TestUnbackup(TestActions):
             })
 
         mock_func.assert_called_once_with(
-            os.path.join(tmpdir, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
+            os.path.join(self.root, WSB_DIR, 'backup', '20200102030405-foo_bar_中文_'),
         )
 
         self.assertEqual(r.status_code, 200)
@@ -5724,7 +5727,7 @@ class TestCache(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'cache', 'f': 'sse'})
 
         mock_abort.assert_called_once_with(400, 'Invalid access token.')
@@ -5732,7 +5735,7 @@ class TestCache(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'cache', 'f': 'json', 'token': token(c)})
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
@@ -5740,7 +5743,7 @@ class TestCache(TestActions):
     @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
     def test_params01(self, mock_func):
         """Require format. (format=sse)"""
-        with app.app_context(), app.test_client() as c:
+        with self.app.app_context(), self.app.test_client() as c:
             try:
                 c.get('/', query_string={
                     'a': 'cache', 'f': 'sse', 'token': token(c),
@@ -5780,7 +5783,7 @@ class TestCache(TestActions):
     @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
     def test_params02(self, mock_func):
         """Check params. (format=None)"""
-        with app.app_context(), app.test_client() as c:
+        with self.app.app_context(), self.app.test_client() as c:
             try:
                 c.get('/', query_string={
                     'a': 'cache', 'token': token(c),
@@ -5822,7 +5825,7 @@ class TestCheck(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_token_check(self, mock_abort):
         """Require token."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'check', 'f': 'sse'})
 
         mock_abort.assert_called_once_with(400, 'Invalid access token.')
@@ -5830,7 +5833,7 @@ class TestCheck(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_format_check(self, mock_abort):
         """Require format."""
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'check', 'f': 'json', 'token': token(c)})
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
@@ -5838,7 +5841,7 @@ class TestCheck(TestActions):
     @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
     def test_params01(self, mock_func):
         """Require format. (format=sse)"""
-        with app.app_context(), app.test_client() as c:
+        with self.app.app_context(), self.app.test_client() as c:
             try:
                 c.get('/', query_string={
                     'a': 'check', 'f': 'sse', 'token': token(c),
@@ -5882,7 +5885,7 @@ class TestCheck(TestActions):
     @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
     def test_params02(self, mock_func):
         """Check params. (format=None)"""
-        with app.app_context(), app.test_client() as c:
+        with self.app.app_context(), self.app.test_client() as c:
             try:
                 c.get('/', query_string={
                     'a': 'check', 'token': token(c),
@@ -5927,13 +5930,13 @@ class TestCheck(TestActions):
 class TestUnknown(TestActions):
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_unknown(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'unkonwn'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.abort', side_effect=abort)
     def test_unknown_json(self, mock_abort):
-        with app.test_client() as c:
+        with self.app.test_client() as c:
             c.get('/', query_string={'a': 'unkonwn', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
