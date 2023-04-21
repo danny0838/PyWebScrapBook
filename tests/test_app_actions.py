@@ -129,7 +129,8 @@ class TestActions(TestFileMixin, unittest.TestCase):
         """
         event = ''
         data = ''
-        for line in content.split('\n'):
+        for line in io.StringIO(content):
+            line = line.rstrip('\r\n')
             if not line:
                 # dispatch event
                 if not event:
