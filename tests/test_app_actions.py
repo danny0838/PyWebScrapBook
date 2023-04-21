@@ -5937,7 +5937,7 @@ class TestCheck(TestActions):
             )
             mock_streamer.assert_called_once_with(
                 'cli.html',
-                title='Indexing...',
+                title='Checking...',
                 messages=mock.ANY,
                 debug=False,
             )

@@ -1306,7 +1306,7 @@ def action_check():
         yield from wsb_check.run(root, config=config, **kwargs)
 
     stream = stream_template('cli.html',
-                             title='Indexing...',
+                             title='Checking...',
                              messages=gen(),
                              debug=False,
                              )
