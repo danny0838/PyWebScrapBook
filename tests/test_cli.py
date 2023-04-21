@@ -16,7 +16,7 @@ RESOURCE_DIR = os.path.join(PROG_DIR, 'resources')
 
 
 def setUpModule():
-    """Set up a temp directory for testing."""
+    # set up a temp directory for testing
     global _tmpdir, tmpdir
     _tmpdir = tempfile.TemporaryDirectory(prefix='cli-', dir=TEMP_DIR)
     tmpdir = os.path.realpath(_tmpdir.name)

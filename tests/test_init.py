@@ -13,8 +13,8 @@ def setUpModule():
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(ROOT_DIR, 'test_config', 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(ROOT_DIR, 'test_config')),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.devnull),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', os.devnull),
     ]
     for mocking in mockings:
         mocking.start()

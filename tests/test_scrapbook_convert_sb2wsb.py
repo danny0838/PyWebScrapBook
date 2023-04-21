@@ -13,24 +13,24 @@ from . import TEMP_DIR
 
 
 def setUpModule():
-    """Set up a temp directory for testing."""
+    # set up a temp directory for testing
     global _tmpdir, tmpdir
     _tmpdir = tempfile.TemporaryDirectory(prefix='sb2wsb-', dir=TEMP_DIR)
     tmpdir = os.path.realpath(_tmpdir.name)
 
     # mock out user config
     global mockings
-    mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
-    ]
+    mockings = (
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.devnull),
+        mock.patch('webscrapbook.WSB_USER_DIR', os.devnull),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', os.devnull),
+    )
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
-    """Cleanup the temp directory."""
+    # cleanup the temp directory
     _tmpdir.cleanup()
 
     # stop mock

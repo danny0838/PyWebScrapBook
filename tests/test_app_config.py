@@ -21,7 +21,7 @@ THEMES_DIR = os.path.join(PROG_DIR, 'themes')
 
 
 def setUpModule():
-    """Set up a temp directory for testing."""
+    # set up a temp directory for testing
     global _tmpdir, tmpdir
     _tmpdir = tempfile.TemporaryDirectory(prefix='config-', dir=TEMP_DIR)
     tmpdir = os.path.realpath(os.path.join(_tmpdir.name, 'd'))
@@ -33,18 +33,20 @@ def setUpModule():
     os.makedirs(os.path.dirname(server_config), exist_ok=True)
 
     # mock out user config
+    global WSB_USER_DIR
+    WSB_USER_DIR = os.path.join(server_root, 'wsb')
     global mockings
-    mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
-    ]
+    mockings = (
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', WSB_USER_DIR),
+        mock.patch('webscrapbook.WSB_USER_DIR', WSB_USER_DIR),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', os.devnull),
+    )
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
-    """Cleanup the temp directory."""
+    # cleanup the temp directory
     _tmpdir.cleanup()
 
     # stop mock
@@ -112,7 +114,7 @@ theme = default
         make_app(server_root)
         self.assertListEqual([os.path.normcase(i) for i in mock_loader.call_args[0][0]], [
             os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')),
-            os.path.normcase(os.path.abspath(os.path.join(server_root, 'wsb', 'themes', 'default', 'templates'))),
+            os.path.normcase(os.path.abspath(os.path.join(WSB_USER_DIR, 'themes', 'default', 'templates'))),
             os.path.normcase(os.path.abspath(os.path.join(THEMES_DIR, 'default', 'templates'))),
         ])
 

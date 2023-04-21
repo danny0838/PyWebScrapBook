@@ -13,24 +13,26 @@ from . import TEMP_DIR, require_case_insensitive
 
 
 def setUpModule():
-    """Set up a temp directory for testing."""
+    # set up a temp directory for testing
     global _tmpdir, tmpdir
     _tmpdir = tempfile.TemporaryDirectory(prefix='host-', dir=TEMP_DIR)
     tmpdir = os.path.realpath(_tmpdir.name)
 
     # mock out user config
+    global WSB_USER_DIR
+    WSB_USER_DIR = os.path.join(tmpdir, 'wsb')
     global mockings
-    mockings = [
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(tmpdir, 'wsb')),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', tmpdir),
-    ]
+    mockings = (
+        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', WSB_USER_DIR),
+        mock.patch('webscrapbook.WSB_USER_DIR', WSB_USER_DIR),
+        mock.patch('webscrapbook.WSB_USER_CONFIG', os.devnull),
+    )
     for mocking in mockings:
         mocking.start()
 
 
 def tearDownModule():
-    """Cleanup the temp directory."""
+    # cleanup the temp directory
     _tmpdir.cleanup()
 
     # stop mock
@@ -78,17 +80,17 @@ name = mybook2
         self.assertEqual(host.backup_dir, os.path.join(self.test_root, 'mybackups'))
         self.assertEqual([os.path.normcase(f) for f in host.themes], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom')),
-            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom')),
+            os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', 'custom')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.statics], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom', 'static')),
-            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'static')),
+            os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', 'custom', 'static')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'static'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.templates], [
             os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', 'custom', 'templates')),
-            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'templates')),
+            os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
         ])
         self.assertEqual(host.locks, os.path.join(self.test_root, WSB_DIR, 'locks'))
@@ -123,17 +125,17 @@ name = mybook2
         self.assertEqual(host.backup_dir, os.path.join(other_root, 'mybackups'))
         self.assertEqual([os.path.normcase(f) for f in host.themes], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom')),
-            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom')),
+            os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', 'custom')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.statics], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom', 'static')),
-            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'static')),
+            os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', 'custom', 'static')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'static'))),
         ])
         self.assertEqual([os.path.normcase(f) for f in host.templates], [
             os.path.normcase(os.path.join(other_root, WSB_DIR, 'themes', 'custom', 'templates')),
-            os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', 'custom', 'templates')),
+            os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', 'custom', 'templates')),
             os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', 'custom', 'templates'))),
         ])
         self.assertEqual(host.locks, os.path.join(other_root, WSB_DIR, 'locks'))
@@ -157,7 +159,7 @@ name = mybook2
                 host = Host(self.test_root)
                 self.assertEqual([os.path.normcase(f) for f in host.themes], [
                     os.path.normcase(os.path.join(self.test_root, WSB_DIR, 'themes', theme_fixed)),
-                    os.path.normcase(os.path.join(tmpdir, 'wsb', 'themes', theme_fixed)),
+                    os.path.normcase(os.path.join(WSB_USER_DIR, 'themes', theme_fixed)),
                     os.path.normcase(os.path.abspath(os.path.join(wsb_host.__file__, '..', '..', 'themes', theme_fixed))),
                 ])
 

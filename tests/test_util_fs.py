@@ -38,14 +38,14 @@ from . import (
 
 
 def setUpModule():
-    """Set up a temp directory for testing."""
+    # set up a temp directory for testing
     global _tmpdir, tmpdir
     _tmpdir = tempfile.TemporaryDirectory(prefix='util.fs-', dir=TEMP_DIR)
     tmpdir = os.path.realpath(_tmpdir.name)
 
 
 def tearDownModule():
-    """Cleanup the temp directory."""
+    # cleanup the temp directory
     _tmpdir.cleanup()
 
 
