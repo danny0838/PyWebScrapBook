@@ -154,7 +154,7 @@ def http_response(body='', status=None, headers=None, format=None):
                     yield 'data: ' + data + '\n\n'
             except Exception:
                 traceback.print_exc()
-                err = {'error': {'message': 'Internal Server Error'}}
+                err = {'type': 'critical', 'msg': 'Internal Server Error'}
                 yield 'data: ' + json.dumps(err, ensure_ascii=False) + '\n\n'
 
             yield 'event: complete' + '\n'
