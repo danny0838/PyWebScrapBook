@@ -5740,28 +5740,25 @@ class TestCache(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
-    def test_params01(self, mock_func):
-        """Require format. (format=sse)"""
+    @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
+                return_value=iter(()))
+    def test_basic_sse(self, mock_func):
         with self.app.app_context(), self.app.test_client() as c:
-            try:
-                c.get('/', query_string={
-                    'a': 'cache', 'f': 'sse', 'token': token(c),
-                    'book': ['', 'id1'],
-                    'item': ['20200101'],
-                    'no_lock': 1,
-                    'no_backup': 1,
-                    'fulltext': 1,
-                    'inclusive_frames': 1,
-                    'recreate': 1,
-                    'static_site': 1,
-                    'static_index': 1,
-                    'rss_root': 'http://example.com',
-                    'rss_item_count': 25,
-                    'locale': 'zh',
-                })
-            except SystemExit:
-                pass
+            r = c.get('/', query_string={
+                'a': 'cache', 'f': 'sse', 'token': token(c),
+                'book': ['', 'id1'],
+                'item': ['20200101'],
+                'no_lock': 1,
+                'no_backup': 1,
+                'fulltext': 1,
+                'inclusive_frames': 1,
+                'recreate': 1,
+                'static_site': 1,
+                'static_index': 1,
+                'rss_root': 'http://example.com',
+                'rss_item_count': 25,
+                'locale': 'zh',
+            })
 
             mock_func.assert_called_once_with(
                 wsb_app.host.root,
@@ -5779,29 +5776,33 @@ class TestCache(TestActions):
                 rss_item_count=25,
                 locale='zh',
             )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            self.assertEqual(
+                self.parse_sse_objects(r.data.decode('UTF-8')),
+                [('complete', None)],
+            )
 
-    @mock.patch('webscrapbook.app.wsb_cache.generate', side_effect=SystemExit)
-    def test_params02(self, mock_func):
-        """Check params. (format=None)"""
+    @mock.patch('webscrapbook.app.stream_template', wraps=wsb_app.stream_template)
+    @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
+                return_value=iter(()))
+    def test_basic_html(self, mock_func, mock_streamer):
         with self.app.app_context(), self.app.test_client() as c:
-            try:
-                c.get('/', query_string={
-                    'a': 'cache', 'token': token(c),
-                    'book': ['', 'id1'],
-                    'item': ['20200101'],
-                    'no_lock': 1,
-                    'no_backup': 1,
-                    'fulltext': 1,
-                    'inclusive_frames': 1,
-                    'recreate': 1,
-                    'static_site': 1,
-                    'static_index': 1,
-                    'rss_root': 'http://example.com',
-                    'rss_item_count': 25,
-                    'locale': 'zh',
-                }, buffered=True)
-            except SystemExit:
-                pass
+            r = c.get('/', query_string={
+                'a': 'cache', 'token': token(c),
+                'book': ['', 'id1'],
+                'item': ['20200101'],
+                'no_lock': 1,
+                'no_backup': 1,
+                'fulltext': 1,
+                'inclusive_frames': 1,
+                'recreate': 1,
+                'static_site': 1,
+                'static_index': 1,
+                'rss_root': 'http://example.com',
+                'rss_item_count': 25,
+                'locale': 'zh',
+            }, buffered=True)
 
             mock_func.assert_called_once_with(
                 wsb_app.host.root,
@@ -5819,6 +5820,14 @@ class TestCache(TestActions):
                 rss_item_count=25,
                 locale='zh',
             )
+            mock_streamer.assert_called_once_with(
+                'cli.html',
+                title='Indexing...',
+                messages=mock.ANY,
+                debug=False,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
 
 
 class TestCheck(TestActions):
@@ -5838,30 +5847,27 @@ class TestCheck(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
-    def test_params01(self, mock_func):
-        """Require format. (format=sse)"""
+    @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
+                return_value=iter(()))
+    def test_basic_sse(self, mock_func):
         with self.app.app_context(), self.app.test_client() as c:
-            try:
-                c.get('/', query_string={
-                    'a': 'check', 'f': 'sse', 'token': token(c),
-                    'book': ['', 'id1'],
-                    'no_lock': 1,
-                    'no_backup': 1,
-                    'resolve_invalid_id': 1,
-                    'resolve_missing_index': 1,
-                    'resolve_missing_index_file': 1,
-                    'resolve_missing_date': 1,
-                    'resolve_older_mtime': 1,
-                    'resolve_toc_unreachable': 1,
-                    'resolve_toc_invalid': 1,
-                    'resolve_toc_empty_subtree': 1,
-                    'resolve_unindexed_files': 1,
-                    'resolve_absolute_icon': 1,
-                    'resolve_unused_icon': 1,
-                })
-            except SystemExit:
-                pass
+            r = c.get('/', query_string={
+                'a': 'check', 'f': 'sse', 'token': token(c),
+                'book': ['', 'id1'],
+                'no_lock': 1,
+                'no_backup': 1,
+                'resolve_invalid_id': 1,
+                'resolve_missing_index': 1,
+                'resolve_missing_index_file': 1,
+                'resolve_missing_date': 1,
+                'resolve_older_mtime': 1,
+                'resolve_toc_unreachable': 1,
+                'resolve_toc_invalid': 1,
+                'resolve_toc_empty_subtree': 1,
+                'resolve_unindexed_files': 1,
+                'resolve_absolute_icon': 1,
+                'resolve_unused_icon': 1,
+            })
 
             mock_func.assert_called_once_with(
                 wsb_app.host.root,
@@ -5881,31 +5887,35 @@ class TestCheck(TestActions):
                 resolve_absolute_icon=True,
                 resolve_unused_icon=True,
             )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            self.assertEqual(
+                self.parse_sse_objects(r.data.decode('UTF-8')),
+                [('complete', None)],
+            )
 
-    @mock.patch('webscrapbook.app.wsb_check.run', side_effect=SystemExit)
-    def test_params02(self, mock_func):
-        """Check params. (format=None)"""
+    @mock.patch('webscrapbook.app.stream_template', wraps=wsb_app.stream_template)
+    @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
+                return_value=iter(()))
+    def test_basic_html(self, mock_func, mock_streamer):
         with self.app.app_context(), self.app.test_client() as c:
-            try:
-                c.get('/', query_string={
-                    'a': 'check', 'token': token(c),
-                    'book': ['', 'id1'],
-                    'no_lock': 1,
-                    'no_backup': 1,
-                    'resolve_invalid_id': 1,
-                    'resolve_missing_index': 1,
-                    'resolve_missing_index_file': 1,
-                    'resolve_missing_date': 1,
-                    'resolve_older_mtime': 1,
-                    'resolve_toc_unreachable': 1,
-                    'resolve_toc_invalid': 1,
-                    'resolve_toc_empty_subtree': 1,
-                    'resolve_unindexed_files': 1,
-                    'resolve_absolute_icon': 1,
-                    'resolve_unused_icon': 1,
-                }, buffered=True)
-            except SystemExit:
-                pass
+            r = c.get('/', query_string={
+                'a': 'check', 'token': token(c),
+                'book': ['', 'id1'],
+                'no_lock': 1,
+                'no_backup': 1,
+                'resolve_invalid_id': 1,
+                'resolve_missing_index': 1,
+                'resolve_missing_index_file': 1,
+                'resolve_missing_date': 1,
+                'resolve_older_mtime': 1,
+                'resolve_toc_unreachable': 1,
+                'resolve_toc_invalid': 1,
+                'resolve_toc_empty_subtree': 1,
+                'resolve_unindexed_files': 1,
+                'resolve_absolute_icon': 1,
+                'resolve_unused_icon': 1,
+            }, buffered=True)
 
             mock_func.assert_called_once_with(
                 wsb_app.host.root,
@@ -5925,6 +5935,14 @@ class TestCheck(TestActions):
                 resolve_absolute_icon=True,
                 resolve_unused_icon=True,
             )
+            mock_streamer.assert_called_once_with(
+                'cli.html',
+                title='Indexing...',
+                messages=mock.ANY,
+                debug=False,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
 
 
 class TestUnknown(TestActions):
