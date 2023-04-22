@@ -198,7 +198,7 @@ page content
         })
 
     def test_path03(self):
-        """Test hierarchical folders for *.html (no preserve filename)
+        """Test hierarchical folders for *.html (preserve_filename=False)
         """
         index_file = os.path.join(self.test_input, 'folder1#中文', 'folder2', 'mypage.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -219,7 +219,7 @@ page content
 </html>
 """)
 
-        for _info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+        for _info in file2wsb.run(self.test_input, self.test_output, preserve_filename=False):
             pass
 
         book = Host(self.test_output).books['']
@@ -320,7 +320,7 @@ page content
         })
 
     def test_path05(self):
-        """<input dir>/index.html should be indexed as single html page (no preserve filename)
+        """<input dir>/index.html should be indexed as single html page (preserve_filename=False)
         """
         index_file = os.path.join(self.test_input, 'index.html')
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -340,7 +340,7 @@ page content
 </html>
 """)
 
-        for _info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+        for _info in file2wsb.run(self.test_input, self.test_output, preserve_filename=False):
             pass
 
         book = Host(self.test_output).books['']
@@ -867,7 +867,7 @@ page content
         })
 
     def test_other02(self):
-        """Test hierarchical folders for normal file (no preserve filename)
+        """Test hierarchical folders for normal file (preserve_filename=False)
         """
         index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.txt')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -876,7 +876,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(index_file, (ts, ts))
 
-        for _info in file2wsb.run(self.test_input, self.test_output, no_preserve_filename=True):
+        for _info in file2wsb.run(self.test_input, self.test_output, preserve_filename=False):
             pass
 
         book = Host(self.test_output).books['']
@@ -939,10 +939,10 @@ page content
         try:
             for _info in file2wsb.run(
                 self.test_input, self.test_output,
-                ignore_ie_meta=False,
-                ignore_singlefile_meta=False,
-                ignore_savepagewe_meta=False,
-                ignore_maoxian_meta=False,
+                handle_ie_meta=False,
+                handle_singlefile_meta=False,
+                handle_savepagewe_meta=False,
+                handle_maoxian_meta=False,
             ):
                 pass
         except SystemExit:
@@ -950,10 +950,10 @@ page content
 
         mock_obj.assert_called_with(
             mock.ANY,
-            handle_ie_meta=True,
-            handle_singlefile_meta=True,
-            handle_savepagewe_meta=True,
-            handle_maoxian_meta=True,
+            handle_ie_meta=False,
+            handle_singlefile_meta=False,
+            handle_savepagewe_meta=False,
+            handle_maoxian_meta=False,
         )
 
 

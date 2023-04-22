@@ -646,12 +646,12 @@ class BookChecker:
                 self.cnt_resolves += 1
 
 
-def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **kwargs):
+def run(root, book_ids=None, *, config=None, lock=True, backup=True, **kwargs):
     start = time.time()
 
     host = Host(root, config)
 
-    if not no_backup:
+    if backup:
         host.init_auto_backup(note='check')
         yield Info('info', f'Prepared backup at "{host.get_subpath(host._auto_backup_dir)}".')
         yield Info('info', '----------------------------------------------------------------------')
@@ -679,7 +679,7 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
                 continue
 
             yield Info('info', f'Checking book "{book_id}" ({book.name}).')
-            lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
+            lh = book.get_tree_lock().acquire() if lock else nullcontext()
             with lh:
                 generator = BookChecker(book, **kwargs)
                 yield from generator.run()
@@ -690,7 +690,7 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
         yield Info('critical', str(exc), exc=exc)
         return
     finally:
-        if not no_backup:
+        if backup:
             host.init_auto_backup(False)
 
     yield Info('info', '----------------------------------------------------------------------')

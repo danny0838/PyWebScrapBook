@@ -906,7 +906,7 @@ class FulltextCacheGenerator():
 
 
 def generate(root, book_ids=None, item_ids=None, *,
-             config=None, no_lock=False, no_backup=False,
+             config=None, lock=True, backup=True,
              fulltext=True, inclusive_frames=True, recreate=False,
              static_site=False, static_index=False, locale=None,
              rss_root=None, rss_item_count=50):
@@ -914,7 +914,7 @@ def generate(root, book_ids=None, item_ids=None, *,
 
     host = Host(root, config)
 
-    if not no_backup:
+    if backup:
         host.init_auto_backup(note='cache')
         yield Info('info', f'Prepared backup at "{host.get_subpath(host._auto_backup_dir)}".')
         yield Info('info', '----------------------------------------------------------------------')
@@ -942,7 +942,7 @@ def generate(root, book_ids=None, item_ids=None, *,
                 continue
 
             yield Info('info', f'Caching book "{book_id}" ({book.name}).')
-            lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
+            lh = book.get_tree_lock().acquire() if lock else nullcontext()
             with lh:
                 if fulltext:
                     generator = FulltextCacheGenerator(
@@ -974,7 +974,7 @@ def generate(root, book_ids=None, item_ids=None, *,
         yield Info('critical', str(exc), exc=exc)
         return
     finally:
-        if not no_backup:
+        if backup:
             host.init_auto_backup(False)
 
     yield Info('info', '----------------------------------------------------------------------')

@@ -1223,8 +1223,8 @@ def action_cache():
     kwargs = {
         'book_ids': request.values.getlist('book'),
         'item_ids': request.values.getlist('item'),
-        'no_lock': request.values.get('no_lock', default=False, type=bool),
-        'no_backup': request.values.get('no_backup', default=False, type=bool),
+        'lock': not request.values.get('no_lock', default=False, type=bool),
+        'backup': not request.values.get('no_backup', default=False, type=bool),
         'fulltext': request.values.get('fulltext', default=False, type=bool),
         'inclusive_frames': request.values.get('inclusive_frames', default=False, type=bool),
         'recreate': request.values.get('recreate', default=False, type=bool),
@@ -1267,8 +1267,8 @@ def action_check():
 
     kwargs = {
         'book_ids': request.values.getlist('book'),
-        'no_lock': request.values.get('no_lock', default=False, type=bool),
-        'no_backup': request.values.get('no_backup', default=False, type=bool),
+        'lock': not request.values.get('no_lock', default=False, type=bool),
+        'backup': not request.values.get('no_backup', default=False, type=bool),
         'resolve_invalid_id': request.values.get('resolve_invalid_id', default=False, type=bool),
         'resolve_missing_index': request.values.get('resolve_missing_index', default=False, type=bool),
         'resolve_missing_index_file': request.values.get('resolve_missing_index_file', default=False, type=bool),

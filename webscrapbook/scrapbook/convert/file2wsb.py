@@ -270,33 +270,33 @@ class Converter:
 
 def run(input, output, *,
         data_folder_suffixes=None,
-        no_preserve_filename=False,
-        ignore_ie_meta=False,
-        ignore_singlefile_meta=False,
-        ignore_savepagewe_meta=False,
-        ignore_maoxian_meta=False,
+        preserve_filename=True,
+        handle_ie_meta=True,
+        handle_singlefile_meta=True,
+        handle_savepagewe_meta=True,
+        handle_maoxian_meta=True,
         ):
     start = time.time()
     yield Info('info', 'conversion mode: hierarchical files --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
     yield Info('info', f'data_folder_suffixes: {SUPPORT_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')
-    yield Info('info', f'no preserve filename: {no_preserve_filename}')
-    yield Info('info', f'ignore IE meta: {ignore_ie_meta}')
-    yield Info('info', f'ignore SingleFile meta: {ignore_singlefile_meta}')
-    yield Info('info', f'ignore Save Page WE meta: {ignore_savepagewe_meta}')
-    yield Info('info', f'ignore MaoXian web clipper meta: {ignore_maoxian_meta}')
+    yield Info('info', f'preserve filename: {preserve_filename}')
+    yield Info('info', f'handle IE meta: {handle_ie_meta}')
+    yield Info('info', f'handle SingleFile meta: {handle_singlefile_meta}')
+    yield Info('info', f'handle Save Page WE meta: {handle_savepagewe_meta}')
+    yield Info('info', f'handle MaoXian web clipper meta: {handle_maoxian_meta}')
     yield Info('info', '')
 
     try:
         conv = Converter(
             input, output,
             data_folder_suffixes=data_folder_suffixes,
-            preserve_filename=not no_preserve_filename,
-            handle_ie_meta=not ignore_ie_meta,
-            handle_singlefile_meta=not ignore_singlefile_meta,
-            handle_savepagewe_meta=not ignore_savepagewe_meta,
-            handle_maoxian_meta=not ignore_maoxian_meta,
+            preserve_filename=preserve_filename,
+            handle_ie_meta=handle_ie_meta,
+            handle_singlefile_meta=handle_singlefile_meta,
+            handle_savepagewe_meta=handle_savepagewe_meta,
+            handle_maoxian_meta=handle_maoxian_meta,
         )
         yield from conv.run()
     except Exception as exc:

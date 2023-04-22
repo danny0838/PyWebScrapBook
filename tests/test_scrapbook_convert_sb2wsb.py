@@ -620,7 +620,7 @@ class TestRun(unittest.TestCase):
                     self.assertTrue(os.path.isfile(path))
 
     def test_backup02(self):
-        """Check no_backup"""
+        """Check backup=False"""
         check_entries = [
             'backup/',
             'tree/',
@@ -656,7 +656,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for _info in sb2wsb.run(self.test_input, self.test_output, no_backup=True):
+        for _info in sb2wsb.run(self.test_input, self.test_output, backup=False):
             pass
 
         self.assertFalse(os.path.exists(os.path.join(self.test_output, WSB_DIR, 'backup')))
@@ -692,7 +692,7 @@ class TestRun(unittest.TestCase):
 </RDF:RDF>
 """)
 
-        for _info in sb2wsb.run(self.test_input, self.test_output, no_data_files=True):
+        for _info in sb2wsb.run(self.test_input, self.test_output, data_files=False):
             pass
 
         mock_convert.assert_not_called()

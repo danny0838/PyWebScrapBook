@@ -29,11 +29,11 @@ REGEX_LINEFEED = re.compile(r'\r\n?|\n')
 
 
 class Converter:
-    def __init__(self, input, output, book_id='', no_data_files=False):
+    def __init__(self, input, output, book_id='', data_files=False):
         self.input = input
         self.output = output
         self.book_id = book_id
-        self.no_data_files = no_data_files
+        self.data_files = data_files
 
         self.id_to_oid = {}
         self.oid_to_id = {}
@@ -274,7 +274,7 @@ class Converter:
 <html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
 {content}
 </pre></body></html>""")
-            elif not self.no_data_files:
+            elif self.data_files:
                 yield Info('debug', f'Converting data files for "{id}" (type={type})')
                 index_dir = os.path.join(self.output, 'data', oid)
                 for root, _dirs, files in os.walk(index_dir):
@@ -600,17 +600,17 @@ class ConvertHtmlFile(HtmlRewriter):
         return rv, i
 
 
-def run(input, output, book_id='', no_data_files=False):
+def run(input, output, book_id='', data_files=True):
     start = time.time()
     yield Info('info', 'conversion mode: WebScrapBook --> ScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
     yield Info('info', f'book: "{book_id}"')
-    yield Info('info', f'no-data-files: {no_data_files}')
+    yield Info('info', f'data-files: {data_files}')
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output, book_id=book_id, no_data_files=no_data_files)
+        conv = Converter(input, output, book_id=book_id, data_files=data_files)
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

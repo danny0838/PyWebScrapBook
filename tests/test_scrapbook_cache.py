@@ -69,15 +69,15 @@ class TestFuncGenerate(TestCache):
         mock_host.assert_called_once_with(self.test_root, {})
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
-    def test_param_no_lock01(self, mock_func):
-        for _info in wsb_cache.generate(self.test_root, no_lock=False):
+    def test_param_lock01(self, mock_func):
+        for _info in wsb_cache.generate(self.test_root, lock=True):
             pass
 
         mock_func.assert_called_once_with()
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
-    def test_param_no_lock02(self, mock_func):
-        for _info in wsb_cache.generate(self.test_root, no_lock=True):
+    def test_param_lock02(self, mock_func):
+        for _info in wsb_cache.generate(self.test_root, lock=False):
             pass
 
         mock_func.assert_not_called()
@@ -227,15 +227,15 @@ no_tree = true
 
     @mock.patch('webscrapbook.scrapbook.host.Host.get_subpath', lambda *_: '')
     @mock.patch('webscrapbook.scrapbook.host.Host.init_auto_backup')
-    def test_no_backup01(self, mock_func):
-        for _info in wsb_cache.generate(self.test_root, static_site=True, no_backup=False):
+    def test_param_backup01(self, mock_func):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, backup=True):
             pass
 
         self.assertEqual(mock_func.call_args_list, [mock.call(note='cache'), mock.call(False)])
 
     @mock.patch('webscrapbook.scrapbook.host.Host.init_auto_backup')
-    def test_no_backup02(self, mock_func):
-        for _info in wsb_cache.generate(self.test_root, static_site=True, no_backup=True):
+    def test_param_backup02(self, mock_func):
+        for _info in wsb_cache.generate(self.test_root, static_site=True, backup=False):
             pass
 
         mock_func.assert_not_called()

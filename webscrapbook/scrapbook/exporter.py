@@ -148,7 +148,7 @@ class Exporter():
 
 
 def run(root, output, book_id='', item_ids=None, *, recursive=False, singleton=False,
-        config=None, no_lock=False):
+        config=None, lock=True):
     start = time.time()
 
     host = Host(root, config)
@@ -168,7 +168,7 @@ def run(root, output, book_id='', item_ids=None, *, recursive=False, singleton=F
             return
 
         yield Info('info', f'Exporting from book "{book_id}" ({book.name}).')
-        lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
+        lh = book.get_tree_lock().acquire() if lock else nullcontext()
         with lh:
             generator = Exporter(output, book, singleton=singleton)
             yield from generator.run(item_ids, recursive)

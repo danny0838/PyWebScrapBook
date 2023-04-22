@@ -398,7 +398,7 @@ class Importer():
             parent.append(id)
 
 
-def run(root, files, book_id='', *, config=None, no_lock=False, **kwargs):
+def run(root, files, book_id='', *, config=None, lock=True, **kwargs):
     start = time.time()
 
     host = Host(root, config)
@@ -418,7 +418,7 @@ def run(root, files, book_id='', *, config=None, no_lock=False, **kwargs):
             return
 
         yield Info('info', f'Impoting to book "{book_id}" ({book.name}).')
-        lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
+        lh = book.get_tree_lock().acquire() if lock else nullcontext()
         with lh:
             generator = Importer(book, **kwargs)
             yield from generator.run(files)

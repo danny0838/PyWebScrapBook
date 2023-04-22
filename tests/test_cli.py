@@ -563,7 +563,7 @@ class TestCache(Test):
             rss_root=None,
             rss_item_count=50,
             locale=None,
-            no_backup=True,
+            backup=False,
         )
 
     @mock.patch('webscrapbook.scrapbook.cache.generate', autospec=True, return_value=iter(()))
@@ -613,7 +613,7 @@ class TestCache(Test):
             rss_root='http://example.com:8000/wsb/',
             rss_item_count=20,
             locale='zh_TW',
-            no_backup=True,
+            backup=False,
         )
 
 
@@ -660,7 +660,7 @@ class TestCheck(Test):
             resolve_unindexed_files=False,
             resolve_absolute_icon=False,
             resolve_unused_icon=False,
-            no_backup=False,
+            backup=True,
         )
 
     @mock.patch('webscrapbook.scrapbook.check.run', autospec=True, return_value=iter(()))
@@ -719,7 +719,7 @@ class TestCheck(Test):
             resolve_unindexed_files=True,
             resolve_absolute_icon=True,
             resolve_unused_icon=True,
-            no_backup=True,
+            backup=False,
         )
 
     @mock.patch('webscrapbook.scrapbook.check.run', autospec=True, return_value=iter(()))
@@ -768,7 +768,7 @@ class TestCheck(Test):
             resolve_unindexed_files=False,
             resolve_absolute_icon=False,
             resolve_unused_icon=False,
-            no_backup=True,
+            backup=False,
         )
 
 
@@ -1091,8 +1091,8 @@ class TestConvert(Test):
         mock_func.assert_called_once_with(
             input=self.input,
             output=self.output,
-            no_data_files=False,
-            no_backup=False,
+            data_files=True,
+            backup=True,
         )
 
     @mock.patch('webscrapbook.scrapbook.convert.sb2wsb.run', autospec=True)
@@ -1123,8 +1123,8 @@ class TestConvert(Test):
         mock_func.assert_called_once_with(
             input=self.input,
             output=self.output,
-            no_data_files=True,
-            no_backup=True,
+            data_files=False,
+            backup=False,
         )
 
     @mock.patch('webscrapbook.scrapbook.convert.wsb2sb.run', autospec=True)
@@ -1152,7 +1152,7 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             book_id='',
-            no_data_files=False,
+            data_files=True,
         )
 
     @mock.patch('webscrapbook.scrapbook.convert.wsb2sb.run', autospec=True)
@@ -1184,7 +1184,7 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             book_id='book1',
-            no_data_files=True,
+            data_files=False,
         )
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.run', autospec=True)
@@ -1204,10 +1204,10 @@ class TestConvert(Test):
             output=self.output,
             data_folder_suffixes=None,
             preserve_filename=True,
-            ignore_ie_meta=False,
-            ignore_singlefile_meta=False,
-            ignore_savepagewe_meta=False,
-            ignore_maoxian_meta=False,
+            handle_ie_meta=True,
+            handle_singlefile_meta=True,
+            handle_savepagewe_meta=True,
+            handle_maoxian_meta=True,
             force=False,
             debug=False,
         ))
@@ -1216,11 +1216,11 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             data_folder_suffixes=None,
-            no_preserve_filename=False,
-            ignore_ie_meta=False,
-            ignore_singlefile_meta=False,
-            ignore_savepagewe_meta=False,
-            ignore_maoxian_meta=False,
+            preserve_filename=True,
+            handle_ie_meta=True,
+            handle_singlefile_meta=True,
+            handle_savepagewe_meta=True,
+            handle_maoxian_meta=True,
         )
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.run', autospec=True)
@@ -1233,10 +1233,10 @@ class TestConvert(Test):
             self.output,
             '--data-folder-suffix', '.files', '_files', '.data',
             '--no-preserve-filename',
-            '--ignore-ie-meta',
-            '--ignore-singlefile-meta',
-            '--ignore-savepagewe-meta',
-            '--ignore-maoxian-meta',
+            '--no-handle-ie-meta',
+            '--no-handle-singlefile-meta',
+            '--no-handle-savepagewe-meta',
+            '--no-handle-maoxian-meta',
             '--force',
             '--debug',
         ])
@@ -1248,10 +1248,10 @@ class TestConvert(Test):
             output=self.output,
             data_folder_suffixes=['.files', '_files', '.data'],
             preserve_filename=False,
-            ignore_ie_meta=True,
-            ignore_singlefile_meta=True,
-            ignore_savepagewe_meta=True,
-            ignore_maoxian_meta=True,
+            handle_ie_meta=False,
+            handle_singlefile_meta=False,
+            handle_savepagewe_meta=False,
+            handle_maoxian_meta=False,
             force=True,
             debug=True,
         ))
@@ -1260,11 +1260,11 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             data_folder_suffixes=['.files', '_files', '.data'],
-            no_preserve_filename=True,
-            ignore_ie_meta=True,
-            ignore_singlefile_meta=True,
-            ignore_savepagewe_meta=True,
-            ignore_maoxian_meta=True,
+            preserve_filename=False,
+            handle_ie_meta=False,
+            handle_singlefile_meta=False,
+            handle_savepagewe_meta=False,
+            handle_maoxian_meta=False,
         )
 
     @mock.patch('webscrapbook.scrapbook.convert.wsb2file.run', autospec=True)

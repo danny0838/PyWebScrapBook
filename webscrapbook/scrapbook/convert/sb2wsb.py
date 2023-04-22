@@ -185,11 +185,11 @@ class LegacyBook:
 
 
 class Converter:
-    def __init__(self, input, output, *, no_data_files=False, no_backup=False):
+    def __init__(self, input, output, *, data_files=True, backup=True):
         self.input = os.path.realpath(input)
         self.output = os.path.realpath(output)
-        self.no_data_files = no_data_files
-        self.no_backup = no_backup
+        self.data_files = data_files
+        self.backup = backup
 
         self.index_files = {}
 
@@ -213,7 +213,7 @@ class Converter:
         book.load_meta_files()
         book.load_toc_files()
 
-        if not self.no_backup:
+        if self.backup:
             host.init_auto_backup(note='convert-sb2wsb')
 
         try:
@@ -228,14 +228,14 @@ class Converter:
             yield Info('info', 'Copying data files...')
             yield from self._copy_data_files(book, book0)
 
-            if not self.no_data_files:
+            if self.data_files:
                 yield from self._convert_data_files(book, book0)
 
             yield Info('info', 'Saving tree files...')
             book.save_meta_files()
             book.save_toc_files()
         finally:
-            if not self.no_backup:
+            if self.backup:
                 host.init_auto_backup(False)
 
     def _merge_meta(self, book, book0):
@@ -363,12 +363,12 @@ class Converter:
                     continue
 
                 if src.name in PRUNE_FILES:
-                    if self.no_backup:
-                        yield Info('debug', f'Skipped legacy scrapbook entry "{src.name}"')
-                        continue
-                    else:
+                    if self.backup:
                         yield Info('debug', f'Backup legacy scrapbook entry "{src.name}"')
                         book.backup(src, base=self.input)
+                        continue
+                    else:
+                        yield Info('debug', f'Skipped legacy scrapbook entry "{src.name}"')
                         continue
 
                 dst = os.path.join(book.top_dir, src.name)
@@ -392,17 +392,17 @@ class Converter:
         yield from converter.run()
 
 
-def run(input, output, *, no_data_files=False, no_backup=False):
+def run(input, output, *, data_files=True, backup=True):
     start = time.time()
     yield Info('info', 'conversion mode: ScrapBook --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
-    yield Info('info', f'no-data-files: {no_data_files}')
-    yield Info('info', f'no-backup: {no_backup}')
+    yield Info('info', f'data-files: {data_files}')
+    yield Info('info', f'backup: {backup}')
     yield Info('info', '')
 
     try:
-        conv = Converter(input, output, no_data_files=no_data_files, no_backup=no_backup)
+        conv = Converter(input, output, data_files=data_files, backup=backup)
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()
