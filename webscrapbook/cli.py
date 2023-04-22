@@ -143,16 +143,17 @@ def cmd_encrypt(args):
 
     Primilarly to be used in auth config.
     """
-    if args['password'] is None:
+    pw = args['password']
+    if pw is None:
         pw1 = getpass('Enter a password: ')
         pw2 = getpass('Confirm the password: ')
 
         if pw1 != pw2:
             die('Entered passwords do not match.')
 
-        args['password'] = pw1
+        pw = pw1
 
-    print(util.encrypt(args['password'], salt=args['salt'], method=args['method']))
+    print(util.encrypt(pw, salt=args['salt'], method=args['method']))
 
 
 def cmd_cache(args):
@@ -1011,8 +1012,8 @@ Available TOPICs:
     return parser.parse_args(argv)
 
 
-def main():
-    args = vars(parse_args())
+def main(argv=None):
+    args = vars(parse_args(argv))
     try:
         func = args.pop('func')
     except KeyError:
