@@ -547,7 +547,7 @@ class TestCache(Test):
             rss_root=None,
             rss_item_count=50,
             locale=None,
-            no_backup=True,
+            backup=False,
             debug=False,
         ))
 
@@ -597,7 +597,7 @@ class TestCache(Test):
             rss_root='http://example.com:8000/wsb/',
             rss_item_count=20,
             locale='zh_TW',
-            no_backup=True,
+            backup=False,
             debug=True,
         ))
 
@@ -641,7 +641,7 @@ class TestCheck(Test):
             resolve_unindexed_files=False,
             resolve_absolute_icon=False,
             resolve_unused_icon=False,
-            no_backup=False,
+            backup=True,
             debug=False,
         ))
 
@@ -700,7 +700,7 @@ class TestCheck(Test):
             resolve_unindexed_files=True,
             resolve_absolute_icon=True,
             resolve_unused_icon=True,
-            no_backup=True,
+            backup=False,
             debug=True,
         ))
 
@@ -749,7 +749,7 @@ class TestCheck(Test):
             resolve_unindexed_files=False,
             resolve_absolute_icon=False,
             resolve_unused_icon=False,
-            no_backup=True,
+            backup=False,
             debug=True,
         ))
 
@@ -1082,8 +1082,8 @@ class TestConvert(Test):
             mode='sb2wsb',
             input=self.input,
             output=self.output,
-            no_data_files=False,
-            no_backup=False,
+            data_files=True,
+            backup=True,
             force=False,
             debug=False,
         ))
@@ -1114,8 +1114,8 @@ class TestConvert(Test):
             mode='sb2wsb',
             input=self.input,
             output=self.output,
-            no_data_files=True,
-            no_backup=True,
+            data_files=False,
+            backup=False,
             force=True,
             debug=True,
         ))
@@ -1143,7 +1143,7 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             book_id='',
-            no_data_files=False,
+            data_files=True,
             force=False,
             debug=False,
         ))
@@ -1175,7 +1175,7 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             book_id='book1',
-            no_data_files=True,
+            data_files=False,
             force=True,
             debug=True,
         ))
@@ -1203,7 +1203,7 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             data_folder_suffixes=None,
-            no_preserve_filename=False,
+            preserve_filename=True,
             ignore_ie_meta=False,
             ignore_singlefile_meta=False,
             ignore_savepagewe_meta=False,
@@ -1247,7 +1247,7 @@ class TestConvert(Test):
             input=self.input,
             output=self.output,
             data_folder_suffixes=['.files', '_files', '.data'],
-            no_preserve_filename=True,
+            preserve_filename=False,
             ignore_ie_meta=True,
             ignore_singlefile_meta=True,
             ignore_savepagewe_meta=True,
