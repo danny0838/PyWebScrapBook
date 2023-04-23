@@ -10,8 +10,6 @@ import time
 import unittest
 from unittest import mock
 
-from flask import abort
-
 import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook import app as wsb_app
@@ -173,13 +171,13 @@ class TestActions(TestFileMixin, unittest.TestCase):
 
 
 class TestView(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check1(self, mock_abort):
         with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.html')
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -372,7 +370,7 @@ class TestView(TestActions):
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/index.html')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist')
@@ -422,7 +420,7 @@ class TestView(TestActions):
             }, buffered=True)
             self.assertEqual(r.status_code, 304)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_subdir_noslash(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr(zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT), '')
@@ -542,7 +540,7 @@ class TestView(TestActions):
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'http://localhost/deep/archive.zip!/index.html')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_zip_nonexist(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -577,20 +575,20 @@ class TestView(TestActions):
 
 
 class TestInfo(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
             c.get('/', query_string={'a': 'info'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check(self, mock_abort):
         with self.app.test_client() as c, mock.patch('webscrapbook.app.file_info', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'info', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -816,13 +814,13 @@ class TestInfo(TestActions):
 
 
 class TestList(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check1(self, mock_abort):
         with self.app.test_client() as c, mock.patch('os.scandir', side_effect=PermissionError('Forbidden')):
             c.get('/subdir/', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -830,7 +828,7 @@ class TestList(TestActions):
             c.get('/deep/archive.zip!/', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
@@ -879,13 +877,13 @@ class TestList(TestActions):
                 },
             ])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'list', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'list', 'f': 'json'})
@@ -1034,7 +1032,7 @@ class TestList(TestActions):
                 },
             ])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_nonexist(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -1099,13 +1097,13 @@ class TestList(TestActions):
             }), sse)
             self.assertIn(('complete', None), sse)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_sse_file(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'list', 'f': 'sse'})
             mock_abort.assert_called_once_with(404, 'Directory does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_sse_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'list', 'f': 'sse'})
@@ -1225,20 +1223,20 @@ class TestList(TestActions):
 
 
 class TestSource(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """No format."""
         with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'source', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check1(self, mock_abort):
         with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'source'})
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -1361,13 +1359,13 @@ class TestSource(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/plain; charset=big5')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_directory(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/subdir', query_string={'a': 'source'})
@@ -1417,7 +1415,7 @@ class TestSource(TestActions):
             self.assertEqual(r.status_code, 206)
             self.assertEqual(r.data.decode('UTF-8').replace('\r\n', '\n'), 'Hello World!')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_zip_subdir(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('explicit_dir/', '')
@@ -1446,7 +1444,7 @@ class TestSource(TestActions):
             c.get('/deep/archive.zip!/implicit_dir/', query_string={'a': 'source'}, buffered=True)
             mock_abort.assert_called_once_with(404)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_zip_nonexist(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -1457,20 +1455,20 @@ class TestSource(TestActions):
 
 
 class TestDownload(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """No format."""
         with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'download', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check1(self, mock_abort):
         with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.html', query_string={'a': 'download'})
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -1601,7 +1599,7 @@ class TestDownload(TestActions):
                 {'zip': zh, 'filename': 'foo.txt'},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'download'}, buffered=True)
@@ -1759,7 +1757,7 @@ class TestDownload(TestActions):
                     {'zip': zh2, 'filename': 'bar.txt'},
                 )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_zip_nonexist(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -1770,14 +1768,14 @@ class TestDownload(TestActions):
 
 
 class TestStatic(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """No format."""
         with self.app.test_client() as c:
             c.get('/index.css', query_string={'a': 'static', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check(self, mock_abort):
         with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/index.css', query_string={'a': 'static'})
@@ -1797,7 +1795,7 @@ class TestStatic(TestActions):
             css = r.data.decode('UTF-8').replace('\r\n', '\n')
             self.assertIn('#data-table', css)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist', query_string={'a': 'static'})
@@ -1805,7 +1803,7 @@ class TestStatic(TestActions):
 
 
 class TestConfig(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
@@ -1846,7 +1844,7 @@ class TestConfig(TestActions):
 
 
 class TestEdit(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """No format."""
         with open(self.test_html, 'wb') as fh:
@@ -1856,13 +1854,13 @@ class TestEdit(TestActions):
             c.get('/index.html', query_string={'a': 'edit', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check1(self, mock_abort):
         with self.app.test_client() as c, mock.patch('builtins.open', side_effect=PermissionError('Forbidden')):
             c.get('/deep/temp.html', query_string={'a': 'edit'})
             mock_abort.assert_called_once_with(403)
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check2(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w'):
             pass
@@ -1991,14 +1989,14 @@ class TestEdit(TestActions):
 
 
 class TestEditx(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """No format."""
         with self.app.test_client() as c:
             c.get('/index.html', query_string={'a': 'editx', 'f': 'json'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_permission_check(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -2063,13 +2061,13 @@ class TestExec(TestActions):
             })
             mock_exec.assert_called_once_with(os.path.join(self.root, 'index.html'))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist.file', query_string={'a': 'exec', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'File does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip(self, mock_abort):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
             zh.writestr('index.html', 'Hello World!')
@@ -2104,13 +2102,13 @@ class TestBrowse(TestActions):
             })
             mock_browse.assert_called_once_with(os.path.join(self.root, 'index.html'))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/nonexist.file', query_string={'a': 'browse', 'f': 'json'})
             mock_abort.assert_called_once_with(404, 'File does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip(self, mock_abort):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
             zh.writestr('index.html', 'Hello World!')
@@ -2121,7 +2119,7 @@ class TestBrowse(TestActions):
 
 
 class TestToken(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -2152,7 +2150,7 @@ class TestLock(TestActions):
         super().setUp()
         self.lock = os.path.join(self.root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -2165,7 +2163,7 @@ class TestLock(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -2177,7 +2175,7 @@ class TestLock(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_params_check(self, mock_abort):
         """Require name."""
         with self.app.test_client() as c:
@@ -2209,7 +2207,7 @@ class TestLock(TestActions):
             })
             self.assertTrue(os.path.isfile(self.lock))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_lock_existed(self, mock_abort):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
         with open(self.lock, 'w'):
@@ -2251,7 +2249,7 @@ class TestLock(TestActions):
                 'data': id,
             })
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_directory_existed(self, mock_abort):
         os.makedirs(self.lock, exist_ok=True)
 
@@ -2290,7 +2288,7 @@ class TestLock(TestActions):
                 'data': 'oldid',
             })
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_extend_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/', data={
@@ -2309,7 +2307,7 @@ class TestUnlock(TestActions):
         super().setUp()
         self.lock = os.path.join(self.root, WSB_DIR, 'locks', '098f6bcd4621d373cade4e832627b4f6.lock')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -2323,7 +2321,7 @@ class TestUnlock(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -2336,7 +2334,7 @@ class TestUnlock(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_params_check01(self, mock_abort):
         """Require name."""
         with self.app.test_client() as c:
@@ -2349,7 +2347,7 @@ class TestUnlock(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Lock name is not specified.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_params_check02(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/', data={
@@ -2383,7 +2381,7 @@ class TestUnlock(TestActions):
             })
             self.assertFalse(os.path.exists(self.lock))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_wrong_id(self, mock_abort):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
         with open(self.lock, 'w') as fh:
@@ -2400,7 +2398,7 @@ class TestUnlock(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/', data={
@@ -2413,7 +2411,7 @@ class TestUnlock(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_directory_existed(self, mock_abort):
         os.makedirs(self.lock, exist_ok=True)
 
@@ -2430,7 +2428,7 @@ class TestUnlock(TestActions):
 
 
 class TestMkdir(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -2442,7 +2440,7 @@ class TestMkdir(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -2505,7 +2503,7 @@ class TestMkdir(TestActions):
             })
             self.assertTrue(os.path.isdir(test_dir))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file(self, mock_abort):
         with open(self.test_html, 'w'):
             pass
@@ -2608,7 +2606,7 @@ class TestMkdir(TestActions):
                     with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.namelist(), ['20200102/'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_file(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('temp/subdir', '123')
@@ -2645,7 +2643,7 @@ class TestMkdir(TestActions):
 
 
 class TestMkzip(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -2657,7 +2655,7 @@ class TestMkzip(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -2705,7 +2703,7 @@ class TestMkzip(TestActions):
             self.assertTrue(os.path.isfile(self.test_zip))
             self.assertTrue(zipfile.is_zipfile(self.test_zip))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir(self, mock_abort):
         os.makedirs(self.test_zip, exist_ok=True)
         with self.app.test_client() as c:
@@ -2759,7 +2757,7 @@ class TestMkzip(TestActions):
                 with zh.open('entry.zip') as fh:
                     self.assertTrue(zipfile.is_zipfile(fh))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_dir(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
             zh.writestr('entry.zip/', '')
@@ -2773,7 +2771,7 @@ class TestMkzip(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_root(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w'):
             pass
@@ -2789,7 +2787,7 @@ class TestMkzip(TestActions):
 
 
 class TestSave(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -2802,7 +2800,7 @@ class TestSave(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -2874,7 +2872,7 @@ class TestSave(TestActions):
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_save_dir(self, mock_abort):
         os.makedirs(self.test_html, exist_ok=True)
 
@@ -2978,7 +2976,7 @@ class TestSave(TestActions):
                     with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_save_zip_dir(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('subdir/index.html/', '')
@@ -2993,7 +2991,7 @@ class TestSave(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_save_zip_root(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w'):
             pass
@@ -3071,7 +3069,7 @@ class TestSave(TestActions):
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_upload_dir(self, mock_abort):
         os.makedirs(self.test_html, exist_ok=True)
 
@@ -3177,7 +3175,7 @@ class TestSave(TestActions):
                     with zipfile.ZipFile(fh, 'r') as zh1:
                         self.assertEqual(zh1.read('index.html').decode('UTF-8'), 'ABC 你好')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_upload_zip_dir(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('subdir/index.html/', '')
@@ -3192,7 +3190,7 @@ class TestSave(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Found a non-file here.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_upload_zip_root(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w'):
             pass
@@ -3209,7 +3207,7 @@ class TestSave(TestActions):
 
 
 class TestDelete(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with open(self.test_html, 'w', encoding='UTF-8'):
@@ -3224,7 +3222,7 @@ class TestDelete(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with open(self.test_html, 'w', encoding='UTF-8'):
@@ -3497,7 +3495,7 @@ class TestDelete(TestActions):
             self.assertTrue(os.path.isdir(ref))
             self.assertTrue(os.path.isfile(ref2))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
@@ -3599,7 +3597,7 @@ class TestDelete(TestActions):
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_nonexist(self, mock_abort):
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             zh.writestr('file.txt', 'dummy')
@@ -3716,7 +3714,7 @@ class TestMove(TestActions):
                 compress_type=zipfile.ZIP_DEFLATED,
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -3728,7 +3726,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -3740,7 +3738,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_params_check(self, mock_abort):
         """Require target."""
         with self.app.test_client() as c:
@@ -3896,7 +3894,7 @@ class TestMove(TestActions):
                 {'file': os.path.join(self.test_dir, 'newdir', 'subdir')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
@@ -3933,7 +3931,7 @@ class TestMove(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
@@ -3949,7 +3947,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
@@ -3991,7 +3989,7 @@ class TestMove(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test.txt')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_to_dir_with_same_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test.txt'), 'w'):
@@ -4007,7 +4005,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'test.txt'), exist_ok=True)
 
@@ -4052,7 +4050,7 @@ class TestMove(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subdir', 'test.txt')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_dir_with_same_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'subdir'), 'w'):
@@ -4068,7 +4066,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
 
@@ -4082,7 +4080,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_child(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
 
@@ -4096,7 +4094,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Unable to move into self.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_disk_to_zip(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
@@ -4108,7 +4106,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Unable to move across a zip.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_disk(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -4187,7 +4185,7 @@ class TestMove(TestActions):
                             {'zip': zh2, 'filename': 'deep/newdir/index.html'},
                         )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
@@ -4199,7 +4197,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_file_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -4211,7 +4209,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_dir_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -4253,7 +4251,7 @@ class TestMove(TestActions):
                             {'zip': zh2, 'filename': 'subdir4/index.html'},
                         )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_file_to_dir_with_same_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -4265,7 +4263,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -4351,7 +4349,7 @@ class TestMove(TestActions):
                             {'zip': zh2, 'filename': 'subdir2/subdir/index.html'},
                         )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -4363,7 +4361,7 @@ class TestMove(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -4427,7 +4425,7 @@ class TestCopy(TestActions):
                 compress_type=zipfile.ZIP_DEFLATED,
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -4440,7 +4438,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -4452,7 +4450,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_params_check(self, mock_abort):
         """Require target."""
         with self.app.test_client() as c:
@@ -4568,7 +4566,7 @@ class TestCopy(TestActions):
             )
 
     @require_junction()
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_junction2(self, mock_abort):
         """Raises when copying a broken directory junction."""
         junction(
@@ -4588,7 +4586,7 @@ class TestCopy(TestActions):
 
     @require_junction()
     @mock.patch('sys.stderr', io.StringIO())
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_junction_deep(self, mock_abort):
         """Copy junction entities with referenced directory content.
 
@@ -4670,7 +4668,7 @@ class TestCopy(TestActions):
             )
 
     @require_symlink()
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_symlink2(self, mock_abort):
         """Raises when copying a broken symlink."""
         os.symlink(
@@ -4690,7 +4688,7 @@ class TestCopy(TestActions):
 
     @require_symlink()
     @mock.patch('sys.stderr', io.StringIO())
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_symlink_deep(self, mock_abort):
         """Copy symlink entities with referenced directory content.
 
@@ -4738,7 +4736,7 @@ class TestCopy(TestActions):
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'deep', 'subdir', 'symlink2')))
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
@@ -4772,7 +4770,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test2.txt')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
@@ -4788,7 +4786,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test2.txt'), 'w', encoding='UTF-8') as fh:
@@ -4827,7 +4825,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'test.txt')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_to_dir_with_same_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'test.txt'), 'w'):
@@ -4843,7 +4841,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_file_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'test.txt'), exist_ok=True)
 
@@ -4880,7 +4878,7 @@ class TestCopy(TestActions):
                 {'file': os.path.join(self.test_dir, 'subdir2', 'subdir')},
             )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_dir_with_same_file(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2'), exist_ok=True)
         with open(os.path.join(self.test_dir, 'subdir2', 'subdir'), 'w'):
@@ -4896,7 +4894,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_dir_to_dir_with_same_dir(self, mock_abort):
         os.makedirs(os.path.join(self.test_dir, 'subdir2', 'subdir'), exist_ok=True)
 
@@ -4962,7 +4960,7 @@ class TestCopy(TestActions):
 
     @require_junction()
     @mock.patch('sys.stderr', io.StringIO())
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_disk_to_zip_junction_deep(self, mock_abort):
         """Copy junction entities with referenced directory content.
 
@@ -5004,7 +5002,7 @@ class TestCopy(TestActions):
 
     @require_symlink()
     @mock.patch('sys.stderr', io.StringIO())
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_disk_to_zip_symlink_deep(self, mock_abort):
         """Copy symlink entities with referenced directory content.
 
@@ -5047,7 +5045,7 @@ class TestCopy(TestActions):
                 with self.assertRaises(KeyError):
                     zh.getinfo('clone/symlink2/')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_disk_to_zip_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/nonexist', data={
@@ -5059,7 +5057,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_disk_to_zip_file_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/subdir/test.txt', data={
@@ -5071,7 +5069,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_disk_to_zip_dir_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/subdir', data={
@@ -5231,7 +5229,7 @@ class TestCopy(TestActions):
                     {'file': os.path.join(self.test_dir, 'subdir', 'subdir', 'index.html')},
                 )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_disk_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
@@ -5243,7 +5241,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_disk_file_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -5255,7 +5253,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_disk_dir_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -5319,7 +5317,7 @@ class TestCopy(TestActions):
                             {'zip': zh2, 'filename': 'deep/newdir/index.html'},
                         )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_nonexist(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/nonexist', data={
@@ -5331,7 +5329,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(404, 'Source does not exist.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_file_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -5343,7 +5341,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_dir_to_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -5379,7 +5377,7 @@ class TestCopy(TestActions):
                             {'zip': zh2, 'filename': 'subdir4/index.html'},
                         )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_file_to_dir_with_same_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -5391,7 +5389,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_file_to_dir_with_same_dir(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir/index.html', data={
@@ -5459,7 +5457,7 @@ class TestCopy(TestActions):
                             {'zip': zh2, 'filename': 'subdir2/subdir/index.html'},
                         )
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_dir_to_dir_with_same_dir(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -5471,7 +5469,7 @@ class TestCopy(TestActions):
 
             mock_abort.assert_called_once_with(400, 'Target already exists.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_to_zip_dir_to_dir_with_same_file(self, mock_abort):
         with self.app.test_client() as c:
             c.post('/deep/archive.maff!/subdir', data={
@@ -5491,7 +5489,7 @@ class TestBackup(TestActions):
         with open(os.path.join(self.test_dir, 'subdir', 'test.txt'), 'w', encoding='UTF-8') as fh:
             fh.write('ABC 你好')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -5503,7 +5501,7 @@ class TestBackup(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
@@ -5514,7 +5512,7 @@ class TestBackup(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -5645,7 +5643,7 @@ class TestBackup(TestActions):
 
 
 class TestUnbackup(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_method_check(self, mock_abort):
         """Require POST."""
         with self.app.test_client() as c:
@@ -5657,7 +5655,7 @@ class TestUnbackup(TestActions):
 
             mock_abort.assert_called_once_with(405, valid_methods=['POST'])
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
@@ -5668,7 +5666,7 @@ class TestUnbackup(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -5724,7 +5722,7 @@ class TestUnbackup(TestActions):
 
 
 class TestCache(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -5732,7 +5730,7 @@ class TestCache(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
@@ -5831,7 +5829,7 @@ class TestCache(TestActions):
 
 
 class TestCheck(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_token_check(self, mock_abort):
         """Require token."""
         with self.app.test_client() as c:
@@ -5839,7 +5837,7 @@ class TestCheck(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
         """Require format."""
         with self.app.test_client() as c:
@@ -5946,13 +5944,13 @@ class TestCheck(TestActions):
 
 
 class TestUnknown(TestActions):
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_unknown(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/', query_string={'a': 'unkonwn'})
             mock_abort.assert_called_once_with(400, 'Action not supported.')
 
-    @mock.patch('webscrapbook.app.abort', side_effect=abort)
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_unknown_json(self, mock_abort):
         with self.app.test_client() as c:
             c.get('/', query_string={'a': 'unkonwn', 'f': 'json'})
