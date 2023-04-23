@@ -905,7 +905,7 @@ class FulltextCacheGenerator():
         return self.FULLTEXT_SPACE_REPLACER(text).strip()
 
 
-def generate(host, book_ids=None, item_ids=None, *,
+def generate(host, book_items=None, *,
              lock=True, backup=True,
              fulltext=True, inclusive_frames=True, recreate=False,
              static_site=False, static_index=False, locale=None,
@@ -925,9 +925,8 @@ def generate(host, book_ids=None, item_ids=None, *,
         yield Info('info', '----------------------------------------------------------------------')
 
     try:
-        # cache all books if none specified
         first = True
-        for book_id in book_ids or host.books:
+        for book_id, item_ids in (book_items or dict.fromkeys(host.books)).items():
             if first:
                 first = False
             else:

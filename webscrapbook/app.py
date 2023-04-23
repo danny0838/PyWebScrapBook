@@ -1220,9 +1220,14 @@ def action_cache():
     """Invoke the cacher."""
     format = request.format
 
+    book_ids = request.values.getlist('book')
+    item_ids = request.values.getlist('item')
+    book_items = {}
+    for i, book_id in enumerate(book_ids):
+        book_items[book_id] = request.values.getlist(f'item[{i}]') + item_ids
+
     kwargs = {
-        'book_ids': request.values.getlist('book'),
-        'item_ids': request.values.getlist('item'),
+        'book_items': book_items,
         'lock': not request.values.get('no_lock', default=False, type=bool),
         'backup': not request.values.get('no_backup', default=False, type=bool),
         'fulltext': request.values.get('fulltext', default=False, type=bool),

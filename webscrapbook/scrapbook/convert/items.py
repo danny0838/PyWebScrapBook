@@ -16,11 +16,10 @@ from ..indexer import FavIconCacher, SingleHtmlConverter, UnSingleHtmlConverter
 
 
 class Converter:
-    def __init__(self, input, output, book_ids=None, item_ids=None, types=None, format=None):
+    def __init__(self, input, output, book_items=None, types=None, format=None):
         self.input = input
         self.output = output
-        self.book_ids = book_ids
-        self.item_ids = item_ids
+        self.book_items = book_items
         self.types = set(types) if types else {}
         self.format = format
 
@@ -33,8 +32,7 @@ class Converter:
         yield Info('info', 'Applying conversion...')
         host = Host(self.output)
 
-        # handle all books if none specified
-        for book_id in self.book_ids or host.books:
+        for book_id, item_ids in (self.book_items or dict.fromkeys(host.books)).items():
             try:
                 book = host.books[book_id]
             except KeyError:
@@ -47,8 +45,7 @@ class Converter:
 
             book_meta_orig = copy.deepcopy(book.meta)
 
-            # handle all items if none specified
-            for id in self.item_ids or book.meta:
+            for id in (item_ids or book.meta):
                 if id not in book.meta:
                     # skip invalid item ID
                     yield Info('debug', f'Skipped invalid item "{id}".')
@@ -299,15 +296,19 @@ class Converter:
 """
 
 
-def run(input, output, book_ids=None, item_ids=None, types=None, format=None):
+def run(input, output, book_items=None, types=None, format=None):
     start = time.time()
-    book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else 'all'
-    item_ids_text = ', '.join(f'"{id}"' for id in item_ids) if item_ids else 'all'
     yield Info('info', 'converting items:')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')
-    yield Info('info', f'book(s): {book_ids_text}')
-    yield Info('info', f'item(s): {item_ids_text}')
+
+    if book_items:
+        for book_id, item_ids in book_items.items():
+            item_ids_text = ', '.join(f'"{id}"' for id in item_ids) if item_ids else 'all'
+            yield Info('info', f'book: "{book_id}", item(s): {item_ids_text}')
+    else:
+        yield Info('info', 'books: all, items: all')
+
     yield Info('info', f'types: {types}')
     yield Info('info', f'format: {format}')
     yield Info('info', '')
@@ -316,7 +317,7 @@ def run(input, output, book_ids=None, item_ids=None, types=None, format=None):
         output = input
 
     try:
-        conv = Converter(input, output, book_ids=book_ids, item_ids=item_ids, types=types, format=format)
+        conv = Converter(input, output, book_items=book_items, types=types, format=format)
         yield from conv.run()
     except Exception as exc:
         traceback.print_exc()

@@ -538,7 +538,7 @@ class TestCache(Test):
         mock_handler.assert_called_once_with(dict(
             root=self.root,
             book_ids=[],
-            item_ids=None,
+            item_ids_list=None,
             fulltext=True,
             inclusive_frames=True,
             recreate=False,
@@ -553,8 +553,7 @@ class TestCache(Test):
 
         mock_func.assert_called_once_with(
             self.root,
-            book_ids=[],
-            item_ids=None,
+            {},
             fulltext=True,
             inclusive_frames=True,
             recreate=False,
@@ -572,8 +571,8 @@ class TestCache(Test):
         cli.main([
             '--root', self.root,
             'cache',
-            'book1', 'book2',
-            '--item', 'item1', 'item2',
+            'book1', 'book2', 'book3', 'book4',
+            '--item', 'item11', 'item12', '--item', '--item', 'item31', 'item32',
             '--no-fulltext',
             '--no-inclusive-frames',
             '--recreate',
@@ -587,8 +586,8 @@ class TestCache(Test):
 
         mock_handler.assert_called_once_with(dict(
             root=self.root,
-            book_ids=['book1', 'book2'],
-            item_ids=['item1', 'item2'],
+            book_ids=['book1', 'book2', 'book3', 'book4'],
+            item_ids_list=[['item11', 'item12'], [], ['item31', 'item32']],
             fulltext=False,
             inclusive_frames=False,
             recreate=True,
@@ -603,8 +602,12 @@ class TestCache(Test):
 
         mock_func.assert_called_once_with(
             self.root,
-            book_ids=['book1', 'book2'],
-            item_ids=['item1', 'item2'],
+            {
+                'book1': ['item11', 'item12'],
+                'book2': [],
+                'book3': ['item31', 'item32'],
+                'book4': None,
+            },
             fulltext=False,
             inclusive_frames=False,
             recreate=True,
@@ -1010,7 +1013,7 @@ class TestConvert(Test):
             input=self.input,
             output=None,
             book_ids=None,
-            item_ids=None,
+            item_ids_list=None,
             format=None,
             types=[''],
             force=False,
@@ -1020,8 +1023,7 @@ class TestConvert(Test):
         mock_func.assert_called_once_with(
             input=self.input,
             output=None,
-            book_ids=None,
-            item_ids=None,
+            book_items={},
             format=None,
             types=[''],
         )
@@ -1034,8 +1036,8 @@ class TestConvert(Test):
             'items',
             self.input,
             self.output,
-            '--book', 'book1', 'book2',
-            '--item', 'item1', 'item2',
+            '--book', 'book1', 'book2', 'book3', 'book4',
+            '--item', 'item11', 'item12', '--item', '--item', 'item31', 'item32',
             '--format', 'htz',
             '--type', '', 'site', 'image', 'file', 'combine',
             'note', 'postit', 'bookmark', 'folder', 'separator',
@@ -1048,8 +1050,8 @@ class TestConvert(Test):
             mode='items',
             input=self.input,
             output=self.output,
-            book_ids=['book1', 'book2'],
-            item_ids=['item1', 'item2'],
+            book_ids=['book1', 'book2', 'book3', 'book4'],
+            item_ids_list=[['item11', 'item12'], [], ['item31', 'item32']],
             format='htz',
             types=['', 'site', 'image', 'file', 'combine',
                    'note', 'postit', 'bookmark', 'folder', 'separator'],
@@ -1060,8 +1062,12 @@ class TestConvert(Test):
         mock_func.assert_called_once_with(
             input=self.input,
             output=self.output,
-            book_ids=['book1', 'book2'],
-            item_ids=['item1', 'item2'],
+            book_items={
+                'book1': ['item11', 'item12'],
+                'book2': [],
+                'book3': ['item31', 'item32'],
+                'book4': None,
+            },
             format='htz',
             types=['', 'site', 'image', 'file', 'combine',
                    'note', 'postit', 'bookmark', 'folder', 'separator'],

@@ -69,39 +69,12 @@ class TestFuncGenerate(TestCache):
         mock_func.assert_not_called()
 
     @mock.patch('webscrapbook.scrapbook.host.Book')
-    def test_param_book_ids01(self, mock_book):
-        """Include effective provided IDs"""
+    def test_param_book_items01(self, mock_book):
+        """Include all available books for None or empty dict"""
         self.init_host(self.test_root, config="""\
-[book "id1"]
+[book "b1"]
 
-[book "id2"]
-
-[book "id4"]
-
-[book "id5"]
-""")
-
-        for _info in wsb_cache.generate(self.test_root, book_ids=['', 'id1', 'id2', 'id3', 'id4']):
-            pass
-
-        self.assertListEqual(mock_book.call_args_list, [
-            mock.call(mock.ANY, ''),
-            mock.call(mock.ANY, 'id1'),
-            mock.call(mock.ANY, 'id2'),
-            mock.call(mock.ANY, 'id4'),
-        ])
-
-    @mock.patch('webscrapbook.scrapbook.host.Book')
-    def test_param_book_ids02(self, mock_book):
-        """Include all available IDs if None provided"""
-        self.init_host(self.test_root, config="""\
-[book "id1"]
-
-[book "id2"]
-
-[book "id4"]
-
-[book "id5"]
+[book "b2"]
 """)
 
         for _info in wsb_cache.generate(self.test_root):
@@ -109,10 +82,65 @@ class TestFuncGenerate(TestCache):
 
         self.assertListEqual(mock_book.call_args_list, [
             mock.call(mock.ANY, ''),
-            mock.call(mock.ANY, 'id1'),
-            mock.call(mock.ANY, 'id2'),
-            mock.call(mock.ANY, 'id4'),
-            mock.call(mock.ANY, 'id5'),
+            mock.call(mock.ANY, 'b1'),
+            mock.call(mock.ANY, 'b2'),
+        ])
+
+    @mock.patch('webscrapbook.scrapbook.host.Book')
+    def test_param_book_items02(self, mock_book):
+        """Include effective books in order"""
+        self.init_host(self.test_root, config="""\
+[book "b1"]
+
+[book "b2"]
+
+[book "b4"]
+
+[book "b5"]
+""")
+
+        for _info in wsb_cache.generate(self.test_root, book_items={
+            '': None,
+            'b2': None,
+            'b1': None,
+            'b3': None,
+            'b4': None,
+        }):
+            pass
+
+        self.assertListEqual(mock_book.call_args_list, [
+            mock.call(mock.ANY, ''),
+            mock.call(mock.ANY, 'b2'),
+            mock.call(mock.ANY, 'b1'),
+            mock.call(mock.ANY, 'b4'),
+        ])
+
+    @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
+    def test_param_book_items03(self, mock_cls):
+        """Include effective books and items"""
+        self.init_host(self.test_root, config="""\
+[book "b1"]
+
+[book "b2"]
+""")
+
+        for _info in wsb_cache.generate(self.test_root, book_items={
+            '': ['item01', 'item02'],
+            'b1': None,
+            'b2': ['item21'],
+        }):
+            pass
+
+        self.assertListEqual(mock_cls.mock_calls, [
+            mock.call(mock.ANY, inclusive_frames=True, recreate=False),  # book ''
+            mock.call().run(['item01', 'item02']),
+            mock.ANY,  # iter
+            mock.call(mock.ANY, inclusive_frames=True, recreate=False),  # book 'b1'
+            mock.call().run(None),
+            mock.ANY,  # iter
+            mock.call(mock.ANY, inclusive_frames=True, recreate=False),  # book 'b2'
+            mock.call().run(['item21']),
+            mock.ANY,  # iter
         ])
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')

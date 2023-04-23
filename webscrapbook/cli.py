@@ -160,8 +160,18 @@ def cmd_cache(args):
     root = kwargs.pop('root')
     debug = kwargs.pop('debug')
 
+    book_ids = kwargs.pop('book_ids')
+    item_ids_list = kwargs.pop('item_ids_list')
+    book_items = {}
+    for i, book_id in enumerate(book_ids):
+        try:
+            item_ids = item_ids_list[i]
+        except (TypeError, IndexError):
+            item_ids = None
+        book_items[book_id] = item_ids
+
     from .scrapbook import cache
-    for info in cache.generate(root, **kwargs):
+    for info in cache.generate(root, book_items, **kwargs):
         if info.type != 'debug' or debug:
             log(f'{info.type.upper()}: {info.msg}')
 
@@ -241,6 +251,18 @@ def cmd_convert(args):
     mode = kwargs.pop('mode')
     force = kwargs.pop('force')
     debug = kwargs.pop('debug')
+
+    if mode == 'items':
+        book_ids = kwargs.pop('book_ids')
+        item_ids_list = kwargs.pop('item_ids_list')
+        book_items = {}
+        for i, book_id in enumerate(book_ids or []):
+            try:
+                item_ids = item_ids_list[i]
+            except (TypeError, IndexError):
+                item_ids = None
+            book_items[book_id] = item_ids
+        kwargs['book_items'] = book_items
 
     import importlib
     conv = importlib.import_module(f'.scrapbook.convert.{mode}', __package__)
@@ -494,9 +516,10 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
         'book_ids', metavar='book', nargs='*', action='store',
         help="""the book ID(s) to generate cache (default: all books)""")
     parser_cache.add_argument(
-        '--item', dest='item_ids',
-        metavar='ID', action='store', default=None, nargs='+',
-        help="""the items ID(s) to generate cache (default: all)""")
+        '--item', dest='item_ids_list',
+        metavar='ID', action='append', nargs='*',
+        help="""the items ID(s) to generate cache (specify repeatedly for each
+corresponding book) (default/empty: all items)""")
     parser_cache.add_argument(
         '--fulltext', default=True, action=BooleanOptionalAction,
         help="""generate fulltext cache (default: %(default)s)""")
@@ -783,9 +806,10 @@ Available TYPEs:
         nargs='+', action='store',
         help="""ID of the book(s) to convert (default: all books)""")
     parser_convert_items.add_argument(
-        '--item', dest='item_ids', metavar='ID',
-        nargs='+', action='store',
-        help="""ID of the item(s) to convert (default: all items)""")
+        '--item', dest='item_ids_list', metavar='ID',
+        nargs='*', action='append',
+        help="""ID of the item(s) to convert (specify repeatedly for each
+corresponding book) (default/empty: all items)""")
     parser_convert_items.add_argument(
         '--format', metavar='FORMAT', action='store',
         choices=['folder', 'htz', 'maff', 'single_file'],

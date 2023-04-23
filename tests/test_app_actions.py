@@ -5487,8 +5487,10 @@ class TestCache(TestActions):
         with self.app.app_context(), self.app.test_client() as c:
             r = c.get('/', query_string={
                 'a': 'cache', 'f': 'sse', 'token': token(c),
-                'book': ['', 'id1'],
-                'item': ['20200101'],
+                'book': ['', 'book1'],
+                'item[0]': ['_item1', '_item2'],
+                'item[1]': ['book1_item1', 'book1_item2'],
+                'item': ['item1', 'item2'],
                 'no_lock': 1,
                 'no_backup': 1,
                 'fulltext': 1,
@@ -5503,8 +5505,10 @@ class TestCache(TestActions):
 
             mock_func.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
-                book_ids=['', 'id1'],
-                item_ids=['20200101'],
+                book_items={
+                    '': ['_item1', '_item2', 'item1', 'item2'],
+                    'book1': ['book1_item1', 'book1_item2', 'item1', 'item2'],
+                },
                 lock=False,
                 backup=False,
                 fulltext=True,
@@ -5529,8 +5533,10 @@ class TestCache(TestActions):
         with self.app.app_context(), self.app.test_client() as c:
             r = c.post('/', data={
                 'a': 'cache', 'token': token(c),
-                'book': ['', 'id1'],
-                'item': ['20200101'],
+                'book': ['', 'book1'],
+                'item[0]': ['_item1', '_item2'],
+                'item[1]': ['book1_item1', 'book1_item2'],
+                'item': ['item1', 'item2'],
                 'no_lock': 1,
                 'no_backup': 1,
                 'fulltext': 1,
@@ -5545,8 +5551,10 @@ class TestCache(TestActions):
 
             mock_func.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
-                book_ids=['', 'id1'],
-                item_ids=['20200101'],
+                book_items={
+                    '': ['_item1', '_item2', 'item1', 'item2'],
+                    'book1': ['book1_item1', 'book1_item2', 'item1', 'item2'],
+                },
                 lock=False,
                 backup=False,
                 fulltext=True,
