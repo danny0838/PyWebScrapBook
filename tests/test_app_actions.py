@@ -31,6 +31,7 @@ from . import (
     DUMMY_ZIP_DT6,
     DUMMY_ZIP_DT7,
     DUMMY_ZIP_DT8,
+    PROG_DIR,
     ROOT_DIR,
     TEMP_DIR,
     TestFileMixin,
@@ -39,6 +40,8 @@ from . import (
     require_junction_deletion,
     require_symlink,
 )
+
+STATIC_DIR = os.path.join(PROG_DIR, 'themes', 'default', 'static')
 
 
 def setUpModule():
@@ -1797,9 +1800,8 @@ class TestStatic(TestActions):
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
             self.assertIsNotNone(r.headers['Last-Modified'])
             self.assertIsNotNone(r.headers['ETag'])
-
-            css = r.data.decode('UTF-8').replace('\r\n', '\n')
-            self.assertIn('#data-table', css)
+            with open(os.path.join(STATIC_DIR, 'index.css'), 'rb') as fh:
+                self.assertEqual(r.data, fh.read())
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
