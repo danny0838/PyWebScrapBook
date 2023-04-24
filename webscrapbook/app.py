@@ -158,7 +158,6 @@ def http_response(body=None, status=None, headers=None, format=None):
             body = None
 
         body = json.dumps({
-            'success': True,
             'data': body,
         }, ensure_ascii=False)
 

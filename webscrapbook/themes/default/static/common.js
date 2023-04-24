@@ -121,21 +121,11 @@ const utils = {
   },
 
   async acquireToken(url) {
-    let xhr;
-    try {
-      xhr = await utils.xhr({
+    const xhr = await this.wsb({
         url: url + '?a=token&f=json',
         responseType: 'json',
         method: "POST",
-      });
-    } catch (ex) {
-      throw new Error('Unable to connect to backend server.');
-    }
-
-    if (!(xhr.response && xhr.response.success)) {
-      throw new Error('Unable to acquire an access token.');
-    }
-
+    });
     return xhr.response.data;
   },
 };
