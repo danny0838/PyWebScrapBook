@@ -1064,38 +1064,40 @@ class TestList(TestActions):
             r = c.get('/subdir', query_string={'a': 'list', 'f': 'sse'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'file.txt',
-                'type': 'file',
-                'size': 3,
-                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
-            }), sse)
-            self.assertIn(('message', {
-                'name': 'sub',
-                'type': 'dir',
-                'size': None,
-                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
-            }), sse)
-            self.assertIn(('complete', None), sse)
+            self.assertCountEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'name': 'file.txt',
+                    'type': 'file',
+                    'size': 3,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
+                }),
+                ('message', {
+                    'name': 'sub',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
+                }),
+                ('complete', None),
+            ])
 
             r = c.get('/subdir/', query_string={'a': 'list', 'f': 'sse'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'file.txt',
-                'type': 'file',
-                'size': 3,
-                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
-            }), sse)
-            self.assertIn(('message', {
-                'name': 'sub',
-                'type': 'dir',
-                'size': None,
-                'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
-            }), sse)
-            self.assertIn(('complete', None), sse)
+            self.assertCountEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'name': 'file.txt',
+                    'type': 'file',
+                    'size': 3,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'file.txt')).st_mtime,
+                }),
+                ('message', {
+                    'name': 'sub',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': os.stat(os.path.join(self.root, 'subdir', 'sub')).st_mtime,
+                }),
+                ('complete', None),
+            ])
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_sse_file(self, mock_abort):
@@ -1125,20 +1127,21 @@ class TestList(TestActions):
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertIsNotNone(r.headers['Last-Modified'])
             self.assertIsNotNone(r.headers['ETag'])
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'index.html',
-                'type': 'file',
-                'size': 19,
-                'last_modified': DUMMY_TS2,
-            }), sse)
-            self.assertIn(('message', {
-                'name': 'subdir',
-                'type': 'dir',
-                'size': None,
-                'last_modified': DUMMY_TS3,
-            }), sse)
-            self.assertIn(('complete', None), sse)
+            self.assertCountEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'name': 'index.html',
+                    'type': 'file',
+                    'size': 19,
+                    'last_modified': DUMMY_TS2,
+                }),
+                ('message', {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': DUMMY_TS3,
+                }),
+                ('complete', None),
+            ])
 
             # explicit dir
             r = c.get('/deep/archive.zip!/explicit_dir/', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1147,20 +1150,21 @@ class TestList(TestActions):
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertIsNotNone(r.headers['Last-Modified'])
             self.assertIsNotNone(r.headers['ETag'])
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'index.html',
-                'type': 'file',
-                'size': 19,
-                'last_modified': DUMMY_TS2,
-            }), sse)
-            self.assertIn(('message', {
-                'name': 'subdir',
-                'type': 'dir',
-                'size': None,
-                'last_modified': DUMMY_TS3,
-            }), sse)
-            self.assertIn(('complete', None), sse)
+            self.assertCountEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'name': 'index.html',
+                    'type': 'file',
+                    'size': 19,
+                    'last_modified': DUMMY_TS2,
+                }),
+                ('message', {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': DUMMY_TS3,
+                }),
+                ('complete', None),
+            ])
 
             # implicit dir (no slash)
             r = c.get('/deep/archive.zip!/implicit_dir', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1169,20 +1173,21 @@ class TestList(TestActions):
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertIsNotNone(r.headers['Last-Modified'])
             self.assertIsNotNone(r.headers['ETag'])
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'index.html',
-                'type': 'file',
-                'size': 22,
-                'last_modified': DUMMY_TS4,
-            }), sse)
-            self.assertIn(('message', {
-                'name': 'subdir',
-                'type': 'dir',
-                'size': None,
-                'last_modified': None,
-            }), sse)
-            self.assertIn(('complete', None), sse)
+            self.assertCountEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'name': 'index.html',
+                    'type': 'file',
+                    'size': 22,
+                    'last_modified': DUMMY_TS4,
+                }),
+                ('message', {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': None,
+                }),
+                ('complete', None),
+            ])
 
             # implicit dir
             r = c.get('/deep/archive.zip!/implicit_dir/', query_string={'a': 'list', 'f': 'sse'}, buffered=True)
@@ -1191,20 +1196,21 @@ class TestList(TestActions):
             self.assertEqual(r.headers['Cache-Control'], 'no-cache')
             self.assertIsNotNone(r.headers['Last-Modified'])
             self.assertIsNotNone(r.headers['ETag'])
-            sse = self.parse_sse_objects(r.data.decode('UTF-8'))
-            self.assertIn(('message', {
-                'name': 'index.html',
-                'type': 'file',
-                'size': 22,
-                'last_modified': DUMMY_TS4,
-            }), sse)
-            self.assertIn(('message', {
-                'name': 'subdir',
-                'type': 'dir',
-                'size': None,
-                'last_modified': None,
-            }), sse)
-            self.assertIn(('complete', None), sse)
+            self.assertCountEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('message', {
+                    'name': 'index.html',
+                    'type': 'file',
+                    'size': 22,
+                    'last_modified': DUMMY_TS4,
+                }),
+                ('message', {
+                    'name': 'subdir',
+                    'type': 'dir',
+                    'size': None,
+                    'last_modified': None,
+                }),
+                ('complete', None),
+            ])
 
             etag = r.headers['ETag']
             lm = r.headers['Last-Modified']
@@ -5776,10 +5782,9 @@ class TestCache(TestActions):
             )
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            self.assertEqual(
-                self.parse_sse_objects(r.data.decode('UTF-8')),
-                [('complete', None)],
-            )
+            self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('complete', None),
+            ])
 
     @mock.patch('webscrapbook.app.stream_template', wraps=wsb_app.stream_template)
     @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
@@ -5887,10 +5892,9 @@ class TestCheck(TestActions):
             )
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-            self.assertEqual(
-                self.parse_sse_objects(r.data.decode('UTF-8')),
-                [('complete', None)],
-            )
+            self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('complete', None),
+            ])
 
     @mock.patch('webscrapbook.app.stream_template', wraps=wsb_app.stream_template)
     @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
