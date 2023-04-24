@@ -1239,30 +1239,24 @@ def action_cache():
     headers = {
         'Cache-Control': 'no-store',
     }
-    root = host.root
-    config = host.config
+    gen = wsb_cache.generate(host.root, config=host.config, **kwargs)
 
     if format == 'sse':
-        def gen():
-            for info in wsb_cache.generate(root, config=config, **kwargs):
-                data = {
+        def wrapper():
+            for info in gen:
+                yield json.dumps({
                     'type': info.type,
                     'msg': info.msg,
-                }
+                }, ensure_ascii=False)
 
-                yield json.dumps(data, ensure_ascii=False)
-
-        return http_response(gen(), headers=headers, format=format)
+        return http_response(wrapper(), headers=headers, format=format)
 
     elif format:
         abort(400, 'Action not supported.')
 
-    def gen():
-        yield from wsb_cache.generate(root, config=config, **kwargs)
-
     stream = stream_template('cli.html',
                              title='Indexing...',
-                             messages=gen(),
+                             messages=gen,
                              debug=False,
                              )
 
@@ -1294,30 +1288,24 @@ def action_check():
     headers = {
         'Cache-Control': 'no-store',
     }
-    root = host.root
-    config = host.config
+    gen = wsb_check.run(host.root, config=host.config, **kwargs)
 
     if format == 'sse':
-        def gen():
-            for info in wsb_check.run(root, config=config, **kwargs):
-                data = {
+        def wrapper():
+            for info in gen:
+                yield json.dumps({
                     'type': info.type,
                     'msg': info.msg,
-                }
+                }, ensure_ascii=False)
 
-                yield json.dumps(data, ensure_ascii=False)
-
-        return http_response(gen(), headers=headers, format=format)
+        return http_response(wrapper(), headers=headers, format=format)
 
     elif format:
         abort(400, 'Action not supported.')
 
-    def gen():
-        yield from wsb_check.run(root, config=config, **kwargs)
-
     stream = stream_template('cli.html',
                              title='Checking...',
-                             messages=gen(),
+                             messages=gen,
                              debug=False,
                              )
 
