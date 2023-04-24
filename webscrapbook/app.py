@@ -752,7 +752,7 @@ def action_info():
     """Show information of a path."""
     format = request.format
 
-    if not format:
+    if format != 'json':
         abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
@@ -934,7 +934,7 @@ def action_config():
     """Show server config."""
     format = request.format
 
-    if not format:
+    if format != 'json':
         abort(400, 'Action not supported.')
 
     data = host.config.dump_object()
@@ -965,6 +965,9 @@ def action_token():
     # require POST method
     if request.method != 'POST':
         abort(405, valid_methods=['POST'])
+
+    if format not in (None, 'json'):
+        abort(400, 'Action not supported.')
 
     return http_response(host.token_acquire(), format=format)
 
@@ -1182,7 +1185,7 @@ def action_backup():
     """Bakup file or directory."""
     format = request.format
 
-    if not format:
+    if format != 'json':
         abort(400, 'Action not supported.')
 
     localpaths = request.localpaths
@@ -1205,7 +1208,7 @@ def action_unbackup():
     """Remove a backup."""
     format = request.format
 
-    if not format:
+    if format != 'json':
         abort(400, 'Action not supported.')
 
     ts = request.values.get('ts') or util.datetime_to_id()
