@@ -153,16 +153,22 @@ def http_response(body=None, status=None, headers=None, format=None):
     elif format == 'json':
         mimetype = 'application/json'
 
-        body = {
+        if status == 204:
+            status = None
+            body = None
+
+        body = json.dumps({
             'success': True,
             'data': body,
-        }
-
-        body = json.dumps(body, ensure_ascii=False)
+        }, ensure_ascii=False)
 
     # expect body to be a generator of text (mostly JSON) data
     elif format == 'sse':
         mimetype = 'text/event-stream'
+
+        if status == 204:
+            status = None
+            body = None
 
         if body is None:
             body = generate_server_sent_events(iter(()))
@@ -541,10 +547,7 @@ def handle_action_advanced(func):
         if rv is not None:
             return rv
 
-        if format:
-            return http_response('Command run successfully.', format=format)
-
-        return http_response(status=204)
+        return http_response(status=204, format=format)
 
     return wrapper
 
@@ -900,10 +903,7 @@ def action_exec():
 
     util.fs.launch(localpath)
 
-    if format:
-        return http_response('Command run successfully.', format=format)
-
-    return http_response(status=204)
+    return http_response(status=204, format=format)
 
 
 def action_browse():
@@ -920,10 +920,7 @@ def action_browse():
 
     util.fs.view_in_explorer(localpath)
 
-    if format:
-        return http_response('Command run successfully.', format=format)
-
-    return http_response(status=204)
+    return http_response(status=204, format=format)
 
 
 def action_config():

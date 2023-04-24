@@ -2051,10 +2051,7 @@ class TestExec(TestActions):
             r = c.get('/subdir', query_string={'a': 'exec', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             mock_exec.assert_called_once_with(os.path.join(self.root, 'subdir'))
 
     @mock.patch('webscrapbook.util.fs.launch')
@@ -2063,10 +2060,7 @@ class TestExec(TestActions):
             r = c.get('/index.html', query_string={'a': 'exec', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             mock_exec.assert_called_once_with(os.path.join(self.root, 'index.html'))
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
@@ -2092,10 +2086,7 @@ class TestBrowse(TestActions):
             r = c.get('/subdir', query_string={'a': 'browse', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             mock_browse.assert_called_once_with(os.path.join(self.root, 'subdir'))
 
     @mock.patch('webscrapbook.util.fs.view_in_explorer')
@@ -2104,10 +2095,7 @@ class TestBrowse(TestActions):
             r = c.get('/index.html', query_string={'a': 'browse', 'f': 'json'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             mock_browse.assert_called_once_with(os.path.join(self.root, 'index.html'))
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
@@ -2383,10 +2371,7 @@ class TestUnlock(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertFalse(os.path.exists(self.lock))
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
@@ -2470,10 +2455,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isdir(test_dir))
 
     def test_nonexist_deep(self):
@@ -2487,10 +2469,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isdir(test_dir))
 
     def test_dir(self):
@@ -2505,10 +2484,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isdir(test_dir))
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
@@ -2538,10 +2514,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/'])
@@ -2559,10 +2532,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
@@ -2580,10 +2550,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['temp/subdir/'])
@@ -2604,10 +2571,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 with zh.open('20200101/entry.zip') as fh:
@@ -2641,10 +2605,7 @@ class TestMkdir(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), [])
@@ -2684,10 +2645,7 @@ class TestMkzip(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_zip))
             self.assertTrue(zipfile.is_zipfile(self.test_zip))
 
@@ -2704,10 +2662,7 @@ class TestMkzip(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_zip))
             self.assertTrue(zipfile.is_zipfile(self.test_zip))
 
@@ -2736,10 +2691,7 @@ class TestMkzip(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as fh:
                     self.assertTrue(zipfile.is_zipfile(fh))
@@ -2757,10 +2709,7 @@ class TestMkzip(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             with zipfile.ZipFile(self.test_zip, 'r') as zh:
                 with zh.open('entry.zip') as fh:
                     self.assertTrue(zipfile.is_zipfile(fh))
@@ -2831,10 +2780,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_html))
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
@@ -2850,10 +2796,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_html))
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
@@ -2872,10 +2815,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_html))
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
@@ -2908,10 +2848,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.read('index.html').decode('UTF-8'), 'ABC 你好')
 
@@ -2929,10 +2866,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
@@ -2950,10 +2884,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
 
@@ -2974,10 +2905,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 with zh.open('20200101/entry.zip') as fh:
@@ -3027,10 +2955,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_html))
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
@@ -3046,10 +2971,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_html))
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
@@ -3069,10 +2991,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_html))
             with open(self.test_html, 'r', encoding='UTF-8') as fh:
                 self.assertEqual(fh.read(), 'ABC 你好')
@@ -3105,10 +3024,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.read('index.html').decode('UTF-8'), 'ABC 你好')
 
@@ -3126,10 +3042,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
@@ -3148,10 +3061,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.read('subdir/index.html').decode('UTF-8'), 'ABC 你好')
@@ -3173,10 +3083,7 @@ class TestSave(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 with zh.open('20200101/entry.zip') as fh:
@@ -3257,10 +3164,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertFalse(os.path.exists(self.test_html))
 
     def test_directory(self):
@@ -3276,10 +3180,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertFalse(os.path.exists(test_dir))
 
     def test_directory_with_content(self):
@@ -3295,10 +3196,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertFalse(os.path.isfile(self.test_dir))
 
     @require_junction()
@@ -3322,10 +3220,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
             self.assertTrue(os.path.isdir(ref))
@@ -3348,10 +3243,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
 
@@ -3380,10 +3272,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
             self.assertTrue(os.path.isdir(ref))
@@ -3410,10 +3299,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
             self.assertTrue(os.path.isdir(ref))
@@ -3438,10 +3324,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
             self.assertTrue(os.path.isfile(ref))
@@ -3463,10 +3346,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
 
@@ -3494,10 +3374,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(dst))
             self.assertTrue(os.path.isdir(ref))
@@ -3528,10 +3405,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -3550,10 +3424,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -3574,10 +3445,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -3597,10 +3465,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), ['file.txt'])
@@ -3636,10 +3501,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 with zh.open('20200101/entry.zip') as fh:
@@ -3662,10 +3524,7 @@ class TestDelete(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
             self.assertTrue(os.path.isfile(self.test_maff))
             with zipfile.ZipFile(self.test_maff, 'r') as zh:
                 self.assertEqual(zh.namelist(), [])
@@ -3771,10 +3630,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir', 'test.txt')))
             self.assert_file_equal(
@@ -3796,10 +3652,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir')))
             self.assert_file_equal(
@@ -3825,10 +3678,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir')))
             self.assert_file_equal(
@@ -3860,10 +3710,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'junction')))
             self.assert_file_equal(
@@ -3891,10 +3738,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'symlink')))
             self.assert_file_equal(
@@ -3928,10 +3772,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir', 'test.txt')))
             self.assert_file_equal(
@@ -3986,10 +3827,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir', 'test.txt')))
             self.assert_file_equal(
@@ -4043,10 +3881,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assertFalse(os.path.lexists(os.path.join(self.test_dir, 'subdir')))
             self.assert_file_equal(
@@ -4140,10 +3975,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with self.assertRaises(KeyError):
@@ -4171,10 +4003,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with self.assertRaises(KeyError):
@@ -4243,10 +4072,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with self.assertRaises(KeyError):
@@ -4298,10 +4124,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with self.assertRaises(KeyError):
@@ -4335,10 +4158,7 @@ class TestMove(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with self.assertRaises(KeyError):
@@ -4481,10 +4301,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
@@ -4502,10 +4319,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir')},
@@ -4527,10 +4341,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir')},
@@ -4559,10 +4370,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir')},
@@ -4661,10 +4469,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir')},
@@ -4768,10 +4573,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
@@ -4823,10 +4625,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir', 'test.txt')},
@@ -4876,10 +4675,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             self.assert_file_equal(
                 {'file': os.path.join(self.test_dir, 'subdir')},
@@ -4927,10 +4723,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh:
                 self.assert_file_equal(
@@ -4950,10 +4743,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh:
                 self.assert_file_equal(
@@ -5100,10 +4890,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
@@ -5124,10 +4911,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
@@ -5152,10 +4936,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh:
                 self.assert_file_equal(
@@ -5174,10 +4955,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh:
                 self.assert_file_equal(
@@ -5200,10 +4978,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 self.assert_file_equal(
@@ -5222,10 +4997,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 self.assert_file_equal(
@@ -5284,10 +5056,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
@@ -5308,10 +5077,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
@@ -5372,10 +5138,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
@@ -5420,10 +5183,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
@@ -5448,10 +5208,7 @@ class TestCopy(TestActions):
 
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'application/json')
-            self.assertEqual(r.json, {
-                'success': True,
-                'data': 'Command run successfully.',
-            })
+            self.assertEqual(r.json, {'success': True, 'data': None})
 
             with zipfile.ZipFile(self.test_maff) as zh1:
                 with zh1.open('entry.maff') as fh:
