@@ -5,6 +5,7 @@ import json
 import os
 import time
 import traceback
+import types
 from collections import namedtuple
 from contextlib import nullcontext
 from secrets import token_urlsafe
@@ -125,15 +126,30 @@ def stream_template(template_name, **context):
     return t.stream(context)
 
 
-def http_response(body='', status=None, headers=None, format=None):
+def generate_server_sent_events(gen):
+    try:
+        for data in gen:
+            yield 'data: ' + data + '\n\n'
+    except Exception:
+        traceback.print_exc()
+        err = {'type': 'critical', 'msg': 'Internal Server Error'}
+        yield 'data: ' + json.dumps(err, ensure_ascii=False) + '\n\n'
+
+    yield 'event: complete' + '\n'
+    yield 'data: ' + '\n\n'
+
+
+def http_response(body=None, status=None, headers=None, format=None):
     """Handle formatted response.
 
     ref: https://jsonapi.org
     """
     if not format:
         mimetype = None
+        if body is None:
+            body = ''
 
-    # expect body to be a JSON-serializable object
+    # expect body to be a JSON-serializable object (including str)
     elif format == 'json':
         mimetype = 'application/json'
 
@@ -148,19 +164,13 @@ def http_response(body='', status=None, headers=None, format=None):
     elif format == 'sse':
         mimetype = 'text/event-stream'
 
-        def wrapper(gen):
-            try:
-                for data in gen:
-                    yield 'data: ' + data + '\n\n'
-            except Exception:
-                traceback.print_exc()
-                err = {'type': 'critical', 'msg': 'Internal Server Error'}
-                yield 'data: ' + json.dumps(err, ensure_ascii=False) + '\n\n'
+        if body is None:
+            body = generate_server_sent_events(iter(()))
+        else:
+            if not isinstance(body, types.GeneratorType):
+                abort(500, 'Invalid generator for an event stream')
 
-            yield 'event: complete' + '\n'
-            yield 'data: ' + '\n\n'
-
-        body = wrapper(body)
+            body = generate_server_sent_events(body)
 
     else:
         abort(400, f'Output format "{format}" is not supported.')
@@ -1366,6 +1376,14 @@ def handle_error(exc):
             },
         }, ensure_ascii=False)
         response.content_type = 'application/json'
+        return response
+
+    if request.format == 'sse':
+        response = exc.get_response()
+        response.data = ''.join(generate_server_sent_events((
+            json.dumps({'type': 'critical', 'msg': exc.description}, ensure_ascii=False),
+        )))
+        response.content_type = 'text/event-stream'
         return response
 
     return exc
