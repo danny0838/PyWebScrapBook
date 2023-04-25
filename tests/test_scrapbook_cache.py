@@ -54,20 +54,6 @@ class TestCache(TestBookMixin, unittest.TestCase):
 
 
 class TestFuncGenerate(TestCache):
-    @mock.patch('webscrapbook.scrapbook.cache.Host')
-    def test_param_root(self, mock_host):
-        for _info in wsb_cache.generate(self.test_root):
-            pass
-
-        mock_host.assert_called_once_with(self.test_root, None)
-
-    @mock.patch('webscrapbook.scrapbook.cache.Host')
-    def test_param_config(self, mock_host):
-        for _info in wsb_cache.generate(self.test_root, config={}):
-            pass
-
-        mock_host.assert_called_once_with(self.test_root, {})
-
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_param_lock01(self, mock_func):
         for _info in wsb_cache.generate(self.test_root, lock=True):

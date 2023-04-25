@@ -398,10 +398,15 @@ class Importer():
             parent.append(id)
 
 
-def run(root, files, book_id='', *, config=None, lock=True, **kwargs):
+def run(host, files, book_id='', *, lock=True, **kwargs):
     start = time.time()
 
-    host = Host(root, config)
+    if isinstance(host, Host):
+        pass
+    elif isinstance(host, str):
+        host = Host(host)
+    else:
+        host = Host(*host)
 
     # Fail for invalid book ID
     if book_id not in host.books:

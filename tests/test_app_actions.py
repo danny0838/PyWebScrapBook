@@ -5502,10 +5502,9 @@ class TestCache(TestActions):
             })
 
             mock_func.assert_called_once_with(
-                wsb_app.host.root,
+                (wsb_app.host.root, wsb_app.host.config),
                 book_ids=['', 'id1'],
                 item_ids=['20200101'],
-                config=wsb_app.host.config,
                 lock=False,
                 backup=False,
                 fulltext=True,
@@ -5545,10 +5544,9 @@ class TestCache(TestActions):
             }, buffered=True)
 
             mock_func.assert_called_once_with(
-                wsb_app.host.root,
+                (wsb_app.host.root, wsb_app.host.config),
                 book_ids=['', 'id1'],
                 item_ids=['20200101'],
-                config=wsb_app.host.config,
                 lock=False,
                 backup=False,
                 fulltext=True,
@@ -5610,9 +5608,8 @@ class TestCheck(TestActions):
             })
 
             mock_func.assert_called_once_with(
-                wsb_app.host.root,
+                (wsb_app.host.root, wsb_app.host.config),
                 book_ids=['', 'id1'],
-                config=wsb_app.host.config,
                 lock=False,
                 backup=False,
                 resolve_invalid_id=True,
@@ -5657,9 +5654,8 @@ class TestCheck(TestActions):
             }, buffered=True)
 
             mock_func.assert_called_once_with(
-                wsb_app.host.root,
+                (wsb_app.host.root, wsb_app.host.config),
                 book_ids=['', 'id1'],
-                config=wsb_app.host.config,
                 lock=False,
                 backup=False,
                 resolve_invalid_id=True,

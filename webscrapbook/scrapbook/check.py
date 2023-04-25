@@ -646,10 +646,15 @@ class BookChecker:
                 self.cnt_resolves += 1
 
 
-def run(root, book_ids=None, *, config=None, lock=True, backup=True, **kwargs):
+def run(host, book_ids=None, *, lock=True, backup=True, **kwargs):
     start = time.time()
 
-    host = Host(root, config)
+    if isinstance(host, Host):
+        pass
+    elif isinstance(host, str):
+        host = Host(host)
+    else:
+        host = Host(*host)
 
     if backup:
         host.init_auto_backup(note='check')

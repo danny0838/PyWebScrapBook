@@ -905,14 +905,19 @@ class FulltextCacheGenerator():
         return self.FULLTEXT_SPACE_REPLACER(text).strip()
 
 
-def generate(root, book_ids=None, item_ids=None, *,
-             config=None, lock=True, backup=True,
+def generate(host, book_ids=None, item_ids=None, *,
+             lock=True, backup=True,
              fulltext=True, inclusive_frames=True, recreate=False,
              static_site=False, static_index=False, locale=None,
              rss_root=None, rss_item_count=50):
     start = time.time()
 
-    host = Host(root, config)
+    if isinstance(host, Host):
+        pass
+    elif isinstance(host, str):
+        host = Host(host)
+    else:
+        host = Host(*host)
 
     if backup:
         host.init_auto_backup(note='cache')

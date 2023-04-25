@@ -552,7 +552,7 @@ class TestCache(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             book_ids=[],
             item_ids=None,
             fulltext=True,
@@ -602,7 +602,7 @@ class TestCache(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             book_ids=['book1', 'book2'],
             item_ids=['item1', 'item2'],
             fulltext=False,
@@ -646,7 +646,7 @@ class TestCheck(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             book_ids=[],
             resolve_all=False,
             resolve_invalid_id=False,
@@ -705,7 +705,7 @@ class TestCheck(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             book_ids=['book1', 'book2'],
             resolve_all=False,
             resolve_invalid_id=True,
@@ -754,7 +754,7 @@ class TestCheck(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             book_ids=['book1', 'book2'],
             resolve_all=True,
             resolve_invalid_id=False,
@@ -794,7 +794,7 @@ class TestExport(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             output=output_dir,
             book_id='',
             item_ids=None,
@@ -828,7 +828,7 @@ class TestExport(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             output=output_dir,
             book_id='book1',
             item_ids=['item1', 'item2'],
@@ -862,7 +862,7 @@ class TestImport(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             files=[file1],
             book_id='',
             target_id='root',
@@ -906,7 +906,7 @@ class TestImport(Test):
         ))
 
         mock_func.assert_called_once_with(
-            root=self.root,
+            self.root,
             files=[file1, file2],
             book_id='book1',
             target_id='20200101000000000',

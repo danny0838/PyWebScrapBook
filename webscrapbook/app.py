@@ -1235,7 +1235,7 @@ def action_cache():
         'locale': request.values.get('locale'),
     }
 
-    gen = wsb_cache.generate(host.root, config=host.config, **kwargs)
+    gen = wsb_cache.generate((host.root, host.config), **kwargs)
 
     if format == 'sse':
         def wrapper():
@@ -1282,7 +1282,7 @@ def action_check():
         'resolve_unused_icon': request.values.get('resolve_unused_icon', default=False, type=bool),
     }
 
-    gen = wsb_check.run(host.root, config=host.config, **kwargs)
+    gen = wsb_check.run((host.root, host.config), **kwargs)
 
     if format == 'sse':
         def wrapper():

@@ -147,11 +147,15 @@ class Exporter():
             util.fs.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
 
 
-def run(root, output, book_id='', item_ids=None, *, recursive=False, singleton=False,
-        config=None, lock=True):
+def run(host, output, book_id='', item_ids=None, *, recursive=False, singleton=False, lock=True):
     start = time.time()
 
-    host = Host(root, config)
+    if isinstance(host, Host):
+        pass
+    elif isinstance(host, str):
+        host = Host(host)
+    else:
+        host = Host(*host)
 
     # Fail for invalid book ID
     if book_id not in host.books:
