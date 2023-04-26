@@ -1324,11 +1324,13 @@ def action_check():
 def action_query():
     """Perform queries on the scrapbook(s)."""
     query = request.values.getlist('q', type=json.loads)
+    auto_cache = request.values.get('auto_cache', type=json.loads)
     details = request.values.get('details', default=False, type=bool)
     lock = not request.values.get('no_lock', default=False, type=bool)
 
     try:
-        rv = wsb_util.HostQuery((host.root, host.config), query, lock=lock).run()
+        rv = wsb_util.HostQuery((host.root, host.config),
+                                query, auto_cache, lock=lock).run()
     except Exception as exc:
         traceback.print_exc()
         abort(500, str(exc))

@@ -5897,6 +5897,7 @@ no_tree = true
             mock_cls.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
                 [query],
+                None,
                 lock=False,
             )
             self.assertEqual(r.status_code, 200)
@@ -5928,6 +5929,7 @@ no_tree = true
             mock_cls.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
                 [query],
+                None,
                 lock=False,
             )
             self.assertEqual(r.status_code, 200)
@@ -5969,6 +5971,7 @@ no_tree = true
             mock_cls.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
                 [query1, query2],
+                None,
                 lock=False,
             )
             self.assertEqual(r.status_code, 200)

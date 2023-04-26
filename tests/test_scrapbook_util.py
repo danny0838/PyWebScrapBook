@@ -4,6 +4,7 @@ import unittest
 from textwrap import dedent
 from unittest import mock
 
+from webscrapbook.scrapbook import cache as wsb_cache
 from webscrapbook.scrapbook import host as wsb_host
 from webscrapbook.scrapbook import util as wsb_util
 
@@ -43,7 +44,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         self.maxDiff = 8192
         self.root = tempfile.mkdtemp(dir=tmpdir)
 
-        self.init_book(
+        book = self.init_book(
             self.root,
             config=dedent(
                 """\
@@ -86,6 +87,11 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
             },
         )
 
+        file = os.path.join(book.data_dir, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(file))
+        with open(file, 'w', encoding='UTF-8') as fh:
+            fh.write('Lorem ipsum dolor sit amet.')
+
     def test_get_item(self):
         # should not raise
         wsb_util.HostQuery(self.root, [
@@ -105,6 +111,9 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         ]).run()
 
     def test_add_item(self):
+        with open(os.path.join(self.root, 'scrapbook0', 'data', '20200103000000000.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('Donec eget vehicula purus.')
+
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'add_item',
@@ -114,13 +123,15 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                         'title': 'Item 3',
                         'create': '20200103000000000',
                         'modify': '20200103000000000',
+                        'index': '20200103000000000.html',
                     },
                 ],
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
+        book.load_fulltext_files()
         self.assertEqual(book.meta, {
             '20200101000000000': {
                 'title': 'Item 1',
@@ -140,6 +151,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 'title': 'Item 3',
                 'create': '20200103000000000',
                 'modify': '20200103000000000',
+                'index': '20200103000000000.html',
             },
         })
         self.assertEqual(book.toc, {
@@ -151,8 +163,18 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 '20200102000000000',
             ],
         })
+        self.assertEqual(book.fulltext, {
+            '20200103000000000': {
+                '20200103000000000.html': {
+                    'content': 'Donec eget vehicula purus.',
+                },
+            },
+        })
 
     def test_add_items(self):
+        with open(os.path.join(self.root, 'scrapbook0', 'data', '20200103000000000.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('Donec eget vehicula purus.')
+
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'add_items',
@@ -162,6 +184,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                         'title': 'Item 3',
                         'create': '20200103000000000',
                         'modify': '20200103000000000',
+                        'index': '20200103000000000.html',
                     },
                     {
                         'id': '20200104000000000',
@@ -171,10 +194,11 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                     },
                 ]],
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
+        book.load_fulltext_files()
         self.assertEqual(book.meta, {
             '20200101000000000': {
                 'title': 'Item 1',
@@ -194,6 +218,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 'title': 'Item 3',
                 'create': '20200103000000000',
                 'modify': '20200103000000000',
+                'index': '20200103000000000.html',
             },
             '20200104000000000': {
                 'title': 'Item 4',
@@ -211,41 +236,62 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 '20200102000000000',
             ],
         })
+        self.assertEqual(book.fulltext, {
+            '20200103000000000': {
+                '20200103000000000.html': {
+                    'content': 'Donec eget vehicula purus.',
+                },
+            },
+        })
 
     def test_update_item(self):
+        with open(os.path.join(self.root, 'scrapbook0', 'data', '20200101000000000', 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('Phasellus eros quam.')
+
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'update_item',
                 'args': [
                     {
-                        'id': '20200102000000000',
-                        'title': 'Item 2f',
-                        'modify': '20200102000000001',
+                        'id': '20200101000000000',
+                        'title': 'Item 1f',
+                        'modify': '20200101000000001',
                     },
                 ],
                 'kwargs': {'auto_modify': False},
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
+        book.load_fulltext_files()
         self.assertEqual(book.meta, {
             '20200101000000000': {
-                'title': 'Item 1',
+                'title': 'Item 1f',
                 'type': '',
                 'create': '20200101000000000',
-                'modify': '20200101000000000',
+                'modify': '20200101000000001',
                 'index': '20200101000000000/index.html',
             },
             '20200102000000000': {
-                'title': 'Item 2f',
+                'title': 'Item 2',
                 'type': 'bookmark',
                 'create': '20200102000000000',
-                'modify': '20200102000000001',
+                'modify': '20200102000000000',
                 'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'Phasellus eros quam.',
+                },
             },
         })
 
     def test_update_items(self):
+        with open(os.path.join(self.root, 'scrapbook0', 'data', '20200101000000000', 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('Phasellus eros quam.')
+
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'update_items',
@@ -263,9 +309,10 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 ]],
                 'kwargs': {'auto_modify': False},
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
+        book.load_fulltext_files()
         self.assertEqual(book.meta, {
             '20200101000000000': {
                 'title': 'Item 1f',
@@ -280,6 +327,13 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200102000000001',
                 'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'Phasellus eros quam.',
+                },
             },
         })
 
@@ -376,10 +430,10 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'copy_item',
-                'args': ['20200101000000000', 0, 'root'],
+                'args': ['root', 0, 'root'],
                 'kwargs': {'target_book_id': 'b1', 'recursively': False},
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
@@ -410,29 +464,37 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book1 = wsb_host.Host(self.root).books['b1']
         book1.load_meta_files()
         book1.load_toc_files()
+        book1.load_fulltext_files()
         self.assertEqual(book1.meta, {
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
+            '20200101000000000': {
+                'title': 'Item 1',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'index': '20200101000000000/index.html',
             },
         })
         self.assertEqual(book1.toc, {
             'root': [
-                '20200102000000000',
+                '20200101000000000',
             ],
+        })
+        self.assertEqual(book1.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'Lorem ipsum dolor sit amet.',
+                },
+            },
         })
 
     def test_copy_items(self):
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'copy_items',
-                'args': [[('20200101000000000', 0)], 'root'],
+                'args': [[('root', 0)], 'root'],
                 'kwargs': {'target_book_id': 'b1', 'recursively': False},
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
@@ -463,19 +525,27 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book1 = wsb_host.Host(self.root).books['b1']
         book1.load_meta_files()
         book1.load_toc_files()
+        book1.load_fulltext_files()
         self.assertEqual(book1.meta, {
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
+            '20200101000000000': {
+                'title': 'Item 1',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'index': '20200101000000000/index.html',
             },
         })
         self.assertEqual(book1.toc, {
             'root': [
-                '20200102000000000',
+                '20200101000000000',
             ],
+        })
+        self.assertEqual(book1.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'Lorem ipsum dolor sit amet.',
+                },
+            },
         })
 
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
@@ -652,47 +722,38 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         })
 
     def test_delete_item(self):
+        for _ in wsb_cache.generate(self.root, fulltext=True, lock=False, backup=False):
+            pass
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'delete_item',
-                'args': ['20200101000000000', 0],
+                'args': ['root', 0],
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-        })
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-            ],
-        })
+        book.load_fulltext_files()
+        self.assertEqual(book.meta, {})
+        self.assertEqual(book.toc, {})
+        self.assertEqual(book.fulltext, {})
 
     def test_delete_items(self):
+        for _ in wsb_cache.generate(self.root, fulltext=True, lock=False, backup=False):
+            pass
         wsb_util.HostQuery(self.root, [
             {
                 'cmd': 'delete_items',
-                'args': [
-                    [
-                        ('root', 0),
-                        ('20200101000000000', 0),
-                    ],
-                ],
+                'args': [[('root', 0)]],
             },
-        ]).run()
+        ], auto_cache={'fulltext': True}).run()
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
+        book.load_fulltext_files()
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
+        self.assertEqual(book.fulltext, {})
 
     def test_sort_item(self):
         wsb_util.HostQuery(self.root, [

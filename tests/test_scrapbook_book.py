@@ -4240,7 +4240,10 @@ class TestCopyItem(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_item('root', 0, 'hidden', None, recursively=False), 0)
+        self.assertEqual(
+            book.copy_item('root', 0, 'hidden', None, recursively=False),
+            (0, '', ['20200101000000000']),
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -4331,7 +4334,16 @@ class TestCopyItem(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_item('root', 0, 'hidden', None), 0)
+        self.assertEqual(
+            book.copy_item('root', 0, 'hidden', None),
+            (0, '', [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+                '20200101000000003',
+                '20200101000000004',
+            ]),
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -4470,7 +4482,10 @@ class TestCopyItem(TestCopyItemBase):
         book = case.book
         book2 = case.host.books['book2']
 
-        self.assertEqual(book.copy_item('root', 0, 'hidden', None, target_book_id='book2', recursively=False), 0)
+        self.assertEqual(
+            book.copy_item('root', 0, 'hidden', None, target_book_id='book2', recursively=False),
+            (0, 'book2', ['item1']),
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -4572,7 +4587,16 @@ class TestCopyItem(TestCopyItemBase):
         book = case.book
         book2 = case.host.books['book2']
 
-        self.assertEqual(book.copy_item('root', 0, 'hidden', None, target_book_id='book2'), 0)
+        self.assertEqual(
+            book.copy_item('root', 0, 'hidden', None, target_book_id='book2'),
+            (0, 'book2', [
+                'item1',
+                'item1-1',
+                'item1-1-1',
+                'item1-2',
+                'item1-3',
+            ]),
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -4806,7 +4830,16 @@ class TestCopyItem(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_item('root', 0, 'item1-3', None), 0)
+        self.assertEqual(
+            book.copy_item('root', 0, 'item1-3', None),
+            (0, '', [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+                '20200101000000003',
+                '20200101000000004',
+            ])
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -4915,11 +4948,18 @@ class TestCopyItems(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_items([
-            ['item1', 0],
-            ['item1', 1],
-            ['item1', 2],
-        ], 'hidden', None, recursively=False), 0)
+        self.assertEqual(
+            book.copy_items([
+                ['item1', 0],
+                ['item1', 1],
+                ['item1', 2],
+            ], 'hidden', None, recursively=False),
+            (0, '', [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+            ]),
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -5027,11 +5067,20 @@ class TestCopyItems(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_items([
-            ['item1', 0],
-            ['item1', 1],
-            ['item1', 2],
-        ], 'hidden', None), 0)
+        self.assertEqual(
+            book.copy_items([
+                ['item1', 0],
+                ['item1', 1],
+                ['item1', 2],
+            ], 'hidden', None),
+            (0, '', [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+                '20200101000000003',
+                '20200101000000004',
+            ])
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -5171,11 +5220,20 @@ class TestCopyItems(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_items([
-            ['root', 0],
-            ['item1', 0],
-            ['item1-1', 0],
-        ], 'hidden', None), 0)
+        self.assertEqual(
+            book.copy_items([
+                ['root', 0],
+                ['item1', 0],
+                ['item1-1', 0],
+            ], 'hidden', None),
+            (0, '', [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+                '20200101000000003',
+                '20200101000000004',
+            ])
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',
@@ -5315,12 +5373,19 @@ class TestCopyItems(TestCopyItemBase):
         case = self.create_general_case()
         book = case.book
 
-        self.assertEqual(book.copy_items([
-            ['item1', 1],
-            ['item1-2', 0],
-            ['item1', 0],
-            ['item1', 1],
-        ], 'hidden', None, recursively=False), 0)
+        self.assertEqual(
+            book.copy_items([
+                ['item1', 1],
+                ['item1-2', 0],
+                ['item1', 0],
+                ['item1', 1],
+            ], 'hidden', None, recursively=False),
+            (0, '', [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+            ]),
+        )
         self.assertEqual(book.toc, {
             'root': [
                 'item1',

@@ -4,12 +4,13 @@ import copy
 from collections import defaultdict, deque
 from contextlib import nullcontext
 
+from . import cache as wsb_cache
 from .host import Host
 
 
 class HostQuery:
     """A utility to perform a series of query on a scrapbook host."""
-    def __init__(self, host, query, *, lock=True):
+    def __init__(self, host, query, auto_cache=None, *, lock=True):
         if isinstance(host, Host):
             pass
         elif isinstance(host, str):
@@ -19,11 +20,13 @@ class HostQuery:
 
         self.host = host
         self.query = query
+        self.auto_cache = auto_cache
         self.lock = lock
 
         self.tasks = []
         self.loads = defaultdict(set)
         self.changes = defaultdict(set)
+        self.modified = defaultdict(set)
         self.results = []
 
     def run(self):
@@ -105,7 +108,7 @@ class HostQuery:
                     book.save_toc_files()
 
     def _run_tasks(self):
-        for _book_id, _cmd, func, args, kwargs in self.tasks:
+        for book_id, cmd, func, args, kwargs in self.tasks:
             try:
                 rv = func(*args, **kwargs)
             except Exception as exc:
@@ -121,17 +124,49 @@ class HostQuery:
 
             self.results.append(rv)
 
+            try:
+                posthandler = getattr(self, f'_cmd_{cmd}_posthandler')
+            except (KeyError, AttributeError):
+                pass
+            else:
+                posthandler(book_id, args, kwargs, rv)
+
+        if self.auto_cache:
+            # prevent getting an empty set, which means all items
+            book_items = {
+                book_id: item_ids
+                for book_id, item_ids in self.modified.items()
+                if item_ids
+            }
+
+            if book_items:
+                gen = wsb_cache.generate(self.host, book_items,
+                                         lock=False, backup=False,
+                                         **self.auto_cache)
+                for _ in gen:
+                    pass
+
     _cmd_get_item_loads = {'meta', 'toc'}
 
     _cmd_get_items_loads = _cmd_get_item_loads
 
     _cmd_add_item_changes = {'meta', 'toc'}
 
+    def _cmd_add_item_posthandler(self, book_id, args, kwargs, rv):
+        self.modified[book_id].update(rv)
+
     _cmd_add_items_changes = _cmd_add_item_changes
+
+    _cmd_add_items_posthandler = _cmd_add_item_posthandler
 
     _cmd_update_item_changes = {'meta'}
 
+    def _cmd_update_item_posthandler(self, book_id, args, kwargs, rv):
+        self.modified[book_id].update(rv)
+
     _cmd_update_items_changes = _cmd_update_item_changes
+
+    _cmd_update_items_posthandler = _cmd_update_item_posthandler
 
     _cmd_move_item_loads = {'meta', 'toc'}
 
@@ -157,9 +192,15 @@ class HostQuery:
             self.loads[target_book_id].update({'meta', 'toc'})
             self.changes[target_book_id].update({'meta', 'toc'})
 
+    def _cmd_copy_item_posthandler(self, book_id, args, kwargs, rv):
+        _, target_book_id, item_ids = rv
+        self.modified[target_book_id].update(item_ids)
+
     _cmd_copy_items_changes = _cmd_copy_item_changes
 
     _cmd_copy_items_prehandler = _cmd_copy_item_prehandler
+
+    _cmd_copy_items_posthandler = _cmd_copy_item_posthandler
 
     _cmd_recycle_item_changes = {'meta', 'toc'}
 
@@ -171,7 +212,12 @@ class HostQuery:
 
     _cmd_delete_item_changes = {'meta', 'toc'}
 
+    def _cmd_delete_item_posthandler(self, book_id, args, kwargs, rv):
+        self.modified[book_id].update(rv)
+
     _cmd_delete_items_changes = _cmd_delete_item_changes
+
+    _cmd_delete_items_posthandler = _cmd_delete_item_posthandler
 
     _cmd_sort_item_loads = {'meta', 'toc'}
 

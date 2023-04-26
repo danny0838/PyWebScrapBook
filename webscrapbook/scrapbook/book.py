@@ -848,6 +848,8 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
         Returns:
             int: index that the items are inserted at
+            str: ID of the target book
+            list: ID of the generated items
 
         Raises:
             ValueError: if the item does not exist, the target parent does not
@@ -910,7 +912,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
                                  recursively, id_map)
             _target_index += 1
 
-        return target_index
+        return target_index, target_book_id, [v for v in id_map.values() if v]
 
     def _copy_item_tree(self, item_id, target_parent_id, target_index, target_book,
                         recursively, id_map):
