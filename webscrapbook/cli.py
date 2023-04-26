@@ -381,8 +381,8 @@ def view():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=getdoc(view_archive_files))
     parser.add_argument(
-        'files', nargs='+',
-        help="""files to view.""")
+        'files', metavar='file', nargs='+',
+        help="""file(s) to view.""")
     args = vars(parser.parse_args())
     view_archive_files(args['files'])
 
@@ -1005,8 +1005,8 @@ Available TOPICs:
         help="""view archive file in the browser""")
     parser_view.set_defaults(func=cmd_view)
     parser_view.add_argument(
-        'files', nargs='+',
-        help="""files to view""")
+        'files', metavar='file', nargs='+',
+        help="""file(s) to view""")
 
     return parser.parse_args(argv)
 
