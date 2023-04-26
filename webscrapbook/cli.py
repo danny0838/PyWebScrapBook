@@ -463,7 +463,7 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
 (default: %(default)s)""")
     parser_encrypt.add_argument(
         '-s', '--salt', default='', action='store',
-        help="""the salt to add during encryption.""")
+        help="""the salt to add during encryption""")
 
     # subcommand: cache
     parser_cache = subparsers.add_parser(
@@ -474,14 +474,14 @@ sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
     parser_cache.set_defaults(func=cmd_cache)
     parser_cache.add_argument(
         'book_ids', metavar='book', nargs='*', action='store',
-        help="""the book ID(s) to generate cache. (default: all books)""")
+        help="""the book ID(s) to generate cache (default: all books)""")
     parser_cache.add_argument(
         '--item', dest='item_ids',
         metavar='ID', action='store', default=None, nargs='+',
         help="""the items ID(s) to generate cache (default: all)""")
     parser_cache.add_argument(
         '--fulltext', default=True, action='store_true',
-        help="""generate fulltext cache. (default)""")
+        help="""generate fulltext cache (default)""")
     parser_cache.add_argument(
         '--no-fulltext', dest='fulltext', action='store_false',
         help="""inverse of --fulltext""")
@@ -540,7 +540,7 @@ inconsistency.""")
     parser_check.set_defaults(func=cmd_check)
     parser_check.add_argument(
         'book_ids', metavar='book', nargs='*', action='store',
-        help="""the book ID(s) to check. (default: all books)""")
+        help="""the book ID(s) to check (default: all books)""")
 
     parser_check.add_argument(
         '-r', '--resolve', dest='resolve_all', default=False, action='store_true',
@@ -598,7 +598,7 @@ inconsistency.""")
         help="""the output directory""")
     parser_export.add_argument(
         '--book', dest='book_id', metavar='ID', default='', action='store',
-        help="""the book ID to export. (default: "")""")
+        help="""the book ID to export (default: "")""")
     parser_export.add_argument(
         '--item', dest='item_ids',
         metavar='ID', action='store', default=None, nargs='+',
@@ -657,7 +657,7 @@ time. For example, "%CREATE:UTC_DATE%".
 child files are imported in unicode filename order.""")
     parser_import.add_argument(
         '--book', dest='book_id', metavar='ID', default='', action='store',
-        help="""the book ID to import into. (default: "")""")
+        help="""the book ID to import into (default: "")""")
     parser_import.add_argument(
         '--target', dest='target_id', metavar='ID',
         default='root', action='store',
@@ -670,7 +670,7 @@ inserted at (default: last)""")
     parser_import.add_argument(
         '--rebuild-folders', default=False, action='store_true',
         help="""insert imported items under the original parent, and
-auto-generate parent folders if not found. (ignores --target and
+auto-generate parent folders if not found (ignores --target and
 --target-index)""")
     parser_import.add_argument(
         '--resolve-id-used', metavar='MODE',
@@ -974,7 +974,7 @@ conversion—item metadata are not preserved and interlinkings may be broken.
         help="""ID of the book to convert (default: "")""")
     parser_convert_wsb2file.add_argument(
         '--no-prefix', dest='prefix', default=True, action='store_false',
-        help="""don't prefix output files with position number.""")
+        help="""don't prefix output files with position number""")
     parser_convert_wsb2file.add_argument(
         '--force', default=False, action='store_true',
         help="""overwrite everything in the output directory""")
