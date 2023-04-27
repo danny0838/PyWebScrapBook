@@ -156,8 +156,7 @@ def cmd_encrypt(args):
 
 
 def cmd_cache(args):
-    """Generate (or update) fulltext cache and/or static site pages.
-    """
+    """Generate (or update) fulltext cache and/or static site pages."""
     kwargs = args.copy()
     debug = kwargs.pop('debug')
 
@@ -168,8 +167,7 @@ def cmd_cache(args):
 
 
 def cmd_export(args):
-    """Export data items into archive files (*.wsba).
-    """
+    """Export data items into archive files (*.wsba)."""
     kwargs = args.copy()
     debug = kwargs.pop('debug')
 
@@ -268,8 +266,7 @@ def cmd_convert(args):
 
 
 def cmd_help(args):
-    """Show detailed information about certain topics.
-    """
+    """Show detailed information about certain topics."""
     root = os.path.join(os.path.dirname(__file__), 'resources')
 
     if args['topic'] == 'config':
