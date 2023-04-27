@@ -48,9 +48,6 @@ def cmd_serve(args):
     """Serve the root directory forever. Shutdown via Ctrl+C or another killing
     technique.
 
-    By default the local browser will be launched to view the served (hosted) site.
-    This behavior can be changed using the `server.browse` config.
-
     Note that this built-in server is designed only for local hosting, or remote
     hosting for personal or few people usage. For an opened world wide web hosting,
     a more specialized server should be used.
@@ -427,7 +424,7 @@ def parse_args(argv=None):
     parser_serve.add_argument(
         '--browse', default=None, action=BooleanOptionalAction,
         help="""launch the browser to visit the served directory (default:
-as config)""")
+as `server.browse` config)""")
     parser_serve.set_defaults(func=cmd_serve)
 
     # subcommand: config
