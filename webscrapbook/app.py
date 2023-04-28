@@ -531,22 +531,25 @@ def handle_action_token(func):
 def handle_action_advanced(func):
     """A decorator function that helps handling an advanced command.
 
-    - Verify POST method.
-    - Provide a default return value.
+    - Verify POST method (except for SSE format).
+    - Add 'Cache-Control: no-store' header.
+    - Provide a default 204 response.
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         format = request.format
 
-        if request.method != 'POST':
+        if request.method != 'POST' and format != 'sse':
             abort(405, valid_methods=['POST'])
 
-        rv = func(*args, **kwargs)
+        response = func(*args, **kwargs)
 
-        if rv is not None:
-            return rv
+        if response is None:
+            response = http_response(status=204, format=format)
 
-        return http_response(status=204, format=format)
+        response.headers.set('Cache-Control', 'no-store')
+
+        return response
 
     return wrapper
 
@@ -1211,6 +1214,7 @@ def action_unbackup():
     return http_response(os.path.basename(backup_dir), format=request.format)
 
 
+@handle_action_advanced
 @handle_action_token
 def action_cache():
     """Invoke the cacher."""
@@ -1231,9 +1235,6 @@ def action_cache():
         'locale': request.values.get('locale'),
     }
 
-    headers = {
-        'Cache-Control': 'no-store',
-    }
     gen = wsb_cache.generate(host.root, config=host.config, **kwargs)
 
     if format == 'sse':
@@ -1244,7 +1245,7 @@ def action_cache():
                     'msg': info.msg,
                 }, ensure_ascii=False)
 
-        return http_response(wrapper(), headers=headers, format=format)
+        return http_response(wrapper(), format=format)
 
     elif format:
         abort(400, 'Action not supported.')
@@ -1255,9 +1256,10 @@ def action_cache():
                              debug=False,
                              )
 
-    return Response(stream, headers=headers)
+    return Response(stream)
 
 
+@handle_action_advanced
 @handle_action_token
 def action_check():
     """Invoke the checker."""
@@ -1280,9 +1282,6 @@ def action_check():
         'resolve_unused_icon': request.values.get('resolve_unused_icon', default=False, type=bool),
     }
 
-    headers = {
-        'Cache-Control': 'no-store',
-    }
     gen = wsb_check.run(host.root, config=host.config, **kwargs)
 
     if format == 'sse':
@@ -1293,7 +1292,7 @@ def action_check():
                     'msg': info.msg,
                 }, ensure_ascii=False)
 
-        return http_response(wrapper(), headers=headers, format=format)
+        return http_response(wrapper(), format=format)
 
     elif format:
         abort(400, 'Action not supported.')
@@ -1304,7 +1303,7 @@ def action_check():
                              debug=False,
                              )
 
-    return Response(stream, headers=headers)
+    return Response(stream)
 
 
 @bp.before_request

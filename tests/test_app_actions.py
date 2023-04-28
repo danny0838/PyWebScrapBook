@@ -5475,9 +5475,9 @@ class TestCache(TestActions):
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
-        """Require format."""
+        """Forbid format=json."""
         with self.app.test_client() as c:
-            c.get('/', query_string={'a': 'cache', 'f': 'json', 'token': token(c)})
+            c.post('/', data={'a': 'cache', 'f': 'json', 'token': token(c)})
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
 
@@ -5528,7 +5528,7 @@ class TestCache(TestActions):
                 return_value=iter(()))
     def test_basic_html(self, mock_func, mock_streamer):
         with self.app.app_context(), self.app.test_client() as c:
-            r = c.get('/', query_string={
+            r = c.post('/', data={
                 'a': 'cache', 'token': token(c),
                 'book': ['', 'id1'],
                 'item': ['20200101'],
@@ -5581,9 +5581,9 @@ class TestCheck(TestActions):
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_format_check(self, mock_abort):
-        """Require format."""
+        """Forbid format=json."""
         with self.app.test_client() as c:
-            c.get('/', query_string={'a': 'check', 'f': 'json', 'token': token(c)})
+            c.post('/', data={'a': 'check', 'f': 'json', 'token': token(c)})
 
         mock_abort.assert_called_once_with(400, 'Action not supported.')
 
@@ -5638,7 +5638,7 @@ class TestCheck(TestActions):
                 return_value=iter(()))
     def test_basic_html(self, mock_func, mock_streamer):
         with self.app.app_context(), self.app.test_client() as c:
-            r = c.get('/', query_string={
+            r = c.post('/', data={
                 'a': 'check', 'token': token(c),
                 'book': ['', 'id1'],
                 'no_lock': 1,
