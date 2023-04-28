@@ -14,6 +14,7 @@ import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION
 from webscrapbook import app as wsb_app
 from webscrapbook._polyfill import zipfile
+from webscrapbook.util import Info
 from webscrapbook.util.fs import junction
 
 from . import (
@@ -5473,14 +5474,6 @@ class TestCache(TestActions):
 
         mock_abort.assert_called_once_with(400, 'Invalid access token.')
 
-    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
-    def test_format_check(self, mock_abort):
-        """Forbid format=json."""
-        with self.app.test_client() as c:
-            c.post('/', data={'a': 'cache', 'f': 'json', 'token': token(c)})
-
-        mock_abort.assert_called_once_with(400, 'Action not supported.')
-
     @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
                 return_value=iter(()))
     def test_basic_sse(self, mock_func):
@@ -5525,6 +5518,49 @@ class TestCache(TestActions):
             self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
                 ('complete', None),
             ])
+
+    @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
+                return_value=iter(()))
+    def test_basic_json(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            r = c.post('/', data={
+                'a': 'cache', 'f': 'json', 'token': token(c),
+                'book': ['', 'book1'],
+                'item[0]': ['_item1', '_item2'],
+                'item[1]': ['book1_item1', 'book1_item2'],
+                'item': ['item1', 'item2'],
+                'no_lock': 1,
+                'no_backup': 1,
+                'fulltext': 1,
+                'inclusive_frames': 1,
+                'recreate': 1,
+                'static_site': 1,
+                'static_index': 1,
+                'rss_root': 'http://example.com',
+                'rss_item_count': 25,
+                'locale': 'zh',
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                book_items={
+                    '': ['_item1', '_item2', 'item1', 'item2'],
+                    'book1': ['book1_item1', 'book1_item2', 'item1', 'item2'],
+                },
+                lock=False,
+                backup=False,
+                fulltext=True,
+                inclusive_frames=True,
+                recreate=True,
+                static_site=True,
+                static_index=True,
+                rss_root='http://example.com',
+                rss_item_count=25,
+                locale='zh',
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {'data': None})
 
     @mock.patch('webscrapbook.app.stream_template', wraps=wsb_app.stream_template)
     @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
@@ -5575,6 +5611,23 @@ class TestCache(TestActions):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
 
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    @mock.patch('webscrapbook.app.wsb_cache.generate', autospec=True,
+                return_value=iter((Info('critical', 'An unexpected error happened.'),)))
+    def test_error_json(self, mock_func, mock_abort):
+        with self.app.app_context(), self.app.test_client() as c:
+            c.post('/', data={
+                'a': 'cache', 'f': 'json', 'token': token(c),
+                'book': ['', 'book1'],
+                'item[0]': ['_item1', '_item2'],
+                'item[1]': ['book1_item1', 'book1_item2'],
+                'item': ['item1', 'item2'],
+                'no_lock': 1,
+                'no_backup': 1,
+            })
+
+            mock_abort.assert_called_once_with(500, 'An unexpected error happened.')
+
 
 class TestCheck(TestActions):
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
@@ -5584,14 +5637,6 @@ class TestCheck(TestActions):
             c.get('/', query_string={'a': 'check', 'f': 'sse'})
 
         mock_abort.assert_called_once_with(400, 'Invalid access token.')
-
-    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
-    def test_format_check(self, mock_abort):
-        """Forbid format=json."""
-        with self.app.test_client() as c:
-            c.post('/', data={'a': 'check', 'f': 'json', 'token': token(c)})
-
-        mock_abort.assert_called_once_with(400, 'Action not supported.')
 
     @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
                 return_value=iter(()))
@@ -5637,6 +5682,49 @@ class TestCheck(TestActions):
             self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
                 ('complete', None),
             ])
+
+    @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
+                return_value=iter(()))
+    def test_basic_json(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            r = c.post('/', data={
+                'a': 'check', 'f': 'json', 'token': token(c),
+                'book': ['', 'id1'],
+                'no_lock': 1,
+                'no_backup': 1,
+                'resolve_invalid_id': 1,
+                'resolve_missing_index': 1,
+                'resolve_missing_index_file': 1,
+                'resolve_missing_date': 1,
+                'resolve_older_mtime': 1,
+                'resolve_toc_unreachable': 1,
+                'resolve_toc_invalid': 1,
+                'resolve_toc_empty_subtree': 1,
+                'resolve_unindexed_files': 1,
+                'resolve_absolute_icon': 1,
+                'resolve_unused_icon': 1,
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                book_ids=['', 'id1'],
+                lock=False,
+                backup=False,
+                resolve_invalid_id=True,
+                resolve_missing_index=True,
+                resolve_missing_index_file=True,
+                resolve_missing_date=True,
+                resolve_older_mtime=True,
+                resolve_toc_unreachable=True,
+                resolve_toc_invalid=True,
+                resolve_toc_empty_subtree=True,
+                resolve_unindexed_files=True,
+                resolve_absolute_icon=True,
+                resolve_unused_icon=True,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {'data': None})
 
     @mock.patch('webscrapbook.app.stream_template', wraps=wsb_app.stream_template)
     @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
@@ -5686,6 +5774,20 @@ class TestCheck(TestActions):
             )
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers['Content-Type'], 'text/html; charset=utf-8')
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    @mock.patch('webscrapbook.app.wsb_check.run', autospec=True,
+                return_value=iter((Info('critical', 'An unexpected error happened.'),)))
+    def test_error_json(self, mock_func, mock_abort):
+        with self.app.app_context(), self.app.test_client() as c:
+            c.post('/', data={
+                'a': 'check', 'f': 'json', 'token': token(c),
+                'book': ['', 'id1'],
+                'no_lock': 1,
+                'no_backup': 1,
+            })
+
+            mock_abort.assert_called_once_with(500, 'An unexpected error happened.')
 
 
 class TestUnknown(TestActions):

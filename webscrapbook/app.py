@@ -1253,7 +1253,10 @@ def action_cache():
         return http_response(wrapper(), format=format)
 
     elif format:
-        abort(400, 'Action not supported.')
+        for info in gen:
+            if info.type == 'critical':
+                abort(500, info.msg)
+        return None
 
     stream = stream_template('cli.html',
                              title='Indexing...',
@@ -1300,7 +1303,10 @@ def action_check():
         return http_response(wrapper(), format=format)
 
     elif format:
-        abort(400, 'Action not supported.')
+        for info in gen:
+            if info.type == 'critical':
+                abort(500, info.msg)
+        return None
 
     stream = stream_template('cli.html',
                              title='Checking...',
