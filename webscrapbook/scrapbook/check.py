@@ -646,10 +646,17 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
     if not no_backup:
         host.init_auto_backup(note='check')
         yield Info('info', f'Prepared backup at "{host.get_subpath(host._auto_backup_dir)}".')
+        yield Info('info', '----------------------------------------------------------------------')
 
     try:
         # handle all books if none specified
+        first = True
         for book_id in book_ids or host.books:
+            if first:
+                first = False
+            else:
+                yield Info('info', '----------------------------------------------------------------------')
+
             try:
                 book = host.books[book_id]
             except KeyError:
@@ -670,8 +677,6 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
                 yield from generator.run()
 
             yield Info('info', 'Done.')
-
-            yield Info('info', '----------------------------------------------------------------------')
     except Exception as exc:
         traceback.print_exc()
         yield Info('critical', str(exc), exc=exc)
@@ -679,6 +684,8 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
     finally:
         if not no_backup:
             host.init_auto_backup(False)
+
+    yield Info('info', '----------------------------------------------------------------------')
 
     elapsed = time.time() - start
     yield Info('info', f'Time spent: {elapsed} seconds.')
