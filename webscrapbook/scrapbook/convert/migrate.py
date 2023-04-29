@@ -216,11 +216,11 @@ class ConvertDataFilesLegacy:
                 index_file = os.path.normpath(os.path.join(book.data_dir, index))
                 yield Info('debug', f'Checking: {index_file}...')
                 try:
-                    content = book.load_note_file(index_file)
+                    content = book.load_postit_file(index_file)
                 except OSError as exc:
                     yield Info('error', f'Failed to convert "{index}" for "{id}": {exc.strerror}', exc=exc)
                 else:
-                    book.save_note_file(index_file, content)
+                    book.save_postit_file(index_file, content)
             else:
                 index_dir = os.path.normpath(os.path.dirname(os.path.join(book.data_dir, index)))
                 for root, _dirs, files in os.walk(index_dir):

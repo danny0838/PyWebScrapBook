@@ -42,7 +42,7 @@ class Book:
     JSON_TRANSLATER = str.maketrans({'\u2028': '\\u2028', '\u2029': '\\u2029'})
 
     REGEX_TREE_FILE_WRAPPER = re.compile(r'^(?:/\*.*\*/|[^(])+\(([\s\S]*)\)(?:/\*.*\*/|[\s;])*$')
-    REGEX_ITEM_NOTE = re.compile(r'^.*?<pre>\n?([^<]*(?:<(?!/pre>)[^<]*)*)\n</pre>.*$', re.S)
+    REGEX_ITEM_POSTIT = re.compile(r'^.*?<pre>\n?([^<]*(?:<(?!/pre>)[^<]*)*)\n</pre>.*$', re.S)
 
     # A javascript string >= 256 MiB (UTF-16 chars) causes an error in some
     # older browsers. Split into several smaller JavaScript files to prevent
@@ -85,13 +85,13 @@ class Book:
         '.maff',
         '.htm',
     }
-    ITEM_NOTE_FORMATTER = """\
+    ITEM_POSTIT_FORMATTER = """\
 <!DOCTYPE html><html><head>\
 <meta charset="UTF-8">\
 <meta name="viewport" content="width=device-width">\
 <style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
 </head><body><pre>
-%NOTE_CONTENT%
+%POSTIT_CONTENT%
 </pre></body></html>"""
 
     def __init__(self, host, book_id=''):
@@ -392,15 +392,15 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
         index = item.get('index', '')
         return os.path.normpath(os.path.join(self.data_dir, os.path.dirname(index), unquote(u.path)))
 
-    def load_note_file(self, file):
+    def load_postit_file(self, file):
         with open(file, encoding='UTF-8') as fh:
             content = fh.read()
 
-        return self.REGEX_ITEM_NOTE.sub(r'\1', content)
+        return self.REGEX_ITEM_POSTIT.sub(r'\1', content)
 
-    def save_note_file(self, file, content):
-        data = util.format_string(self.ITEM_NOTE_FORMATTER, {
-            'NOTE_CONTENT': content,
+    def save_postit_file(self, file, content):
+        data = util.format_string(self.ITEM_POSTIT_FORMATTER, {
+            'POSTIT_CONTENT': content,
         })
         # enforce LF to prevent bad parsing for legacy ScrapBook
         with open(file, 'w', encoding='UTF-8', newline='\n') as fh:

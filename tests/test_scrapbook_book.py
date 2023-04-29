@@ -1150,8 +1150,8 @@ scrapbook.fulltext({
             os.path.join(book.tree_dir, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'),
         )
 
-    def test_load_note_file01(self):
-        """Test for common note file wrapper."""
+    def test_load_postit_file01(self):
+        """Test for common postit file wrapper."""
         test_file = os.path.join(self.test_root, 'index.html')
         with open(test_file, 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -1159,42 +1159,42 @@ scrapbook.fulltext({
 <meta name="viewport" content="width=device-width">\
 <style>pre{white-space: pre-wrap; overflow-wrap: break-word;}</style>\
 </head><body><pre>
-Note content
+postit content
 2nd line
 3rd line
 </pre></body></html>""")
 
         book = Book(Host(self.test_root))
-        content = book.load_note_file(test_file)
+        content = book.load_postit_file(test_file)
         self.assertEqual(content, """\
-Note content
+postit content
 2nd line
 3rd line""")
 
-    def test_load_note_file02(self):
-        """Test for common legacy note file wrapper."""
+    def test_load_postit_file02(self):
+        """Test for common legacy postit file wrapper."""
         test_file = os.path.join(self.test_root, 'index.html')
         with open(test_file, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 <html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body><pre>
-Note content
+postit content
 2nd line
 3rd line
 </pre></body></html>""")
 
         book = Book(Host(self.test_root))
-        content = book.load_note_file(test_file)
+        content = book.load_postit_file(test_file)
         self.assertEqual(content, """\
-Note content
+postit content
 2nd line
 3rd line""")
 
-    def test_load_note_file03(self):
+    def test_load_postit_file03(self):
         """Return original text if malformatted."""
         test_file = os.path.join(self.test_root, 'index.html')
         html = """\
 <html><head><meta http-equiv="Content-Type" content="text/html;Charset=UTF-8"></head><body>
-Note content
+postit content
 2nd line
 3rd line
 </body></html>"""
@@ -1202,16 +1202,16 @@ Note content
             fh.write(html)
 
         book = Book(Host(self.test_root))
-        content = book.load_note_file(test_file)
+        content = book.load_postit_file(test_file)
         self.assertEqual(content, html)
 
-    def test_save_note_file01(self):
+    def test_save_postit_file(self):
         """Test saving. Enforce LF linefeeds."""
         test_file = os.path.join(self.test_root, 'index.html')
 
         book = Book(Host(self.test_root))
-        book.save_note_file(test_file, """\
-Note content
+        book.save_postit_file(test_file, """\
+postit content
 2nd line
 3rd line""")
 
@@ -1222,7 +1222,7 @@ Note content
 <meta name="viewport" content="width=device-width">\
 <style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
 </head><body><pre>
-Note content
+postit content
 2nd line
 3rd line
 </pre></body></html>""")

@@ -265,7 +265,7 @@ class Converter:
                 yield Info('debug', f'Converting data file for "{id}" (type={type})')
                 file = os.path.join(self.output, 'data', oid, 'index.html')
                 try:
-                    content = book.load_note_file(file)
+                    content = book.load_postit_file(file)
                 except OSError as exc:
                     yield Info('error', f'Failed to convert "index.html" for "{id}": {exc.strerror}', exc=exc)
                 else:
