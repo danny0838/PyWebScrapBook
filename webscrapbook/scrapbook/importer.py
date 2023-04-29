@@ -411,6 +411,7 @@ def run(root, files, book_id='', *, config=None, no_lock=False, **kwargs):
     except Exception as exc:
         traceback.print_exc()
         yield Info('critical', str(exc), exc=exc)
+        return
     else:
         yield Info('info', 'Done.')
 

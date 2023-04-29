@@ -299,6 +299,7 @@ def run(input, output, *,
     except Exception as exc:
         traceback.print_exc()
         yield Info('critical', str(exc), exc=exc)
+        return
     else:
         yield Info('info', 'Done.')
 

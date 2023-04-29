@@ -615,6 +615,7 @@ def run(input, output, book_id='', no_data_files=False):
     except Exception as exc:
         traceback.print_exc()
         yield Info('critical', str(exc), exc=exc)
+        return
     else:
         yield Info('info', 'Done.')
 

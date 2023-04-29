@@ -320,6 +320,7 @@ def run(input, output, book_ids=None, item_ids=None, types=None, format=None):
     except Exception as exc:
         traceback.print_exc()
         yield Info('critical', str(exc), exc=exc)
+        return
     else:
         yield Info('info', 'Done.')
 

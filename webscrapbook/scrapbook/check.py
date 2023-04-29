@@ -658,23 +658,24 @@ def run(root, book_ids=None, *, config=None, no_lock=False, no_backup=False, **k
                 continue
 
             yield Info('debug', f'Loading book "{book_id}"...')
-            try:
-                if book.no_tree:
-                    yield Info('info', f'Skipped book "{book_id}" ({book.name}) (no_tree).')
-                    continue
 
-                yield Info('info', f'Checking book "{book_id}" ({book.name}).')
-                lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
-                with lh:
-                    generator = BookChecker(book, **kwargs)
-                    yield from generator.run()
-            except Exception as exc:
-                traceback.print_exc()
-                yield Info('critical', str(exc), exc=exc)
-            else:
-                yield Info('info', 'Done.')
+            if book.no_tree:
+                yield Info('info', f'Skipped book "{book_id}" ({book.name}) (no_tree).')
+                continue
+
+            yield Info('info', f'Checking book "{book_id}" ({book.name}).')
+            lh = nullcontext() if no_lock else book.get_tree_lock().acquire()
+            with lh:
+                generator = BookChecker(book, **kwargs)
+                yield from generator.run()
+
+            yield Info('info', 'Done.')
 
             yield Info('info', '----------------------------------------------------------------------')
+    except Exception as exc:
+        traceback.print_exc()
+        yield Info('critical', str(exc), exc=exc)
+        return
     finally:
         if not no_backup:
             host.init_auto_backup(False)
