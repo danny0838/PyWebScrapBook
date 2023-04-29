@@ -27,7 +27,7 @@ class TestMimetypes(unittest.TestCase):
         )
         self.assertEqual(
             mimetypes.guess_type('myfile.js'),
-            ('application/javascript', None),
+            ('text/javascript', None),
         )
         self.assertEqual(
             mimetypes.guess_type('myfile.bmp'),

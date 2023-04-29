@@ -1767,8 +1767,8 @@ class TestSingleHtmlConverter(Test):
 <!DOCTYPE html>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <script href="data:application/javascript,script.js"></script>
-  <script xlink:href="data:application/javascript,scriptx.js"></script>
+  <script href="data:text/javascript,script.js"></script>
+  <script xlink:href="data:text/javascript,scriptx.js"></script>
   <a href="data:image/bmp;base64,YS5ibXA=">
     <image href="data:image/bmp;base64,aW1hZ2UuYm1w" />
   </a>
@@ -1820,8 +1820,8 @@ class TestSingleHtmlConverter(Test):
 <?xml version="1.0"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <script href="data:application/javascript,script.js"></script>
-  <script xlink:href="data:application/javascript,scriptx.js"></script>
+  <script href="data:text/javascript,script.js"></script>
+  <script xlink:href="data:text/javascript,scriptx.js"></script>
   <a href="data:image/bmp;base64,YS5ibXA=">
     <image href="data:image/bmp;base64,aW1hZ2UuYm1w" />
   </a>
@@ -2180,8 +2180,8 @@ class TestUnSingleHtmlConverter(Test):
 <!DOCTYPE html>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <script href="data:application/javascript,script.js"></script>
-  <script xlink:href="data:application/javascript,scriptx.js"></script>
+  <script href="data:text/javascript,script.js"></script>
+  <script xlink:href="data:text/javascript,scriptx.js"></script>
   <a href="data:image/bmp;base64,YS5ibXA=">
     <image href="data:image/bmp;base64,aW1hZ2UuYm1w" />
   </a>
@@ -2233,8 +2233,8 @@ class TestUnSingleHtmlConverter(Test):
 <?xml version="1.0"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <script href="data:application/javascript,script.js"></script>
-  <script xlink:href="data:application/javascript,scriptx.js"></script>
+  <script href="data:text/javascript,script.js"></script>
+  <script xlink:href="data:text/javascript,scriptx.js"></script>
   <a href="data:image/bmp;base64,YS5ibXA=">
     <image href="data:image/bmp;base64,aW1hZ2UuYm1w" />
   </a>

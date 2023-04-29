@@ -41,7 +41,8 @@ _mimetypes.add_type('application/x-7z-compressed', '.7z')
 _mimetypes.add_type('application/vnd.rar', '.rar')
 
 # .js is mapped to application/x-javascript in some mime types sources
-_mimetypes.add_type('application/javascript', '.js')
+# ref: https://www.ietf.org/rfc/rfc9239.txt
+_mimetypes.add_type('text/javascript', '.js')
 
 # .bmp is mapped to image/x-ms-bmp on POSIX
 # ref: https://bugs.python.org/issue42028
