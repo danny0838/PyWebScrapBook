@@ -132,6 +132,13 @@ def id_to_datetime_legacy(id):
     return None
 
 
+def unify_pathsep(text):
+    """Convert non-standard path separators to '/'."""
+    if os.sep != '/':
+        return text.replace(os.sep, '/')
+    return text
+
+
 def validate_filename(filename, force_ascii=False):
     """Transliterates the given string to be a safe filename
 

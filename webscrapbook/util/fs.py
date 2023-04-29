@@ -1061,9 +1061,7 @@ def _zip_compress_iter(filename, subpath, filter=None):
                         continue
 
             # determine target subpath as dst
-            dst = src[cut:]
-            if os.sep != '/':
-                dst = dst.replace(os.sep, '/')
+            dst = util.unify_pathsep(src[cut:])
             dst = subpath + dst
 
             yield src, dst

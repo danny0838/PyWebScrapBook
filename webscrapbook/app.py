@@ -1521,9 +1521,7 @@ def file_info(file, base=None):
         if not file.startswith(base):
             raise ValueError('file not under base')
 
-        name = file[len(base):]
-        if os.sep != '/':
-            name = name.replace(os.sep, '/')
+        name = util.unify_pathsep(file[len(base):])
 
     try:
         statinfo = os.lstat(file)

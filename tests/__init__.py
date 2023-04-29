@@ -65,6 +65,12 @@ def require_sep(reason="requires '/' as filesystem path separator "
     return unittest.skipUnless(support, reason)
 
 
+def require_altsep(reason="requires non-'/' as filesystem path separator "
+                          '(e.g. Windows)'):
+    support = os.sep != '/'
+    return unittest.skipUnless(support, reason)
+
+
 def require_case_insensitive(reason='requires case insensitive filesystem '
                                     '(e.g. Windows)'):
     support = os.path.normcase('ABC') == os.path.normcase('abc')

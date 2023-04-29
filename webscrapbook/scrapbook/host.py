@@ -412,8 +412,7 @@ class Host:
         # Convert non-standard path separators to '/'. (Currently this only
         # happens on Windows, which uses '\', and it's safe to do so since
         # Windows does not allow '/' in filename.)
-        if os.sep != '/':
-            path = path.replace(os.sep, '/')
+        path = util.unify_pathsep(path)
 
         return path
 

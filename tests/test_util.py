@@ -10,7 +10,7 @@ import lxml.html
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
 
-from . import DUMMY_ZIP_DT, ROOT_DIR, TEMP_DIR
+from . import DUMMY_ZIP_DT, ROOT_DIR, TEMP_DIR, require_altsep, require_sep
 
 test_root = os.path.join(ROOT_DIR, 'test_util')
 
@@ -128,6 +128,18 @@ class TestUtils(unittest.TestCase):
 
         # invalid format (number out of range)
         self.assertIsNone(util.id_to_datetime_legacy('20200102036505'))
+
+    @require_sep()
+    def test_unify_pathsep_cs(self):
+        self.assertEqual(
+            util.unify_pathsep('a/b\\c/d'),
+            'a/b\\c/d')
+
+    @require_altsep()
+    def test_unify_pathsep_ci(self):
+        self.assertEqual(
+            util.unify_pathsep('a/b\\c/d'),
+            'a/b/c/d')
 
     def test_validate_filename(self):
         # basic
