@@ -7,7 +7,7 @@ from unittest import mock
 
 from webscrapbook import WSB_DIR, util
 from webscrapbook._polyfill import zipfile
-from webscrapbook.scrapbook.check import BookChecker
+from webscrapbook.scrapbook import check as wsb_check
 from webscrapbook.scrapbook.host import Host
 
 from . import TEMP_DIR
@@ -39,7 +39,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestBookChecker(unittest.TestCase):
+class TestCheck(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -49,8 +49,122 @@ class TestBookChecker(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
+        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
         os.makedirs(self.test_tree)
 
+
+class TestFuncRun(TestCheck):
+    @mock.patch('webscrapbook.scrapbook.check.Host')
+    def test_param_root(self, mock_host):
+        for _info in wsb_check.run(self.test_root):
+            pass
+
+        mock_host.assert_called_once_with(self.test_root, None)
+
+    @mock.patch('webscrapbook.scrapbook.check.Host')
+    def test_param_config(self, mock_host):
+        for _info in wsb_check.run(self.test_root, config={}):
+            pass
+
+        mock_host.assert_called_once_with(self.test_root, {})
+
+    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    def test_param_no_lock01(self, mock_func):
+        for _info in wsb_check.run(self.test_root, no_lock=False):
+            pass
+
+        mock_func.assert_called_once_with()
+
+    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    def test_param_no_lock02(self, mock_func):
+        for _info in wsb_check.run(self.test_root, no_lock=True):
+            pass
+
+        mock_func.assert_not_called()
+
+    @mock.patch('webscrapbook.scrapbook.host.Book')
+    def test_param_book_ids01(self, mock_book):
+        """Include effective provided IDs"""
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book "id1"]
+
+[book "id2"]
+
+[book "id4"]
+
+[book "id5"]
+""")
+
+        for _info in wsb_check.run(self.test_root, book_ids=['', 'id1', 'id2', 'id3', 'id4']):
+            pass
+
+        self.assertListEqual(mock_book.call_args_list, [
+            mock.call(mock.ANY, ''),
+            mock.call(mock.ANY, 'id1'),
+            mock.call(mock.ANY, 'id2'),
+            mock.call(mock.ANY, 'id4'),
+        ])
+
+    @mock.patch('webscrapbook.scrapbook.host.Book')
+    def test_param_book_ids02(self, mock_book):
+        """Include all available IDs if None provided"""
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book "id1"]
+
+[book "id2"]
+
+[book "id4"]
+
+[book "id5"]
+""")
+
+        for _info in wsb_check.run(self.test_root):
+            pass
+
+        self.assertListEqual(mock_book.call_args_list, [
+            mock.call(mock.ANY, ''),
+            mock.call(mock.ANY, 'id1'),
+            mock.call(mock.ANY, 'id2'),
+            mock.call(mock.ANY, 'id4'),
+            mock.call(mock.ANY, 'id5'),
+        ])
+
+    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    def test_no_tree(self, mock_lock):
+        """Books with no_tree=True should be skipped."""
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+no_tree = true
+""")
+
+        for _info in wsb_check.run(self.test_root):
+            pass
+
+        mock_lock.assert_not_called()
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.get_subpath', lambda *_: '')
+    @mock.patch('webscrapbook.scrapbook.host.Host.init_auto_backup')
+    def test_no_backup01(self, mock_func):
+        for _info in wsb_check.run(self.test_root, no_backup=False):
+            pass
+
+        self.assertEqual(mock_func.call_args_list, [
+            mock.call(note='check'),
+            mock.call(False),
+        ])
+
+    @mock.patch('webscrapbook.scrapbook.host.Host.init_auto_backup')
+    def test_no_backup02(self, mock_func):
+        for _info in wsb_check.run(self.test_root, no_backup=True):
+            pass
+
+        mock_func.assert_not_called()
+
+
+class TestBookChecker(TestCheck):
     def test_normal(self):
         """A simple normal check case. No error should raise."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
@@ -79,7 +193,7 @@ scrapbook.toc({
             fh.write("""page content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book)
+        generator = wsb_check.BookChecker(book)
         for _info in generator.run():
             pass
 
@@ -129,7 +243,7 @@ scrapbook.toc({
             fh.write("""page content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_invalid_id=True)
+        generator = wsb_check.BookChecker(book, resolve_invalid_id=True)
         for _info in generator.run():
             pass
 
@@ -163,7 +277,7 @@ scrapbook.toc({
             fh.write("""page content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_index=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_index=True)
         for _info in generator.run():
             pass
 
@@ -194,7 +308,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_index_file=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_index_file=True)
         for _info in generator.run():
             pass
 
@@ -229,7 +343,7 @@ scrapbook.toc({
             fh.write("""page content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -278,7 +392,7 @@ scrapbook.toc({
             fh.write("""page content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -329,7 +443,7 @@ scrapbook.toc({
             fh.write("""page content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -372,7 +486,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -411,7 +525,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -459,7 +573,7 @@ scrapbook.toc({
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -510,7 +624,7 @@ scrapbook.toc({
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -553,7 +667,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -593,7 +707,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_missing_date=True)
+        generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
 
@@ -642,7 +756,7 @@ scrapbook.toc({
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_older_mtime=True)
+        generator = wsb_check.BookChecker(book, resolve_older_mtime=True)
         for _info in generator.run():
             pass
 
@@ -702,7 +816,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_toc_invalid=True)
+        generator = wsb_check.BookChecker(book, resolve_toc_invalid=True)
         for _info in generator.run():
             pass
 
@@ -745,7 +859,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_toc_invalid=True, resolve_missing_index=True)
+        generator = wsb_check.BookChecker(book, resolve_toc_invalid=True, resolve_missing_index=True)
         for _info in generator.run():
             pass
 
@@ -776,7 +890,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_toc_unreachable=True)
+        generator = wsb_check.BookChecker(book, resolve_toc_unreachable=True)
         for _info in generator.run():
             pass
 
@@ -824,7 +938,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_toc_empty_subtree=True)
+        generator = wsb_check.BookChecker(book, resolve_toc_empty_subtree=True)
         for _info in generator.run():
             pass
 
@@ -874,7 +988,7 @@ page content
         os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_unindexed_files=True)
+        generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
         for _info in generator.run():
             pass
 
@@ -912,7 +1026,7 @@ tree_dir = .wsb/tree
             fh.write("""<!DOCTYPE html>index content""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_unindexed_files=True)
+        generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
         for _info in generator.run():
             pass
 
@@ -935,7 +1049,7 @@ scrapbook.meta({
             fh.write('dummy')
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_absolute_icon=True)
+        generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
 
@@ -967,7 +1081,7 @@ scrapbook.meta({
             fh.write('dummy')
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_absolute_icon=True)
+        generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
 
@@ -996,7 +1110,7 @@ scrapbook.meta({
             fh.write('dummy')
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_absolute_icon=True)
+        generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
 
@@ -1025,7 +1139,7 @@ scrapbook.meta({
             fh.write('dummy')
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_absolute_icon=True)
+        generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
 
@@ -1063,7 +1177,7 @@ scrapbook.meta({
             fh.write('dummy')
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_unused_icon=True)
+        generator = wsb_check.BookChecker(book, resolve_unused_icon=True)
         for _info in generator.run():
             pass
 
@@ -1113,7 +1227,7 @@ scrapbook.toc({
 })""")
 
         book = Host(self.test_root).books['']
-        generator = BookChecker(book, resolve_all=True)
+        generator = wsb_check.BookChecker(book, resolve_all=True)
         for _info in generator.run():
             pass
 
