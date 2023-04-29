@@ -3146,7 +3146,7 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
         self.assertFalse(mock_func.call_args_list[0][1]['rss'])
 
-    def test_param_locale(self):
+    def test_param_locale01(self):
         """locale should be passed."""
         book = Host(self.test_root).books['']
         generator = wsb_cache.StaticSiteGenerator(book, static_index=True, locale='ar')
@@ -3154,6 +3154,21 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
             pass
 
         self.assertEqual(generator.template_env.globals['i18n'].lang, 'ar')
+
+    def test_param_locale02(self):
+        """Take config if locale not specified."""
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[app]
+locale = he
+""")
+
+        book = Host(self.test_root).books['']
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(generator.template_env.globals['i18n'].lang, 'he')
 
     def test_static_index_anchor01(self):
         """Page with index */index.html"""

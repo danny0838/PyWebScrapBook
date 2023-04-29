@@ -83,7 +83,7 @@ class StaticSiteGenerator():
         self.host = book.host
         self.book = book
         self.static_index = static_index
-        self.locale = locale
+        self.locale = locale or self.host.config['app']['locale']
 
         self.rss = rss
 
@@ -93,7 +93,7 @@ class StaticSiteGenerator():
         )
         self.template_env.globals.update({
             'format_string': util.format_string,
-            'i18n': self.host.get_i18n(locale),
+            'i18n': self.host.get_i18n(self.locale),
             'bookname': book.name,
         })
 

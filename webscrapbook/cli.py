@@ -510,7 +510,7 @@ inconsistency. (default: %(default)s)""")
         help="""number of items the RSS feed should include (default: %(default)s)""")
     parser_cache.add_argument(
         '--locale', action='store',
-        help="""locale for the generated pages (default: system locale)""")
+        help="""locale for the generated pages (default: as `app.locale` config)""")
     parser_cache.add_argument(
         '--backup', default=False, action=BooleanOptionalAction,
         help="""backup changed files (default: %(default)s)""")
