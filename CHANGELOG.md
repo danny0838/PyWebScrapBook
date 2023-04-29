@@ -3,8 +3,18 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.12.0] - 2023-04-29
+* Improved handling of boolean options for CLI.
+* Improved the output of some CLI commands.
+* Static site pages now are generated using the config locale if not otherwise specified.
+* JavaScript files now use `text/javascript` as MIME type.
+* Fixed a potential backup error in certain rare cases.
+* Fixed the output format for server sent events when an unexpected error occurred.
+* Fixed and improved some documentation.
+* Miscellaneous optimization and refactoring of the source code and the unittest suite.
+
 ## [1.11.0] - 2023-04-10
-* Fixes and updates for the search page:
+* Fixed and updated the search page:
   * Fixed outdated browser support information.
   * `create:` and `modify:` conditions are now "or"-connected.
   * `book:` conditions are now matched by book ID.
