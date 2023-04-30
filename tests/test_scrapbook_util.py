@@ -65,7 +65,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 '20200101000000000': {
                     'index': '20200101000000000/index.html',
                     'title': 'Item 1',
-                    'type': '',
+                    'type': 'postit',
                     'create': '20200101000000000',
                     'modify': '20200101000000000',
                 },
@@ -90,7 +90,14 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         file = os.path.join(book.data_dir, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(file))
         with open(file, 'w', encoding='UTF-8') as fh:
-            fh.write('Lorem ipsum dolor sit amet.')
+            fh.write("""\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+Lorem ipsum dolor sit amet.
+</pre></body></html>""")
 
     def test_get_item(self):
         # should not raise
@@ -220,7 +227,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book.load_fulltext_files()
         self.assertEqual(book.meta['20200101000000000'], {
             'title': 'Item 1f',
-            'type': '',
+            'type': 'postit',
             'create': '20200101000000000',
             'modify': '20200101000000001',
             'index': '20200101000000000/index.html',
@@ -258,7 +265,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book.load_fulltext_files()
         self.assertEqual(book.meta['20200101000000000'], {
             'title': 'Item 1f',
-            'type': '',
+            'type': 'postit',
             'create': '20200101000000000',
             'modify': '20200101000000001',
             'index': '20200101000000000/index.html',
@@ -379,7 +386,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book1.load_fulltext_files()
         self.assertEqual(book1.meta['20200101000000000'], {
             'title': 'Item 1',
-            'type': '',
+            'type': 'postit',
             'create': '20200101000000000',
             'modify': '20200101000000000',
             'index': '20200101000000000/index.html',
@@ -407,7 +414,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book1.load_fulltext_files()
         self.assertEqual(book1.meta['20200101000000000'], {
             'title': 'Item 1',
-            'type': '',
+            'type': 'postit',
             'create': '20200101000000000',
             'modify': '20200101000000000',
             'index': '20200101000000000/index.html',
@@ -468,7 +475,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book.load_toc_files()
         self.assertEqual(book.meta['20200101000000000'], {
             'title': 'Item 1',
-            'type': '',
+            'type': 'postit',
             'create': '20200101000000000',
             'modify': '20200101000000000',
             'index': '20200101000000000/index.html',
@@ -551,7 +558,7 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book.load_toc_files()
         self.assertEqual(book.meta['20200101000000000'], {
             'title': 'Item 1',
-            'type': '',
+            'type': 'postit',
             'create': '20200101000000000',
             'modify': '20200101000000000',
             'index': '20200101000000000/index.html',
@@ -645,6 +652,36 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
             '20200102000000000',
             '20200101000000000',
         ])
+
+    def test_load_item_postit(self):
+        wsb_util.HostQuery(self.root, [
+            {
+                'cmd': 'load_item_postit',
+                'args': ['20200101000000000'],
+            },
+        ]).run()
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
+    def test_save_item_postit(self):
+        wsb_util.HostQuery(self.root, [
+            {
+                'cmd': 'save_item_postit',
+                'args': ['20200101000000000', 'Duis aute\nirure dolor'],
+            },
+        ], auto_cache={'fulltext': True}).run()
+        book = wsb_host.Host(self.root).books['']
+        book.load_meta_files()
+        book.load_fulltext_files()
+        self.assertEqual(book.meta['20200101000000000'], {
+            'title': 'Duis aute',
+            'type': 'postit',
+            'create': '20200101000000000',
+            'modify': '20230101000000000',
+            'index': '20200101000000000/index.html',
+        })
+        self.assertEqual(book.fulltext['20200101000000000'], {
+            'index.html': {'content': 'Duis aute irure dolor'},
+        })
 
 
 if __name__ == '__main__':

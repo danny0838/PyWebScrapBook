@@ -7030,5 +7030,216 @@ class TestSortItems(TestBook):
         })
 
 
+class TestLoadItemPostit(TestBook):
+    def test_basic(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'type': 'postit',
+                'index': 'item1/index.html',
+            },
+        }
+        indexfile = os.path.join(book.data_dir, 'item1', 'index.html')
+        util.fs.save(indexfile, """\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+Lorem ipsum dolor sit amet "&lt;&amp;&gt;" 崽芺穵縡葥螑扤一鈜珽凈竻氻衶乇
+</pre></body></html>""".encode('UTF-8'))
+
+        self.assertEqual(
+            book.load_item_postit('item1'),
+            'Lorem ipsum dolor sit amet "<&>" 崽芺穵縡葥螑扤一鈜珽凈竻氻衶乇',
+        )
+
+    def test_file_missing(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'type': 'postit',
+                'index': 'item1/index.html',
+            },
+        }
+
+        self.assertEqual(
+            book.load_item_postit('item1'),
+            '',
+        )
+
+    def test_bad_item_missing(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {}
+
+        with self.assertRaises(ValueError):
+            book.load_item_postit('item1')
+
+    def test_bad_item_not_postit(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'index': 'item1/index.html',
+            },
+        }
+
+        with self.assertRaises(ValueError):
+            book.load_item_postit('item1')
+
+    def test_bad_item_index_missing(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {},
+        }
+
+        with self.assertRaises(ValueError):
+            book.load_item_postit('item1')
+
+    def test_bad_item_index_empty(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'index': '',
+            },
+        }
+
+        with self.assertRaises(ValueError):
+            book.load_item_postit('item1')
+
+
+class TestSaveItemPostit(TestBook):
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
+    def test_basic(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'type': 'postit',
+                'index': 'item1/index.html',
+            },
+            'item2': {},
+        }
+
+        result = book.save_item_postit(
+            'item1', 'Duis aute irure dolor "<&>"\n傜帙伔鮈鳭魻')
+        self.assertEqual(result, {
+            'item1': {
+                'title': 'Duis aute irure dolor "<&>"',
+                'type': 'postit',
+                'index': 'item1/index.html',
+                'modify': '20230101000000000',
+            },
+        })
+        self.assertEqual(book.meta, {
+            'item1': {
+                'title': 'Duis aute irure dolor "<&>"',
+                'type': 'postit',
+                'index': 'item1/index.html',
+                'modify': '20230101000000000',
+            },
+            'item2': {},
+        })
+        indexfile = os.path.join(book.data_dir, 'item1', 'index.html')
+        with open(indexfile, encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), """\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+Duis aute irure dolor "&lt;&amp;&gt;"
+傜帙伔鮈鳭魻
+</pre></body></html>""")
+
+    def test_basic_no_auto_modify(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'type': 'postit',
+                'index': 'item1/index.html',
+            },
+            'item2': {},
+        }
+
+        result = book.save_item_postit(
+            'item1', 'Duis aute irure dolor "<&>"\n傜帙伔鮈鳭魻',
+            auto_modify=False)
+        self.assertEqual(result, {
+            'item1': {
+                'title': 'Duis aute irure dolor "<&>"',
+                'type': 'postit',
+                'index': 'item1/index.html',
+            },
+        })
+        self.assertEqual(book.meta, {
+            'item1': {
+                'title': 'Duis aute irure dolor "<&>"',
+                'type': 'postit',
+                'index': 'item1/index.html',
+            },
+            'item2': {},
+        })
+        indexfile = os.path.join(book.data_dir, 'item1', 'index.html')
+        with open(indexfile, encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), """\
+<!DOCTYPE html><html><head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width">\
+<style>pre { white-space: pre-wrap; overflow-wrap: break-word; }</style>\
+</head><body><pre>
+Duis aute irure dolor "&lt;&amp;&gt;"
+傜帙伔鮈鳭魻
+</pre></body></html>""")
+
+    def test_bad_item_missing(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {}
+
+        with self.assertRaises(ValueError):
+            book.save_item_postit('item1', 'Duis aute irure dolor 傜帙伔鮈鳭魻')
+
+    def test_bad_item_not_postit(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'index': 'item1/index.html',
+            },
+        }
+
+        with self.assertRaises(ValueError):
+            book.save_item_postit('item1', 'Duis aute irure dolor 傜帙伔鮈鳭魻')
+
+    def test_bad_item_index_missing(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {},
+        }
+
+        with self.assertRaises(ValueError):
+            book.save_item_postit('item1', 'Duis aute irure dolor 傜帙伔鮈鳭魻')
+
+    def test_bad_item_index_empty(self):
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'index': '',
+            },
+        }
+
+        with self.assertRaises(ValueError):
+            book.save_item_postit('item1', 'Duis aute irure dolor 傜帙伔鮈鳭魻')
+
+
 if __name__ == '__main__':
     unittest.main()

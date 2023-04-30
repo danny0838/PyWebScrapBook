@@ -226,3 +226,10 @@ class HostQuery:
     _cmd_sort_items_loads = _cmd_sort_item_loads
 
     _cmd_sort_items_changes = _cmd_sort_item_changes
+
+    _cmd_load_item_postit_loads = {'meta'}
+
+    _cmd_save_item_postit_changes = {'meta'}
+
+    def _cmd_save_item_postit_posthandler(self, book_id, args, kwargs, rv):
+        self.modified[book_id].update(rv)

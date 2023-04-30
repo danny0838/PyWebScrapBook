@@ -2,6 +2,7 @@
 """
 import functools
 import glob
+import html
 import json
 import os
 import re
@@ -1306,3 +1307,74 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
     def _sort_items_keyfunc_marked(self, item_id):
         return bool(self.meta.get(item_id, {}).get('marked'))
+
+    def load_item_postit(self, item_id):
+        """Get content of a postit item.
+
+        Args:
+            item_id: ID of the postit item
+
+        Returns:
+            str: content of the postit item
+
+        Raises:
+            ValueError: if the provided item does not exist, item is not a
+                postit, item index missing, etc.
+        """
+        try:
+            item = self.meta[item_id]
+        except KeyError:
+            raise ValueError(f'Item not exist: {item_id!r}') from None
+
+        if item.get('type') != 'postit':
+            raise ValueError(f'Item is not a postit: {item_id!r}')
+
+        index = item.get('index')
+        if not index:
+            raise ValueError(f'Item index missing: {item_id!r}')
+
+        index_file = os.path.join(self.data_dir, index)
+
+        if not os.path.lexists(index_file):
+            return ''
+
+        return html.unescape(self.load_postit_file(index_file))
+
+    def save_item_postit(self, item_id, content, auto_modify=True):
+        """Save content for a postit item.
+
+        Args:
+            item_id: ID of the postit item
+            content: new content to save
+            auto_modify: automatically update the 'modify' property
+
+        Returns:
+            dict: ID and updated meta of the saved postit item
+
+        Raises:
+            ValueError: if the provided item does not exist, item is not a
+                postit, item index missing, etc.
+        """
+        try:
+            item = self.meta[item_id]
+        except KeyError:
+            raise ValueError(f'Item not exist: {item_id!r}') from None
+
+        if item.get('type') != 'postit':
+            raise ValueError(f'Item is not a postit: {item_id!r}')
+
+        index = item.get('index')
+        if not index:
+            raise ValueError(f'Item index missing: {item_id!r}')
+
+        index_file = os.path.join(self.data_dir, index)
+
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        self.save_postit_file(index_file, html.escape(content, False))
+
+        item['title'] = re.sub(r'\n[\s\S]*$', '', content, flags=re.M)
+
+        if auto_modify:
+            item['modify'] = _id_now()
+
+        return {item_id: item}
