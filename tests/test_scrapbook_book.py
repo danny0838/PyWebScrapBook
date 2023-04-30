@@ -1462,6 +1462,65 @@ scrapbook.fulltext({
         self.assertEqual(book.get_unique_id('20220101000059999'), '20220101000100003')
 
 
+class TestGetTemplate(TestBook):
+    def test_note_html(self):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+
+        file = os.path.join(book.tree_dir, 'templates', 'note_template.html')
+        expected = """\
+<!DOCTYPE html>
+<html data-scrapbook-type="note">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-scrapbook-elem="title">%NOTE_TITLE%</title>
+</head>
+<body>%NOTE_TITLE%</body>
+</html>
+"""
+        self.assertEqual(book.get_template('note', '.html'), expected)
+        with open(file, encoding='UTF-8') as fh:
+            self.assertTrue(fh.read(), expected)
+
+    def test_note_md(self):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+
+        file = os.path.join(book.tree_dir, 'templates', 'note_template.md')
+        expected = """%NOTE_TITLE%"""
+        self.assertEqual(book.get_template('note', '.md'), expected)
+        with open(file, encoding='UTF-8') as fh:
+            self.assertTrue(fh.read(), expected)
+
+    def test_custom(self):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+
+        file = os.path.join(book.tree_dir, 'templates', 'note_template.html')
+        content = """\
+<!DOCTYPE html>
+<body>%NOTE_TITLE%</body>
+"""
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with open(file, 'w', encoding='UTF-8') as fh:
+            fh.write(content)
+
+        self.assertEqual(book.get_template('note', '.html'), content)
+
+    def test_unknown(self):
+        """Raise for unknown ext."""
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+
+        with self.assertRaises(ValueError):
+            book.get_template('note', '.unknown')
+
+
 class TestGetItem(TestBook):
     def test_basic(self):
         host = Host(self.test_root)
@@ -7239,6 +7298,192 @@ Duis aute irure dolor "&lt;&amp;&gt;"
 
         with self.assertRaises(ValueError):
             book.save_item_postit('item1', 'Duis aute irure dolor 傜帙伔鮈鳭魻')
+
+
+class TestAddItemSubpage(TestBook):
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_template', return_value="""\
+<!DOCTYPE html>
+<title>%NOTE_TITLE%</title>
+<a href="%SCRAPBOOK_DIR%">scrapbook</a>
+<a href="%TREE_DIR%">tree</a>
+<a href="%DATA_DIR%">data</a>
+<a href="%ITEM_DIR%">item</a>
+""")
+    def test_index(self, mock_tpl):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'title': 'My <Note>',
+                'type': 'note',
+                'index': 'item1/index.html',
+            },
+        }
+
+        self.assertEqual(
+            book.add_item_subpage('item1'),
+            'item1',
+        )
+        file = os.path.join(book.data_dir, 'item1', 'index.html')
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+        self.assertEqual(content, """\
+<!DOCTYPE html>
+<title>My &lt;Note&gt;</title>
+<a href="../../">scrapbook</a>
+<a href="../../tree/">tree</a>
+<a href="../">data</a>
+<a href="./">item</a>
+""")
+
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_template', return_value="""\
+# %NOTE_TITLE%
+* [scrapbook](%SCRAPBOOK_DIR%)
+* [tree](%TREE_DIR%)
+* [data](%DATA_DIR%)
+* [item](%ITEM_DIR%)
+""")
+    def test_index_md(self, mock_tpl):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'title': 'My <Note>',
+                'type': 'note',
+                'index': 'item1/index.html',
+            },
+        }
+
+        self.assertEqual(
+            book.add_item_subpage('item1', ext='.md'),
+            'item1',
+        )
+        file = os.path.join(book.data_dir, 'item1', 'index.md')
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+        self.assertEqual(content, """\
+# My &lt;Note&gt;
+* [scrapbook](../../)
+* [tree](../../tree/)
+* [data](../)
+* [item](./)
+""")
+
+    def test_index_other(self):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'title': 'My <Note>',
+                'type': 'note',
+                'index': 'item1/index.html',
+            },
+        }
+
+        self.assertEqual(
+            book.add_item_subpage('item1', ext='.unknown'),
+            'item1',
+        )
+        file = os.path.join(book.data_dir, 'item1', 'index.unknown')
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+        self.assertEqual(content, '')
+
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_template', return_value="""\
+<!DOCTYPE html>
+<title>%NOTE_TITLE%</title>
+<a href="%SCRAPBOOK_DIR%">scrapbook</a>
+<a href="%TREE_DIR%">tree</a>
+<a href="%DATA_DIR%">data</a>
+<a href="%ITEM_DIR%">item</a>
+""")
+    def test_subpage(self, mock_tpl):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'title': 'mynote',
+                'type': 'note',
+                'index': 'item1/index.html',
+            },
+        }
+
+        self.assertEqual(
+            book.add_item_subpage('item1', 'My <Awesome> Page'),
+            'item1',
+        )
+        file = os.path.join(book.data_dir, 'item1', 'My _Awesome_ Page.html')
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+        self.assertEqual(content, """\
+<!DOCTYPE html>
+<title>My &lt;Awesome&gt; Page</title>
+<a href="../../">scrapbook</a>
+<a href="../../tree/">tree</a>
+<a href="../">data</a>
+<a href="./">item</a>
+""")
+
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_template', return_value="""\
+<!DOCTYPE html>
+<title>%NOTE_TITLE%</title>
+<a href="%SCRAPBOOK_DIR%">scrapbook</a>
+<a href="%TREE_DIR%">tree</a>
+<a href="%DATA_DIR%">data</a>
+<a href="%ITEM_DIR%">item</a>
+""")
+    def test_subpage_deep(self, mock_tpl):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'title': 'mynote',
+                'type': 'note',
+                'index': 'item1/index.html',
+            },
+        }
+
+        self.assertEqual(
+            book.add_item_subpage('item1', 'Awesome Page', base='item1/subdir/index.html'),
+            'item1',
+        )
+        file = os.path.join(book.data_dir, 'item1', 'subdir', 'Awesome Page.html')
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+        self.assertEqual(content, """\
+<!DOCTYPE html>
+<title>Awesome Page</title>
+<a href="../../../">scrapbook</a>
+<a href="../../../tree/">tree</a>
+<a href="../../">data</a>
+<a href="../">item</a>
+""")
+
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_template', return_value='')
+    def test_bad_subpage_deep_beyond_data_dir(self, mock_tpl):
+        self.create_general_config()
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {
+                'title': 'mynote',
+                'type': 'note',
+                'index': 'item1/index.html',
+            },
+        }
+        book.toc = {}
+
+        orig_meta = copy.deepcopy(book.meta)
+        orig_toc = copy.deepcopy(book.toc)
+        with self.assertRaises(ValueError):
+            book.add_item_subpage('item1', 'Awesome Page', base='../index.html')
+        self.assertEqual(book.meta, orig_meta)
+        self.assertEqual(book.toc, orig_toc)
 
 
 if __name__ == '__main__':

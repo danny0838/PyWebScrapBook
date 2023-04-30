@@ -683,6 +683,51 @@ Lorem ipsum dolor sit amet.
             'index.html': {'content': 'Duis aute irure dolor'},
         })
 
+    def test_add_item_subpage(self):
+        wsb_util.HostQuery(self.root, [
+            {
+                'cmd': 'add_item_subpage',
+                'kwargs': {
+                    'item_id': '20200101000000000',
+                    'title': 'mysubpage',
+                },
+            },
+        ]).run()
+        file = os.path.join(self.root, 'scrapbook0', 'data', '20200101000000000', 'mysubpage.html')
+        with open(file, encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), '')
+
+    def test_add_item_subpage2(self):
+        """Test if auto_cache works."""
+        wsb_util.HostQuery(self.root, [
+            {
+                'cmd': 'add_item',
+                'args': [
+                    {
+                        'id': '20200103000000000',
+                        'title': 'Item 3',
+                        'type': 'note',
+                        'create': '20200103000000000',
+                        'modify': '20200103000000000',
+                        'index': '20200103000000000/index.html',
+                    },
+                ],
+            },
+        ]).run()
+        wsb_util.HostQuery(self.root, [
+            {
+                'cmd': 'add_item_subpage',
+                'kwargs': {
+                    'item_id': '20200103000000000',
+                },
+            },
+        ], auto_cache={'fulltext': True}).run()
+        book = wsb_host.Host(self.root).books['']
+        book.load_fulltext_files()
+        self.assertEqual(book.fulltext['20200103000000000'], {
+            'index.html': {'content': 'Item 3'},
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

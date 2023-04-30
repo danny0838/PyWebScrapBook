@@ -105,6 +105,28 @@ class Book:
 %POSTIT_CONTENT%
 </pre></body></html>"""
 
+    TEMPLATE_DIR = 'templates'
+    TEMPLATES = {
+        ('note', '.html'): {
+            'filename': 'note_template.html',
+            'content': """\
+<!DOCTYPE html>
+<html data-scrapbook-type="note">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-scrapbook-elem="title">%NOTE_TITLE%</title>
+</head>
+<body>%NOTE_TITLE%</body>
+</html>
+""",
+        },
+        ('note', '.md'): {
+            'filename': 'note_template.md',
+            'content': """%NOTE_TITLE%""",
+        },
+    }
+
     def __init__(self, host, book_id=''):
         self.host = host
         config = host.config['book'][book_id]
@@ -465,6 +487,23 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
             item_id = util.datetime_to_id(dt)
 
         return item_id
+
+    def get_template(self, type, ext='.html'):
+        try:
+            tpl = self.TEMPLATES[(type, ext)]
+        except KeyError:
+            raise ValueError(f'Unknown template: {(type, ext)!r}')
+
+        file = os.path.join(self.tree_dir, self.TEMPLATE_DIR, tpl['filename'])
+
+        # generate if not exists
+        if not os.path.lexists(file):
+            util.fs.save(file, tpl['content'].encode('UTF-8'))
+
+        with open(file, encoding='UTF-8') as fh:
+            content = fh.read()
+
+        return content
 
     def get_item(self, item_id, include_parents=False):
         """Singular version shortcut of get_items()."""
@@ -1378,3 +1417,64 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
             item['modify'] = _id_now()
 
         return {item_id: item}
+
+    def add_item_subpage(self, item_id, title=None, ext='.html', base=None):
+        """Generate a subpage for an item.
+
+        Args:
+            item_id: ID of the item
+            title: title of the subpage, or None for index
+            ext: file extension of the subpage ('.html' or '.md')
+            base: base file (from data dir) to create the subpage, or None to
+                be relative to item index
+
+        Returns:
+            str: ID of the item
+
+        Raises:
+            ValueError: if the provided item does not exist, item index
+                missing, item is single-file, file already exists, etc.
+        """
+        try:
+            item = self.meta[item_id]
+        except KeyError:
+            raise ValueError(f'Item not exist: {item_id!r}') from None
+
+        index = item.get('index')
+        if not index:
+            raise ValueError(f'Item index missing: {item_id!r}')
+
+        if not index.endswith('/index.html'):
+            raise ValueError(f"Index page is not '*/index.html': {item_id!r}")
+
+        item_dir = os.path.normpath(os.path.join(self.data_dir, os.path.dirname(index)))
+
+        if base is None:
+            base = index
+        base_dir = os.path.normpath(os.path.dirname(os.path.join(self.data_dir, base)))
+
+        if not os.path.normcase(base_dir).startswith(os.path.normcase(os.path.join(self.data_dir, ''))):
+            raise ValueError(f'base not under data directory: {base!r}')
+
+        dst = util.validate_filename(('index' if title is None else title) + ext)
+        dst = os.path.join(base_dir, dst)
+
+        if os.path.lexists(dst):
+            raise ValueError(f'Page already exists: {self.get_subpath(dst)!r}')
+
+        try:
+            tpl = self.get_template(item.get('type', ''), ext)
+        except ValueError:
+            data = ''
+        else:
+            data = util.format_string(tpl, {
+                'NOTE_TITLE': html.escape(item.get('title', '') if title is None else title),
+                'SCRAPBOOK_DIR': html.escape(util.get_relative_url(self.top_dir, dst, start_is_dir=False)),
+                'TREE_DIR': html.escape(util.get_relative_url(self.tree_dir, dst, start_is_dir=False)),
+                'DATA_DIR': html.escape(util.get_relative_url(self.data_dir, dst, start_is_dir=False)),
+                'ITEM_DIR': html.escape(util.get_relative_url(item_dir, dst, start_is_dir=False)),
+            })
+
+        util.fs.save(dst, data.encode('UTF-8'))
+
+        return item_id

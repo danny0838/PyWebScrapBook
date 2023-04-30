@@ -233,3 +233,8 @@ class HostQuery:
 
     def _cmd_save_item_postit_posthandler(self, book_id, args, kwargs, rv):
         self.modified[book_id].update(rv)
+
+    _cmd_add_item_subpage_loads = {'meta'}
+
+    def _cmd_add_item_subpage_posthandler(self, book_id, args, kwargs, rv):
+        self.modified[book_id].add(rv)
