@@ -132,42 +132,19 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
         book.load_fulltext_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
-            '20200103000000000': {
-                'title': 'Item 3',
-                'create': '20200103000000000',
-                'modify': '20200103000000000',
-                'index': '20200103000000000.html',
-            },
+        self.assertEqual(book.meta['20200103000000000'], {
+            'title': 'Item 3',
+            'create': '20200103000000000',
+            'modify': '20200103000000000',
+            'index': '20200103000000000.html',
         })
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                '20200103000000000',
-            ],
-            '20200101000000000': [
-                '20200102000000000',
-            ],
-        })
-        self.assertEqual(book.fulltext, {
-            '20200103000000000': {
-                '20200103000000000.html': {
-                    'content': 'Donec eget vehicula purus.',
-                },
+        self.assertEqual(book.toc['root'], [
+            '20200101000000000',
+            '20200103000000000',
+        ])
+        self.assertEqual(book.fulltext['20200103000000000'], {
+            '20200103000000000.html': {
+                'content': 'Donec eget vehicula purus.',
             },
         })
 
@@ -199,48 +176,25 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
         book.load_fulltext_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
-            '20200103000000000': {
-                'title': 'Item 3',
-                'create': '20200103000000000',
-                'modify': '20200103000000000',
-                'index': '20200103000000000.html',
-            },
-            '20200104000000000': {
-                'title': 'Item 4',
-                'create': '20200104000000000',
-                'modify': '20200104000000000',
-            },
+        self.assertEqual(book.meta['20200103000000000'], {
+            'title': 'Item 3',
+            'create': '20200103000000000',
+            'modify': '20200103000000000',
+            'index': '20200103000000000.html',
         })
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                '20200103000000000',
-                '20200104000000000',
-            ],
-            '20200101000000000': [
-                '20200102000000000',
-            ],
+        self.assertEqual(book.meta['20200104000000000'], {
+            'title': 'Item 4',
+            'create': '20200104000000000',
+            'modify': '20200104000000000',
         })
-        self.assertEqual(book.fulltext, {
-            '20200103000000000': {
-                '20200103000000000.html': {
-                    'content': 'Donec eget vehicula purus.',
-                },
+        self.assertEqual(book.toc['root'], [
+            '20200101000000000',
+            '20200103000000000',
+            '20200104000000000',
+        ])
+        self.assertEqual(book.fulltext['20200103000000000'], {
+            '20200103000000000.html': {
+                'content': 'Donec eget vehicula purus.',
             },
         })
 
@@ -264,27 +218,16 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_fulltext_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1f',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000001',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
+        self.assertEqual(book.meta['20200101000000000'], {
+            'title': 'Item 1f',
+            'type': '',
+            'create': '20200101000000000',
+            'modify': '20200101000000001',
+            'index': '20200101000000000/index.html',
         })
-        self.assertEqual(book.fulltext, {
-            '20200101000000000': {
-                'index.html': {
-                    'content': 'Phasellus eros quam.',
-                },
+        self.assertEqual(book.fulltext['20200101000000000'], {
+            'index.html': {
+                'content': 'Phasellus eros quam.',
             },
         })
 
@@ -313,27 +256,23 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_fulltext_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1f',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000001',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2f',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000001',
-                'source': 'http://example.com',
-            },
+        self.assertEqual(book.meta['20200101000000000'], {
+            'title': 'Item 1f',
+            'type': '',
+            'create': '20200101000000000',
+            'modify': '20200101000000001',
+            'index': '20200101000000000/index.html',
         })
-        self.assertEqual(book.fulltext, {
-            '20200101000000000': {
-                'index.html': {
-                    'content': 'Phasellus eros quam.',
-                },
+        self.assertEqual(book.meta['20200102000000000'], {
+            'title': 'Item 2f',
+            'type': 'bookmark',
+            'create': '20200102000000000',
+            'modify': '20200102000000001',
+            'source': 'http://example.com',
+        })
+        self.assertEqual(book.fulltext['20200101000000000'], {
+            'index.html': {
+                'content': 'Phasellus eros quam.',
             },
         })
 
@@ -434,56 +373,23 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 'kwargs': {'target_book_id': 'b1', 'recursively': False},
             },
         ], auto_cache={'fulltext': True}).run()
-        book = wsb_host.Host(self.root).books['']
-        book.load_meta_files()
-        book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
-        })
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-            ],
-            '20200101000000000': [
-                '20200102000000000',
-            ],
-        })
         book1 = wsb_host.Host(self.root).books['b1']
         book1.load_meta_files()
         book1.load_toc_files()
         book1.load_fulltext_files()
-        self.assertEqual(book1.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
+        self.assertEqual(book1.meta['20200101000000000'], {
+            'title': 'Item 1',
+            'type': '',
+            'create': '20200101000000000',
+            'modify': '20200101000000000',
+            'index': '20200101000000000/index.html',
         })
-        self.assertEqual(book1.toc, {
-            'root': [
-                '20200101000000000',
-            ],
-        })
-        self.assertEqual(book1.fulltext, {
-            '20200101000000000': {
-                'index.html': {
-                    'content': 'Lorem ipsum dolor sit amet.',
-                },
+        self.assertEqual(book1.toc['root'], [
+            '20200101000000000',
+        ])
+        self.assertEqual(book1.fulltext['20200101000000000'], {
+            'index.html': {
+                'content': 'Lorem ipsum dolor sit amet.',
             },
         })
 
@@ -495,56 +401,23 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
                 'kwargs': {'target_book_id': 'b1', 'recursively': False},
             },
         ], auto_cache={'fulltext': True}).run()
-        book = wsb_host.Host(self.root).books['']
-        book.load_meta_files()
-        book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
-        })
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-            ],
-            '20200101000000000': [
-                '20200102000000000',
-            ],
-        })
         book1 = wsb_host.Host(self.root).books['b1']
         book1.load_meta_files()
         book1.load_toc_files()
         book1.load_fulltext_files()
-        self.assertEqual(book1.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
+        self.assertEqual(book1.meta['20200101000000000'], {
+            'title': 'Item 1',
+            'type': '',
+            'create': '20200101000000000',
+            'modify': '20200101000000000',
+            'index': '20200101000000000/index.html',
         })
-        self.assertEqual(book1.toc, {
-            'root': [
-                '20200101000000000',
-            ],
-        })
-        self.assertEqual(book1.fulltext, {
-            '20200101000000000': {
-                'index.html': {
-                    'content': 'Lorem ipsum dolor sit amet.',
-                },
+        self.assertEqual(book1.toc['root'], [
+            '20200101000000000',
+        ])
+        self.assertEqual(book1.fulltext['20200101000000000'], {
+            'index.html': {
+                'content': 'Lorem ipsum dolor sit amet.',
             },
         })
 
@@ -559,23 +432,14 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-                'parent': '20200101000000000',
-                'recycled': '20230101000000000',
-            },
+        self.assertEqual(book.meta['20200102000000000'], {
+            'title': 'Item 2',
+            'type': 'bookmark',
+            'create': '20200102000000000',
+            'modify': '20200102000000000',
+            'source': 'http://example.com',
+            'parent': '20200101000000000',
+            'recycled': '20230101000000000',
         })
         self.assertEqual(book.toc, {
             'root': [
@@ -602,25 +466,23 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-                'parent': 'root',
-                'recycled': '20230101000000000',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-                'parent': '20200101000000000',
-                'recycled': '20230101000000000',
-            },
+        self.assertEqual(book.meta['20200101000000000'], {
+            'title': 'Item 1',
+            'type': '',
+            'create': '20200101000000000',
+            'modify': '20200101000000000',
+            'index': '20200101000000000/index.html',
+            'parent': 'root',
+            'recycled': '20230101000000000',
+        })
+        self.assertEqual(book.meta['20200102000000000'], {
+            'title': 'Item 2',
+            'type': 'bookmark',
+            'create': '20200102000000000',
+            'modify': '20200102000000000',
+            'source': 'http://example.com',
+            'parent': '20200101000000000',
+            'recycled': '20230101000000000',
         })
         self.assertEqual(book.toc, {
             'recycle': [
@@ -645,21 +507,12 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
+        self.assertEqual(book.meta['20200102000000000'], {
+            'title': 'Item 2',
+            'type': 'bookmark',
+            'create': '20200102000000000',
+            'modify': '20200102000000000',
+            'source': 'http://example.com',
         })
         self.assertEqual(book.toc, {
             'root': [
@@ -696,21 +549,19 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         book = wsb_host.Host(self.root).books['']
         book.load_meta_files()
         book.load_toc_files()
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'Item 1',
-                'type': '',
-                'create': '20200101000000000',
-                'modify': '20200101000000000',
-                'index': '20200101000000000/index.html',
-            },
-            '20200102000000000': {
-                'title': 'Item 2',
-                'type': 'bookmark',
-                'create': '20200102000000000',
-                'modify': '20200102000000000',
-                'source': 'http://example.com',
-            },
+        self.assertEqual(book.meta['20200101000000000'], {
+            'title': 'Item 1',
+            'type': '',
+            'create': '20200101000000000',
+            'modify': '20200101000000000',
+            'index': '20200101000000000/index.html',
+        })
+        self.assertEqual(book.meta['20200102000000000'], {
+            'title': 'Item 2',
+            'type': 'bookmark',
+            'create': '20200102000000000',
+            'modify': '20200102000000000',
+            'source': 'http://example.com',
         })
         self.assertEqual(book.toc, {
             'root': [
@@ -770,12 +621,10 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         ]).run()
         book = wsb_host.Host(self.root).books['']
         book.load_toc_files()
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200102000000000',
-                '20200101000000000',
-            ],
-        })
+        self.assertEqual(book.toc['root'], [
+            '20200102000000000',
+            '20200101000000000',
+        ])
 
     def test_sort_items(self):
         wsb_util.HostQuery(self.root, [
@@ -792,12 +641,10 @@ class TestHostQuery(TestBookMixin, unittest.TestCase):
         ]).run()
         book = wsb_host.Host(self.root).books['']
         book.load_toc_files()
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200102000000000',
-                '20200101000000000',
-            ],
-        })
+        self.assertEqual(book.toc['root'], [
+            '20200102000000000',
+            '20200101000000000',
+        ])
 
 
 if __name__ == '__main__':
