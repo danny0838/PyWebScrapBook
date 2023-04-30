@@ -323,7 +323,7 @@ class Converter:
         if file_ci.startswith(os.path.normcase(favicon_dir)):
             subpath = os.path.relpath(file, favicon_dir)
             fdst = os.path.join(self.output, 'icon', subpath)
-            self.icons_to_cache[file_ci] = fdst
+            self.icons_to_cache[file_ci] = (file, fdst)
             yield Info('debug', f'Created icon file mapping (cache): {file!r} => {fdst!r}')
             return f'resource://scrapbook/icon/{pathname2url(subpath)}'
 
@@ -334,26 +334,26 @@ class Converter:
                 if file_ci.startswith(path):
                     subpath = os.path.relpath(file, path)
                     fdst = os.path.join(self.output, 'data', oid, subpath)
-                    self.icons_to_cache[file_ci] = fdst
+                    self.icons_to_cache[file_ci] = (file, fdst)
                     yield Info('debug', f'Created icon file mapping (item): {file!r} => {fdst!r}')
                     return f'resource://scrapbook/data/{oid}/{pathname2url(subpath)}'
 
             # otherwise, map to sub-data-directory path
             subpath = os.path.relpath(file, book.data_dir)
             fdst = os.path.join(self.output, 'data', subpath)
-            self.icons_to_cache[file_ci] = fdst
+            self.icons_to_cache[file_ci] = (file, fdst)
             yield Info('debug', f'Created icon file mapping (data): {file!r} => {fdst!r}')
             return f'resource://scrapbook/data/{pathname2url(subpath)}'
 
         # record icons outside of "data" folder to copy later
         subpath = os.path.relpath(file, book.top_dir)
         fdst = os.path.join(self.output, subpath)
-        self.icons_to_cache[file_ci] = fdst
+        self.icons_to_cache[file_ci] = (file, fdst)
         yield Info('debug', f'Created icon file mapping: {file!r} => {fdst!r}')
         return f'resource://scrapbook/{pathname2url(subpath)}'
 
     def _copy_icon_files(self):
-        for fsrc, fdst in self.icons_to_cache.items():
+        for fsrc, fdst in self.icons_to_cache.values():
             yield Info('debug', f'Copying icon {fsrc!r} => {fdst!r}')
             if not os.path.exists(fdst):
                 os.makedirs(os.path.dirname(fdst), exist_ok=True)
