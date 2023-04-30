@@ -2206,7 +2206,7 @@ class TestLock(TestActions):
                 'chkt': 0,
             })
 
-            mock_abort.assert_called_once_with(503, 'Unable to acquire lock "test".', retry_after=60)
+            mock_abort.assert_called_once_with(503, "Unable to acquire lock 'test'.", retry_after=60)
 
     def test_stale_lock_existed(self):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
@@ -2245,7 +2245,7 @@ class TestLock(TestActions):
                 'chkt': 0,
             })
 
-            mock_abort.assert_called_once_with(500, 'Unable to create lock "test".')
+            mock_abort.assert_called_once_with(500, "Unable to create lock 'test'.")
 
     def test_extend(self):
         os.makedirs(os.path.dirname(self.lock), exist_ok=True)
@@ -2281,7 +2281,7 @@ class TestLock(TestActions):
                 'id': 'oldid',
             })
 
-            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
+            mock_abort.assert_called_once_with(400, "Unable to persist lock 'test'.")
 
 
 class TestUnlock(TestActions):
@@ -2375,7 +2375,7 @@ class TestUnlock(TestActions):
                 'id': 'dummy',
             })
 
-            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
+            mock_abort.assert_called_once_with(400, "Unable to persist lock 'test'.")
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_nonexist(self, mock_abort):
@@ -2388,7 +2388,7 @@ class TestUnlock(TestActions):
                 'id': 'dummy',
             })
 
-            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
+            mock_abort.assert_called_once_with(400, "Unable to persist lock 'test'.")
 
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_directory_existed(self, mock_abort):
@@ -2403,7 +2403,7 @@ class TestUnlock(TestActions):
                 'id': 'dummy',
             })
 
-            mock_abort.assert_called_once_with(400, 'Unable to persist lock "test".')
+            mock_abort.assert_called_once_with(400, "Unable to persist lock 'test'.")
 
 
 class TestMkdir(TestActions):

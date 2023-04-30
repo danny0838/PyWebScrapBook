@@ -1251,7 +1251,7 @@ class Encrypt():
         fn = getattr(self, method, None)
 
         if not callable(fn):
-            print(f'Encrypt method "{method}" not implemented, fallback to "plain".', file=sys.stderr)
+            print(f"Encrypt method {method!r} not implemented, fallback to 'plain'.", file=sys.stderr)
             fn = self.plain
 
         return fn(text, salt)

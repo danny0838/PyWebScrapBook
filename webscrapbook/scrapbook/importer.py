@@ -58,30 +58,30 @@ class Importer():
                     srcs = sorted(f.path for f in entries if util.is_wsba(f.path))
             elif os.path.isfile(file):
                 if not util.is_wsba(file):
-                    yield Info('warn', f'Skipped invalid file "{os.path.basename(file)}"')
+                    yield Info('warn', f'Skipped invalid file {os.path.basename(file)!r}')
                     continue
                 srcs = [file]
             else:
-                yield Info('error', f'Failed to import file "{os.path.basename(file)}": unable to access file')
+                yield Info('error', f'Failed to import file {os.path.basename(file)!r}: unable to access file')
                 continue
 
             for src in srcs:
                 try:
-                    yield Info('debug', f'Importing file "{os.path.basename(src)}"')
+                    yield Info('debug', f'Importing file {os.path.basename(src)!r}')
                     id, eid, parent_id = yield from self._import_file(src)
                 except RuntimeError as exc:
                     # intended raise to skip the import
-                    yield Info('error', f'Failed to import file "{os.path.basename(src)}": {exc}', exc=exc)
+                    yield Info('error', f'Failed to import file {os.path.basename(src)!r}: {exc}', exc=exc)
                 except Exception as exc:
                     # unexpected error
                     traceback.print_exc()
-                    yield Info('error', f'Failed to import file "{os.path.basename(src)}": {exc}', exc=exc)
+                    yield Info('error', f'Failed to import file {os.path.basename(src)!r}: {exc}', exc=exc)
                 else:
                     # finalize a successful import
-                    yield Info('info', f'Imported "{id}" (under "{parent_id}")')
+                    yield Info('info', f'Imported {id!r} (under {parent_id!r})')
                     self.map_eid_to_id.setdefault(eid, id)
                     if self.prune:
-                        yield Info('debug', f'Removing "{os.path.basename(src)}" (prune)')
+                        yield Info('debug', f'Removing {os.path.basename(src)!r} (prune)')
                         os.remove(src)
 
         # update files
@@ -209,14 +209,14 @@ class Importer():
 
             id = meta.pop('id')
             if id in Book.SPECIAL_ITEM_ID:
-                raise RuntimeError(f'invalid ID "{id}"')
+                raise RuntimeError(f'invalid ID {id!r}')
 
             # skip importing data for a duplicated occurrence of a previously
             # imported item
             imported_id = self.map_eid_to_id.get(export_info['id'])
             if imported_id is not None:
                 id = imported_id
-                yield Info('debug', f'Skipped importing data for multi-referenced "{id}"')
+                yield Info('debug', f'Skipped importing data for multi-referenced {id!r}')
             else:
                 id = yield from self._import_meta_and_data(id, meta, zh, export_info)
 
@@ -247,7 +247,7 @@ class Importer():
         # may overwrite id, dst, and meta['index']
         if id in self.book.meta:
             if self.resolve_id_used == 'skip':
-                raise RuntimeError(f'ID "{id}" already exists')
+                raise RuntimeError(f'ID {id!r} already exists')
 
             elif self.resolve_id_used == 'replace':
                 index_old = self.book.meta[id].get('index', '')
@@ -259,7 +259,7 @@ class Importer():
                 if index_old.endswith('/index.html') != index.endswith('/index.html'):
                     raise RuntimeError('index type not match')
 
-                yield Info('info', f'Force importing duplicated "{id}"...')
+                yield Info('info', f'Force importing duplicated {id!r}...')
 
                 if index:
                     # use original index
@@ -287,7 +287,7 @@ class Importer():
                     ts += timedelta(milliseconds=1)
                     new_id = util.datetime_to_id(ts)
 
-                yield Info('info', f'Importing duplicated "{id}" as "{new_id}"...')
+                yield Info('info', f'Importing duplicated {id!r} as {new_id!r}...')
                 self.map_id_to_new_id[id] = new_id
                 id = new_id
 
@@ -298,14 +298,14 @@ class Importer():
                     meta['index'] = filename + ('/index.html' if index.endswith('/index.html') else '')
 
             else:
-                raise RuntimeError(f'unknown resolve mode: "{self.resolve_id_used}"')
+                raise RuntimeError(f'unknown resolve mode: {self.resolve_id_used!r}')
 
         # import data files
         if index:
             if os.path.lexists(dst):
-                raise RuntimeError(f'file "{dst}" already exists')
+                raise RuntimeError(f'file {dst!r} already exists')
 
-            yield Info('debug', f'Extracting data files to "{self.book.get_subpath(dst)}"')
+            yield Info('debug', f'Extracting data files to {self.book.get_subpath(dst)!r}')
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             util.fs.zip_extract(zh, dst, src)
 
@@ -319,9 +319,9 @@ class Importer():
                 try:
                     util.fs.zip_extract(zh, iconfile, f)
                 except FileExistsError:
-                    yield Info('debug', f'Skipped existing favicon cache "{basename}"')
+                    yield Info('debug', f'Skipped existing favicon cache {basename!r}')
                 else:
-                    yield Info('info', f'Added favicon cache "{basename}"')
+                    yield Info('info', f'Added favicon cache {basename!r}')
 
                 # rewrite icon property to be consistent with the importing book
                 try:
@@ -369,7 +369,7 @@ class Importer():
                 ts += timedelta(milliseconds=1)
                 new_id = util.datetime_to_id(ts)
 
-            yield Info('info', f'Generating folder "{new_id}" under "{parent_id}"...')
+            yield Info('info', f'Generating folder {new_id!r} under {parent_id!r}...')
             new_meta = {
                 'title': export_path[j]['title'],
                 'type': 'folder',
@@ -386,7 +386,7 @@ class Importer():
 
     def _insert_to_id(self, id, parent_id, allow_insert=True):
         if id in self.book.toc.get(parent_id, []):
-            yield Info('debug', f'Skipped appending "{id}" to "{parent_id}": already in')
+            yield Info('debug', f'Skipped appending {id!r} to {parent_id!r}: already in')
             return
 
         parent = self.book.toc.setdefault(parent_id, [])
@@ -410,19 +410,19 @@ def run(host, files, book_id='', *, lock=True, **kwargs):
 
     # Fail for invalid book ID
     if book_id not in host.books:
-        yield Info('error', f'Invalid book "{book_id}".')
+        yield Info('error', f'Invalid book {book_id!r}.')
         return
 
-    yield Info('debug', f'Loading book "{book_id}".')
+    yield Info('debug', f'Loading book {book_id!r}.')
 
     try:
         book = host.books[book_id]
 
         if book.no_tree:
-            yield Info('error', f'Unable to import to book "{book_id}" ("{book.name}") (no_tree).')
+            yield Info('error', f'Unable to import to book {book_id!r} ({book.name!r}) (no_tree).')
             return
 
-        yield Info('info', f'Impoting to book "{book_id}" ({book.name}).')
+        yield Info('info', f'Impoting to book {book_id!r} ({book.name!r}).')
         lh = book.get_tree_lock().acquire() if lock else nullcontext()
         with lh:
             generator = Importer(book, **kwargs)

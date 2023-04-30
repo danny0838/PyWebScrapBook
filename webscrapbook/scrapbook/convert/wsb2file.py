@@ -26,7 +26,7 @@ class Converter:
         try:
             self.book = host.books[self.book_id]
         except KeyError as exc:
-            raise RuntimeError(f'book "{self.book_id}" does not exist') from exc
+            raise RuntimeError(f'book {self.book_id!r} does not exist') from exc
 
         self.book.load_meta_files()
         self.book.load_toc_files()
@@ -42,7 +42,7 @@ class Converter:
         if id not in self.book.meta or id in Book.SPECIAL_ITEM_ID:
             return
 
-        yield Info('debug', f'Exporting item "{id}"')
+        yield Info('debug', f'Exporting item {id!r}')
 
         meta = self.book.meta[id]
         type = meta.get('type', '')
@@ -56,36 +56,36 @@ class Converter:
         if type == 'folder':
             dst = path
             subpath = os.path.relpath(dst, self.output)
-            yield Info('info', f'Exporting "{id}" to "{subpath}"...')
+            yield Info('info', f'Exporting {id!r} to {subpath!r}...')
             try:
                 os.makedirs(dst, exist_ok=True)
             except OSError as exc:
-                yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
+                yield Info('error', f'Failed to export {id!r} to {subpath!r}: {exc}', exc=exc)
 
         elif type == 'separator':
             if self.prefix:
                 dst = path + '.-'
                 subpath = os.path.relpath(dst, self.output)
-                yield Info('info', f'Exporting "{id}" to "{subpath}"...')
+                yield Info('info', f'Exporting {id!r} to {subpath!r}...')
                 try:
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
                     with open(dst, 'wb') as fh:
                         pass
                 except OSError as exc:
-                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
+                    yield Info('error', f'Failed to export {id!r} to {subpath!r}: {exc}', exc=exc)
 
         elif type == 'bookmark':
             source = meta.get('source')
             if source:
                 dst = path + '.htm'
                 subpath = os.path.relpath(dst, self.output)
-                yield Info('info', f'Exporting "{id}" to "{subpath}"...')
+                yield Info('info', f'Exporting {id!r} to {subpath!r}...')
                 try:
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
                     with open(dst, 'w', encoding='UTF-8') as fh:
                         fh.write(f'<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url={html.escape(source)}">')
                 except OSError as exc:
-                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
+                    yield Info('error', f'Failed to export {id!r} to {subpath!r}: {exc}', exc=exc)
 
         else:
             index = meta.get('index', '')
@@ -103,7 +103,7 @@ class Converter:
 
                 dst = path + ext
                 subpath = os.path.relpath(dst, self.output)
-                yield Info('info', f'Exporting "{id}" to "{subpath}"...')
+                yield Info('info', f'Exporting {id!r} to {subpath!r}...')
                 try:
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
                     try:
@@ -111,7 +111,7 @@ class Converter:
                     except NotADirectoryError:
                         shutil.copy2(src, dst)
                 except OSError as exc:
-                    yield Info('error', f'Failed to export "{id}" to "{subpath}": {exc}', exc=exc)
+                    yield Info('error', f'Failed to export {id!r} to {subpath!r}: {exc}', exc=exc)
 
         # do not add descendants for a recursive item
         if id in id_chain:
@@ -140,7 +140,7 @@ def run(input, output, book_id='', prefix=True):
     yield Info('info', 'conversion mode: WebScrapBook --> hierarchical files')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
-    yield Info('info', f'book: "{book_id}"')
+    yield Info('info', f'book: {book_id!r}')
     yield Info('info', f'prefix: {prefix}')
     yield Info('info', '')
 

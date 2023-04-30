@@ -460,7 +460,7 @@ class TestConfig(Test):
 
         mock_getname.assert_called_once_with('unknown.config')
         self.assertEqual(cm.exception.code, 1)
-        self.assertEqual(mock_stderr.getvalue(), 'Error: Config entry "unknown.config" does not exist\n')
+        self.assertEqual(mock_stderr.getvalue(), "Error: Config entry 'unknown.config' does not exist\n")
 
     @mock.patch('webscrapbook.config.dump', autospec=True)
     @mock.patch('webscrapbook.cli.cmd_config', wraps=cli.cmd_config)

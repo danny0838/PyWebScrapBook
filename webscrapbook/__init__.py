@@ -175,7 +175,7 @@ class Config():
         try:
             parser.read(file, encoding='UTF-8')
         except Exception as exc:
-            raise RuntimeError(f'Unable to load config from "{file}"') from exc
+            raise RuntimeError(f'Unable to load config from {file!r}') from exc
 
         for section in parser.sections():
             # Handle subsected sections formatted as [section "subsection"].

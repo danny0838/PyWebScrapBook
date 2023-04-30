@@ -46,7 +46,7 @@ class Converter:
         try:
             book = host.books[self.book_id]
         except KeyError as exc:
-            raise RuntimeError(f'book "{self.book_id}" does not exist') from exc
+            raise RuntimeError(f'book {self.book_id!r} does not exist') from exc
 
         book.load_meta_files()
         book.load_toc_files()
@@ -90,12 +90,12 @@ class Converter:
 
         # map convertable IDs
         for id in book.meta:
-            yield Info('debug', f'Createding ID mapping: "{id}"')
+            yield Info('debug', f'Createding ID mapping: {id!r}')
             oid = get_legacy_id(id)
             if oid and oid not in self.oid_to_id:
                 self.id_to_oid[id] = oid
                 self.oid_to_id[oid] = id
-                yield Info('debug', f'Created ID mapping: "{id}" => "{oid}"')
+                yield Info('debug', f'Created ID mapping: {id!r} => {oid!r}')
             else:
                 nonconvertable_ids.append(id)
 
@@ -104,7 +104,7 @@ class Converter:
             oid = generate_unique_id(id)
             self.id_to_oid[id] = oid
             self.oid_to_id[oid] = id
-            yield Info('debug', f'Created ID mapping: "{id}" => "{oid}" (new)')
+            yield Info('debug', f'Created ID mapping: {id!r} => {oid!r} (new)')
 
     def _generate_directory_mapping(self, book):
         for id, oid in self.id_to_oid.items():
@@ -114,11 +114,11 @@ class Converter:
 
             dsrc = os.path.join(book.data_dir, os.path.dirname(index), '')
             self.path_to_oid[os.path.normcase(dsrc)] = oid
-            yield Info('debug', f'Created directory mapping "{dsrc}" => "{oid}"')
+            yield Info('debug', f'Created directory mapping {dsrc!r} => {oid!r}')
 
     def _generate_rdf(self, book):
         def make_meta_node(id, meta):
-            yield Info('debug', f'Generating meta node for "{id}"')
+            yield Info('debug', f'Generating meta node for {id!r}')
 
             oid = self.id_to_oid[id]
             type = meta.get('type', '')
@@ -153,7 +153,7 @@ class Converter:
                 node.attrib[f'{NS1}lock'] = 'true' if locked else ''
 
         def make_toc_node(id):
-            yield Info('debug', f'Generating TOC node for "{id}"')
+            yield Info('debug', f'Generating TOC node for {id!r}')
 
             node = etree.SubElement(root, f'{RDF}Seq')
             if id == 'root':
@@ -164,10 +164,10 @@ class Converter:
 
             for ref_id in book.toc.get(id, []):
                 if ref_id in seen_in_toc:
-                    yield Info('debug', f'Skipped adding "{ref_id}" under "{id}" (referenced)')
+                    yield Info('debug', f'Skipped adding {ref_id!r} under {id!r} (referenced)')
                     continue
 
-                yield Info('debug', f'Adding "{ref_id}" under "{id}"')
+                yield Info('debug', f'Adding {ref_id!r} under {id!r}')
                 oref_id = self.id_to_oid[ref_id]
                 child = etree.SubElement(node, f'{RDF}li')
                 child.attrib[f'{RDF}resource'] = f'urn:scrapbook:item{oref_id}'
@@ -206,15 +206,15 @@ class Converter:
 
     def _copy_data_files(self, book):
         for id, oid in self.id_to_oid.items():
-            yield Info('debug', f'Copying data files for "{id}" => "{oid}"')
+            yield Info('debug', f'Copying data files for {id!r} => {oid!r}')
             type = book.meta[id].get('type', '')
             if type in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
-                yield Info('debug', f'Skipped copying data for "{id}": type is "{type}"')
+                yield Info('debug', f'Skipped copying data for {id!r}: type is {type!r}')
                 continue
 
             index = book.meta[id].get('index', '')
             if not index:
-                yield Info('debug', f'Skipped copying data for "{id}": no index')
+                yield Info('debug', f'Skipped copying data for {id!r}: no index')
                 continue
 
             try:
@@ -238,11 +238,11 @@ class Converter:
                     fdst = os.path.join(self.output, 'data', oid)
                     pages = util.get_maff_pages(fsrc)
                     if len(pages) == 0:
-                        yield Info('error', f'Failed to copy data for "{id}": no page in MAFF archive')
+                        yield Info('error', f'Failed to copy data for {id!r}: no page in MAFF archive')
                         continue
                     else:
                         if len(pages) > 1:
-                            yield Info('warn', f'"{id}": only the first web page in MAFF archive can be copied')
+                            yield Info('warn', f'{id!r}: only the first web page in MAFF archive can be copied')
                         page = pages[0]
                         topdir, _, _ = page.indexfilename.partition('/')
 
@@ -259,15 +259,15 @@ class Converter:
                                  f'<meta http-equiv="refresh" content="0;URL=./{quote(basename)}">'
                                  '</head><body></body></html>')
             except OSError as exc:
-                yield Info('error', f'Failed to copy data for "{id}": {exc}', exc=exc)
+                yield Info('error', f'Failed to copy data for {id!r}: {exc}', exc=exc)
 
             if type == 'postit':
-                yield Info('debug', f'Converting data file for "{id}" (type={type})')
+                yield Info('debug', f'Converting data file for {id!r} (type={type!r})')
                 file = os.path.join(self.output, 'data', oid, 'index.html')
                 try:
                     content = book.load_postit_file(file)
                 except OSError as exc:
-                    yield Info('error', f'Failed to convert "index.html" for "{id}": {exc.strerror}', exc=exc)
+                    yield Info('error', f"Failed to convert 'index.html' for {id!r}: {exc.strerror}", exc=exc)
                 else:
                     with open(file, 'w', encoding='UTF-8') as fh:
                         fh.write(f"""\
@@ -275,29 +275,29 @@ class Converter:
 {content}
 </pre></body></html>""")
             elif self.data_files:
-                yield Info('debug', f'Converting data files for "{id}" (type={type})')
+                yield Info('debug', f'Converting data files for {id!r} (type={type!r})')
                 index_dir = os.path.join(self.output, 'data', oid)
                 for root, _dirs, files in os.walk(index_dir):
                     for file in files:
                         if HTML_FILE_FILTER.search(file):
                             file = os.path.join(root, file)
-                            yield Info('debug', f'Checking: {file}...')
+                            yield Info('debug', f'Checking: {file!r}...')
                             try:
                                 conv = ConvertHtmlFile(file)
                                 conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
-                                yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+                                yield Info('error', f'Failed to convert {file!r} for {id!r}: {exc}', exc=exc)
 
     def _handle_item_icon(self, book, id):
-        yield Info('debug', f'Checking icon for "{id}"')
+        yield Info('debug', f'Checking icon for {id!r}')
         icon = book.meta[id].get('icon', '')
 
         if not icon:
             # return moz_icon if defined
             moz_icon_url = book.meta[id].get('icon-moz')
             if moz_icon_url:
-                yield Info('debug', f'Use moz-icon URL from property for "{id}": "{moz_icon_url}"')
+                yield Info('debug', f'Use moz-icon URL from property for {id!r}: {moz_icon_url!r}')
                 return moz_icon_url
 
             # generate moz-icon:// for files
@@ -307,7 +307,7 @@ class Converter:
                 targetfile = util.get_meta_refreshed_file(indexfile)
                 if targetfile:
                     moz_icon_url = f'moz-icon://{quote(os.path.basename(targetfile))}?size=16'
-                    yield Info('debug', f'Generated moz-icon URL for "{id}": "{moz_icon_url}"')
+                    yield Info('debug', f'Generated moz-icon URL for {id!r}: {moz_icon_url!r}')
                     return moz_icon_url
             return ''
 
@@ -324,7 +324,7 @@ class Converter:
             subpath = os.path.relpath(file, favicon_dir)
             fdst = os.path.join(self.output, 'icon', subpath)
             self.icons_to_cache[file_ci] = fdst
-            yield Info('debug', f'Created icon file mapping (cache): "{file}" => "{fdst}"')
+            yield Info('debug', f'Created icon file mapping (cache): {file!r} => {fdst!r}')
             return f'resource://scrapbook/icon/{pathname2url(subpath)}'
 
         # if inside data folder
@@ -335,26 +335,26 @@ class Converter:
                     subpath = os.path.relpath(file, path)
                     fdst = os.path.join(self.output, 'data', oid, subpath)
                     self.icons_to_cache[file_ci] = fdst
-                    yield Info('debug', f'Created icon file mapping (item): "{file}" => "{fdst}"')
+                    yield Info('debug', f'Created icon file mapping (item): {file!r} => {fdst!r}')
                     return f'resource://scrapbook/data/{oid}/{pathname2url(subpath)}'
 
             # otherwise, map to sub-data-directory path
             subpath = os.path.relpath(file, book.data_dir)
             fdst = os.path.join(self.output, 'data', subpath)
             self.icons_to_cache[file_ci] = fdst
-            yield Info('debug', f'Created icon file mapping (data): "{file}" => "{fdst}"')
+            yield Info('debug', f'Created icon file mapping (data): {file!r} => {fdst!r}')
             return f'resource://scrapbook/data/{pathname2url(subpath)}'
 
         # record icons outside of "data" folder to copy later
         subpath = os.path.relpath(file, book.top_dir)
         fdst = os.path.join(self.output, subpath)
         self.icons_to_cache[file_ci] = fdst
-        yield Info('debug', f'Created icon file mapping: "{file}" => "{fdst}"')
+        yield Info('debug', f'Created icon file mapping: {file!r} => {fdst!r}')
         return f'resource://scrapbook/{pathname2url(subpath)}'
 
     def _copy_icon_files(self):
         for fsrc, fdst in self.icons_to_cache.items():
-            yield Info('debug', f'Copying icon "{fsrc}" => "{fdst}"')
+            yield Info('debug', f'Copying icon {fsrc!r} => {fdst!r}')
             if not os.path.exists(fdst):
                 os.makedirs(os.path.dirname(fdst), exist_ok=True)
                 shutil.copy2(fsrc, fdst)
@@ -605,7 +605,7 @@ def run(input, output, book_id='', data_files=True):
     yield Info('info', 'conversion mode: WebScrapBook --> ScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
-    yield Info('info', f'book: "{book_id}"')
+    yield Info('info', f'book: {book_id!r}')
     yield Info('info', f'data-files: {data_files}')
     yield Info('info', '')
 

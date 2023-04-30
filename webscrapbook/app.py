@@ -178,7 +178,7 @@ def http_response(body=None, status=None, headers=None, format=None):
             body = generate_server_sent_events(body)
 
     else:
-        abort(400, f'Output format "{format}" is not supported.')
+        abort(400, f'Output format {format!r} is not supported.')
 
     return Response(body, status, headers, mimetype=mimetype)
 
@@ -988,7 +988,7 @@ def action_lock():
     try:
         lock = host.get_lock(name, persist=id)
     except wsb_host.LockPersistError:
-        abort(400, f'Unable to persist lock "{name}".')
+        abort(400, f'Unable to persist lock {name!r}.')
 
     if id:
         try:
@@ -997,18 +997,18 @@ def action_lock():
             # Lock file gone in this short interval. Try acquire.
             pass
         except wsb_host.LockExtendError:
-            abort(500, f'Unable to extend lock "{name}".')
+            abort(500, f'Unable to extend lock {name!r}.')
         else:
             return http_response(lock.id, format=request.format)
 
     try:
         lock.acquire(timeout=timeout)
     except wsb_host.LockTimeoutError:
-        abort(503, f'Unable to acquire lock "{name}".', retry_after=60)
+        abort(503, f'Unable to acquire lock {name!r}.', retry_after=60)
     except wsb_host.LockRegenerateError:
-        abort(500, f'Unable to regenerate stale lock "{name}".')
+        abort(500, f'Unable to regenerate stale lock {name!r}.')
     except wsb_host.LockGenerateError:
-        abort(500, f'Unable to create lock "{name}".')
+        abort(500, f'Unable to create lock {name!r}.')
 
     return http_response(lock.id, format=request.format)
 
@@ -1030,14 +1030,14 @@ def action_unlock():
     try:
         lock = host.get_lock(name, persist=id)
     except wsb_host.LockPersistError:
-        abort(400, f'Unable to persist lock "{name}".')
+        abort(400, f'Unable to persist lock {name!r}.')
 
     try:
         lock.release()
     except wsb_host.LockReleaseNotFoundError:
         pass
     except wsb_host.LockReleaseError:
-        abort(500, f'Unable to remove lock "{name}".')
+        abort(500, f'Unable to remove lock {name!r}.')
 
 
 @handle_action_advanced
@@ -1691,7 +1691,7 @@ def zip_listdir(zip, subpath, recursive=False):
                     entries.setdefault(entry, True)
 
         if not entries and not dir_exist:
-            raise ZipDirNotFoundError(f'Directory "{base}" does not exist in the zip.')
+            raise ZipDirNotFoundError(f'Directory {base!r} does not exist in the zip.')
 
         for entry in entries:
             info = zip_file_info(zh, base + entry, base)

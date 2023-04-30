@@ -107,12 +107,12 @@ class FileLock:
                     assert fh.read() == persist
             except OSError as exc:
                 raise LockPersistOSError(
-                    f'unable to access lock file for "{name}"',
+                    f'unable to access lock file for {name!r}',
                     name=self.name, file=self.file, id=persist
                 ) from exc
             except AssertionError as exc:
                 raise LockPersistUnmatchError(
-                    f'unable to persist lock "{name}" with given ID',
+                    f'unable to persist lock {name!r} with given ID',
                     name=self.name, file=self.file, id=persist
                 ) from exc
 
@@ -173,7 +173,7 @@ class FileLock:
             pass
         except OSError as exc:
             raise LockGenerateError(
-                f'unable to create lock "{self.name}"',
+                f'unable to create lock {self.name!r}',
                 name=self.name, file=self.file
             ) from exc
 
@@ -191,7 +191,7 @@ class FileLock:
                 except OSError as exc:
                     # error out if self.file cannot be stated
                     raise LockGenerateError(
-                        f'unable to create lock "{self.name}"',
+                        f'unable to create lock {self.name!r}',
                         name=self.name, file=self.file
                     ) from exc
 
@@ -200,7 +200,7 @@ class FileLock:
                 # in such case)
                 if not stat.S_ISREG(st.st_mode):
                     raise LockGenerateError(
-                        f'unable to create lock "{self.name}"',
+                        f'unable to create lock {self.name!r}',
                         name=self.name, file=self.file
                     ) from exc
 
@@ -208,7 +208,7 @@ class FileLock:
 
                 if t >= timeout_time:
                     raise LockTimeoutError(
-                        f'timeout when acquiring lock "{self.name}"',
+                        f'timeout when acquiring lock {self.name!r}',
                         name=self.name, file=self.file
                     ) from None
 
@@ -221,7 +221,7 @@ class FileLock:
                             fh.write(self.id)
                     except OSError as exc:
                         raise LockRegenerateError(
-                            f'unable to regenerate stale lock "{self.name}"',
+                            f'unable to regenerate stale lock {self.name!r}',
                             name=self.name, file=self.file) from exc
                     else:
                         break
@@ -229,7 +229,7 @@ class FileLock:
                 time.sleep(poll_interval)
             except OSError as exc:
                 raise LockGenerateError(
-                    f'unable to create lock "{self.name}"',
+                    f'unable to create lock {self.name!r}',
                     name=self.name, file=self.file
                 ) from exc
             else:
@@ -248,7 +248,7 @@ class FileLock:
         """
         if not self._lock:
             raise LockExtendNotAcquiredError(
-                f'lock "{self.name}" has not been acquired',
+                f'lock {self.name!r} has not been acquired',
                 name=self.name, file=self.file
             )
 
@@ -256,12 +256,12 @@ class FileLock:
             os.utime(self.file)
         except FileNotFoundError as exc:
             raise LockExtendNotFoundError(
-                f'file for lock "{self.name}" does not exist',
+                f'file for lock {self.name!r} does not exist',
                 name=self.name, file=self.file
             ) from exc
         except OSError as exc:
             raise LockExtendError(
-                f'unable to extend lock "{self.name}"',
+                f'unable to extend lock {self.name!r}',
                 name=self.name, file=self.file
             ) from exc
 
@@ -275,7 +275,7 @@ class FileLock:
         """
         if not self._lock:
             raise LockReleaseNotAcquiredError(
-                f'lock "{self.name}" has not been acquired',
+                f'lock {self.name!r} has not been acquired',
                 name=self.name, file=self.file
             )
 
@@ -283,12 +283,12 @@ class FileLock:
             os.remove(self.file)
         except FileNotFoundError as exc:
             raise LockReleaseNotFoundError(
-                f'file for lock "{self.name}" does not exist',
+                f'file for lock {self.name!r} does not exist',
                 name=self.name, file=self.file
             ) from exc
         except OSError as exc:
             raise LockReleaseError(
-                f'unable to release lock "{self.name}"',
+                f'unable to release lock {self.name!r}',
                 name=self.name, file=self.file
             ) from exc
         else:

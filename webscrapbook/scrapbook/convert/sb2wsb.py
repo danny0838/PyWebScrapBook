@@ -59,7 +59,7 @@ class LegacyBook:
         self.modifies = {}
 
     def load(self):
-        yield Info('info', 'Loading "scrapbook.rdf"...')
+        yield Info('info', "Loading 'scrapbook.rdf'...")
         yield from self._load_rdf()
         yield Info('info', 'Inspecting data directory...')
         yield from self._load_data_dir()
@@ -71,9 +71,9 @@ class LegacyBook:
             with open(rdf_file, 'rb') as fh:
                 yield from self._parse_rdf(fh)
         except OSError as exc:
-            raise RuntimeError(f'Unable to load "scrapbook.rdf": {exc.strerror}') from exc
+            raise RuntimeError(f"Unable to load 'scrapbook.rdf': {exc.strerror}") from exc
         except etree.XMLSyntaxError as exc:
-            raise RuntimeError(f'Malformed "scrapbook.rdf": {exc.args[0]}') from exc
+            raise RuntimeError(f"Malformed 'scrapbook.rdf': {exc.args[0]}") from exc
 
     def _parse_rdf(self, fh):
         for _event, elem in etree.iterparse(
@@ -133,16 +133,16 @@ class LegacyBook:
             for dir in dirs:
                 # check name as ID
                 id = dir.name
-                yield Info('debug', f'Inspecting item folder "{id}"')
+                yield Info('debug', f'Inspecting item folder {id!r}')
                 match_id = REGEX_ID.match(id)
                 if not match_id:
-                    yield Info('warn', f'Skipped item folder "{id}" (invalid ID)')
+                    yield Info('warn', f'Skipped item folder {id!r} (invalid ID)')
                     continue
 
                 # check index.html
                 index_file = os.path.join(dir, 'index.html')
                 if not os.path.isfile(index_file):
-                    yield Info('debug', f'Skipped item folder "{id}" (missing "index.html")')
+                    yield Info('debug', f"Skipped item folder {id!r} (missing 'index.html')")
                     continue
 
                 # record mtime of index.html
@@ -158,17 +158,17 @@ class LegacyBook:
 
                 # load index.dat
                 if load_index_dat:
-                    yield Info('debug', f'Checking "index.dat" for "{id}"')
+                    yield Info('debug', f"Checking 'index.dat' for {id!r}")
                     index_dat_file = os.path.join(dir, 'index.dat')
                     try:
                         assert os.stat(index_dat_file).st_mtime > self.rdf_mtime
                     except (FileNotFoundError, IsADirectoryError, NotADirectoryError, AssertionError):
                         continue
                     except OSError as exc:
-                        yield Info('error', f'Failed to read "index.dat" for "{id}": {exc.strerror}', exc=exc)
+                        yield Info('error', f"Failed to read 'index.dat' for {id!r}: {exc.strerror}", exc=exc)
                         continue
 
-                    yield Info('info', f'Reading metadata from newer "index.dat" for "{id}"')
+                    yield Info('info', f"Reading metadata from newer 'index.dat' for {id!r}")
                     try:
                         with open(index_dat_file, encoding='UTF-8') as fh:
                             meta = {}
@@ -180,7 +180,7 @@ class LegacyBook:
                                 meta[key] = value
                             self.meta.setdefault(id, {}).update(meta)
                     except OSError as exc:
-                        yield Info('error', f'Failed to read "index.dat" for "{id}": {exc.strerror}', exc=exc)
+                        yield Info('error', f"Failed to read 'index.dat' for {id!r}: {exc.strerror}", exc=exc)
                         continue
 
 
@@ -240,7 +240,7 @@ class Converter:
 
     def _merge_meta(self, book, book0):
         for id0, meta0 in book0.meta.items():
-            yield Info('debug', f'Inspecting item metadata for "{id0}"')
+            yield Info('debug', f'Inspecting item metadata for {id0!r}')
             id = id0
             meta = meta0.copy()
             meta_new = book.meta.setdefault(id, book.DEFAULT_META.copy())
@@ -267,7 +267,7 @@ class Converter:
                 # if it's saved in the item directory. (mainly for ScrapBee)
                 meta['index'] = f'{id}/index.html'
                 self.index_files[os.path.normpath(os.path.join(book.data_dir, id, 'index.html'))] = True
-                yield Info('debug', f'Registering dummy file "{meta["index"]}"')
+                yield Info('debug', f'Registering dummy file {meta["index"]!r}')
 
             # meta['create']
             # fallback to id
@@ -359,16 +359,16 @@ class Converter:
         with os.scandir(self.input) as dirs:
             for src in dirs:
                 if src.name == WSB_DIR:
-                    yield Info('warn', f'Skipped copying special directory "{WSB_DIR}"')
+                    yield Info('warn', f'Skipped copying special directory {WSB_DIR!r}')
                     continue
 
                 if src.name in PRUNE_FILES:
                     if self.backup:
-                        yield Info('debug', f'Backup legacy scrapbook entry "{src.name}"')
+                        yield Info('debug', f'Backup legacy scrapbook entry {src.name!r}')
                         book.backup(src, base=self.input)
                         continue
                     else:
-                        yield Info('debug', f'Skipped legacy scrapbook entry "{src.name}"')
+                        yield Info('debug', f'Skipped legacy scrapbook entry {src.name!r}')
                         continue
 
                 dst = os.path.join(book.top_dir, src.name)
@@ -381,7 +381,7 @@ class Converter:
         # generate registered dummy index files
         for path in self.index_files:
             if not os.path.lexists(path):
-                yield Info('debug', f'Generating registered dummy file "{path}"')
+                yield Info('debug', f'Generating registered dummy file {path!r}')
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, 'wb'):
                     pass

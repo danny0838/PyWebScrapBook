@@ -37,10 +37,10 @@ class Converter:
                 book = host.books[book_id]
             except KeyError:
                 # skip invalid book ID
-                yield Info('warn', f'Skipped invalid book "{book_id}".')
+                yield Info('warn', f'Skipped invalid book {book_id!r}.')
                 continue
 
-            yield Info('info', f'Handling book "{book_id}"...')
+            yield Info('info', f'Handling book {book_id!r}...')
             book.load_meta_files()
 
             book_meta_orig = copy.deepcopy(book.meta)
@@ -48,15 +48,15 @@ class Converter:
             for id in (item_ids or book.meta):
                 if id not in book.meta:
                     # skip invalid item ID
-                    yield Info('debug', f'Skipped invalid item "{id}".')
+                    yield Info('debug', f'Skipped invalid item {id!r}.')
                     continue
 
                 type = book.meta[id].get('type', '')
                 if type not in self.types:
-                    yield Info('debug', f'Skipped item "{id}": type="{type}"')
+                    yield Info('debug', f'Skipped item {id!r}: type={type!r}')
                     continue
 
-                yield Info('debug', f'Checking "{id}"...')
+                yield Info('debug', f'Checking {id!r}...')
 
                 if self.format:
                     try:
@@ -66,7 +66,7 @@ class Converter:
                             raise RuntimeError(exc.strerror) from exc
                     except Exception as exc:
                         traceback.print_exc()
-                        yield Info('error', f'Failed to convert "{id}": {exc}', exc=exc)
+                        yield Info('error', f'Failed to convert {id!r}: {exc}', exc=exc)
 
             # update files
             if book.meta != book_meta_orig:
@@ -87,7 +87,7 @@ class Converter:
         index = meta.get('index')
 
         if not index:
-            yield Info('debug', f'Skipped "{id}": no index')
+            yield Info('debug', f'Skipped {id!r}: no index')
             return
 
         if index.endswith('/index.html'):
@@ -100,7 +100,7 @@ class Converter:
             format = 'single_file'
 
         if format == self.format:
-            yield Info('debug', f'Skipped "{id}": same format')
+            yield Info('debug', f'Skipped {id!r}: same format')
             return
 
         if format == 'folder':
@@ -121,7 +121,7 @@ class Converter:
 
             maff_info = next(iter(util.get_maff_pages(fsrc)), None)
             if not maff_info:
-                yield Info('debug', f'Skipping "{id}": no valid index page in MAFF')
+                yield Info('debug', f'Skipping {id!r}: no valid index page in MAFF')
             subpath, _, _ = maff_info.indexfilename.partition('/')
 
             util.fs.zip_extract(fsrc, indexdir, subpath)
@@ -159,10 +159,10 @@ class Converter:
         try:
             if self.format == 'folder':
                 fdst = os.path.normpath(os.path.join(book.data_dir, indexbase))
-                yield Info('info', f'Converting "{id}": "{book.get_subpath(fsrc)}" => "{book.get_subpath(fdst)}" ...')
+                yield Info('info', f'Converting {id!r}: {book.get_subpath(fsrc)!r} => {book.get_subpath(fdst)!r} ...')
 
                 if os.path.lexists(fdst):
-                    yield Info('error', f'Failed to convert "{id}": target "{book.get_subpath(fdst)}" already exists.')
+                    yield Info('error', f'Failed to convert {id!r}: target {book.get_subpath(fdst)!r} already exists.')
                     return
 
                 shutil.move(indexdir, fdst)
@@ -176,10 +176,10 @@ class Converter:
 
             elif self.format == 'htz':
                 fdst = os.path.normpath(os.path.join(book.data_dir, indexbase + '.htz'))
-                yield Info('info', f'Converting "{id}": "{book.get_subpath(fsrc)}" => "{book.get_subpath(fdst)}" ...')
+                yield Info('info', f'Converting {id!r}: {book.get_subpath(fsrc)!r} => {book.get_subpath(fdst)!r} ...')
 
                 if os.path.lexists(fdst):
-                    yield Info('error', f'Failed to convert "{id}": target "{book.get_subpath(fdst)}" already exists.')
+                    yield Info('error', f'Failed to convert {id!r}: target {book.get_subpath(fdst)!r} already exists.')
                     return
 
                 util.fs.zip_compress(fdst, indexdir, '')
@@ -194,15 +194,15 @@ class Converter:
 
             elif self.format == 'maff':
                 fdst = os.path.normpath(os.path.join(book.data_dir, indexbase + '.maff'))
-                yield Info('info', f'Converting "{id}": "{book.get_subpath(fsrc)}" => "{book.get_subpath(fdst)}" ...')
+                yield Info('info', f'Converting {id!r}: {book.get_subpath(fsrc)!r} => {book.get_subpath(fdst)!r} ...')
 
                 rdf_file = os.path.join(indexdir, 'index.rdf')
                 if os.path.lexists(rdf_file):
-                    yield Info('error', f'Failed to convert "{id}": index.rdf file already exists.')
+                    yield Info('error', f'Failed to convert {id!r}: index.rdf file already exists.')
                     return
 
                 if os.path.lexists(fdst):
-                    yield Info('error', f'Failed to convert "{id}": target "{book.get_subpath(fdst)}" already exists.')
+                    yield Info('error', f'Failed to convert {id!r}: target {book.get_subpath(fdst)!r} already exists.')
                     return
 
                 subpath = id if util.id_to_datetime(id) else util.datetime_to_id()
@@ -242,10 +242,10 @@ class Converter:
                     indexbase = 'index_'
 
                 fdst = os.path.normpath(os.path.join(book.data_dir, indexbase + ext))
-                yield Info('info', f'Converting "{id}": "{book.get_subpath(fsrc)}" => "{book.get_subpath(fdst)}" ...')
+                yield Info('info', f'Converting {id!r}: {book.get_subpath(fsrc)!r} => {book.get_subpath(fdst)!r} ...')
 
                 if os.path.lexists(fdst):
-                    yield Info('error', f'Failed to convert "{id}": target "{book.get_subpath(fdst)}" already exists.')
+                    yield Info('error', f'Failed to convert {id!r}: target {book.get_subpath(fdst)!r} already exists.')
                     return
 
                 if util.is_html(file) or util.is_svg(file):
@@ -304,8 +304,8 @@ def run(input, output, book_items=None, types=None, format=None):
 
     if book_items:
         for book_id, item_ids in book_items.items():
-            item_ids_text = ', '.join(f'"{id}"' for id in item_ids) if item_ids else 'all'
-            yield Info('info', f'book: "{book_id}", item(s): {item_ids_text}')
+            item_ids_text = ', '.join(f'{id!r}' for id in item_ids) if item_ids else 'all'
+            yield Info('info', f'book: {book_id!r}, item(s): {item_ids_text}')
     else:
         yield Info('info', 'books: all, items: all')
 

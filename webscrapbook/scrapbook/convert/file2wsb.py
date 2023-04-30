@@ -51,7 +51,7 @@ class Converter:
         self.book.save_toc_files()
 
     def _inspect_data_dir(self, data_dir, paths):
-        yield Info('debug', f'Inspecting directory "{data_dir}"')
+        yield Info('debug', f'Inspecting directory {data_dir!r}')
 
         if not os.path.samefile(data_dir, self.input):
             # add data_dir as an item if index.html exists
@@ -81,7 +81,7 @@ class Converter:
 
             parent_id = paths[-1]
             self.book.toc.setdefault(parent_id, []).append(id)
-            yield Info('info', f'Generated folder item "{id}" under "{parent_id}"')
+            yield Info('info', f'Generated folder item {id!r} under {parent_id!r}')
         else:
             id = 'root'
 
@@ -90,7 +90,7 @@ class Converter:
         except FileNotFoundError:
             return
         except OSError as exc:
-            yield Info('error', f'Failed to scan folder "{self.book.get_subpath(exc.filename)}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to scan folder {self.book.get_subpath(exc.filename)!r}: {exc.strerror}', exc=exc)
             return
 
         entries_to_handle = set()
@@ -98,7 +98,7 @@ class Converter:
         with entries as entries:
             for entry in entries:
                 if os.path.normcase(entry.path) == os.path.normcase(self.wsb_dir):
-                    yield Info('debug', f'Skipped special "{self.book.get_subpath(entry)}"')
+                    yield Info('debug', f'Skipped special {self.book.get_subpath(entry)!r}')
                     continue
 
                 if entry.is_dir():
@@ -116,7 +116,7 @@ class Converter:
                     basename, _ = os.path.splitext(entry.name)
                     for suffix in self.data_folder_suffixes:
                         p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
-                        yield Info('debug', f'Excluding "{p}" from index finding')
+                        yield Info('debug', f'Excluding {p!r} from index finding')
                         entries_to_exclude.add(p)
 
         paths.append(id)
@@ -133,7 +133,7 @@ class Converter:
         paths.pop()
 
     def _index_entry(self, entry, paths):
-        yield Info('debug', f'Generating item for "{entry}"...')
+        yield Info('debug', f'Generating item for {entry!r}...')
 
         basename = os.path.basename(entry)
         _, ext = os.path.splitext(entry)
@@ -154,11 +154,11 @@ class Converter:
 
             src = entry
             dst = os.path.join(dst_dir, basename)
-            yield Info('info', f'Copying data file: "{src}" => "{dst}"')
+            yield Info('info', f'Copying data file: {src!r} => {dst!r}')
             try:
                 shutil.copy2(src, dst)
             except OSError as exc:
-                yield Info('error', f'Failed to copy data file "{entry}": {exc.strerror}', exc=exc)
+                yield Info('error', f'Failed to copy data file {entry!r}: {exc.strerror}', exc=exc)
 
             index_file = os.path.join(dst_dir, 'index.html')
             if ext in self.book.ITEM_INDEX_ALLOWED_EXT:
@@ -166,16 +166,16 @@ class Converter:
                 try:
                     shutil.copy2(src, index_file)
                 except OSError as exc:
-                    yield Info('error', f'Failed to copy data file "{entry}": {exc.strerror}', exc=exc)
+                    yield Info('error', f'Failed to copy data file {entry!r}: {exc.strerror}', exc=exc)
 
                 if supporting_folder:
                     src = supporting_folder
                     dst = os.path.join(dst_dir, os.path.basename(supporting_folder))
-                    yield Info('info', f'Copying data folder: "{src}" => "{dst}"')
+                    yield Info('info', f'Copying data folder: {src!r} => {dst!r}')
                     try:
                         shutil.copytree(src, dst)
                     except OSError as exc:
-                        yield Info('error', f'Failed to copy data folder "{entry}": {exc.strerror}', exc=exc)
+                        yield Info('error', f'Failed to copy data folder {entry!r}: {exc.strerror}', exc=exc)
 
                 # generate meta
                 indexer = Indexer(
@@ -210,14 +210,14 @@ class Converter:
         else:
             src = entry
             dst = os.path.join(self.book.data_dir, id + ext)
-            yield Info('info', f'Copying data files: "{src}" => "{dst}"')
+            yield Info('info', f'Copying data files: {src!r} => {dst!r}')
             try:
                 try:
                     shutil.copytree(src, dst)
                 except NotADirectoryError:
                     shutil.copy2(src, dst)
             except OSError as exc:
-                yield Info('error', f'Failed to copy data files for "{entry}": {exc.strerror}', exc=exc)
+                yield Info('error', f'Failed to copy data files for {entry!r}: {exc.strerror}', exc=exc)
 
             index_file = os.path.join(dst, 'index.html') if os.path.isdir(entry) else dst
 
@@ -243,7 +243,7 @@ class Converter:
             # add to parent
             parent_id = paths[-1]
             self.book.toc.setdefault(parent_id, []).append(id)
-            yield Info('info', f'Appended item "{id}" under "{parent_id}"')
+            yield Info('info', f'Appended item {id!r} under {parent_id!r}')
 
     def _get_index_path_key(self, path):
         return self.book.get_subpath(os.path.normcase(path))

@@ -42,7 +42,7 @@ class Exporter():
                 for id in list(id_pool):
                     for desc_id in self._iter_child_items(id, [id]):
                         id_pool.add(desc_id)
-                        yield Info('debug', f'Included descendant item of "{id}": "{desc_id}"')
+                        yield Info('debug', f'Included descendant item of {id!r}: {desc_id!r}')
         else:
             id_pool = {id for id in book.meta if id not in self.recycle}
 
@@ -71,16 +71,16 @@ class Exporter():
     def _export_item(self, id, id_chain):
         if id in self.map_id_to_eid:
             if self.singleton:
-                yield Info('debug', f'Skipped exporting item "{id}" (singleton mode)')
+                yield Info('debug', f'Skipped exporting item {id!r} (singleton mode)')
                 return
 
-        yield Info('debug', f'Exporting item "{id}"')
+        yield Info('debug', f'Exporting item {id!r}')
         try:
             yield from self._export_item_internal(id, id_chain)
         except Exception as exc:
             # unexpected error
             traceback.print_exc()
-            yield Info('error', f'Failed to export "{id}": {exc}', exc=exc)
+            yield Info('error', f'Failed to export {id!r}: {exc}', exc=exc)
 
     def _export_item_internal(self, id, id_chain):
         meta = self.book.meta[id]
@@ -109,7 +109,7 @@ class Exporter():
             i += 1
             dst = os.path.join(self.output, f'{basename}-{i}.wsba')
 
-        yield Info('info', f'Exporting "{id}" to "{os.path.basename(dst)}"')
+        yield Info('info', f'Exporting {id!r} to {os.path.basename(dst)!r}')
         parents = [{'id': id, 'title': self.book.meta.get(id, {}).get('title', '')} for id in id_chain]
         meta_data = {'id': id, **meta}
         export_data = {
@@ -131,7 +131,7 @@ class Exporter():
             if index:
                 zh.writestr('data/', '')
                 src = os.path.join(self.book.data_dir, os.path.dirname(index) if index.endswith('/index.html') else index)
-                yield Info('debug', f'Saving data files for "{id}": "{self.book.get_subpath(src)}"')
+                yield Info('debug', f'Saving data files for {id!r}: {self.book.get_subpath(src)!r}')
                 util.fs.zip_compress(zh, src, f'data/{os.path.basename(src)}')
 
             # include favicon cache
@@ -159,19 +159,19 @@ def run(host, output, book_id='', item_ids=None, *, recursive=False, singleton=F
 
     # Fail for invalid book ID
     if book_id not in host.books:
-        yield Info('error', f'Invalid book "{book_id}".')
+        yield Info('error', f'Invalid book {book_id!r}.')
         return
 
-    yield Info('debug', f'Loading book "{book_id}".')
+    yield Info('debug', f'Loading book {book_id!r}.')
 
     try:
         book = host.books[book_id]
 
         if book.no_tree:
-            yield Info('error', f'Unable to export book "{book_id}" ("{book.name}") (no_tree).')
+            yield Info('error', f'Unable to export book {book_id!r} ({book.name!r}) (no_tree).')
             return
 
-        yield Info('info', f'Exporting from book "{book_id}" ({book.name}).')
+        yield Info('info', f'Exporting from book {book_id!r} ({book.name!r}).')
         lh = book.get_tree_lock().acquire() if lock else nullcontext()
         with lh:
             generator = Exporter(output, book, singleton=singleton)

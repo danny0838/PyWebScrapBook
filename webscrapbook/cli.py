@@ -67,7 +67,7 @@ def cmd_config(args):
         fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, WSB_CONFIG))
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
-            log(f'Generating "{fdst}"...')
+            log(f'Generating {fdst!r}...')
             try:
                 fcopy(fsrc, fdst)
             except OSError:
@@ -83,17 +83,17 @@ def cmd_config(args):
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'serve.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'serve.py'))
             if not os.path.isfile(fdst):
-                log(f'Generating "{fdst}"...')
+                log(f'Generating {fdst!r}...')
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
                 except OSError:
-                    die(f'Unable to generate {fdst}.')
+                    die(f'Unable to generate {fdst!r}.')
 
             fdst = os.path.normpath(os.path.join(args['root'], WSB_DIR, 'app.py'))
             fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'app.py'))
             if not os.path.isfile(fdst):
-                log(f'Generating "{fdst}"...')
+                log(f'Generating {fdst!r}...')
                 try:
                     fcopy(fsrc, fdst)
                     os.chmod(fdst, os.stat(fdst).st_mode | (0o111 & ~get_umask()))
@@ -104,7 +104,7 @@ def cmd_config(args):
         fdst = WSB_USER_CONFIG
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
-            log(f'Generating "{fdst}"...')
+            log(f'Generating {fdst!r}...')
             try:
                 fcopy(fsrc, fdst)
             except OSError:
@@ -127,7 +127,7 @@ def cmd_config(args):
         value = config.getname(args['name'])
 
         if value is None:
-            die(f"""Config entry "{args['name']}" does not exist""")
+            die(f"""Config entry {args['name']!r} does not exist""")
 
         print(value)
 
@@ -272,7 +272,7 @@ def cmd_convert(args):
     input = os.path.realpath(input)
 
     if not os.path.isdir(input):
-        die(f'''Input directory not available: "{input}"''')
+        die(f"""Input directory not available: {input!r}""")
 
     output = args['output']
     if output is not None:
@@ -290,7 +290,7 @@ def cmd_convert(args):
         if not os.path.lexists(output):
             pass
         elif not os.path.isdir(output):
-            die(f'''Output directory not available: "{output}"''')
+            die(f"""Output directory not available: {output!r}""")
         else:
             if force:
                 # using os.rmtree() frequently cause an error on Windows
@@ -303,7 +303,7 @@ def cmd_convert(args):
             else:
                 with os.scandir(output) as dirs:
                     if next(dirs, None):
-                        die(f'''Output directory not empty: "{output}"''')
+                        die(f"""Output directory not empty: {output!r}""")
 
     for info in conv.run(**kwargs):
         if info.type != 'debug' or debug:

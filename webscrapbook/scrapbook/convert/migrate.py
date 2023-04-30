@@ -166,10 +166,10 @@ class Converter:
                 book = host.books[book_id]
             except KeyError:
                 # skip invalid book ID
-                yield Info('warn', f'Skipped invalid book "{book_id}".')
+                yield Info('warn', f'Skipped invalid book {book_id!r}.')
                 continue
 
-            yield Info('info', f'Handling book "{book_id}"...')
+            yield Info('info', f'Handling book {book_id!r}...')
             book.load_meta_files()
             book.load_toc_files()
 
@@ -211,14 +211,14 @@ class ConvertDataFilesLegacy:
                 continue
 
             type = meta.get('type', '')
-            yield Info('debug', f'Converting data files for "{id}" (type="{type}")...')
+            yield Info('debug', f'Converting data files for {id!r} (type={type!r})...')
             if type == 'postit':
                 index_file = os.path.normpath(os.path.join(book.data_dir, index))
                 yield Info('debug', f'Checking: {index_file}...')
                 try:
                     content = book.load_postit_file(index_file)
                 except OSError as exc:
-                    yield Info('error', f'Failed to convert "{index}" for "{id}": {exc.strerror}', exc=exc)
+                    yield Info('error', f'Failed to convert {index!r} for {id!r}: {exc.strerror}', exc=exc)
                 else:
                     book.save_postit_file(index_file, content)
             else:
@@ -237,7 +237,7 @@ class ConvertDataFilesLegacy:
                                 conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
-                                yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+                                yield Info('error', f'Failed to convert {file!r} for {id!r}: {exc}', exc=exc)
 
 
 class ConvertHtmlFileLegacy(HtmlRewriter):
@@ -822,7 +822,7 @@ class ConvertDataFilesV1:
             if not index:
                 continue
 
-            yield Info('debug', f'Converting data files for "{id}" (type="{type}")...')
+            yield Info('debug', f'Converting data files for {id!r} (type={type!r})...')
 
             # folder
             if index.endswith('/index.html'):
@@ -831,13 +831,13 @@ class ConvertDataFilesV1:
                     for file in files:
                         if HTML_FILE_FILTER.search(file):
                             file = os.path.join(root, file)
-                            yield Info('debug', f'Checking: "{file}"...')
+                            yield Info('debug', f'Checking: {file}...')
                             try:
                                 conv = ConvertHtmlFileV1(file)
                                 conv.run()
                             except Exception as exc:
                                 traceback.print_exc()
-                                yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+                                yield Info('error', f'Failed to convert {file!r} for {id!r}: {exc}', exc=exc)
 
             # htz/maff
             elif util.is_htz(index) or util.is_maff(index):
@@ -853,7 +853,7 @@ class ConvertDataFilesV1:
                             if HTML_FILE_FILTER.search(file):
                                 file = os.path.join(root, file)
                                 subpath = file[len(tempzipdir) + 1:].replace('\\', '/')
-                                yield Info('debug', f'Checking: "{subpath}" in "{index_file}"...')
+                                yield Info('debug', f'Checking: {subpath!r} in {index_file!r}...')
                                 try:
                                     conv = ConvertHtmlFileV1(file)
                                     conv.run()
@@ -861,7 +861,7 @@ class ConvertDataFilesV1:
                                         changed = True
                                 except Exception as exc:
                                     traceback.print_exc()
-                                    yield Info('error', f'Failed to convert "{subpath}" in "{index_file}" for "{id}": {exc}', exc=exc)
+                                    yield Info('error', f'Failed to convert {subpath!r} in {index_file!r} for {id!r}: {exc}', exc=exc)
 
                     # don't recompress (and change mtime) if no content changed
                     if changed:
@@ -875,13 +875,13 @@ class ConvertDataFilesV1:
             # single file
             elif util.is_html(index):
                 file = os.path.normpath(os.path.join(book.data_dir, index))
-                yield Info('debug', f'Checking: "{file}"...')
+                yield Info('debug', f'Checking: {file}...')
                 try:
                     conv = ConvertHtmlFileV1(file)
                     conv.run()
                 except Exception as exc:
                     traceback.print_exc()
-                    yield Info('error', f'Failed to convert "{file}" for "{id}": {exc}', exc=exc)
+                    yield Info('error', f'Failed to convert {file!r} for {id!r}: {exc}', exc=exc)
 
 
 class ConvertHtmlFileV1(HtmlRewriter):
@@ -1097,7 +1097,7 @@ def run(input, output, book_ids=None, *,
         use_native_tags=False,
         ):
     start = time.time()
-    book_ids_text = ', '.join(f'"{id}"' for id in book_ids) if book_ids else 'all'
+    book_ids_text = ', '.join(f'{id!r}' for id in book_ids) if book_ids else 'all'
     yield Info('info', 'migrating:')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output) if output is not None else "(in-place)"}')

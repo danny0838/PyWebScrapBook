@@ -138,7 +138,7 @@ class StaticSiteGenerator():
         )
 
     def _generate_resource_file(self, src, dst):
-        yield Info('debug', f'Checking resource file "{dst}"')
+        yield Info('debug', f'Checking resource file {dst!r}')
         fsrc = self.host.get_static_file(src)
         fdst = os.path.normpath(os.path.join(self.book.tree_dir, dst))
 
@@ -146,21 +146,21 @@ class StaticSiteGenerator():
         if os.path.isfile(fdst):
             if os.stat(fsrc).st_size == os.stat(fdst).st_size:
                 if util.checksum(fsrc) == util.checksum(fdst):
-                    yield Info('debug', f'Skipped resource file "{dst}" (up-to-date)')
+                    yield Info('debug', f'Skipped resource file {dst!r} (up-to-date)')
                     return
 
         # save file
-        yield Info('info', f'Generating resource file "{dst}"')
+        yield Info('info', f'Generating resource file {dst!r}')
         try:
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
             fsrc = self.host.get_static_file(src)
             self.book.backup(fdst)
             shutil.copyfile(fsrc, fdst)
         except OSError as exc:
-            yield Info('error', f'Failed to create resource file "{dst}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to create resource file {dst!r}: {exc.strerror}', exc=exc)
 
     def _generate_page(self, dst, tpl, **kwargs):
-        yield Info('debug', f'Checking page "{dst}"')
+        yield Info('debug', f'Checking page {dst!r}')
         fsrc = io.BytesIO()
         fdst = os.path.normpath(os.path.join(self.book.tree_dir, dst))
 
@@ -173,11 +173,11 @@ class StaticSiteGenerator():
             if fsrc.getbuffer().nbytes == os.stat(fdst).st_size:
                 fsrc.seek(0)
                 if util.checksum(fsrc) == util.checksum(fdst):
-                    yield Info('debug', f'Skipped page "{dst}" (up-to-date)')
+                    yield Info('debug', f'Skipped page {dst!r} (up-to-date)')
                     return
 
         # save file
-        yield Info('info', f'Generating page "{dst}"')
+        yield Info('info', f'Generating page {dst!r}')
         try:
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
@@ -185,7 +185,7 @@ class StaticSiteGenerator():
             with open(fdst, 'wb') as fh:
                 shutil.copyfileobj(fsrc, fh)
         except OSError as exc:
-            yield Info('error', f'Failed to create page file "{dst}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to create page file {dst!r}: {exc.strerror}', exc=exc)
 
     def _generate_static_index(self):
         def get_class_text(classes, prefix=' '):
@@ -289,7 +289,7 @@ class RssFeedGenerator():
         # RSS root must be an absolute URL
         u = urlsplit(rss_root)
         if not (u.scheme and u.netloc):
-            yield Info('error', f'Invalid RSS root URL "{rss_root}"')
+            yield Info('error', f'Invalid RSS root URL {rss_root!r}')
             return
 
         id_prefix = re.sub(r'/+$', '', f'urn:webscrapbook:{u.netloc}{u.path}')
@@ -385,7 +385,7 @@ class RssFeedGenerator():
                     return
 
         # save file
-        yield Info('info', 'Generating RSS feed file "feed.atom"')
+        yield Info('info', "Generating RSS feed file 'feed.atom'")
         try:
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
@@ -393,7 +393,7 @@ class RssFeedGenerator():
             with open(fdst, 'wb') as fh:
                 shutil.copyfileobj(fsrc, fh)
         except OSError as exc:
-            yield Info('error', f'Failed to create RSS feed file "feed.atom": {exc.strerror}', exc=exc)
+            yield Info('error', f"Failed to create RSS feed file 'feed.atom': {exc.strerror}", exc=exc)
 
 
 FulltextCacheItem = namedtuple('FulltextCacheItem', ('id', 'meta', 'index', 'indexfile', 'files_to_update'))
@@ -469,27 +469,27 @@ class FulltextCacheGenerator():
                 os.utime(file)
 
     def _cache_item(self, id):
-        yield Info('debug', f'Checking item "{id}"')
+        yield Info('debug', f'Checking item {id!r}')
         book = self.book
 
         # remove id if no meta
         meta = book.meta.get(id)
         if meta is None:
-            yield Info('debug', f'Purging item "{id}" (missing metadata)')
+            yield Info('debug', f'Purging item {id!r} (missing metadata)')
             yield from self._delete_item(id)
             return
 
         # remove id if no index
         index = meta.get('index')
         if not index:
-            yield Info('debug', f'Purging item "{id}" (no index)')
+            yield Info('debug', f'Purging item {id!r} (no index)')
             yield from self._delete_item(id)
             return
 
         # remove id if no index file
         indexfile = os.path.join(book.data_dir, index)
         if not os.path.exists(indexfile):
-            yield Info('debug', f'Purging item "{id}" (missing index file)')
+            yield Info('debug', f'Purging item {id!r} (missing index file)')
             yield from self._delete_item(id)
             return
 
@@ -505,7 +505,7 @@ class FulltextCacheGenerator():
 
     def _delete_item(self, id):
         if id in self.book.fulltext:
-            yield Info('info', f'Removing stale cache for "{id}".')
+            yield Info('info', f'Removing stale cache for {id!r}.')
             del self.book.fulltext[id]
 
     def _collect_files_to_update(self, item):
@@ -520,23 +520,23 @@ class FulltextCacheGenerator():
             # than cache file, for better performance
             if util.is_archive(indexfile):
                 if os.stat(indexfile).st_mtime <= self.cache_last_modified:
-                    yield Info('debug', f'Skipped "{id}" (archive file older than cache)')
+                    yield Info('debug', f'Skipped {id!r} (archive file older than cache)')
                     return
 
         # add index file(s) to update list
         try:
             for path in book.get_index_paths(index):
-                yield Info('debug', f'Adding "{path}" of "{id}" to check list (from index)')
+                yield Info('debug', f'Adding {path!r} of {id!r} to check list (from index)')
                 files_to_update[path] = True
         except zipfile.BadZipFile:
             # MAFF file corrupted.
             # Skip adding index files.
             # Treat as no file exists and remove all indexes later on.
-            yield Info('error', f'Archive file for "{id}" is corrupted')
+            yield Info('error', f'Archive file for {id!r} is corrupted')
 
         # add files in cache to update list
         for path in book.fulltext[id]:
-            yield Info('debug', f'Adding "{path}" of "{id}" to check list (from cache)')
+            yield Info('debug', f'Adding {path!r} of {id!r} to check list (from cache)')
             files_to_update[path] = True
 
     def _handle_files_to_update(self, item):
@@ -545,9 +545,9 @@ class FulltextCacheGenerator():
             if has_update:
                 return
             if book.fulltext[id]:
-                yield Info('info', f'Updating cache for "{id}"...')
+                yield Info('info', f'Updating cache for {id!r}...')
             else:
-                yield Info('info', f'Generating cache for "{id}"...')
+                yield Info('info', f'Generating cache for {id!r}...')
             has_update = True
 
         book = self.book
@@ -555,10 +555,10 @@ class FulltextCacheGenerator():
         has_update = False
 
         for path in files_to_update:
-            yield Info('debug', f'Checking "{path}" of "{id}"')
+            yield Info('debug', f'Checking {path!r} of {id!r}')
             # remove from cache if marked False
             if not files_to_update[path]:
-                yield Info('debug', f'Purging "{path}" of "{id}" (inlined)')
+                yield Info('debug', f'Purging {path!r} of {id!r} (inlined)')
                 if path in book.fulltext[id]:
                     yield from report_update()
                     del book.fulltext[id][path]
@@ -570,7 +570,7 @@ class FulltextCacheGenerator():
             mtime = yield from self._get_mtime(item, path)
             if mtime is None:
                 # path not exist => delete from cache
-                yield Info('debug', f'Purging "{path}" of "{id}" (file not exist)')
+                yield Info('debug', f'Purging {path!r} of {id!r} (file not exist)')
                 if path in book.fulltext[id]:
                     yield from report_update()
                     del book.fulltext[id][path]
@@ -581,13 +581,13 @@ class FulltextCacheGenerator():
             #   updated file, and thus needs update even if it's mtime is not
             #   newer.
             if path in book.fulltext[id] and mtime <= self.cache_last_modified:
-                yield Info('debug', f'Skipped "{path}" of "{id}" (file older than cache)')
+                yield Info('debug', f'Skipped {path!r} of {id!r} (file older than cache)')
                 continue
 
             yield from report_update()
 
             # set updated fulltext
-            yield Info('debug', f'Generating cache for "{path}" of "{id}"')
+            yield Info('debug', f'Generating cache for {path!r} of {id!r}')
             fulltext = yield from self._get_fulltext_cache(item, path)
 
             if fulltext is not None:
@@ -605,10 +605,10 @@ class FulltextCacheGenerator():
             try:
                 zh = zipfile.ZipFile(os.path.join(self.book.data_dir, item.index))
             except zipfile.BadZipFile as exc:
-                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc}', exc=exc)
+                yield Info('error', f'Failed to open zip file {item.index!r} for {item.id!r}: {exc}', exc=exc)
                 return None
             except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as exc:
-                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc.strerror}', exc=exc)
+                yield Info('error', f'Failed to open zip file {item.index!r} for {item.id!r}: {exc.strerror}', exc=exc)
                 return None
 
             try:
@@ -618,7 +618,7 @@ class FulltextCacheGenerator():
             except KeyError:
                 return None
             except Exception as exc:
-                yield Info('error', f'Failed to access in-zip-file for "{path}" of "{item.id}": {exc}', exc=exc)
+                yield Info('error', f'Failed to access in-zip-file for {path!r} of {item.id!r}: {exc}', exc=exc)
                 return None
 
         file = os.path.join(self.book.data_dir, os.path.dirname(item.index), path)
@@ -627,7 +627,7 @@ class FulltextCacheGenerator():
         except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
             return None
         except OSError as exc:
-            yield Info('error', f'Failed to access file for "{path}" of "{item.id}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to access file for {path!r} of {item.id!r}: {exc.strerror}', exc=exc)
             return None
 
     def _open_file(self, item, path):
@@ -635,10 +635,10 @@ class FulltextCacheGenerator():
             try:
                 zh = zipfile.ZipFile(os.path.join(self.book.data_dir, item.index))
             except zipfile.BadZipFile as exc:
-                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc}', exc=exc)
+                yield Info('error', f'Failed to open zip file {item.index!r} for {item.id!r}: {exc}', exc=exc)
                 return None
             except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as exc:
-                yield Info('error', f'Failed to open zip file "{item.index}" for "{item.id}": {exc.strerror}', exc=exc)
+                yield Info('error', f'Failed to open zip file {item.index!r} for {item.id!r}: {exc.strerror}', exc=exc)
                 return None
 
             try:
@@ -647,7 +647,7 @@ class FulltextCacheGenerator():
             except KeyError:
                 return None
             except Exception as exc:
-                yield Info('error', f'Failed to open in-zip-file for "{path}" of "{item.id}": {exc}', exc=exc)
+                yield Info('error', f'Failed to open in-zip-file for {path!r} of {item.id!r}: {exc}', exc=exc)
                 return None
 
         file = os.path.join(self.book.data_dir, os.path.dirname(item.index), path)
@@ -656,13 +656,13 @@ class FulltextCacheGenerator():
         except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
             return None
         except OSError as exc:
-            yield Info('error', f'Failed to open file for "{path}" of "{item.id}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to open file for {path!r} of {item.id!r}: {exc.strerror}', exc=exc)
             return None
 
     def _get_fulltext_cache(self, item, path):
         fh = yield from self._open_file(item, path)
         if not fh:
-            yield Info('debug', f'Skipped "{path}" of "{item.id}" (file not exist or accessible)')
+            yield Info('debug', f'Skipped {path!r} of {item.id!r} (file not exist or accessible)')
             return None
 
         try:
@@ -670,14 +670,14 @@ class FulltextCacheGenerator():
             return (yield from self._get_fulltext_cache_for_fh(item, path, fh, mime))
         except Exception as exc:
             traceback.print_exc()
-            yield Info('error', f'Failed to generate cache for "{item.id}" ({path}): {exc}', exc=exc)
+            yield Info('error', f'Failed to generate cache for {item.id!r} ({path!r}): {exc}', exc=exc)
             return ''
         finally:
             fh.close()
 
     def _get_fulltext_cache_for_fh(self, item, path, fh, mime, *, is_srcdoc=False):
         if not mime:
-            yield Info('debug', f'Skipped "{path}" of "{item.id}" (unknown type)')
+            yield Info('debug', f'Skipped {path!r} of {item.id!r} (unknown type)')
             return None
 
         if util.mime_is_html(mime):
@@ -686,7 +686,7 @@ class FulltextCacheGenerator():
         if mime.startswith('text/'):
             return (yield from self._get_fulltext_cache_txt(item, path, fh))
 
-        yield Info('debug', f'Skipped "{path}" of "{item.id}" ("{mime}" not supported)')
+        yield Info('debug', f'Skipped {path!r} of {item.id!r} ({mime!r} not supported)')
         return None
 
     def _get_fulltext_cache_html(self, item, path, fh, *, is_srcdoc=False):
@@ -729,7 +729,7 @@ class FulltextCacheGenerator():
             try:
                 data = util.parse_datauri(url)
             except util.DataUriMalformedError as exc:
-                yield Info('error', f'Skipped malformed data URL "{util.crop(url, 256)}": {exc}', exc=exc)
+                yield Info('error', f'Skipped malformed data URL {util.crop(url, 256)!r}: {exc}', exc=exc)
                 return
             fh = io.BytesIO(data.bytes)
             fulltext = yield from self._get_fulltext_cache_for_fh(item, None, fh, data.mime)
@@ -737,9 +737,9 @@ class FulltextCacheGenerator():
                 results.append(fulltext)
 
         if is_srcdoc:
-            yield Info('debug', f'Retrieving HTML content for "{path}" (srcdoc) of "{item.id}"')
+            yield Info('debug', f'Retrieving HTML content for {path!r} (srcdoc) of {item.id!r}')
         else:
-            yield Info('debug', f'Retrieving HTML content for "{path}" of "{item.id}"')
+            yield Info('debug', f'Retrieving HTML content for {path!r} of {item.id!r}')
 
         # return '' for an empty file to prevent a parsing error
         fh.seek(0, 2)
@@ -767,7 +767,7 @@ class FulltextCacheGenerator():
             else:
                 target = get_relative_file_path(url)
                 if target and target not in item.files_to_update:
-                    yield Info('debug', f'Adding "{target}" of "{item.id}" to check list (from <meta>)')
+                    yield Info('debug', f'Adding {target!r} of {item.id!r} to check list (from <meta>)')
                     item.files_to_update[target] = True
 
         # Add data URL content of meta refresh targets to fulltext index if the
@@ -816,7 +816,7 @@ class FulltextCacheGenerator():
                         else:
                             target = get_relative_file_path(url)
                             if target and target not in item.files_to_update:
-                                yield Info('debug', f'Adding "{target}" of "{item.id}" to check list (from <{elem.tag}>)')
+                                yield Info('debug', f'Adding {target!r} of {item.id!r} to check list (from <{elem.tag}>)')
                                 item.files_to_update[target] = True
 
                 elif elem.tag in ('iframe', 'frame'):
@@ -839,14 +839,14 @@ class FulltextCacheGenerator():
                                         # content if the targeted file hasn't
                                         # been indexed.
                                         if item.files_to_update.get(target) is not False:
-                                            yield Info('debug', f'Caching "{target}" of "{item.id}" as inline (from <{elem.tag}>)')
+                                            yield Info('debug', f'Caching {target!r} of {item.id!r} as inline (from <{elem.tag}>)')
                                             item.files_to_update[target] = False
                                             fulltext = yield from self._get_fulltext_cache(item, target)
                                             if fulltext:
                                                 results.append(fulltext)
                                     else:
                                         if target not in item.files_to_update:
-                                            yield Info('debug', f'Adding "{target}" of "{item.id}" to check list (from <{elem.tag}>)')
+                                            yield Info('debug', f'Adding {target!r} of {item.id!r} to check list (from <{elem.tag}>)')
                                             item.files_to_update[target] = True
                     else:
                         fh = io.BytesIO(srcdoc.encode('UTF-8-SIG'))
@@ -899,7 +899,7 @@ class FulltextCacheGenerator():
         return self.FULLTEXT_SPACE_REPLACER(' '.join(results)).strip()
 
     def _get_fulltext_cache_txt(self, item, path, fh):
-        yield Info('debug', f'Retrieving text content for "{path}" of "{item.id}"')
+        yield Info('debug', f'Retrieving text content for {path!r} of {item.id!r}')
         charset = util.sniff_bom(fh) or util.fix_codec(item.meta.get('charset', '')) or 'UTF-8'
         text = fh.read().decode(charset, errors='replace')
         return self.FULLTEXT_SPACE_REPLACER(text).strip()
@@ -921,7 +921,7 @@ def generate(host, book_items=None, *,
 
     if backup:
         host.init_auto_backup(note='cache')
-        yield Info('info', f'Prepared backup at "{host.get_subpath(host._auto_backup_dir)}".')
+        yield Info('info', f'Prepared backup at {host.get_subpath(host._auto_backup_dir)!r}.')
         yield Info('info', '----------------------------------------------------------------------')
 
     try:
@@ -936,16 +936,16 @@ def generate(host, book_items=None, *,
                 book = host.books[book_id]
             except KeyError:
                 # skip invalid book ID
-                yield Info('warn', f'Skipped invalid book "{book_id}".')
+                yield Info('warn', f'Skipped invalid book {book_id!r}.')
                 continue
 
-            yield Info('debug', f'Loading book "{book_id}".')
+            yield Info('debug', f'Loading book {book_id!r}...')
 
             if book.no_tree:
-                yield Info('info', f'Skipped book "{book_id}" ("{book.name}") (no_tree).')
+                yield Info('info', f'Skipped book {book_id!r} ({book.name!r}) (no_tree).')
                 continue
 
-            yield Info('info', f'Caching book "{book_id}" ({book.name}).')
+            yield Info('info', f'Caching book {book_id!r} ({book.name!r}).')
             lh = book.get_tree_lock().acquire() if lock else nullcontext()
             with lh:
                 if fulltext:

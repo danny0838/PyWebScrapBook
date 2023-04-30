@@ -163,17 +163,17 @@ class Indexer:
         for file in files:
             id = yield from self._index_file(file)
             if id:
-                yield Info('info', f'Added item "{id}" for "{self.book.get_subpath(file)}".')
+                yield Info('info', f'Added item {id!r} for {self.book.get_subpath(file)!r}.')
                 indexed[id] = True
 
         return indexed
 
     def _index_file(self, file):
         subpath = self.book.get_subpath(file)
-        yield Info('debug', f'Indexing "{subpath}"...')
+        yield Info('debug', f'Indexing {subpath!r}...')
 
         if not os.path.isfile(file):
-            yield Info('error', f'File "{subpath}" does not exist.')
+            yield Info('error', f'File {subpath!r} does not exist.')
             return None
 
         _, ext = os.path.splitext(file.lower())
@@ -182,12 +182,12 @@ class Indexer:
         if is_webpage:
             tree = self.book.get_tree_from_index_file(file)
             if tree is None:
-                yield Info('error', f'Failed to read document from file "{subpath}"')
+                yield Info('error', f'Failed to read document from file {subpath!r}')
                 return None
 
             tree_root = tree.getroot()
             if tree_root is None or tree_root.tag != 'html':
-                yield Info('error', f'No html element in file "{subpath}"')
+                yield Info('error', f'No html element in file {subpath!r}')
                 return None
 
             html_elem = tree_root
@@ -219,11 +219,11 @@ class Indexer:
         if id:
             # if explicitly specified in html attributes, use it or fail out.
             if id in self.book.meta:
-                yield Info('error', f'Specified ID "{id}" is already used.')
+                yield Info('error', f'Specified ID {id!r} is already used.')
                 return None
 
             if id in self.book.SPECIAL_ITEM_ID:
-                yield Info('error', f'Specified ID "{id}" is invalid.')
+                yield Info('error', f'Specified ID {id!r} is invalid.')
                 return None
 
         else:
@@ -264,7 +264,7 @@ class Indexer:
                             + ''.join(etree.tostring(e, encoding='unicode') for e in title_elem)
                         )
                     except UnicodeDecodeError as exc:
-                        yield Info('error', f'Failed to extract title for "{id}": {exc}', exc=exc)
+                        yield Info('error', f'Failed to extract title for {id!r}: {exc}', exc=exc)
             if not title or not title.strip():
                 title = generate_item_title(self.book, id)
             meta['title'] = title or ''
@@ -400,11 +400,11 @@ class FavIconCacher:
         return cached
 
     def _cache_favicon(self, id):
-        yield Info('debug', f'Caching favicon for "{id}"...')
+        yield Info('debug', f'Caching favicon for {id!r}...')
 
         url = self.book.meta[id].get('icon')
         if not url:
-            yield Info('debug', f'Skipped for "{id}": no favicon to cache.')
+            yield Info('debug', f'Skipped for {id!r}: no favicon to cache.')
             return None
 
         urlparts = urlsplit(url)
@@ -444,11 +444,11 @@ class FavIconCacher:
         """
         def verify_mime(mime):
             if not mime:
-                yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unknown MIME type')
+                yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: unknown MIME type')
                 return False
 
             if not (mime.startswith('image/') or mime == 'application/octet-stream'):
-                yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": invalid image MIME type "{mime}"')
+                yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: invalid image MIME type {mime!r}')
                 return False
 
             return True
@@ -459,10 +459,10 @@ class FavIconCacher:
             fdst = os.path.join(self.book.tree_dir, 'favicon', hash_ + ext)
 
             if os.path.isfile(fdst):
-                yield Info('info', f'Use saved favicon for "{util.crop(source_url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
+                yield Info('info', f'Use saved favicon for {util.crop(source_url, 256)!r} for {id!r} at {self.book.get_subpath(fdst)!r}.')
                 return fdst
 
-            yield Info('info', f'Saving favicon "{util.crop(source_url, 256)}" for "{id}" at "{self.book.get_subpath(fdst)}".')
+            yield Info('info', f'Saving favicon {util.crop(source_url, 256)!r} for {id!r} at {self.book.get_subpath(fdst)!r}.')
             fsrc.seek(0)
             os.makedirs(os.path.dirname(fdst), exist_ok=True)
             self.book.backup(fdst)
@@ -476,10 +476,10 @@ class FavIconCacher:
         try:
             r = urlopen(url)
         except URLError as exc:
-            yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unable to fetch favicon URL.', exc=exc)
+            yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: unable to fetch favicon URL.', exc=exc)
             return None
         except ValueError as exc:
-            yield Info('error', f'Unable to cache favicon "{util.crop(source_url, 256)}" for "{id}": unsupported or malformatted URL: {exc}', exc=exc)
+            yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: unsupported or malformatted URL: {exc}', exc=exc)
             return None
 
         with r as r:
@@ -519,7 +519,7 @@ class FavIconCacher:
             except OSError as exc:
                 raise RuntimeError(exc.strerror) from exc
         except Exception as exc:
-            yield Info('error', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc}', exc=exc)
+            yield Info('error', f'Failed to read archive favicon {util.crop(url, 256)!r} for {id!r}: {exc}', exc=exc)
             return None
 
         mime, _ = mimetypes.guess_type(subpath)
@@ -533,14 +533,14 @@ class FavIconCacher:
 
         # skip if already in favicon dir
         if os.path.normcase(file).startswith(self.favicon_dir):
-            yield Info('debug', f'Skipped favicon "{util.crop(url, 256)}" for "{id}": already in favicon folder')
+            yield Info('debug', f'Skipped favicon {util.crop(url, 256)!r} for {id!r}: already in favicon folder')
             return None
 
         try:
             with open(file, 'rb') as fh:
                 bytes_ = fh.read()
         except OSError as exc:
-            yield Info('error', f'Failed to read archive favicon "{util.crop(url, 256)}" for "{id}": {exc.strerror}', exc=exc)
+            yield Info('error', f'Failed to read archive favicon {util.crop(url, 256)!r} for {id!r}: {exc.strerror}', exc=exc)
 
         mime, _ = mimetypes.guess_type(subpath)
         mime = mime or 'application/octet-stream'
