@@ -1233,13 +1233,10 @@ def action_cache():
         'lock': not request.values.get('no_lock', default=False, type=bool),
         'backup': not request.values.get('no_backup', default=False, type=bool),
         'fulltext': request.values.get('fulltext', default=False, type=bool),
-        'inclusive_frames': request.values.get('inclusive_frames', default=False, type=bool),
         'recreate': request.values.get('recreate', default=False, type=bool),
         'static_site': request.values.get('static_site', default=False, type=bool),
-        'static_index': request.values.get('static_index', default=False, type=bool),
-        'rss_root': request.values.get('rss_root'),
-        'rss_item_count': request.values.get('rss_item_count', default=50, type=int),
-        'locale': request.values.get('locale'),
+        'static_index': request.values.get('static_index', default=None, type=bool),
+        'rss': request.values.get('rss', default=None, type=bool),
     }
 
     gen = wsb_cache.generate((host.root, host.config), **kwargs)

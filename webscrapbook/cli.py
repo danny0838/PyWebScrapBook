@@ -598,11 +598,6 @@ corresponding book) (default/empty: all items)""")
         '--fulltext', default=True, action=BooleanOptionalAction,
         help="""generate fulltext cache (default: %(default)s)""")
     parser_cache.add_argument(
-        '--inclusive-frames', default=True, action=BooleanOptionalAction,
-        help="""cache frame content as part of the main page. It's recommended
-to recreate fulltext cache when changing this option to prevent an
-inconsistency. (default: %(default)s)""")
-    parser_cache.add_argument(
         '--recreate', dest='recreate', default=False, action=BooleanOptionalAction,
         help="""ignore current fulltext cache and generate again
 (default: %(default)s)""")
@@ -610,18 +605,13 @@ inconsistency. (default: %(default)s)""")
         '--static-site', default=False, action=BooleanOptionalAction,
         help="""generate static site pages (default: %(default)s)""")
     parser_cache.add_argument(
-        '--static-index', default=False, action=BooleanOptionalAction,
-        help="""generate static index.html page (default: %(default)s)""")
+        '--static-index', default=None, action=BooleanOptionalAction,
+        help="""generate static index.html page  (default: as
+`book.*.static_index` config)""")
     parser_cache.add_argument(
-        '--rss-root', metavar='ROOT_URL', action='store',
-        help="""generate an RSS feed file for the book, using the specified root URL
-        (usually corresponds to webscrapbook app root)""")
-    parser_cache.add_argument(
-        '--rss-item-count', default=50, type=int, action='store',
-        help="""number of items the RSS feed should include (default: %(default)s)""")
-    parser_cache.add_argument(
-        '--locale', action='store',
-        help="""locale for the generated pages (default: as `app.locale` config)""")
+        '--rss', default=None, action=BooleanOptionalAction,
+        help="""generate an RSS feed file for the book (default: True if
+`--static-site` and `book.*.rss_root` config are set)""")
     parser_cache.add_argument(
         '--backup', default=False, action=BooleanOptionalAction,
         help="""backup changed files (default: %(default)s)""")

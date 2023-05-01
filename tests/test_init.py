@@ -71,6 +71,10 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', 'tree'),
                 ('index', 'tree/map.html'),
                 ('no_tree', False),
+                ('inclusive_frames', False),
+                ('static_index', True),
+                ('rss_root', 'http://example.com/'),
+                ('rss_item_count', 30),
             ])),
             ('book2', OrderedDict([
                 ('name', 'mybook2'),
@@ -79,6 +83,10 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', '.wsb/tree'),
                 ('index', '.wsb/tree/map.html'),
                 ('no_tree', True),
+                ('inclusive_frames', True),
+                ('static_index', False),
+                ('rss_root', ''),
+                ('rss_item_count', 50),
             ])),
             ('book3', OrderedDict([
                 ('name', 'mybook3'),
@@ -87,6 +95,10 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', 'tree'),
                 ('index', 'tree/map.html'),
                 ('no_tree', True),
+                ('inclusive_frames', True),
+                ('static_index', False),
+                ('rss_root', ''),
+                ('rss_item_count', 50),
             ])),
         ]))
         self.assertDictEqual(conf['auth'], OrderedDict([
@@ -234,6 +246,10 @@ data_dir = data
 tree_dir = tree
 index = tree/map.html
 no_tree = false
+inclusive_frames = false
+static_index = true
+rss_root = http://example.com/
+rss_item_count = 30
 
 [book "book2"]
 name = mybook2
@@ -242,6 +258,10 @@ data_dir =
 tree_dir = .wsb/tree
 index = .wsb/tree/map.html
 no_tree = on
+inclusive_frames = true
+static_index = false
+rss_root = 
+rss_item_count = 50
 
 [book "book3"]
 name = mybook3
@@ -250,6 +270,10 @@ data_dir = data
 tree_dir = tree
 index = tree/map.html
 no_tree = on
+inclusive_frames = true
+static_index = false
+rss_root = 
+rss_item_count = 50
 
 [auth "user1"]
 user = myuser1
@@ -304,6 +328,10 @@ permission = all
                         ('tree_dir', 'tree'),
                         ('index', 'tree/map.html'),
                         ('no_tree', False),
+                        ('inclusive_frames', False),
+                        ('static_index', True),
+                        ('rss_root', 'http://example.com/'),
+                        ('rss_item_count', 30),
                     ])),
                     ('book2', OrderedDict([
                         ('name', 'mybook2'),
@@ -312,6 +340,10 @@ permission = all
                         ('tree_dir', '.wsb/tree'),
                         ('index', '.wsb/tree/map.html'),
                         ('no_tree', True),
+                        ('inclusive_frames', True),
+                        ('static_index', False),
+                        ('rss_root', ''),
+                        ('rss_item_count', 50),
                     ])),
                     ('book3', OrderedDict([
                         ('name', 'mybook3'),
@@ -320,6 +352,10 @@ permission = all
                         ('tree_dir', 'tree'),
                         ('index', 'tree/map.html'),
                         ('no_tree', True),
+                        ('inclusive_frames', True),
+                        ('static_index', False),
+                        ('rss_root', ''),
+                        ('rss_item_count', 50),
                     ])),
                 ])),
                 ('auth', OrderedDict([

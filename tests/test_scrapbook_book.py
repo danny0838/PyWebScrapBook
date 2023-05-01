@@ -83,6 +83,7 @@ no_tree = false
         book = Book(host)
 
         self.assertEqual(book.host, host)
+        self.assertEqual(book.config, host.config['book'][''])
         self.assertEqual(book.id, '')
         self.assertEqual(book.name, 'scrapbook')
         self.assertEqual(book.root, self.test_root)
@@ -107,6 +108,7 @@ no_tree = false
         book = Book(host, 'book1')
 
         self.assertEqual(book.host, host)
+        self.assertEqual(book.config, host.config['book']['book1'])
         self.assertEqual(book.id, 'book1')
         self.assertEqual(book.name, 'scrapbook1')
         self.assertEqual(book.root, self.test_root)
@@ -134,6 +136,7 @@ no_tree = false
         book = Book(host)
 
         self.assertEqual(book.host, host)
+        self.assertEqual(book.config, host.config['book'][''])
         self.assertEqual(book.id, '')
         self.assertEqual(book.name, 'scrapbook')
         self.assertEqual(book.root, self.test_root)

@@ -129,7 +129,7 @@ class Book:
 
     def __init__(self, host, book_id=''):
         self.host = host
-        config = host.config['book'][book_id]
+        self.config = config = host.config['book'][book_id]
         self.id = book_id
         self.name = config['name']
         self.root = host.root

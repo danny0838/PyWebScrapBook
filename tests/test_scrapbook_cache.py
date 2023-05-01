@@ -132,13 +132,13 @@ class TestFuncGenerate(TestCache):
             pass
 
         self.assertListEqual(mock_cls.mock_calls, [
-            mock.call(mock.ANY, inclusive_frames=True, recreate=False),  # book ''
+            mock.call(mock.ANY, recreate=False),  # book ''
             mock.call().run(['item01', 'item02']),
             mock.ANY,  # iter
-            mock.call(mock.ANY, inclusive_frames=True, recreate=False),  # book 'b1'
+            mock.call(mock.ANY, recreate=False),  # book 'b1'
             mock.call().run(None),
             mock.ANY,  # iter
-            mock.call(mock.ANY, inclusive_frames=True, recreate=False),  # book 'b2'
+            mock.call(mock.ANY, recreate=False),  # book 'b2'
             mock.call().run(['item21']),
             mock.ANY,  # iter
         ])
@@ -172,20 +172,6 @@ no_tree = true
 
         mock_cls.assert_not_called()
 
-    @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
-    def test_param_inclusive_frames01(self, mock_cls):
-        for _info in wsb_cache.generate(self.test_root, inclusive_frames=True):
-            pass
-
-        self.assertTrue(mock_cls.call_args[1]['inclusive_frames'])
-
-    @mock.patch('webscrapbook.scrapbook.cache.FulltextCacheGenerator')
-    def test_param_inclusive_frames02(self, mock_cls):
-        for _info in wsb_cache.generate(self.test_root, inclusive_frames=False):
-            pass
-
-        self.assertFalse(mock_cls.call_args[1]['inclusive_frames'])
-
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_static_site01(self, mock_cls):
         for _info in wsb_cache.generate(self.test_root, static_site=True):
@@ -202,41 +188,74 @@ no_tree = true
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
     def test_param_static_index01(self, mock_cls):
+        """Use config if not set."""
+        for _info in wsb_cache.generate(self.test_root, static_site=True):
+            pass
+
+        self.assertIsNone(mock_cls.call_args[1]['static_index'])
+
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
+    def test_param_static_index02(self, mock_cls):
         for _info in wsb_cache.generate(self.test_root, static_site=True, static_index=True):
             pass
 
         self.assertTrue(mock_cls.call_args[1]['static_index'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
-    def test_param_static_index02(self, mock_cls):
+    def test_param_static_index03(self, mock_cls):
         for _info in wsb_cache.generate(self.test_root, static_site=True, static_index=False):
             pass
 
         self.assertFalse(mock_cls.call_args[1]['static_index'])
 
-    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
-    def test_param_locale(self, mock_cls):
-        for _info in wsb_cache.generate(self.test_root, static_site=True, locale='zh_TW'):
-            pass
-
-        self.assertEqual(mock_cls.call_args[1]['locale'], 'zh_TW')
-
     @mock.patch('webscrapbook.scrapbook.cache.RssFeedGenerator')
-    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
-    def test_param_rss_root01(self, mock_ssg, mock_rss):
-        for _info in wsb_cache.generate(self.test_root, static_site=True, rss_root='http://example.com:8000/wsb/'):
+    def test_param_rss01(self, mock_rss):
+        """Run RSS generator if config and static_site are set."""
+        # rss_root not set
+        for _info in wsb_cache.generate(self.test_root):
             pass
+        mock_rss.assert_not_called()
 
-        self.assertTrue(mock_ssg.call_args[1]['rss'])
+        for _info in wsb_cache.generate(self.test_root, static_site=True):
+            pass
+        mock_rss.assert_not_called()
+
+        # rss_root set
+        self.init_host(self.test_root, config="""\
+[book ""]
+rss_root = http://example.com/wsb
+""")
+
+        for _info in wsb_cache.generate(self.test_root):
+            pass
+        mock_rss.assert_not_called()
+
+        for _info in wsb_cache.generate(self.test_root, static_site=True):
+            pass
         mock_rss.assert_called_once()
 
     @mock.patch('webscrapbook.scrapbook.cache.RssFeedGenerator')
-    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator')
-    def test_param_rss_root02(self, mock_ssg, mock_rss):
-        for _info in wsb_cache.generate(self.test_root, static_site=True, rss_root=None):
+    def test_param_rss02(self, mock_rss):
+        """Run RSS generator only when config is set."""
+        # rss_root not set
+        for _info in wsb_cache.generate(self.test_root, rss=True):
             pass
+        mock_rss.assert_not_called()
 
-        self.assertFalse(mock_ssg.call_args[1]['rss'])
+        # rss_root set
+        self.init_host(self.test_root, config="""\
+[book ""]
+rss_root = http://example.com/wsb
+""")
+
+        for _info in wsb_cache.generate(self.test_root, rss=True):
+            pass
+        mock_rss.assert_called_once()
+
+    @mock.patch('webscrapbook.scrapbook.cache.RssFeedGenerator')
+    def test_param_rss03(self, mock_rss):
+        for _info in wsb_cache.generate(self.test_root, rss=False):
+            pass
         mock_rss.assert_not_called()
 
     @mock.patch('webscrapbook.scrapbook.host.Host.get_subpath', lambda *_: '')
@@ -266,6 +285,12 @@ class TestFulltextCacheGenerator(TestCache):
         self.test_dir = os.path.join(self.test_root, '20200101000000000')
         self.test_file = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(self.test_dir)
+
+    def general_config_no_inclusive_frame(self):
+        return """\
+[book ""]
+inclusive_frames = false
+"""
 
     def general_meta(self):
         return {
@@ -2151,7 +2176,11 @@ Iframe page content. 中文
 
     def test_html_iframe02(self):
         """Treat iframe content as another page if specified"""
-        book = self.init_book(self.test_root, meta=self.general_meta())
+        book = self.init_book(
+            self.test_root,
+            config=self.general_config_no_inclusive_frame(),
+            meta=self.general_meta(),
+        )
         with open(self.test_file, 'w', encoding='UTF-8') as fh:
             fh.write("""<!DOCTYPE html>
 <html>
@@ -2169,7 +2198,7 @@ Iframe page content. 中文
 </html>
 """)
 
-        generator = wsb_cache.FulltextCacheGenerator(book, inclusive_frames=False)
+        generator = wsb_cache.FulltextCacheGenerator(book)
         for _info in generator.run():
             pass
 
@@ -2311,7 +2340,11 @@ Frame page content 1.
 
     def test_html_frame02(self):
         """Treat frame content as another page if specified"""
-        book = self.init_book(self.test_root, meta=self.general_meta())
+        book = self.init_book(
+            self.test_root,
+            config=self.general_config_no_inclusive_frame(),
+            meta=self.general_meta(),
+        )
         with open(self.test_file, 'w', encoding='UTF-8') as fh:
             fh.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -2338,7 +2371,7 @@ Frame page content 1.
 </html>
 """)
 
-        generator = wsb_cache.FulltextCacheGenerator(book, inclusive_frames=False)
+        generator = wsb_cache.FulltextCacheGenerator(book)
         for _info in generator.run():
             pass
 
@@ -3042,6 +3075,58 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         self.assertEqual(mock_func.call_args_list[3][1]['tree_dir'], 'tree%20%E4%B8%AD%E6%96%87/')
         self.assertEqual(mock_func.call_args_list[3][1]['index'], 'tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag')
 
+    def test_config_locale01(self):
+        book = self.init_book(self.test_root)
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(generator.template_env.globals['i18n'].lang, 'en')
+
+    def test_config_locale02(self):
+        book = self.init_book(self.test_root, config="""\
+[app]
+locale = zh-TW
+""")
+
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(generator.template_env.globals['i18n'].lang, 'zh_tw')
+
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
+    def test_config_rss01(self, mock_func):
+        book = self.init_book(self.test_root, config="""\
+[book ""]
+rss_root =
+""")
+
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
+        self.assertFalse(mock_func.call_args_list[0][1]['rss'])
+        self.assertEqual(mock_func.call_args_list[1][0], ('map.html', 'static_map.html'))
+        self.assertFalse(mock_func.call_args_list[1][1]['rss'])
+
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
+    def test_config_rss02(self, mock_func):
+        book = self.init_book(self.test_root, config="""\
+[book ""]
+rss_root = http://example.com/
+""")
+
+        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
+        self.assertTrue(mock_func.call_args_list[0][1]['rss'])
+        self.assertEqual(mock_func.call_args_list[1][0], ('map.html', 'static_map.html'))
+        self.assertTrue(mock_func.call_args_list[1][1]['rss'])
+
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
     def test_param_static_index01(self, mock_func):
         """Check if params are passed correctly."""
@@ -3070,47 +3155,37 @@ index = tree%20%E4%B8%AD%E6%96%87/my%20index.html?id=1#myfrag
         self.assertIsNone(mock_func.call_args_list[0][1]['static_index'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
-    def test_param_rss01(self, mock_func):
-        """rss should be passed."""
-        book = self.init_book(self.test_root)
-        generator = wsb_cache.StaticSiteGenerator(book, rss=True)
+    def test_param_static_index03(self, mock_func):
+        """Check config if not specified"""
+        book = self.init_book(self.test_root, config="""\
+[book ""]
+static_index = true
+""")
+        generator = wsb_cache.StaticSiteGenerator(book)
         for _info in generator.run():
             pass
 
-        self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
-        self.assertTrue(mock_func.call_args_list[0][1]['rss'])
+        self.assertEqual(mock_func.call_args_list[0][0], ('index.html', 'static_index.html'))
+        self.assertEqual(mock_func.call_args_list[0][1]['filename'], 'index')
+        self.assertIsInstance(mock_func.call_args_list[0][1]['static_index'], collections.abc.Generator)
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page')
-    def test_param_rss02(self, mock_func):
-        """rss should be passed."""
-        book = self.init_book(self.test_root)
-        generator = wsb_cache.StaticSiteGenerator(book, rss=False)
-        for _info in generator.run():
-            pass
-
-        self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
-        self.assertFalse(mock_func.call_args_list[0][1]['rss'])
-
-    def test_param_locale01(self):
-        """locale should be passed."""
-        book = self.init_book(self.test_root)
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True, locale='ar')
-        for _info in generator.run():
-            pass
-
-        self.assertEqual(generator.template_env.globals['i18n'].lang, 'ar')
-
-    def test_param_locale02(self):
-        """Take config if locale not specified."""
+    def test_param_static_index04(self, mock_func):
+        """Check config if not specified"""
         book = self.init_book(self.test_root, config="""\
-[app]
-locale = he
+[book ""]
+static_index = false
 """)
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
+        generator = wsb_cache.StaticSiteGenerator(book)
         for _info in generator.run():
             pass
 
-        self.assertEqual(generator.template_env.globals['i18n'].lang, 'he')
+        for i, call in enumerate(mock_func.call_args_list):
+            with self.subTest(i=i, file=call[0][0]):
+                self.assertNotEqual(call[0][0], 'index.html')
+        self.assertEqual(mock_func.call_args_list[0][0], ('map.html', 'static_map.html'))
+        self.assertEqual(mock_func.call_args_list[0][1]['filename'], 'map')
+        self.assertIsNone(mock_func.call_args_list[0][1]['static_index'])
 
     @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
                 return_value=iter(()))
@@ -3885,6 +3960,10 @@ class TestRssFeedGenerator(TestCache):
         """A basic test case."""
         book = self.init_book(
             self.test_root,
+            config="""\
+[book ""]
+rss_root = http://example.com/wsb
+""",
             meta={
                 '20200101000100000': {
                     'index': '20200101000100000/index.html',
@@ -3924,7 +4003,7 @@ class TestRssFeedGenerator(TestCache):
             },
         )
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
+        generator = wsb_cache.RssFeedGenerator(book)
         for _info in generator.run():
             pass
 
@@ -3998,6 +4077,10 @@ class TestRssFeedGenerator(TestCache):
         """Latter item goes first if same modify time."""
         book = self.init_book(
             self.test_root,
+            config="""\
+[book ""]
+rss_root = http://example.com
+""",
             meta={
                 '20200101000100000': {
                     'index': '20200101000100000/index.html',
@@ -4023,7 +4106,7 @@ class TestRssFeedGenerator(TestCache):
             },
         )
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
+        generator = wsb_cache.RssFeedGenerator(book)
         for _info in generator.run():
             pass
 
@@ -4077,6 +4160,11 @@ class TestRssFeedGenerator(TestCache):
         """Check item_count param."""
         book = self.init_book(
             self.test_root,
+            config="""\
+[book ""]
+rss_root = http://example.com
+rss_item_count = 3
+""",
             meta={
                 '20200101000100000': {
                     'index': '20200101000100000/index.html',
@@ -4116,7 +4204,7 @@ class TestRssFeedGenerator(TestCache):
             },
         )
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com', item_count=3)
+        generator = wsb_cache.RssFeedGenerator(book)
         for _info in generator.run():
             pass
 
@@ -4173,6 +4261,10 @@ class TestRssFeedGenerator(TestCache):
         """
         book = self.init_book(
             self.test_root,
+            config="""\
+[book ""]
+rss_root = http://example.com
+""",
             meta={
                 '20200101000100000': {
                     'title': 'Title 中文 1',
@@ -4204,7 +4296,7 @@ class TestRssFeedGenerator(TestCache):
             },
         )
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
+        generator = wsb_cache.RssFeedGenerator(book)
         for _info in generator.run():
             pass
 
@@ -4237,6 +4329,10 @@ class TestRssFeedGenerator(TestCache):
         """Item missing create property uses epoch=0"""
         book = self.init_book(
             self.test_root,
+            config="""\
+[book ""]
+rss_root = http://example.com
+""",
             meta={
                 '20200101000100000': {
                     'title': 'Title 中文 1',
@@ -4248,7 +4344,7 @@ class TestRssFeedGenerator(TestCache):
             },
         )
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
+        generator = wsb_cache.RssFeedGenerator(book)
         for _info in generator.run():
             pass
 
@@ -4282,6 +4378,10 @@ class TestRssFeedGenerator(TestCache):
         """Item missing modify property infers from create and epoch=0"""
         book = self.init_book(
             self.test_root,
+            config="""\
+[book ""]
+rss_root = http://example.com
+""",
             meta={
                 '20200101000100000': {
                     'title': 'Title 中文 1',
@@ -4297,7 +4397,7 @@ class TestRssFeedGenerator(TestCache):
             },
         )
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
+        generator = wsb_cache.RssFeedGenerator(book)
         for _info in generator.run():
             pass
 

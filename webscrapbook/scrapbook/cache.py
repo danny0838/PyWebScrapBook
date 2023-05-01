@@ -77,15 +77,15 @@ class StaticSiteGenerator():
         'postit': 'icon/postit.png',  # ScrapBook X note
     }
 
-    def __init__(self, book, *, locale=None,
-                 static_index=False, rss=False,
-                 ):
+    def __init__(self, book, *, static_index=None):
         self.host = book.host
         self.book = book
-        self.static_index = static_index
-        self.locale = locale or self.host.config['app']['locale']
+        self.locale = self.host.config['app']['locale']
+        self.rss = bool(self.book.config['rss_root'])
 
-        self.rss = rss
+        if static_index is None:
+            static_index = self.book.config['static_index']
+        self.static_index = static_index
 
         self.template_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.host.templates),
@@ -134,7 +134,7 @@ class StaticSiteGenerator():
             path=util.get_relative_url(self.book.top_dir, self.book.tree_dir),
             data_dir=util.get_relative_url(self.book.data_dir, self.book.top_dir),
             tree_dir=util.get_relative_url(self.book.tree_dir, self.book.top_dir),
-            index=self.host.config['book'][self.book.id]['index'],
+            index=self.book.config['index'],
         )
 
     def _generate_resource_file(self, src, dst):
@@ -275,10 +275,10 @@ class RssFeedGenerator():
     """
     NS = 'http://www.w3.org/2005/Atom'
 
-    def __init__(self, book, *, rss_root=None, item_count=50):
+    def __init__(self, book):
         self.book = book
-        self.rss_root = rss_root.rstrip('/') + '/'
-        self.item_count = item_count
+        self.rss_root = book.config['rss_root'].rstrip('/') + '/'
+        self.item_count = book.config['rss_item_count']
 
     def run(self):
         yield Info('info', 'Generating RSS feed...')
@@ -416,9 +416,9 @@ class FulltextCacheGenerator():
         'svg', 'math',
     }
 
-    def __init__(self, book, *, inclusive_frames=True, recreate=False):
+    def __init__(self, book, *, recreate=False):
         self.book = book
-        self.inclusive_frames = inclusive_frames
+        self.inclusive_frames = self.book.config['inclusive_frames']
         self.recreate = recreate
         self.cache_last_modified = 0
 
@@ -907,9 +907,9 @@ class FulltextCacheGenerator():
 
 def generate(host, book_items=None, *,
              lock=True, backup=True,
-             fulltext=True, inclusive_frames=True, recreate=False,
-             static_site=False, static_index=False, locale=None,
-             rss_root=None, rss_item_count=50):
+             fulltext=True, recreate=False,
+             static_site=False, static_index=None,
+             rss=None):
     start = time.time()
 
     if isinstance(host, Host):
@@ -939,8 +939,6 @@ def generate(host, book_items=None, *,
                 yield Info('warn', f'Skipped invalid book {book_id!r}.')
                 continue
 
-            yield Info('debug', f'Loading book {book_id!r}...')
-
             if book.no_tree:
                 yield Info('info', f'Skipped book {book_id!r} ({book.name!r}) (no_tree).')
                 continue
@@ -951,7 +949,6 @@ def generate(host, book_items=None, *,
                 if fulltext:
                     generator = FulltextCacheGenerator(
                         book,
-                        inclusive_frames=inclusive_frames,
                         recreate=recreate,
                     )
                     yield from generator.run(item_ids)
@@ -960,15 +957,18 @@ def generate(host, book_items=None, *,
                     generator = StaticSiteGenerator(
                         book,
                         static_index=static_index,
-                        locale=locale, rss=bool(rss_root),
                     )
                     yield from generator.run()
 
-                if rss_root:
+                _rss = static_site if rss is None else rss
+
+                if _rss:
+                    if not book.config['rss_root']:
+                        yield Info('debug', 'Skipped RSS generating: RSS root not configured')
+                        continue
+
                     generator = RssFeedGenerator(
                         book,
-                        rss_root=rss_root,
-                        item_count=rss_item_count,
                     )
                     yield from generator.run()
 

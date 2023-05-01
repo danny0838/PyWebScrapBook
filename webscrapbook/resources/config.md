@@ -242,6 +242,39 @@ Set true to disable virtual tree and index of the book.
 (default: `false`)
 
 
+#### `inclusive_frames`
+
+Cache the content of frame pages as part of the main page. The fulltext cache
+should be recreated if this config is changed, to prevent an inconsistency.
+
+(default: `true`)
+
+
+#### `static_index`
+
+Set true to generate an additional `index.html` page when generating static
+site pages. The page provides a static list of data items, for SEO and for a
+client not supporting JavaScript to browse. However, the page takes more time
+to generate and usually loads slower than the dynamic `map.html`.
+
+(default: `false`)
+
+
+#### `rss_root`
+
+The public absolute root URL of the site, to be used by the generated RSS feed.
+No RSS feed will be generated if left blank.
+
+(default: )
+
+
+#### `rss_item_count`
+
+Items in the generated RSS feed.
+
+(default: `50`)
+
+
 ### `[auth]` section(s)
 
 The `[auth]` section(s) define authorization rules. It can be subsected as

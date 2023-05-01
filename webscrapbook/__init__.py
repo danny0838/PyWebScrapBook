@@ -60,6 +60,10 @@ class Config():
             'tree_dir': '.wsb/tree',
             'index': '.wsb/tree/map.html',
             'no_tree': 'false',
+            'inclusive_frames': 'true',
+            'static_index': 'false',
+            'rss_root': '',
+            'rss_item_count': '50',
         },
     }
     TYPES = {
@@ -82,6 +86,9 @@ class Config():
         'book': {
             None: {
                 'no_tree': 'getboolean',
+                'inclusive_frames': 'getboolean',
+                'static_index': 'getboolean',
+                'rss_item_count': 'getint',
             },
         },
     }
