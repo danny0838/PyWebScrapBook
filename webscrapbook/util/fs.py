@@ -419,7 +419,7 @@ def mkzip(cpath):
         raise _map_exc(exc, cpath) from exc
 
 
-def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+def save(cpath, src, *, buffer_size=None):
     """Write content to the target.
 
     Args:
@@ -469,7 +469,7 @@ def save(cpath, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
         raise _map_exc(exc, cpath) from exc
 
 
-def _save_write(fh, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+def _save_write(fh, src, *, buffer_size=None):
     if isinstance(src, bytes):
         fh.write(src)
         return
@@ -479,8 +479,7 @@ def _save_write(fh, src, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
     except (AssertionError, AttributeError):
         pass
     else:
-        for chunk in iter(functools.partial(src.read, buffer_size), b''):
-            fh.write(chunk)
+        shutil.copyfileobj(src, fh, buffer_size)
         return
 
     raise ValueError('src must be bytes or a stream')
@@ -739,7 +738,7 @@ def copy(csrc, cdst):
 
 
 @contextmanager
-def open_archive_path(cpath, mode='r', *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+def open_archive_path(cpath, mode='r', *, buffer_size=None):
     """Open the innermost zip handler for reading or writing.
 
     In-memory buffers will be generated for nested ZIPs (len(cpath) > 2),
@@ -798,8 +797,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=io.DEFAULT_BUFFER_SIZE):
                 # make writable by copying bytes to a buffer
                 fh = io.BytesIO()
                 with zh.open(cpath[i]) as fr:
-                    for chunk in iter(functools.partial(fr.read, buffer_size), b''):
-                        fh.write(chunk)
+                    shutil.copyfileobj(fr, fh, buffer_size)
                 stack.append(fh)
                 zh = zipfile.ZipFile(fh, mode)
                 stack.append(zh)
@@ -816,8 +814,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=io.DEFAULT_BUFFER_SIZE):
                     zinfo.compress_type = zipfile.ZIP_STORED
                     with zh.open(zinfo, 'w') as fw:
                         fh.seek(0)
-                        for chunk in iter(functools.partial(fh.read, buffer_size), b''):
-                            fw.write(chunk)
+                        shutil.copyfileobj(fh, fw, buffer_size)
                     fh.close()
                 zh.close()
                 if i:
@@ -1018,7 +1015,7 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
                         zinfo.compress_type = comp['compress_type']
                         zinfo._compresslevel = comp['compresslevel']
                     with open(src, 'rb') as ih, zh.open(zinfo, 'w') as oh:
-                        for chunk in iter(lambda: ih.read(buffer_size), b''):
+                        for chunk in iter(functools.partial(ih.read, buffer_size), b''):
                             oh.write(chunk)
                             if stream:
                                 yield stream.get()
@@ -1125,7 +1122,7 @@ def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
                 if stream:
                     zinfo2.compress_type = zipfile.ZIP_STORED
                 with zi.open(zinfo) as ih, zh.open(zinfo2, 'w') as oh:
-                    for chunk in iter(lambda: ih.read(buffer_size), b''):
+                    for chunk in iter(functools.partial(ih.read, buffer_size), b''):
                         oh.write(chunk)
                         if stream:
                             yield stream.get()
