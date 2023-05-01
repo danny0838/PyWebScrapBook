@@ -451,15 +451,7 @@ class FavIconCacher:
 
             return True
 
-        def cache_fh(fh):
-            fsrc = io.BytesIO()
-            while True:
-                chunk = fh.read(8192)
-                if not chunk:
-                    break
-                fsrc.write(chunk)
-
-            fsrc.seek(0)
+        def cache_fh(fsrc):
             hash_ = util.checksum(fsrc)
             ext = mime_to_extension(mime)
             fdst = os.path.join(self.book.tree_dir, 'favicon', hash_ + ext)
