@@ -51,6 +51,8 @@ class TestCache(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
+        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
+        os.makedirs(self.test_tree)
 
 
 class TestFuncGenerate(TestCache):
@@ -85,7 +87,6 @@ class TestFuncGenerate(TestCache):
     @mock.patch('webscrapbook.scrapbook.host.Book')
     def test_param_book_ids01(self, mock_book):
         """Include effective provided IDs"""
-        os.makedirs(os.path.dirname(self.test_config))
         with open(self.test_config, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 [book "id1"]
@@ -110,7 +111,6 @@ class TestFuncGenerate(TestCache):
     @mock.patch('webscrapbook.scrapbook.host.Book')
     def test_param_book_ids02(self, mock_book):
         """Include all available IDs if None provided"""
-        os.makedirs(os.path.dirname(self.test_config))
         with open(self.test_config, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 [book "id1"]
@@ -136,7 +136,6 @@ class TestFuncGenerate(TestCache):
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_no_tree(self, mock_lock):
         """Books with no_tree=True should be skipped."""
-        os.makedirs(os.path.dirname(self.test_config))
         with open(self.test_config, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 [book ""]
@@ -251,15 +250,12 @@ class TestFulltextCacheGenerator(TestCache):
     def setUp(self):
         """Generate general temp test folder
         """
-        self.test_root = tempfile.mkdtemp(dir=tmpdir)
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
+        super().setUp()
         self.test_meta = os.path.join(self.test_tree, 'meta.js')
         self.test_toc = os.path.join(self.test_tree, 'toc.js')
         self.test_fulltext = os.path.join(self.test_tree, 'fulltext.js')
         self.test_dir = os.path.join(self.test_root, '20200101000000000')
         self.test_file = os.path.join(self.test_root, '20200101000000000', 'index.html')
-
-        os.makedirs(self.test_tree)
         os.makedirs(self.test_dir)
 
     def create_meta(self):
@@ -2976,15 +2972,6 @@ Text file content
 
 
 class TestStaticSiteGenerator(TestCache):
-    def setUp(self):
-        """Generate general temp test folder
-        """
-        self.test_root = tempfile.mkdtemp(dir=tmpdir)
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
-
-        os.makedirs(self.test_tree)
-
     def test_update01(self):
         """Create nonexisting files"""
         check_files = [
@@ -3878,15 +3865,6 @@ scrapbook.toc({
 
 
 class TestRssFeedGenerator(TestCache):
-    def setUp(self):
-        """Generate general temp test folder
-        """
-        self.test_root = tempfile.mkdtemp(dir=tmpdir)
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
-        self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
-
-        os.makedirs(self.test_tree)
-
     def test_basic(self):
         """A basic test case."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
