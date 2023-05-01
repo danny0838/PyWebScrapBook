@@ -228,8 +228,8 @@ page content
 
         self.assertDictEqual(book.meta, {})
 
-    def test_item_id_filename01(self):
-        """Test if filename corresponds to standard ID format."""
+    def test_item_id_dirname01(self):
+        """Test if dirname corresponds to standard ID format."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -267,8 +267,8 @@ page content
             },
         })
 
-    def test_item_id_filename02(self):
-        """Test if base filename corresponds to standard ID format."""
+    def test_item_id_dirname02(self):
+        """Test if dirname (deply) corresponds to standard ID format."""
         test_index = os.path.join(self.test_root, 'subdir', '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -306,8 +306,8 @@ page content
             },
         })
 
-    def test_item_id_filename03(self):
-        """Generate new ID if filename corresponds to standard ID format but used."""
+    def test_item_id_dirname03(self):
+        """Generate new ID if dirname corresponds to standard ID format but used."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -367,8 +367,8 @@ page content
             },
         })
 
-    def test_item_id_filename04(self):
-        """Generate new ID if filename not corresponds to standard ID format."""
+    def test_item_id_dirname04(self):
+        """Generate new ID if dirname not corresponds to standard ID format."""
         test_index = os.path.join(self.test_root, 'foo', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -399,6 +399,145 @@ page content
         self.assertDictEqual(book.meta, {
             new_id: {
                 'index': 'foo/index.html',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+            },
+        })
+
+    def test_item_id_filename01(self):
+        """Test if filename corresponds to standard ID format."""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+            },
+        })
+
+    def test_item_id_filename02(self):
+        """Generate new ID if filename corresponds to standard ID format but used."""
+        test_index = os.path.join(self.test_root, '20200101000000000.html')
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "title": "dummy",
+    "type": "folder"
+  }
+})""")
+        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "20200101000000000"
+  ]
+})""")
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        new_id = list(book.meta.keys())[-1]
+        self.assertRegex(new_id, r'^\d{17}$')
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'title': 'dummy',
+                'type': 'folder',
+            },
+            new_id: {
+                'index': '20200101000000000.html',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+            },
+        })
+
+    def test_item_id_filename03(self):
+        """Generate new ID if filename not corresponds to standard ID format."""
+        test_index = os.path.join(self.test_root, 'foo.html')
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = Host(self.test_root).books['']
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        new_id = list(book.meta.keys())[-1]
+        self.assertRegex(new_id, r'^\d{17}$')
+
+        self.assertDictEqual(book.meta, {
+            new_id: {
+                'index': 'foo.html',
                 'title': 'MyTitle 中文',
                 'type': '',
                 'create': '20200101000000000',
@@ -1087,6 +1226,12 @@ scrapbook.meta({
             },
         })
 
+        with open(os.path.join(self.test_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'), 'rb') as fh:
+            self.assertEqual(
+                fh.read(),
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
+
     def test_cache_absolute_url02(self):
         """Cache absolute URL off.
         """
@@ -1146,6 +1291,12 @@ scrapbook.meta({
                 'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd',
             },
         })
+
+        with open(os.path.join(self.test_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd'), 'rb') as fh:
+            self.assertEqual(
+                fh.read(),
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
     def test_cache_absolute_url04(self):
         """Test Image with an invalid MIME should not be cached
