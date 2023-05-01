@@ -3157,7 +3157,9 @@ locale = he
 
         self.assertEqual(generator.template_env.globals['i18n'].lang, 'he')
 
-    def test_static_index_anchor01(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor01(self, mock_gen):
         """Page with index */index.html"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3181,13 +3183,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000/index%231.html', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000/index%231.html', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a').attrib['href'], '../../20200101000000000/index%231.html')
-
-    def test_static_index_anchor02(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor02(self, mock_gen):
         """Page with index *.maff"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3211,13 +3226,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000%231.maff', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000%231.maff', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a').attrib['href'], '../../20200101000000000%231.maff')
-
-    def test_static_index_anchor03(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor03(self, mock_gen):
         """Page with index *.html"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3241,13 +3269,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000%231.html', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000%231.html', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a').attrib['href'], '../../20200101000000000%231.html')
-
-    def test_static_index_anchor04(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor04(self, mock_gen):
         """Page with empty index"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3271,13 +3312,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertIsNone(div.find('./a').attrib.get('href'))
-
-    def test_static_index_anchor05(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor05(self, mock_gen):
         """Page without index"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3300,13 +3354,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='http://example.com:8888', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertIsNone(div.find('./a').attrib.get('href'))
-
-    def test_static_index_anchor06(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor06(self, mock_gen):
         """Bookmark with source"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3329,13 +3396,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='bookmark', marked='', title='20200101000000000',
+                url='http://example.com:8888/%231', icon='',
+                source='http://example.com:8888/%231', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='bookmark', marked='', title='20200101000000000',
+                url='http://example.com:8888/%231', icon='',
+                source='http://example.com:8888/%231', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a').attrib['href'], 'http://example.com:8888/%231')
-
-    def test_static_index_anchor07(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor07(self, mock_gen):
         """Bookmark without source and with index"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3358,13 +3438,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='bookmark', marked='', title='20200101000000000',
+                url='../../20200101000000000%231.htm', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='bookmark', marked='', title='20200101000000000',
+                url='../../20200101000000000%231.htm', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a').attrib['href'], '../../20200101000000000%231.htm')
-
-    def test_static_index_anchor08(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor08(self, mock_gen):
         """Bookmark without source and index"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3386,13 +3479,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='bookmark', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='bookmark', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertIsNone(div.find('./a').attrib.get('href'))
-
-    def test_static_index_anchor09(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_anchor09(self, mock_gen):
         """Folder should not have href anyway"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3415,13 +3521,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='folder', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='folder', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertIsNone(div.find('./a').attrib.get('href'))
-
-    def test_static_index_icon01(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_icon01(self, mock_gen):
         """Icon with absolute path."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3445,13 +3564,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000/index.html', icon='http://example.com/favicon%231.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000/index.html', icon='http://example.com/favicon%231.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a/img').attrib['src'], 'http://example.com/favicon%231.ico')
-
-    def test_static_index_icon02(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_icon02(self, mock_gen):
         """Icon with index */index.html"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3475,13 +3607,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000/index.html', icon='../../20200101000000000/favicon%231.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000/index.html', icon='../../20200101000000000/favicon%231.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a/img').attrib['src'], '../../20200101000000000/favicon%231.ico')
-
-    def test_static_index_icon03(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_icon03(self, mock_gen):
         """Icon with index *.maff"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3505,13 +3650,28 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000.maff',
+                icon='../../.wsb/tree/favicon/0123456789abcdef0123456789abcdef01234567.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='../../20200101000000000.maff',
+                icon='../../.wsb/tree/favicon/0123456789abcdef0123456789abcdef01234567.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a/img').attrib['src'], '../../.wsb/tree/favicon/0123456789abcdef0123456789abcdef01234567.ico')
-
-    def test_static_index_icon04(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_icon04(self, mock_gen):
         """Icon with no index"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3534,13 +3694,28 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='',
+                icon='../../.wsb/tree/favicon/0123456789abcdef0123456789abcdef01234567.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='',
+                icon='../../.wsb/tree/favicon/0123456789abcdef0123456789abcdef01234567.ico',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a/img').attrib['src'], '../../.wsb/tree/favicon/0123456789abcdef0123456789abcdef01234567.ico')
-
-    def test_static_index_icon05(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_icon05(self, mock_gen):
         """Default icon (empty icon)"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3563,13 +3738,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/item.png')
-
-    def test_static_index_icon06(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_icon06(self, mock_gen):
         """Default icon (no icon)"""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3591,153 +3779,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/item.png')
-
-    def test_static_index_icon07(self):
-        """Default icon for folder"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-        book = Host(self.test_root).books['']
-
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for _info in generator.run():
-            pass
-
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
-
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/fclose.png')
-
-    def test_static_index_icon08(self):
-        """Default icon for file"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "file"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-        book = Host(self.test_root).books['']
-
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for _info in generator.run():
-            pass
-
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
-
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/file.png')
-
-    def test_static_index_icon09(self):
-        """Default icon for image"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "image"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-        book = Host(self.test_root).books['']
-
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for _info in generator.run():
-            pass
-
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
-
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/file.png')
-
-    def test_static_index_icon10(self):
-        """Default icon for note"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "note"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-        book = Host(self.test_root).books['']
-
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for _info in generator.run():
-            pass
-
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
-
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/note.png')
-
-    def test_static_index_icon11(self):
-        """Default icon for postit"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "postit"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-        book = Host(self.test_root).books['']
-
-        generator = wsb_cache.StaticSiteGenerator(book, static_index=True)
-        for _info in generator.run():
-            pass
-
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
-
-        self.assertEqual(div.find('./a/img').attrib['src'], 'icon/postit.png')
-
-    def test_static_index_title01(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_title01(self, mock_gen):
         """Item without title (use ID)."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3759,16 +3820,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='20200101000000000',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(
-            etree.tostring(div, encoding='unicode', with_tail=False),
-            '<div><a><img src="icon/item.png" alt="" loading="lazy"/>20200101000000000</a></div>',
-        )
-
-    def test_static_index_title02(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_title02(self, mock_gen):
         """Item with title."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3791,16 +3862,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='', marked='', title='My title 中文',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='', marked='', title='My title 中文',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(
-            etree.tostring(div, encoding='unicode', with_tail=False),
-            '<div><a><img src="icon/item.png" alt="" loading="lazy"/>My title 中文</a></div>',
-        )
-
-    def test_static_index_title03(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_title03(self, mock_gen):
         """Separator without title."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3822,16 +3903,26 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='separator', marked='', title='',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='separator', marked='', title='',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
-        self.assertEqual(
-            etree.tostring(div, encoding='unicode', with_tail=False),
-            '<div><fieldset><legend>\xA0\xA0</legend></fieldset></div>',
-        )
-
-    def test_static_index_title04(self):
+    @mock.patch('webscrapbook.scrapbook.cache.StaticSiteGenerator._generate_page',
+                return_value=iter(()))
+    def test_static_index_title04(self, mock_gen):
         """Separator with title."""
         with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -3854,14 +3945,22 @@ scrapbook.toc({
         for _info in generator.run():
             pass
 
-        with open(os.path.join(self.test_tree, 'index.html'), encoding='UTF-8') as fh:
-            tree = etree.parse(fh, etree.HTMLParser())
-            div = tree.find('/body/div/ul/li/div')
-
-        self.assertEqual(
-            etree.tostring(div, encoding='unicode', with_tail=False),
-            '<div><fieldset><legend>\xA0My sep 中文\xA0</legend></fieldset></div>',
-        )
+        self.assertEqual(list(mock_gen.call_args_list[0][1]['static_index']), [
+            wsb_cache.StaticIndexItem(
+                event='start-container', level=0),
+            wsb_cache.StaticIndexItem(
+                event='start', level=1, id='20200101000000000',
+                type='separator', marked='', title='My sep 中文',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end', level=1, id='20200101000000000',
+                type='separator', marked='', title='My sep 中文',
+                url='', icon='',
+                source='', comment=''),
+            wsb_cache.StaticIndexItem(
+                event='end-container', level=0),
+        ])
 
 
 class TestRssFeedGenerator(TestCache):
