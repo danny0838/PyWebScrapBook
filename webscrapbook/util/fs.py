@@ -611,13 +611,17 @@ def _dstinsrc(src, dst):
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
 
-    src_chk = os.path.normcase(src).lower() + os.path.sep
-    dst_chk = os.path.normcase(dst).lower() + os.path.sep
+    src_chk = os.path.normcase(src).lower()
+    dst_chk = os.path.normcase(dst).lower()
+    if not src_chk.endswith(os.path.sep):
+        src_chk += os.path.sep
+    if not dst_chk.endswith(os.path.sep):
+        dst_chk += os.path.sep
     if not dst_chk.startswith(src_chk):
         return False
 
     try:
-        return os.path.samefile(src, dst[:len(src)])
+        return os.lstat(src) == os.lstat(dst[:len(src)])
     except OSError:
         return False
 
