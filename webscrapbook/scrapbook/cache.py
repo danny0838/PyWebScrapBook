@@ -280,9 +280,6 @@ class RssFeedGenerator():
         self.rss_root = rss_root.rstrip('/') + '/'
         self.item_count = item_count
 
-        book.load_meta_files()
-        book.load_toc_files()
-
     def run(self):
         yield Info('info', 'Generating RSS feed...')
 
@@ -298,6 +295,8 @@ class RssFeedGenerator():
         id_prefix = re.sub(r'/+$', '', f'urn:webscrapbook:{u.netloc}{u.path}')
         data_url = urljoin(rss_root, util.get_relative_url(book.data_dir, book.root))
         tree_url = urljoin(rss_root, util.get_relative_url(book.tree_dir, book.root))
+
+        book.load_meta_files()
 
         # get latest updated item entries
         entries = []
