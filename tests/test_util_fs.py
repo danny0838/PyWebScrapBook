@@ -1886,6 +1886,25 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
                 {'deep/subarchive.zip'},
             )
 
+    @require_case_insensitive()
+    def test_zip_dir_to_child_ci(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/subdir']
+        src2 = [os.path.join(root, 'archive.zip'), 'deep/subdir/file.txt']
+        dst = [os.path.join(root, 'Archive.zip'), 'deep/subdir/subdir2']
+        util.fs.mkzip(src[0])
+        util.fs.mkdir(src)
+        util.fs.save(src2, DUMMY_BYTES)
+        with self.assertRaises(util.fs.FSMoveInsideError):
+            util.fs.move(src, dst)
+
+        # verify no unexpected content change
+        with util.fs.open_archive_path(src) as zh:
+            self.assertEqual(
+                {*zh.namelist()},
+                {'deep/subdir/', 'deep/subdir/file.txt'},
+            )
+
     def test_zip_dir_to_child_self(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/subdir']
