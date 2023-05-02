@@ -4014,209 +4014,146 @@ scrapbook.meta({
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
-
         self.assertEqual(
-            tree.find(f'/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib),
-            {
-                'rel': 'self',
-                'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
-            }
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib),
-            {
-                'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}title').text,
-            'scrapbook',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}updated').text,
-            '2020-01-01T00:05:00Z',
-        )
-        self.assertEqual(len(tree.findall(f'/{NS}entry')), 5)
-
-        # entry 1
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb:20200101000500000',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[1]/{NS}link').attrib),
-            {
-                'href': 'http://example.com',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[1]/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}title').text,
-            'Title 中文 5',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}published').text,
-            '2020-01-01T00:00:05Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}updated').text,
-            '2020-01-01T00:05:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}author/{NS}name').text,
-            'Anonymous',
+            etree.tostring(tree, encoding='unicode', pretty_print=True),
+            """\
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:webscrapbook:example.com/wsb</id>
+  <link rel="self" href="http://example.com/wsb/.wsb/tree/feed.atom"/>
+  <link href="http://example.com/wsb/.wsb/tree/map.html"/>
+  <title type="text">scrapbook</title>
+  <updated>2020-01-01T00:05:00Z</updated>
+  <entry>
+    <id>urn:webscrapbook:example.com/wsb:20200101000500000</id>
+    <link href="http://example.com"/>
+    <title type="text">Title 中文 5</title>
+    <published>2020-01-01T00:00:05Z</published>
+    <updated>2020-01-01T00:05:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com/wsb:20200101000400000</id>
+    <link href="http://example.com/wsb/20200101000400000.html"/>
+    <title type="text">Title 中文 4</title>
+    <published>2020-01-01T00:00:04Z</published>
+    <updated>2020-01-01T00:04:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com/wsb:20200101000300000</id>
+    <link href="http://example.com/wsb/20200101000300000.maff"/>
+    <title type="text">Title 中文 3</title>
+    <published>2020-01-01T00:00:03Z</published>
+    <updated>2020-01-01T00:03:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com/wsb:20200101000200000</id>
+    <link href="http://example.com/wsb/20200101000200000.htz"/>
+    <title type="text">Title 中文 2</title>
+    <published>2020-01-01T00:00:02Z</published>
+    <updated>2020-01-01T00:02:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com/wsb:20200101000100000</id>
+    <link href="http://example.com/wsb/20200101000100000/index.html"/>
+    <title type="text">Title 中文 1</title>
+    <published>2020-01-01T00:00:01Z</published>
+    <updated>2020-01-01T00:01:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+</feed>
+"""
         )
 
-        # entry 2
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb:20200101000400000',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[2]/{NS}link').attrib),
-            {
-                'href': 'http://example.com/wsb/20200101000400000.html',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[2]/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}title').text,
-            'Title 中文 4',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}published').text,
-            '2020-01-01T00:00:04Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}updated').text,
-            '2020-01-01T00:04:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}author/{NS}name').text,
-            'Anonymous',
-        )
+    def test_same_modify(self):
+        """Latter item goes first if same modify time."""
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000100000": {
+    "index": "20200101000100000/index.html",
+    "title": "Title 中文 1",
+    "type": "",
+    "create": "20200101000001000",
+    "modify": "20200102000000000"
+  },
+  "20200101000200000": {
+    "index": "20200101000200000.htz",
+    "title": "Title 中文 2",
+    "type": "",
+    "create": "20200101000002000",
+    "modify": "20200102000000000"
+  },
+  "20200101000300000": {
+    "index": "20200101000300000.maff",
+    "title": "Title 中文 3",
+    "type": "",
+    "create": "20200101000003000",
+    "modify": "20200102000000000"
+  }
+})""")
+        book = Host(self.test_root).books['']
 
-        # entry 3
-        self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb:20200101000300000',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[3]/{NS}link').attrib),
-            {
-                'href': 'http://example.com/wsb/20200101000300000.maff',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[3]/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}title').text,
-            'Title 中文 3',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}published').text,
-            '2020-01-01T00:00:03Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}updated').text,
-            '2020-01-01T00:03:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[3]/{NS}author/{NS}name').text,
-            'Anonymous',
-        )
+        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
+        for _info in generator.run():
+            pass
 
-        # entry 4
-        self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb:20200101000200000',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[4]/{NS}link').attrib),
-            {
-                'href': 'http://example.com/wsb/20200101000200000.htz',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[4]/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}title').text,
-            'Title 中文 2',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}published').text,
-            '2020-01-01T00:00:02Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}updated').text,
-            '2020-01-01T00:02:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[4]/{NS}author/{NS}name').text,
-            'Anonymous',
-        )
+        with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
+            tree = etree.parse(fh)
 
-        # entry 5
         self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb:20200101000100000',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[5]/{NS}link').attrib),
-            {
-                'href': 'http://example.com/wsb/20200101000100000/index.html',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}entry[5]/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}title').text,
-            'Title 中文 1',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}published').text,
-            '2020-01-01T00:00:01Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}updated').text,
-            '2020-01-01T00:01:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[5]/{NS}author/{NS}name').text,
-            'Anonymous',
+            etree.tostring(tree, encoding='unicode', pretty_print=True),
+            """\
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:webscrapbook:example.com</id>
+  <link rel="self" href="http://example.com/.wsb/tree/feed.atom"/>
+  <link href="http://example.com/.wsb/tree/map.html"/>
+  <title type="text">scrapbook</title>
+  <updated>2020-01-02T00:00:00Z</updated>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000300000</id>
+    <link href="http://example.com/20200101000300000.maff"/>
+    <title type="text">Title 中文 3</title>
+    <published>2020-01-01T00:00:03Z</published>
+    <updated>2020-01-02T00:00:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000200000</id>
+    <link href="http://example.com/20200101000200000.htz"/>
+    <title type="text">Title 中文 2</title>
+    <published>2020-01-01T00:00:02Z</published>
+    <updated>2020-01-02T00:00:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000100000</id>
+    <link href="http://example.com/20200101000100000/index.html"/>
+    <title type="text">Title 中文 1</title>
+    <published>2020-01-01T00:00:01Z</published>
+    <updated>2020-01-02T00:00:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+</feed>
+"""
         )
 
     def test_param_item_count(self):
@@ -4262,16 +4199,55 @@ scrapbook.meta({
 })""")
         book = Host(self.test_root).books['']
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb', item_count=3)
+        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com', item_count=3)
         for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
-
-        self.assertEqual(len(tree.findall(f'/{NS}entry')), 3)
+        self.assertEqual(
+            etree.tostring(tree, encoding='unicode', pretty_print=True),
+            """\
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:webscrapbook:example.com</id>
+  <link rel="self" href="http://example.com/.wsb/tree/feed.atom"/>
+  <link href="http://example.com/.wsb/tree/map.html"/>
+  <title type="text">scrapbook</title>
+  <updated>2020-01-01T00:05:00Z</updated>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000500000</id>
+    <link href="http://example.com"/>
+    <title type="text">Title 中文 5</title>
+    <published>2020-01-01T00:00:05Z</published>
+    <updated>2020-01-01T00:05:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000400000</id>
+    <link href="http://example.com/20200101000400000.html"/>
+    <title type="text">Title 中文 4</title>
+    <published>2020-01-01T00:00:04Z</published>
+    <updated>2020-01-01T00:04:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000300000</id>
+    <link href="http://example.com/20200101000300000.maff"/>
+    <title type="text">Title 中文 3</title>
+    <published>2020-01-01T00:00:03Z</published>
+    <updated>2020-01-01T00:03:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+</feed>
+"""
+        )
 
     def test_empty(self):
         """Include only items with index or bookmark with source.
@@ -4311,7 +4287,7 @@ scrapbook.meta({
 })""")
         book = Host(self.test_root).books['']
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
+        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
         for _info in generator.run():
             pass
 
@@ -4319,44 +4295,26 @@ scrapbook.meta({
             tree = etree.parse(fh)
 
         NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
-        now = datetime.now(timezone.utc)
-
-        self.assertEqual(
-            tree.find(f'/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib),
-            {
-                'rel': 'self',
-                'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib),
-            {
-                'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}title').text,
-            'scrapbook',
-        )
-
-        ts = datetime.strptime(tree.find(f'/{NS}updated').text, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+        updated = tree.find(f'/{NS}updated').text
+        ts = datetime.strptime(updated, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         self.assertAlmostEqual(
             ts.timestamp(),
-            now.timestamp(),
+            datetime.now(timezone.utc).timestamp(),
             delta=3,
         )
 
-        self.assertIsNone(tree.find(f'/{NS}entry'))
+        self.assertEqual(
+            etree.tostring(tree, encoding='unicode', pretty_print=True),
+            f"""\
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:webscrapbook:example.com</id>
+  <link rel="self" href="http://example.com/.wsb/tree/feed.atom"/>
+  <link href="http://example.com/.wsb/tree/map.html"/>
+  <title type="text">scrapbook</title>
+  <updated>{updated}</updated>
+</feed>
+"""
+        )
 
     def test_item_create(self):
         """Item missing create property uses epoch=0"""
@@ -4373,55 +4331,34 @@ scrapbook.meta({
 })""")
         book = Host(self.test_root).books['']
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
+        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
         for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
-
         self.assertEqual(
-            tree.find(f'/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib),
-            {
-                'rel': 'self',
-                'href': 'http://example.com/wsb/.wsb/tree/feed.atom'
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib),
-            {
-                'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}title').text,
-            'scrapbook',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}updated').text,
-            '2020-01-01T00:01:00Z',
-        )
-
-        # entry 1
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}published').text,
-            '1970-01-01T00:00:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}updated').text,
-            '2020-01-01T00:01:00Z',
+            etree.tostring(tree, encoding='unicode', pretty_print=True),
+            """\
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:webscrapbook:example.com</id>
+  <link rel="self" href="http://example.com/.wsb/tree/feed.atom"/>
+  <link href="http://example.com/.wsb/tree/map.html"/>
+  <title type="text">scrapbook</title>
+  <updated>2020-01-01T00:01:00Z</updated>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000100000</id>
+    <link href="http://example.com"/>
+    <title type="text">Title 中文 1</title>
+    <published>1970-01-01T00:00:00Z</published>
+    <updated>2020-01-01T00:01:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+</feed>
+"""
         )
 
     def test_item_modify(self):
@@ -4443,65 +4380,44 @@ scrapbook.meta({
 })""")
         book = Host(self.test_root).books['']
 
-        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com/wsb')
+        generator = wsb_cache.RssFeedGenerator(book, rss_root='http://example.com')
         for _info in generator.run():
             pass
 
         with open(os.path.join(self.test_tree, 'feed.atom'), encoding='UTF-8') as fh:
             tree = etree.parse(fh)
 
-        NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
-
         self.assertEqual(
-            tree.find(f'/{NS}id').text,
-            'urn:webscrapbook:example.com/wsb',
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[1]').attrib),
-            {
-                'rel': 'self',
-                'href': 'http://example.com/wsb/.wsb/tree/feed.atom',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}link[2]').attrib),
-            {
-                'href': 'http://example.com/wsb/.wsb/tree/map.html',
-            },
-        )
-        self.assertEqual(
-            dict(tree.find(f'/{NS}title').attrib),
-            {
-                'type': 'text',
-            },
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}title').text,
-            'scrapbook',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}updated').text,
-            '2020-01-01T00:01:00Z',
-        )
-
-        # entry 1
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}published').text,
-            '2020-01-01T00:01:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[1]/{NS}updated').text,
-            '2020-01-01T00:01:00Z',
-        )
-
-        # entry 2
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}published').text,
-            '1970-01-01T00:00:00Z',
-        )
-        self.assertEqual(
-            tree.find(f'/{NS}entry[2]/{NS}updated').text,
-            '1970-01-01T00:00:00Z',
+            etree.tostring(tree, encoding='unicode', pretty_print=True),
+            """\
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:webscrapbook:example.com</id>
+  <link rel="self" href="http://example.com/.wsb/tree/feed.atom"/>
+  <link href="http://example.com/.wsb/tree/map.html"/>
+  <title type="text">scrapbook</title>
+  <updated>2020-01-01T00:01:00Z</updated>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000100000</id>
+    <link href="http://example.com"/>
+    <title type="text">Title 中文 1</title>
+    <published>2020-01-01T00:01:00Z</published>
+    <updated>2020-01-01T00:01:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+  <entry>
+    <id>urn:webscrapbook:example.com:20200101000200000</id>
+    <link href="http://example.com:8000"/>
+    <title type="text">Title 中文 2</title>
+    <published>1970-01-01T00:00:00Z</published>
+    <updated>1970-01-01T00:00:00Z</updated>
+    <author>
+      <name>Anonymous</name>
+    </author>
+  </entry>
+</feed>
+"""
         )
 
 
