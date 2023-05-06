@@ -1756,6 +1756,25 @@ Linked page content.
             }
         })
 
+    def test_html_empty(self):
+        """Generate an empty cache for an empty HTML (without error)."""
+        self.create_meta()
+        with open(self.test_file, 'wb'):
+            pass
+
+        book = Host(self.test_root).books['']
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for info in generator.run():
+            self.assertNotEqual(info.type, 'error')
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': ''
+                },
+            }
+        })
+
     def test_html_charset01(self):
         """Detect charset from BOM. (UTF-16-LE)"""
         self.create_meta()

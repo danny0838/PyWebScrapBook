@@ -741,6 +741,12 @@ class FulltextCacheGenerator():
         else:
             yield Info('debug', f'Retrieving HTML content for "{path}" of "{item.id}"')
 
+        # return '' for an empty file to prevent a parsing error
+        fh.seek(0, 2)
+        if fh.tell() == 0:
+            return ''
+        fh.seek(0)
+
         charset = util.get_html_charset(fh, default=item.meta.get('charset') or 'UTF-8')
         fh.seek(0)
 
