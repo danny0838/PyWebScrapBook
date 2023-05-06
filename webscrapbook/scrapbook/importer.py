@@ -7,7 +7,6 @@ import time
 import traceback
 import uuid
 from contextlib import nullcontext
-from datetime import datetime, timedelta, timezone
 from urllib.request import pathname2url
 
 from .. import util
@@ -280,13 +279,7 @@ class Importer():
                             pass
 
             elif self.resolve_id_used == 'new':
-                # generate a new unique id
-                ts = datetime.now(timezone.utc)
-                new_id = util.datetime_to_id(ts)
-                while new_id in self.book.meta:
-                    ts += timedelta(milliseconds=1)
-                    new_id = util.datetime_to_id(ts)
-
+                new_id = self.book.get_unique_id()
                 yield Info('info', f'Importing duplicated {id!r} as {new_id!r}...')
                 self.map_id_to_new_id[id] = new_id
                 id = new_id
@@ -362,22 +355,12 @@ class Importer():
             parent_id = self.book.ROOT_ITEM_ID
 
         for j in range(i + 1, len(export_path)):
-            # generate a new unique id
-            ts = datetime.now(timezone.utc)
-            new_id = util.datetime_to_id(ts)
-            while new_id in self.book.meta:
-                ts += timedelta(milliseconds=1)
-                new_id = util.datetime_to_id(ts)
-
-            yield Info('info', f'Generating folder {new_id!r} under {parent_id!r}...')
-            new_meta = {
+            new_items = self.book.add_item({
                 'title': export_path[j]['title'],
                 'type': 'folder',
-                'create': new_id,
-                'modify': new_id,
-            }
-            self.book.meta[new_id] = new_meta
-            self.book.toc.setdefault(parent_id, []).append(new_id)
+            }, parent_id)
+            new_id = next(iter(new_items))
+            yield Info('info', f'Generated folder {new_id!r} under {parent_id!r}')
             self.map_id_to_new_id[export_path[j]['id']] = new_id
             parent_id = new_id
 

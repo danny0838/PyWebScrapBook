@@ -242,14 +242,6 @@ class Converter:
             yield Info('debug', f'Inspecting item metadata for {id0!r}')
             id = id0
             meta = meta0.copy()
-            meta_new = book.meta.setdefault(id, book.DEFAULT_META.copy())
-
-            # meta['id']
-            # omit id field in meta
-            try:
-                del meta['id']
-            except KeyError:
-                pass
 
             # meta['type'], meta['marked']
             meta['type'] = LEGACY_TYPE_MAP.get(meta.get('type'), meta.get('type', ''))
@@ -343,11 +335,8 @@ class Converter:
             except KeyError:
                 pass
 
-            # merge and remove None values
-            meta_new.update(meta)
-            for k, v in list(meta_new.items()):
-                if v is None:
-                    del meta_new[k]
+            # add to book
+            book.add_item(meta, None)
 
     def _merge_toc(self, book, book0):
         book.toc.update(book0.toc)

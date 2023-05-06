@@ -4,10 +4,9 @@ import os
 import tempfile
 import unittest
 from base64 import b64decode
-from datetime import datetime, timezone
 from unittest import mock
 
-from webscrapbook import WSB_DIR, util
+from webscrapbook import WSB_DIR
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import importer as wsb_importer
 from webscrapbook.scrapbook.host import Host
@@ -976,6 +975,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             ],
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
     def test_param_rebuild_folders02(self):
         """Generate folders if parent not exist
         """
@@ -1011,20 +1011,18 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
 
-        new_id = book.toc['root'][0]
-        new_id2 = book.toc[new_id][0]
         self.assertEqual(book.meta, {
-            new_id: {
+            '20230101000000000': {
                 'title': 'item0',
                 'type': 'folder',
-                'create': new_id,
-                'modify': new_id,
+                'create': '20230101000000000',
+                'modify': '20230101000000000',
             },
-            new_id2: {
+            '20230101000000001': {
                 'title': 'item2',
                 'type': 'folder',
-                'create': new_id2,
-                'modify': new_id2,
+                'create': '20230101000000000',
+                'modify': '20230101000000000',
             },
             '20200101000000001': {
                 'type': '',
@@ -1038,16 +1036,17 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         })
         self.assertEqual(book.toc, {
             'root': [
-                new_id,
+                '20230101000000000',
             ],
-            new_id: [
-                new_id2,
+            '20230101000000000': [
+                '20230101000000001',
             ],
-            new_id2: [
+            '20230101000000001': [
                 '20200101000000001',
             ],
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
     def test_param_rebuild_folders03(self):
         """Generate folders if parent not exist (partial)
         """
@@ -1098,18 +1097,17 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
 
-        new_id = book.toc['20200101000000000'][0]
         self.assertEqual(book.meta, {
             '20200101000000000': {
                 'title': 'current item0',
                 'type': 'bookmark',
                 'source': 'http://example.com',
             },
-            new_id: {
+            '20230101000000000': {
                 'title': 'item2',
                 'type': 'folder',
-                'create': new_id,
-                'modify': new_id,
+                'create': '20230101000000000',
+                'modify': '20230101000000000',
             },
             '20200101000000001': {
                 'type': '',
@@ -1126,13 +1124,14 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000000',
             ],
             '20200101000000000': [
-                new_id,
+                '20230101000000000',
             ],
-            new_id: [
+            '20230101000000000': [
                 '20200101000000001',
             ],
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
     def test_param_rebuild_folders04(self):
         """Assume path starting from 'root' if no matching id
         """
@@ -1167,20 +1166,18 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
 
-        new_id = book.toc['root'][0]
-        new_id2 = book.toc[new_id][0]
         self.assertEqual(book.meta, {
-            new_id: {
+            '20230101000000000': {
                 'title': 'item0',
                 'type': 'folder',
-                'create': new_id,
-                'modify': new_id,
+                'create': '20230101000000000',
+                'modify': '20230101000000000',
             },
-            new_id2: {
+            '20230101000000001': {
                 'title': 'item2',
                 'type': 'folder',
-                'create': new_id2,
-                'modify': new_id2,
+                'create': '20230101000000000',
+                'modify': '20230101000000000',
             },
             '20200101000000001': {
                 'type': '',
@@ -1194,12 +1191,12 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         })
         self.assertEqual(book.toc, {
             'root': [
-                new_id,
+                '20230101000000000',
             ],
-            new_id: [
-                new_id2,
+            '20230101000000000': [
+                '20230101000000001',
             ],
-            new_id2: [
+            '20230101000000001': [
                 '20200101000000001',
             ],
         })
@@ -1573,6 +1570,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.test_output, '20200101000000001', 'index.html')))
         self.assertFalse(os.path.lexists(os.path.join(self.test_output, '20200101000000001.html')))
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
     def test_param_resolve_id_used_new01(self):
         """Test */index.html
         """
@@ -1651,8 +1649,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
 
-        new_id = book.toc['root'][-1]
-        self.assertAlmostEqual(util.id_to_datetime(new_id).timestamp(), datetime.now(timezone.utc).timestamp(), delta=3)
         self.assertEqual(book.meta, {
             '20200101000000001': {
                 'type': '',
@@ -1662,9 +1658,9 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'modify': '20200301000000000',
                 'source': 'http://example.com/original',
             },
-            new_id: {
+            '20230101000000000': {
                 'type': '',
-                'index': f'{new_id}/index.html',
+                'index': '20230101000000000/index.html',
                 'title': 'item1',
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
@@ -1674,13 +1670,13 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         self.assertEqual(book.toc, {
             'root': [
                 '20200101000000001',
-                new_id,
+                '20230101000000000',
             ],
         })
 
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'original page content')
-        with open(os.path.join(self.test_output, new_id, 'index.html'), encoding='UTF-8') as fh:
+        with open(os.path.join(self.test_output, '20230101000000000', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
 
     def test_param_prune(self):

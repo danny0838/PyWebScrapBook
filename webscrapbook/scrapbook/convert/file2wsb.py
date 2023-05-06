@@ -2,7 +2,6 @@ import os
 import shutil
 import time
 import traceback
-from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
 from ... import WSB_DIR, util
@@ -66,21 +65,12 @@ class Converter:
             if ext.lower() == '.htd':
                 ext = ''
 
-            id = self._generate_unique_id()
-            meta = self.book.DEFAULT_META.copy()
-            meta.update({
+            parent_id = paths[-1]
+            new_items = self.book.add_item({
                 'type': 'folder',
                 'title': basename + ext,
-                'create': id,
-                'modify': id,
-            })
-            for key in list(meta):
-                if meta[key] is None:
-                    del meta[key]
-            self.book.meta[id] = meta
-
-            parent_id = paths[-1]
-            self.book.toc.setdefault(parent_id, []).append(id)
+            }, parent_id)
+            id = next(iter(new_items))
             yield Info('info', f'Generated folder item {id!r} under {parent_id!r}')
         else:
             id = self.book.ROOT_ITEM_ID
@@ -142,7 +132,7 @@ class Converter:
             ext = ''
 
         # generate a unique ID
-        id = self._generate_unique_id(ext)
+        id = self.book.get_unique_id()
 
         # copy data files
         supporting_folder = self._get_supporting_folder(entry)
@@ -258,14 +248,6 @@ class Converter:
                     return supporting_folder
 
         return None
-
-    def _generate_unique_id(self, ext=''):
-        dt = datetime.now(timezone.utc)
-        id = util.datetime_to_id(dt)
-        while id in self.book.meta or os.path.lexists(os.path.join(self.book.data_dir, id + ext)):
-            dt += timedelta(milliseconds=1)
-            id = util.datetime_to_id(dt)
-        return id
 
 
 def run(input, output, *,

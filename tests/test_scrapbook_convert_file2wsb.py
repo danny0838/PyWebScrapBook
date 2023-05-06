@@ -54,6 +54,7 @@ class TestRun(unittest.TestCase):
 
         os.makedirs(self.test_input, exist_ok=True)
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_path01(self):
         """Test hierarchical folders for */index.html
         """
@@ -83,24 +84,23 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_folder2, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_folder2: {
+            '20220101000000002': {
                 'title': 'folder2',
                 'type': 'folder',
-                'create': id_folder2,
-                'modify': id_folder2,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000003': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000003/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -110,21 +110,22 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_folder2,
+            '20220101000000001': [
+                '20220101000000002',
             ],
-            id_folder2: [
-                id_item,
+            '20220101000000002': [
+                '20220101000000003',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
+            os.path.join(self.test_output, '20220101000000003'),
+            os.path.join(self.test_output, '20220101000000003', 'index.html'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_path02(self):
         """Test hierarchical folders for *.html
         """
@@ -154,24 +155,23 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_folder2, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_folder2: {
+            '20220101000000002': {
                 'title': 'folder2',
                 'type': 'folder',
-                'create': id_folder2,
-                'modify': id_folder2,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000003': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000003/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -181,22 +181,23 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_folder2,
+            '20220101000000001': [
+                '20220101000000002',
             ],
-            id_folder2: [
-                id_item,
+            '20220101000000002': [
+                '20220101000000003',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'mypage.html'),
+            os.path.join(self.test_output, '20220101000000003'),
+            os.path.join(self.test_output, '20220101000000003', 'index.html'),
+            os.path.join(self.test_output, '20220101000000003', 'mypage.html'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_path03(self):
         """Test hierarchical folders for *.html (preserve_filename=False)
         """
@@ -226,24 +227,23 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_folder2, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_folder2: {
+            '20220101000000002': {
                 'title': 'folder2',
                 'type': 'folder',
-                'create': id_folder2,
-                'modify': id_folder2,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000003': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.html',
+                'index': '20220101000000003.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -253,20 +253,21 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_folder2,
+            '20220101000000001': [
+                '20220101000000002',
             ],
-            id_folder2: [
-                id_item,
+            '20220101000000002': [
+                '20220101000000003',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.html'),
+            os.path.join(self.test_output, '20220101000000003.html'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_path04(self):
         """<input dir>/index.html should be indexed as single html page
         """
@@ -295,12 +296,11 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000001/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -310,15 +310,16 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
+                '20220101000000001',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
+            os.path.join(self.test_output, '20220101000000001'),
+            os.path.join(self.test_output, '20220101000000001', 'index.html'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_path05(self):
         """<input dir>/index.html should be indexed as single html page (preserve_filename=False)
         """
@@ -347,12 +348,11 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.html',
+                'index': '20220101000000001.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -362,14 +362,15 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
+                '20220101000000001',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.html'),
+            os.path.join(self.test_output, '20220101000000001.html'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_supporting_folder01(self):
         """Test for supporting folder *.files
         """
@@ -403,12 +404,11 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000001/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -418,18 +418,19 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
+                '20220101000000001',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'mypage.html'),
-            os.path.join(self.test_output, id_item, 'mypage.files'),
-            os.path.join(self.test_output, id_item, 'mypage.files', 'picture.bmp'),
+            os.path.join(self.test_output, '20220101000000001'),
+            os.path.join(self.test_output, '20220101000000001', 'index.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage.files'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage.files', 'picture.bmp'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_supporting_folder02(self):
         """Test for supporting folder *_files
         """
@@ -463,12 +464,11 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000001/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -478,18 +478,19 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
+                '20220101000000001',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'mypage.html'),
-            os.path.join(self.test_output, id_item, 'mypage_files'),
-            os.path.join(self.test_output, id_item, 'mypage_files', 'picture.bmp'),
+            os.path.join(self.test_output, '20220101000000001'),
+            os.path.join(self.test_output, '20220101000000001', 'index.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage_files'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage_files', 'picture.bmp'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_supporting_folder03(self):
         """Test for index.html + index.files
         """
@@ -524,12 +525,11 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000001/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -539,19 +539,20 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
+                '20220101000000001',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'index.files'),
-            os.path.join(self.test_output, id_item, 'index.files', 'picture.bmp'),
+            os.path.join(self.test_output, '20220101000000001'),
+            os.path.join(self.test_output, '20220101000000001', 'index.html'),
+            os.path.join(self.test_output, '20220101000000001', 'index.files'),
+            os.path.join(self.test_output, '20220101000000001', 'index.files', 'picture.bmp'),
         })
-        with open(os.path.join(self.test_output, id_item, 'index.html'), encoding='UTF-8') as fh:
+        with open(os.path.join(self.test_output, '20220101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), content)
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_supporting_folder04(self):
         """Test for custom supporting folder (data_folder_suffixes set)
         """
@@ -585,12 +586,11 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000001/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -600,18 +600,19 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
+                '20220101000000001',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'mypage.html'),
-            os.path.join(self.test_output, id_item, 'mypage_archive'),
-            os.path.join(self.test_output, id_item, 'mypage_archive', 'picture.bmp'),
+            os.path.join(self.test_output, '20220101000000001'),
+            os.path.join(self.test_output, '20220101000000001', 'index.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage_archive'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage_archive', 'picture.bmp'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_supporting_folder05(self):
         """Test for custom supporting folder (data_folder_suffixes not set)
         """
@@ -637,6 +638,8 @@ page content
         os.makedirs(os.path.dirname(img_file), exist_ok=True)
         with open(img_file, 'wb') as fh:
             fh.write(b'dummy')
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(img_file, (ts, ts))
 
         for _info in file2wsb.run(self.test_input, self.test_output):
             pass
@@ -645,30 +648,29 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_item, id_folder, id_item2 = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_item: {
+            '20220101000000001': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}/index.html',
+                'index': '20220101000000001/index.html',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
                 'icon': '',
                 'comment': '',
             },
-            id_folder: {
+            '20220101000000002': {
                 'title': 'mypage_archive',
                 'type': 'folder',
-                'create': id_folder,
-                'modify': id_folder,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item2: {
+            '20220101000000003': {
                 'title': 'picture.bmp',
                 'type': 'file',
-                'index': f'{id_item2}/index.html',
-                'create': id_item2,
-                'modify': mock.ANY,
+                'index': '20220101000000003/index.html',
+                'create': '20220101000000003',
+                'modify': '20200102030405067',
                 'source': '',
                 'icon': '',
                 'comment': '',
@@ -676,23 +678,24 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_item,
-                id_folder,
+                '20220101000000001',
+                '20220101000000002',
             ],
-            id_folder: [
-                id_item2,
+            '20220101000000002': [
+                '20220101000000003',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'mypage.html'),
-            os.path.join(self.test_output, id_item2),
-            os.path.join(self.test_output, id_item2, 'index.html'),
-            os.path.join(self.test_output, id_item2, 'picture.bmp'),
+            os.path.join(self.test_output, '20220101000000001'),
+            os.path.join(self.test_output, '20220101000000001', 'index.html'),
+            os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
+            os.path.join(self.test_output, '20220101000000003'),
+            os.path.join(self.test_output, '20220101000000003', 'index.html'),
+            os.path.join(self.test_output, '20220101000000003', 'picture.bmp'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_htz(self):
         """Test hierarchical folders for *.htz
         """
@@ -722,18 +725,17 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000002': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.htz',
+                'index': '20220101000000002.htz',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -743,17 +745,18 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_item,
+            '20220101000000001': [
+                '20220101000000002',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.htz'),
+            os.path.join(self.test_output, '20220101000000002.htz'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_maff(self):
         """Test hierarchical folders for *.maff
         """
@@ -783,18 +786,17 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000002': {
                 'title': 'MyTitle 中文',
                 'type': '',
-                'index': f'{id_item}.maff',
+                'index': '20220101000000002.maff',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
@@ -804,17 +806,18 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_item,
+            '20220101000000001': [
+                '20220101000000002',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.maff'),
+            os.path.join(self.test_output, '20220101000000002.maff'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_other01(self):
         """Test hierarchical folders for normal file
         """
@@ -832,19 +835,18 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000002': {
                 'title': 'mypage.txt',
                 'type': 'file',
-                'index': f'{id_item}/index.html',
-                'create': id_item,
+                'index': '20220101000000002/index.html',
+                'create': '20220101000000002',
                 'modify': '20200102030405067',
                 'source': '',
                 'icon': '',
@@ -853,19 +855,20 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_item,
+            '20220101000000001': [
+                '20220101000000002',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, id_item),
-            os.path.join(self.test_output, id_item, 'index.html'),
-            os.path.join(self.test_output, id_item, 'mypage.txt'),
+            os.path.join(self.test_output, '20220101000000002'),
+            os.path.join(self.test_output, '20220101000000002', 'index.html'),
+            os.path.join(self.test_output, '20220101000000002', 'mypage.txt'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_other02(self):
         """Test hierarchical folders for normal file (preserve_filename=False)
         """
@@ -883,19 +886,18 @@ page content
         book.load_meta_files()
         book.load_toc_files()
 
-        id_folder1, id_item = book.meta.keys()
         self.assertDictEqual(book.meta, {
-            id_folder1: {
+            '20220101000000001': {
                 'title': 'folder1#中文',
                 'type': 'folder',
-                'create': id_folder1,
-                'modify': id_folder1,
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
             },
-            id_item: {
+            '20220101000000002': {
                 'title': 'mypage.txt',
                 'type': 'file',
-                'index': f'{id_item}.txt',
-                'create': id_item,
+                'index': '20220101000000002.txt',
+                'create': '20220101000000002',
                 'modify': '20200102030405067',
                 'source': '',
                 'icon': '',
@@ -904,15 +906,15 @@ page content
         })
         self.assertDictEqual(book.toc, {
             'root': [
-                id_folder1,
+                '20220101000000001',
             ],
-            id_folder1: [
-                id_item,
+            '20220101000000001': [
+                '20220101000000002',
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
-            os.path.join(self.test_output, f'{id_item}.txt'),
+            os.path.join(self.test_output, '20220101000000002.txt'),
         })
 
     @mock.patch('webscrapbook.scrapbook.convert.file2wsb.Indexer', side_effect=SystemExit)

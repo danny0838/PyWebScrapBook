@@ -2,15 +2,15 @@ import json
 import os
 import tempfile
 import unittest
-from base64 import b64decode, b64encode
-from datetime import datetime, timezone
+from base64 import b64decode
+from datetime import datetime
 from unittest import mock
 
-from webscrapbook import WSB_DIR, util
+from webscrapbook import WSB_DIR
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import exporter as wsb_exporter
 
-from . import TEMP_DIR, TestBookMixin
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -54,6 +54,43 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         os.makedirs(self.test_input_tree, exist_ok=True)
 
+    @staticmethod
+    def read_exported_archive(file):
+        export_info = None
+        meta = None
+        index_data = None
+        favicon_data = None
+
+        with zipfile.ZipFile(file) as zh:
+            with zh.open('export.json') as fh:
+                export_info = json.load(fh)
+            with zh.open('meta.json') as fh:
+                meta = json.load(fh)
+            for zinfo in zh.infolist():
+                if zinfo.filename.startswith('data/'):
+                    if zinfo.filename.endswith('/index.html'):
+                        with zh.open(zinfo) as fh:
+                            index_data = fh.read().decode('UTF-8')
+                    elif zinfo.filename.endswith('.htz'):
+                        with zh.open(zinfo) as fh:
+                            with zipfile.ZipFile(fh) as zh2:
+                                with zh2.open('index.html') as fh2:
+                                    index_data = fh2.read().decode('UTF-8')
+                    continue
+
+                if zinfo.filename.startswith('favicon/'):
+                    with zh.open(zinfo) as fh:
+                        favicon_data = fh.read()
+                    continue
+
+        return {
+            'export_info': export_info,
+            'meta': meta,
+            'index_data': index_data,
+            'favicon_data': favicon_data,
+        }
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_basic01(self):
         """Test exporting a common */index.html
         """
@@ -61,7 +98,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             self.test_input,
             meta={
                 '20200101000000000': {
-                    'type': 'folder',
+                    'type': '',
                     'title': 'item0',
                     'index': '20200101000000000/index.html',
                     'create': '20200102000000000',
@@ -84,37 +121,34 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-
-        # files are exported in depth-first order
-        with zipfile.ZipFile(files[0]) as zh:
-            with zh.open('meta.json') as fh:
-                data = json.load(fh)
-            with zh.open('export.json') as fh:
-                export_info = json.load(fh)
-            with zh.open('data/20200101000000000/index.html') as fh:
-                index_data = fh.read().decode('UTF-8')
-
-        self.assertEqual(data, {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
-            'index': '20200101000000000/index.html',
-            'create': '20200102000000000',
-            'modify': '20200103000000000',
-            'source': 'http://example.com',
-            'icon': 'favicon.bmp',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
         })
 
-        self.assertEqual(export_info['version'], 1)
-        self.assertAlmostEqual(util.id_to_datetime(export_info['id']).timestamp(), datetime.now(timezone.utc).timestamp(), delta=3)
-        self.assertEqual(export_info['timestamp'], export_info['id'])
-        self.assertEqual(export_info['timezone'], datetime.now().astimezone().utcoffset().total_seconds())
-        self.assertEqual(export_info['path'], [{'id': 'root', 'title': ''}])
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+                'path': [{'id': 'root', 'title': ''}],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': '',
+                'title': 'item0',
+                'index': '20200101000000000/index.html',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
+            },
+            'index_data': 'ABC123',
+            'favicon_data': None,
+        })
 
-        self.assertEqual(index_data, 'ABC123')
-
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_basic02(self):
         """Test exporting a common *.htz
         """
@@ -122,7 +156,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             self.test_input,
             meta={
                 '20200101000000000': {
-                    'type': 'folder',
+                    'type': '',
                     'title': 'item0',
                     'index': '20200101000000000.htz',
                     'create': '20200102000000000',
@@ -148,42 +182,34 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-
-        # files are exported in depth-first order
-        with zipfile.ZipFile(files[0]) as zh:
-            with zh.open('meta.json') as fh:
-                data = json.load(fh)
-            with zh.open('export.json') as fh:
-                export_info = json.load(fh)
-            with zh.open('data/20200101000000000.htz') as fh:
-                with zipfile.ZipFile(fh) as zh2:
-                    with zh2.open('index.html') as fh2:
-                        index_data = fh2.read().decode('UTF-8')
-            with zh.open('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp') as fh:
-                favicon_data = fh.read()
-
-        self.assertEqual(data, {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
-            'index': '20200101000000000.htz',
-            'create': '20200102000000000',
-            'modify': '20200103000000000',
-            'source': 'http://example.com',
-            'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
         })
 
-        self.assertEqual(export_info['version'], 1)
-        self.assertAlmostEqual(util.id_to_datetime(export_info['id']).timestamp(), datetime.now(timezone.utc).timestamp(), delta=3)
-        self.assertEqual(export_info['timestamp'], export_info['id'])
-        self.assertEqual(export_info['timezone'], datetime.now().astimezone().utcoffset().total_seconds())
-        self.assertEqual(export_info['path'], [{'id': 'root', 'title': ''}])
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+                'path': [{'id': 'root', 'title': ''}],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': '',
+                'title': 'item0',
+                'index': '20200101000000000.htz',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            },
+            'index_data': 'ABC123',
+            'favicon_data': b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+        })
 
-        self.assertEqual(index_data, 'ABC123')
-        self.assertEqual(b64encode(favicon_data), b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA')
-
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc01(self):
         """Export all if item_ids not set
 
@@ -234,58 +260,92 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-        metas = []
-        export_infos = []
-        for file in files:
-            with zipfile.ZipFile(file) as zh:
-                with zh.open('meta.json') as fh:
-                    metas.append(json.load(fh))
-                with zh.open('export.json') as fh:
-                    export_infos.append(json.load(fh))
-
-        self.assertEqual(len(files), 4)
-        self.assertEqual(len({e['id'] for e in export_infos}), 4)
-
-        # files are exported in depth-first order
-        self.assertEqual(metas[0], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item3.wsba'),
         })
-        self.assertEqual(export_infos[0]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[1], {
-            'id': '20200101000000002',
-            'type': 'folder',
-            'title': 'item2',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[1]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000000', 'title': 'item0'},
-        ])
 
-        self.assertEqual(metas[2], {
-            'id': '20200101000000001',
-            'type': 'folder',
-            'title': 'item1',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[2]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[3], {
-            'id': '20200101000000003',
-            'type': 'folder',
-            'title': 'item3',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item1.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000002',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[3]['path'], [
-            {'id': 'hidden', 'title': ''},
-        ])
 
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000003',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'hidden', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc02(self):
         """Export only those specified by item_ids
 
@@ -348,38 +408,51 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         ):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-        metas = []
-        export_infos = []
-        for file in files:
-            with zipfile.ZipFile(file) as zh:
-                with zh.open('meta.json') as fh:
-                    metas.append(json.load(fh))
-                with zh.open('export.json') as fh:
-                    export_infos.append(json.load(fh))
-
-        self.assertEqual(len(files), 2)
-
-        # files are exported in depth-first order
-        self.assertEqual(metas[0], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item3.wsba'),
         })
-        self.assertEqual(export_infos[0]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[1], {
-            'id': '20200101000000003',
-            'type': 'folder',
-            'title': 'item3',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[1]['path'], [
-            {'id': 'hidden', 'title': ''},
-        ])
 
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item3.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'hidden', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc03(self):
         """Export descendants if recursive"""
         self.init_book(
@@ -422,50 +495,74 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         ):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-        metas = []
-        export_infos = []
-        for file in files:
-            with zipfile.ZipFile(file) as zh:
-                with zh.open('meta.json') as fh:
-                    metas.append(json.load(fh))
-                with zh.open('export.json') as fh:
-                    export_infos.append(json.load(fh))
-
-        self.assertEqual(len(files), 3)
-
-        # files are exported in depth-first order
-        self.assertEqual(metas[0], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item3.wsba'),
         })
-        self.assertEqual(export_infos[0]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[1], {
-            'id': '20200101000000002',
-            'type': 'folder',
-            'title': 'item2',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[1]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000000', 'title': 'item0'},
-        ])
 
-        self.assertEqual(metas[2], {
-            'id': '20200101000000003',
-            'type': 'folder',
-            'title': 'item3',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[2]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000000', 'title': 'item0'},
-            {'id': '20200101000000002', 'title': 'item2'},
-        ])
 
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item3.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000002',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc04(self):
         """Export all occurrences
 
@@ -513,90 +610,155 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-        metas = []
-        export_infos = []
-        for file in files:
-            with zipfile.ZipFile(file) as zh:
-                with zh.open('meta.json') as fh:
-                    metas.append(json.load(fh))
-                with zh.open('export.json') as fh:
-                    export_infos.append(json.load(fh))
-
-        self.assertEqual(len(files), 7)
-
-        # files are exported in depth-first order
-        self.assertEqual(metas[0], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000004-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000005-item3.wsba'),
+            os.path.join(self.test_output, '20230101000000006-item0.wsba'),
         })
-        self.assertEqual(export_infos[0]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[1], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[1]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
-        self.assertEqual(export_infos[1]['id'], export_infos[0]['id'])
 
-        self.assertEqual(metas[2], {
-            'id': '20200101000000001',
-            'type': 'folder',
-            'title': 'item1',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[2]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[3], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item1.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000002',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[3]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000001', 'title': 'item1'},
-        ])
-        self.assertEqual(export_infos[3]['id'], export_infos[0]['id'])
 
-        self.assertEqual(metas[4], {
-            'id': '20200101000000002',
-            'type': 'folder',
-            'title': 'item2',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[4]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[5], {
-            'id': '20200101000000003',
-            'type': 'folder',
-            'title': 'item3',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000004-item2.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000004',
+                'timestamp': '20230101000000004',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[5]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000002', 'title': 'item2'},
-        ])
 
-        self.assertEqual(metas[6], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000005-item3.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000005',
+                'timestamp': '20230101000000005',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[6]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000002', 'title': 'item2'},
-            {'id': '20200101000000003', 'title': 'item3'},
-        ])
-        self.assertEqual(export_infos[6]['id'], export_infos[0]['id'])
 
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000006-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000006',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                    {'id': '20200101000000003', 'title': 'item3'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc05(self):
         """Export first occurrence if singleton"""
         self.init_book(
@@ -641,57 +803,92 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         for _info in wsb_exporter.run(self.test_input, self.test_output, singleton=True):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-        metas = []
-        export_infos = []
-        for file in files:
-            with zipfile.ZipFile(file) as zh:
-                with zh.open('meta.json') as fh:
-                    metas.append(json.load(fh))
-                with zh.open('export.json') as fh:
-                    export_infos.append(json.load(fh))
-
-        self.assertEqual(len(files), 4)
-
-        # files are exported in depth-first order
-        self.assertEqual(metas[0], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item3.wsba'),
         })
-        self.assertEqual(export_infos[0]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[1], {
-            'id': '20200101000000001',
-            'type': 'folder',
-            'title': 'item1',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[1]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[2], {
-            'id': '20200101000000002',
-            'type': 'folder',
-            'title': 'item2',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item1.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[2]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[3], {
-            'id': '20200101000000003',
-            'type': 'folder',
-            'title': 'item3',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item2.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000002',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[3]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000002', 'title': 'item2'},
-        ])
 
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000003',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc06(self):
         """Export circular item but no children"""
         self.init_book(
@@ -722,50 +919,72 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
 
-        with os.scandir(self.test_output) as entries:
-            files = sorted(entries, key=lambda x: x.path)
-        metas = []
-        export_infos = []
-        for file in files:
-            with zipfile.ZipFile(file) as zh:
-                with zh.open('meta.json') as fh:
-                    metas.append(json.load(fh))
-                with zh.open('export.json') as fh:
-                    export_infos.append(json.load(fh))
-
-        self.assertEqual(len(files), 3)
-
-        # files are exported in depth-first order
-        self.assertEqual(metas[0], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item0.wsba'),
         })
-        self.assertEqual(export_infos[0]['path'], [
-            {'id': 'root', 'title': ''},
-        ])
 
-        self.assertEqual(metas[1], {
-            'id': '20200101000000001',
-            'type': 'folder',
-            'title': 'item1',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[1]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000000', 'title': 'item0'},
-        ])
 
-        self.assertEqual(metas[2], {
-            'id': '20200101000000000',
-            'type': 'folder',
-            'title': 'item0',
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item1.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
         })
-        self.assertEqual(export_infos[2]['path'], [
-            {'id': 'root', 'title': ''},
-            {'id': '20200101000000000', 'title': 'item0'},
-            {'id': '20200101000000001', 'title': 'item1'},
-        ])
-        self.assertEqual(export_infos[2]['id'], export_infos[0]['id'])
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item0.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
 
 
 if __name__ == '__main__':

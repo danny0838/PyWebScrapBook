@@ -3,11 +3,12 @@ import os
 import time
 import traceback
 from contextlib import nullcontext
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from .. import util
 from .._polyfill import mimetypes, zipfile
 from ..util import Info
+from .book import _id_now
 from .host import Host
 
 
@@ -87,10 +88,13 @@ class Exporter():
         index = meta.get('index', '')
 
         # generate a unique timestamp as prefix
-        dt = datetime.now(timezone.utc)
-        ets = util.datetime_to_id(dt)
+        ets = _id_now()
         while ets in self.used_ts:
-            dt += timedelta(milliseconds=1)
+            try:
+                dt += timedelta(milliseconds=1)  # noqa: F821
+            except UnboundLocalError:
+                dt = util.id_to_datetime(ets)
+                dt += timedelta(milliseconds=1)
             ets = util.datetime_to_id(dt)
         self.used_ts.add(ets)
 
@@ -116,7 +120,7 @@ class Exporter():
             'version': 1,
             'id': eid,
             'timestamp': ets,
-            'timezone': dt.astimezone().utcoffset().total_seconds(),
+            'timezone': util.id_to_datetime(ets).astimezone().utcoffset().total_seconds(),
             'path': parents,
         }
         with zipfile.ZipFile(dst, 'w') as zh:
