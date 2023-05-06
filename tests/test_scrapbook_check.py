@@ -961,31 +961,100 @@ scrapbook.toc({
         })
 
     def test_resolve_unindexed_files(self):
-        """Check for unindexed files.
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "item1": {}
+})""")
 
-        - Favicons should be cached regardless of other resolve options.
-        """
-        test_index = os.path.join(self.test_root, '20200101000000000.htz')
-        with zipfile.ZipFile(test_index, 'w') as zh:
-            zh.writestr('index.html', """<!DOCTYPE html>
-<html
-    data-scrapbook-create="20200102030405067"
-    data-scrapbook-source="http://example.com">
+        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "item1"
+  ]
+})""")
+
+        test_file = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_file), exist_ok=True)
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html data-scrapbook-create="20200101030405067"
+      data-scrapbook-source="http://example.com">
 <head>
 <meta charset="UTF-8">
-<title>MyTitle 中文</title>
-<link rel="shortcut icon" href="favicon.bmp">
+<title>MyTitle 中文 1</title>
 </head>
 <body>
-page content
+page content 1
 </body>
 </html>""")
+        ts = datetime(2021, 1, 1, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_file, (ts, ts))
+
+        test_file = os.path.join(self.test_root, '20200102000000000.html')
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html data-scrapbook-create="20200102030405067"
+      data-scrapbook-source="https://example.com">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文 2</title>
+</head>
+<body>
+page content 2
+</body>
+</html>""")
+        ts = datetime(2021, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_file, (ts, ts))
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
+        for _info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            'item1': {},
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': 'MyTitle 中文 1',
+                'type': '',
+                'create': '20200101030405067',
+                'modify': '20210101030405067',
+                'icon': '',
+                'source': 'http://example.com',
+                'comment': '',
+            },
+            '20200102000000000': {
+                'index': '20200102000000000.html',
+                'title': 'MyTitle 中文 2',
+                'type': '',
+                'create': '20200102030405067',
+                'modify': '20210102030405067',
+                'icon': '',
+                'source': 'https://example.com',
+                'comment': '',
+            },
+        })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                'item1',
+                '20200102000000000',
+                '20200101000000000',
+            ],
+        })
+
+    def test_resolve_unindexed_files_icon(self):
+        """Favicons should be cached regardless of other resolve options."""
+        test_index = os.path.join(self.test_root, '20200101000000000.htz')
+        with zipfile.ZipFile(test_index, 'w') as zh:
+            zh.writestr('index.html', '<link rel="shortcut icon" href="favicon.bmp">')
             zh.writestr(
                 'favicon.bmp',
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
-        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
-        os.utime(test_index, (ts, ts))
 
         book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
@@ -995,12 +1064,12 @@ page content
         self.assertDictEqual(book.meta, {
             '20200101000000000': {
                 'index': '20200101000000000.htz',
-                'title': 'MyTitle 中文',
+                'title': '',
                 'type': '',
-                'create': '20200102030405067',
-                'modify': '20200102030405067',
+                'create': mock.ANY,
+                'modify': mock.ANY,
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                'source': 'http://example.com',
+                'source': '',
                 'comment': '',
             },
         })
