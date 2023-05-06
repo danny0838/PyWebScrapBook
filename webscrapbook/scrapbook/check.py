@@ -605,7 +605,9 @@ class BookChecker:
         for id in indexed:
             # add to TOC if not seen
             if id not in self.seen_in_toc:
-                self.book.toc.setdefault(self.book.ROOT_ITEM_ID, []).append(id)
+                root = self.book.ROOT_ITEM_ID
+                target_index = 0 if self.book.config['new_at_top'] else len(self.book.toc.get(root, ()))
+                self.book.toc.setdefault(root, []).insert(target_index, id)
                 self.seen_in_toc.add(id)
 
             # record added cached favicons

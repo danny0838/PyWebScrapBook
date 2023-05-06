@@ -1833,6 +1833,7 @@ class TestConfig(TestActions):
                             'tree_dir': WSB_DIR + '/tree',
                             'index': WSB_DIR + '/tree/map.html',
                             'no_tree': False,
+                            'new_at_top': False,
                             'inclusive_frames': True,
                             'static_index': False,
                             'rss_root': '',

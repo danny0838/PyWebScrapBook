@@ -2170,6 +2170,46 @@ class TestAddItems(TestBook):
         self.assertEqual(book.meta, orig_meta)
         self.assertEqual(book.toc, orig_toc)
 
+    def test_new_at_top(self):
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {},
+            'item2': {},
+        }
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+            ],
+        }
+        book.add_items([
+            {
+                'id': 'item3',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+            },
+            {
+                'id': 'item4',
+                'create': '20200102000000000',
+                'modify': '20200102000000000',
+            },
+        ])
+        self.assertEqual(book.toc, {
+            'root': [
+                'item3',
+                'item4',
+                'item1',
+                'item2',
+            ],
+        })
+
 
 class TestUpdateItem(TestBook):
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
@@ -3530,6 +3570,54 @@ class TestMoveItems(TestBook):
             ],
         })
 
+    def test_new_at_top(self):
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'folder1': {},
+            'folder2': {},
+            'item1-1': {},
+            'item1-2': {},
+            'item2-1': {},
+            'item2-2': {},
+        }
+        book.toc = {
+            'root': [
+                'folder1',
+                'folder2',
+            ],
+            'folder1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'folder2': [
+                'item2-1',
+                'item2-2',
+            ],
+        }
+        book.move_items([
+            ('folder1', 0),
+            ('folder1', 1),
+        ], 'folder2'),
+        self.assertEqual(book.toc, {
+            'root': [
+                'folder1',
+                'folder2',
+            ],
+            'folder2': [
+                'item1-1',
+                'item1-2',
+                'item2-1',
+                'item2-2',
+            ],
+        })
+
 
 class TestLinkItem(TestBook):
     def test_basic(self):
@@ -4197,6 +4285,58 @@ class TestLinkItems(TestBook):
                 'item2',
                 'item3',
                 'item1',
+            ],
+        })
+
+    def test_new_at_top(self):
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'folder1': {},
+            'folder2': {},
+            'item1-1': {},
+            'item1-2': {},
+            'item2-1': {},
+            'item2-2': {},
+        }
+        book.toc = {
+            'root': [
+                'folder1',
+                'folder2',
+            ],
+            'folder1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'folder2': [
+                'item2-1',
+                'item2-2',
+            ],
+        }
+        book.link_items([
+            ('folder1', 0),
+            ('folder1', 1),
+        ], 'folder2'),
+        self.assertEqual(book.toc, {
+            'root': [
+                'folder1',
+                'folder2',
+            ],
+            'folder1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'folder2': [
+                'item1-1',
+                'item1-2',
+                'item2-1',
+                'item2-2',
             ],
         })
 
@@ -5547,6 +5687,161 @@ class TestCopyItems(TestCopyItemBase):
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20200101000000001')
+    def test_new_at_top(self):
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'folder': {},
+            'item1': {},
+            'item1-1': {},
+            'item1-1-1': {},
+            'item1-2': {},
+            'item2': {},
+            'item3': {},
+            'item4': {},
+        }
+        book.toc = {
+            'root': [
+                'folder',
+                'item1',
+                'item2',
+            ],
+            'folder': [
+                'item3',
+                'item4',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'item1-1': [
+                'item1-1-1',
+            ],
+            'item1-2': [
+                'item1',
+            ],
+        }
+        book.copy_items([
+            ('root', 1),
+            ('root', 2),
+        ], 'folder'),
+        self.assertEqual(book.toc, {
+            'root': [
+                'folder',
+                'item1',
+                'item2',
+            ],
+            'folder': [
+                '20200101000000001',
+                '20200101000000005',
+                'item3',
+                'item4',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'item1-1': [
+                'item1-1-1',
+            ],
+            'item1-2': [
+                'item1',
+            ],
+            '20200101000000001': [
+                '20200101000000002',
+                '20200101000000004',
+            ],
+            '20200101000000002': [
+                '20200101000000003',
+            ],
+            '20200101000000004': [
+                '20200101000000001',
+            ],
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20200101000000001')
+    def test_new_at_top_cross_book(self):
+        """Insertion point should be determined by the target book."""
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book "book2"]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = host.books['']
+        book.meta = {
+            'item1': {},
+            'item1-1': {},
+            'item1-1-1': {},
+            'item1-2': {},
+            'item2': {},
+        }
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'item1-1': [
+                'item1-1-1',
+            ],
+            'item1-2': [
+                'item1',
+            ],
+        }
+        book2 = host.books['book2']
+        book2.meta = {
+            'folder': {},
+            'item3': {},
+            'item4': {},
+        }
+        book2.toc = {
+            'root': [
+                'folder',
+            ],
+            'folder': [
+                'item3',
+                'item4',
+            ],
+        }
+
+        book.copy_items([
+            ('root', 0),
+            ('root', 1),
+        ], 'folder', None, target_book_id='book2'),
+        self.assertEqual(book2.toc, {
+            'root': [
+                'folder',
+            ],
+            'folder': [
+                'item1',
+                'item2',
+                'item3',
+                'item4',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'item1-1': [
+                'item1-1-1',
+            ],
+            'item1-2': [
+                'item1',
+            ],
+        })
+
 
 class TestRecycleItem(TestBook):
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20200101000000000')
@@ -5855,6 +6150,44 @@ class TestRecycleItems(TestBook):
         self.assertEqual(book.meta['item0']['recycled'], book.meta['item1']['recycled'])
         self.assertEqual(book.meta['item0']['recycled'], book.meta['item2']['recycled'])
 
+    def test_new_at_top(self):
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'item1': {},
+            'item2': {},
+            'item3': {},
+            'item4': {},
+        }
+        book.toc = {
+            'root': [
+                'item3',
+                'item4',
+            ],
+            'recycle': [
+                'item1',
+                'item2',
+            ],
+        }
+        book.recycle_items([
+            ('root', 0),
+            ('root', 1),
+        ]),
+        self.assertEqual(book.toc, {
+            'recycle': [
+                'item3',
+                'item4',
+                'item1',
+                'item2',
+            ],
+        })
+
 
 class TestUnrecycleItem(TestBook):
     def test_basic(self):
@@ -6159,6 +6492,75 @@ class TestUnrecycleItems(TestBook):
             'item1': {},
             'item2': {},
             'item3': {},
+        })
+
+    def test_new_at_top(self):
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[book ""]
+new_at_top = true
+""")
+
+        host = Host(self.test_root)
+        book = Book(host)
+        book.meta = {
+            'folder1': {},
+            'item1': {
+                'parent': 'folder1',
+                'recycled': '20000101000000000',
+            },
+            'item1-1': {},
+            'item2': {
+                'parent': 'folder1',
+                'recycled': '20000102000000000',
+            },
+            'item3': {
+                'parent': 'folder2',
+                'recycled': '20000103000000000',
+            },
+            'item4': {
+                'parent': 'folder2',
+                'recycled': '20000104000000000',
+            },
+            'item5': {},
+        }
+        book.toc = {
+            'root': [
+                'folder1',
+            ],
+            'recycle': [
+                'item1',
+                'item2',
+                'item3',
+                'item4',
+            ],
+            'folder1': [
+                'item5',
+            ],
+            'item1': [
+                'item1-1',
+            ],
+        }
+        book.unrecycle_items([
+            ('recycle', 0),
+            ('recycle', 1),
+            ('recycle', 2),
+            ('recycle', 3),
+        ]),
+        self.assertEqual(book.toc, {
+            'root': [
+                'item3',
+                'item4',
+                'folder1',
+            ],
+            'folder1': [
+                'item1',
+                'item2',
+                'item5',
+            ],
+            'item1': [
+                'item1-1',
+            ],
         })
 
 

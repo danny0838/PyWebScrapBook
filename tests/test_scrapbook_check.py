@@ -50,6 +50,12 @@ class TestCheck(TestBookMixin, unittest.TestCase):
         self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
         os.makedirs(self.test_tree)
 
+    def general_config_new_at_top(self):
+        return """\
+[book ""]
+new_at_top = true
+"""
+
 
 class TestFuncRun(TestCheck):
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
@@ -1067,6 +1073,46 @@ tree_dir = .wsb/tree
 
         self.assertDictEqual(book.meta, {})
         self.assertDictEqual(book.toc, {})
+
+    def test_resolve_unindexed_new_at_top(self):
+        """Add items at top of tree if configured."""
+        book = self.init_book(
+            self.test_root,
+            config=self.general_config_new_at_top(),
+            meta={
+                'item1': {},
+            },
+            toc={
+                'root': [
+                    'item1',
+                ],
+            },
+        )
+
+        test_file = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_file), exist_ok=True)
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<body>page content 1</body>""")
+
+        test_file = os.path.join(self.test_root, '20200102000000000.html')
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<body>page content 2</body>""")
+
+        generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
+        for _info in generator.run():
+            pass
+
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20200102000000000',
+                '20200101000000000',
+                'item1',
+            ],
+        })
 
     def test_resolve_absolute_icon01(self):
         """Check favicon with absolute URL."""

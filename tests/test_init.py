@@ -71,6 +71,7 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', 'tree'),
                 ('index', 'tree/map.html'),
                 ('no_tree', False),
+                ('new_at_top', True),
                 ('inclusive_frames', False),
                 ('static_index', True),
                 ('rss_root', 'http://example.com/'),
@@ -83,6 +84,7 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', '.wsb/tree'),
                 ('index', '.wsb/tree/map.html'),
                 ('no_tree', True),
+                ('new_at_top', False),
                 ('inclusive_frames', True),
                 ('static_index', False),
                 ('rss_root', ''),
@@ -95,6 +97,7 @@ class TestClassConfig(unittest.TestCase):
                 ('tree_dir', 'tree'),
                 ('index', 'tree/map.html'),
                 ('no_tree', True),
+                ('new_at_top', False),
                 ('inclusive_frames', True),
                 ('static_index', False),
                 ('rss_root', ''),
@@ -246,6 +249,7 @@ data_dir = data
 tree_dir = tree
 index = tree/map.html
 no_tree = false
+new_at_top = true
 inclusive_frames = false
 static_index = true
 rss_root = http://example.com/
@@ -258,6 +262,7 @@ data_dir =
 tree_dir = .wsb/tree
 index = .wsb/tree/map.html
 no_tree = on
+new_at_top = false
 inclusive_frames = true
 static_index = false
 rss_root = 
@@ -270,6 +275,7 @@ data_dir = data
 tree_dir = tree
 index = tree/map.html
 no_tree = on
+new_at_top = false
 inclusive_frames = true
 static_index = false
 rss_root = 
@@ -328,6 +334,7 @@ permission = all
                         ('tree_dir', 'tree'),
                         ('index', 'tree/map.html'),
                         ('no_tree', False),
+                        ('new_at_top', True),
                         ('inclusive_frames', False),
                         ('static_index', True),
                         ('rss_root', 'http://example.com/'),
@@ -340,6 +347,7 @@ permission = all
                         ('tree_dir', '.wsb/tree'),
                         ('index', '.wsb/tree/map.html'),
                         ('no_tree', True),
+                        ('new_at_top', False),
                         ('inclusive_frames', True),
                         ('static_index', False),
                         ('rss_root', ''),
@@ -352,6 +360,7 @@ permission = all
                         ('tree_dir', 'tree'),
                         ('index', 'tree/map.html'),
                         ('no_tree', True),
+                        ('new_at_top', False),
                         ('inclusive_frames', True),
                         ('static_index', False),
                         ('rss_root', ''),

@@ -484,9 +484,11 @@ class Importer():
 
         if allow_insert and self.target_index is not None:
             parent.insert(self.target_index, id)
-            self.target_index += 1
+            if not self.book.config['new_at_top']:
+                self.target_index += 1
         else:
-            parent.append(id)
+            target_index = 0 if self.book.config['new_at_top'] else len(parent)
+            parent.insert(target_index, id)
 
 
 def run(host, files, book_id='', *, lock=True, **kwargs):

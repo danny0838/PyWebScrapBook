@@ -612,7 +612,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
         if rv and target_parent_id is not None:
             # adjust target_index
             if target_index is None:
-                target_index = float('inf')
+                target_index = 0 if self.config['new_at_top'] else float('inf')
             target_index = min(target_index, len(self.toc.get(target_parent_id, ())))
 
             self.toc.setdefault(target_parent_id, [])[target_index:target_index] = rv
@@ -736,7 +736,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
         # adjust target_index
         if target_index is None:
-            target_index = float('inf')
+            target_index = 0 if self.config['new_at_top'] else float('inf')
         target_index = min(target_index, len(self.toc.get(target_parent_id, ())))
 
         # prepare items to handle
@@ -836,7 +836,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
         # adjust target_index
         if target_index is None:
-            target_index = float('inf')
+            target_index = 0 if self.config['new_at_top'] else float('inf')
         target_index = min(target_index, len(self.toc.get(target_parent_id, ())))
 
         # prepare items to handle
@@ -921,7 +921,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
 
         # adjust target_index
         if target_index is None:
-            target_index = float('inf')
+            target_index = 0 if target_book.config['new_at_top'] else float('inf')
         target_index = min(target_index, len(target_book.toc.get(target_parent_id, ())))
 
         # prepare items to handle
@@ -1103,7 +1103,11 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
                 recycled[item_id] = current_parent_id
                 self.meta[item_id]['parent'] = current_parent_id
                 self.meta[item_id]['recycled'] = recycle_ts
-                self.toc.setdefault(self.RECYCLE_ITEM_ID, []).append(item_id)
+
+        if recycled:
+            target_parent_id = self.RECYCLE_ITEM_ID
+            target_index = 0 if self.config['new_at_top'] else len(self.toc.get(target_parent_id, ()))
+            self.toc.setdefault(target_parent_id, [])[target_index:target_index] = recycled
 
         return recycled
 
@@ -1182,11 +1186,17 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
             if not (target_parent_id in self.meta or target_parent_id in self.SPECIAL_ITEM_ID):
                 target_parent_id = self.ROOT_ITEM_ID
 
-            # add to target TOC
-            self.toc.setdefault(target_parent_id, []).append(item_id)
-
             # record target in the map
             unrecycled[item_id] = target_parent_id
+
+        if unrecycled:
+            map_parent_items = {}
+            for item_id, target_parent_id in unrecycled.items():
+                map_parent_items.setdefault(target_parent_id, []).append(item_id)
+
+            for target_parent_id, item_ids in map_parent_items.items():
+                target_index = 0 if self.config['new_at_top'] else len(self.toc.get(target_parent_id, ()))
+                self.toc.setdefault(target_parent_id, [])[target_index:target_index] = item_ids
 
         return unrecycled
 

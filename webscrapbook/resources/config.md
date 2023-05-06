@@ -242,6 +242,16 @@ Set true to disable virtual tree and index of the book.
 (default: `false`)
 
 
+#### `new_at_top`
+
+Put newly added items at the top of the scrapbook tree rather than at the
+bottom. Multiple items will remain the original order when inserted together.
+(e.g. Moving items `A, B, C` into another item having children `X, Y, Z`
+gets `A, B, C, X, Y, Z`.)
+
+(default: `false`)
+
+
 #### `inclusive_frames`
 
 Cache the content of frame pages as part of the main page. The fulltext cache
