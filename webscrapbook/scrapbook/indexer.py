@@ -220,7 +220,7 @@ class Indexer:
 
         # id
         id = meta.get('id')
-        if id:
+        if id is not None:
             # if explicitly specified in html attributes, use it or fail out.
             if id in self.book.meta:
                 yield Info('error', f'Specified ID {id!r} is already used.')
@@ -239,10 +239,8 @@ class Indexer:
                 basename = os.path.basename(os.path.dirname(basepath))
             id, _ = os.path.splitext(basename)
 
-            if not util.id_to_datetime(id) or id in self.book.meta:
-                id = None
-
-            meta['id'] = id
+            if util.id_to_datetime(id) and id not in self.book.meta:
+                meta['id'] = id
 
         # add to book
         new_items = self.book.add_item(meta, None)
