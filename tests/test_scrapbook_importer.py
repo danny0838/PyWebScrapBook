@@ -64,21 +64,6 @@ class TestImporter(unittest.TestCase):
     def test_basic01(self):
         """Test importing a common */index.html
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('meta.json', json.dumps({
@@ -102,6 +87,10 @@ scrapbook.toc({
                 ],
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr(
+                'data/20200101000000001/favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
 
         for _info in wsb_importer.run(self.test_output, [self.test_input]):
             pass
@@ -111,9 +100,6 @@ scrapbook.toc({
         book.load_toc_files()
 
         self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'type': 'folder'
-            },
             '20200101000000001': {
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -126,34 +112,19 @@ scrapbook.toc({
         })
         self.assertEqual(book.toc, {
             'root': [
-                '20200101000000000',
                 '20200101000000001',
             ],
         })
-
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
+        with open(os.path.join(self.test_output, '20200101000000001', 'favicon.bmp'), 'rb') as fh:
+            self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
     def test_basic02(self):
         """Test importing a common *.htz
 
         - Favicon cache should be imported.
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
-
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w') as zh:
@@ -193,9 +164,6 @@ scrapbook.toc({
         book.load_toc_files()
 
         self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'type': 'folder'
-            },
             '20200101000000001': {
                 'type': '',
                 'index': '20200101000000001.htz',
@@ -208,13 +176,67 @@ scrapbook.toc({
         })
         self.assertEqual(book.toc, {
             'root': [
-                '20200101000000000',
                 '20200101000000001',
             ],
         })
-
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000001.htz')) as zh:
             self.assertEqual(zh.read('index.html').decode('UTF-8'), 'page content')
+        with open(os.path.join(self.test_output_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'), 'rb') as fh:
+            self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+    def test_basic03(self):
+        """Test importing a common no-index item.
+        """
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': 'bookmark',
+                'index': '',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            }))
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr(
+                'favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'type': 'bookmark',
+                'index': '',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+        })
         with open(os.path.join(self.test_output_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'), 'rb') as fh:
             self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
@@ -349,7 +371,6 @@ scrapbook.toc({
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
@@ -363,19 +384,41 @@ scrapbook.toc({
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'item2',
+                'create': '20200102000000002',
+                'modify': '20200103000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+
         for _info in wsb_importer.run(self.test_output, [self.test_input], target_id='20200101000000000'):
             pass
 
         book = Host(self.test_output).books['']
-        book.load_meta_files()
         book.load_toc_files()
-
         self.assertEqual(book.toc, {
             'root': [
                 '20200101000000000',
             ],
             '20200101000000000': [
                 '20200101000000001',
+                '20200101000000002',
             ],
         })
 
@@ -407,7 +450,6 @@ scrapbook.toc({
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
@@ -421,16 +463,38 @@ scrapbook.toc({
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'item2',
+                'create': '20200102000000002',
+                'modify': '20200103000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+
         for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=0):
             pass
 
         book = Host(self.test_output).books['']
-        book.load_meta_files()
         book.load_toc_files()
-
         self.assertEqual(book.toc, {
             'root': [
                 '20200101000000001',
+                '20200101000000002',
                 '20200101000000000',
             ],
         })
