@@ -1078,6 +1078,73 @@ page content 2
             ['dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'],
         )
 
+    def test_resolve_unindexed_files_exclude_support_folders(self):
+        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "item1": {
+    "index": "item1.html"
+  }
+})""")
+
+        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "item1"
+  ]
+})""")
+        test_file = os.path.join(self.test_root, 'item1.html')
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('item page content')
+        sup_dir = os.path.join(self.test_root, 'item1.files')
+        os.makedirs(sup_dir)
+        with open(os.path.join(sup_dir, 'frame.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('frame content')
+        sup_dir = os.path.join(self.test_root, 'item1_files')
+        os.makedirs(sup_dir)
+        with open(os.path.join(sup_dir, 'frame.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('frame content')
+
+        test_file = os.path.join(self.test_root, '20200101000000000.html')
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('page content')
+        sup_dir = os.path.join(self.test_root, '20200101000000000.files')
+        os.makedirs(sup_dir)
+        with open(os.path.join(sup_dir, 'frame.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('frame content')
+        sup_dir = os.path.join(self.test_root, '20200101000000000_files')
+        os.makedirs(sup_dir)
+        with open(os.path.join(sup_dir, 'frame.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('frame content')
+
+        book = Host(self.test_root).books['']
+        generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
+        for _info in generator.run():
+            pass
+
+        self.assertDictEqual(book.meta, {
+            'item1': {
+                'index': 'item1.html',
+            },
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'title': '',
+                'type': '',
+                'create': mock.ANY,
+                'modify': mock.ANY,
+                'icon': '',
+                'source': '',
+                'comment': '',
+            },
+        })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                'item1',
+                '20200101000000000',
+            ],
+        })
+
     def test_resolve_unindexed_files_exclude_wsb(self):
         """<book>/.wsb should be skipped."""
         config_file = os.path.join(self.test_root, WSB_DIR, 'config.ini')

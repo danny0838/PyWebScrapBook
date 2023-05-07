@@ -8,9 +8,7 @@ from urllib.parse import quote
 from ... import WSB_DIR, util
 from ...util import Info
 from ..host import Host
-from ..indexer import Indexer
-
-DEFAULT_DATA_FOLDER_SUFFIXES = ['.files', '_files']
+from ..indexer import SUPPORT_FOLDER_SUFFIXES, Indexer
 
 
 class Converter:
@@ -26,7 +24,7 @@ class Converter:
         self.output = os.path.abspath(output)
         self.data_folder_suffixes = (
             [k for k in dict.fromkeys(os.path.normcase(s.strip()) for s in data_folder_suffixes) if k]
-            if data_folder_suffixes is not None else DEFAULT_DATA_FOLDER_SUFFIXES)
+            if data_folder_suffixes is not None else SUPPORT_FOLDER_SUFFIXES)
         self.preserve_filename = preserve_filename
         self.handle_ie_meta = handle_ie_meta
         self.handle_singlefile_meta = handle_singlefile_meta
@@ -106,15 +104,19 @@ class Converter:
                     entries_to_handle.add(entry)
 
                 elif entry.is_file():
-                    if self._get_index_path_key(entry) not in entries_to_exclude:
-                        entries_to_handle.add(entry)
+                    if self._get_index_path_key(entry) in entries_to_exclude:
+                        continue
 
-                        if util.is_html(entry.path):
-                            basename, _ = os.path.splitext(entry.name)
-                            for suffix in self.data_folder_suffixes:
-                                p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
-                                yield Info('debug', f'Excluding "{p}" from index finding')
-                                entries_to_exclude.add(p)
+                    entries_to_handle.add(entry)
+
+                    if not util.is_html(entry.path):
+                        continue
+
+                    basename, _ = os.path.splitext(entry.name)
+                    for suffix in self.data_folder_suffixes:
+                        p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
+                        yield Info('debug', f'Excluding "{p}" from index finding')
+                        entries_to_exclude.add(p)
 
         paths.append(id)
 
@@ -277,7 +279,7 @@ def run(input, output, *,
     yield Info('info', 'conversion mode: hierarchical files --> WebScrapBook')
     yield Info('info', f'input directory: {os.path.abspath(input)}')
     yield Info('info', f'output directory: {os.path.abspath(output)}')
-    yield Info('info', f'data_folder_suffixes: {DEFAULT_DATA_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')
+    yield Info('info', f'data_folder_suffixes: {SUPPORT_FOLDER_SUFFIXES if data_folder_suffixes is None else data_folder_suffixes}')
     yield Info('info', f'no preserve filename: {no_preserve_filename}')
     yield Info('info', f'ignore IE meta: {ignore_ie_meta}')
     yield Info('info', f'ignore SingleFile meta: {ignore_singlefile_meta}')

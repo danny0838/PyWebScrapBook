@@ -14,6 +14,7 @@ from ..util import Info
 from .book import Book, TreeFileError
 from .host import Host
 from .indexer import (
+    SUPPORT_FOLDER_SUFFIXES,
     FavIconCacher,
     Indexer,
     generate_item_create,
@@ -261,13 +262,10 @@ class BookChecker:
                 self.find_index_exclude.add(pd)
             elif util.is_html(index):
                 basename, ext = os.path.splitext(index)
-                p = self._get_index_path_key(os.path.join(os.path.dirname(file), f'{basename}.files'))
-                yield Info('debug', f'Excluding "{p}" from index finding')
-                self.find_index_exclude.add(p)
-
-                p = self._get_index_path_key(os.path.join(os.path.dirname(file), f'{basename}_files'))
-                yield Info('debug', f'Excluding "{p}" from index finding')
-                self.find_index_exclude.add(p)
+                for suffix in SUPPORT_FOLDER_SUFFIXES:
+                    p = self._get_index_path_key(os.path.join(os.path.dirname(file), f'{basename}{suffix}'))
+                    yield Info('debug', f'Excluding "{p}" from index finding')
+                    self.find_index_exclude.add(p)
             elif util.is_archive(index):
                 try:
                     zh = zipfile.ZipFile(file)
@@ -431,22 +429,27 @@ class BookChecker:
                     else:
                         self.cnt_files += 1
 
-                    if find_index and entry.is_file():
-                        if self._get_index_path_key(entry) not in self.find_index_exclude:
-                            basename, ext = os.path.splitext(entry.name.lower())
-                            if ext in self.book.ITEM_INDEX_ALLOWED_EXT:
-                                yield Info('warn', f'File "{self.book.get_subpath(entry)}" not used as item index')
-                                self.cnt_warns += 1
-                                unindexed_files[entry.path] = True
+                    if not find_index:
+                        continue
 
-                                if util.is_html(entry.path):
-                                    p = self._get_index_path_key(os.path.join(data_dir, f'{basename}.files'))
-                                    yield Info('debug', f'Excluding "{p}" from index finding')
-                                    self.find_index_exclude.add(p)
+                    if self._get_index_path_key(entry) in self.find_index_exclude:
+                        continue
 
-                                    p = self._get_index_path_key(os.path.join(data_dir, f'{basename}_files'))
-                                    yield Info('debug', f'Excluding "{p}" from index finding')
-                                    self.find_index_exclude.add(p)
+                    basename, ext = os.path.splitext(entry.name.lower())
+                    if ext not in self.book.ITEM_INDEX_ALLOWED_EXT:
+                        continue
+
+                    yield Info('warn', f'File "{self.book.get_subpath(entry)}" not used as item index')
+                    self.cnt_warns += 1
+                    unindexed_files[entry.path] = True
+
+                    if not util.is_html(entry.path):
+                        continue
+
+                    for suffix in SUPPORT_FOLDER_SUFFIXES:
+                        p = self._get_index_path_key(os.path.join(data_dir, f'{basename}{suffix}'))
+                        yield Info('debug', f'Excluding "{p}" from index finding')
+                        self.find_index_exclude.add(p)
 
         for entry in subdirs:
             p = self._get_index_path_key(entry)
@@ -608,11 +611,12 @@ class BookChecker:
             # record added cached favicons
             index = self.book.meta[id].get('index')
             icon = self.book.meta[id].get('icon')
-            file = os.path.normpath(os.path.join(self.book.data_dir, os.path.dirname(index), unquote(icon)))
-            file_ci = os.path.normcase(file)
-            is_in_favicon_dir = file_ci.startswith(os.path.normcase(favicon_dir))
-            if is_in_favicon_dir:
-                self.used_favicons.add(file_ci)
+            if icon:
+                file = os.path.normpath(os.path.join(self.book.data_dir, os.path.dirname(index), unquote(icon)))
+                file_ci = os.path.normcase(file)
+                is_in_favicon_dir = file_ci.startswith(os.path.normcase(favicon_dir))
+                if is_in_favicon_dir:
+                    self.used_favicons.add(file_ci)
 
             self.cnt_resolves += 1
 

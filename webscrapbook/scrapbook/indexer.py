@@ -48,6 +48,8 @@ COMMON_MIME_EXTENSION = {
     'application/ogg': '.ogx',
 }
 
+SUPPORT_FOLDER_SUFFIXES = ['.files', '_files']
+
 
 def generate_item_title(book, id):
     # infer from source
