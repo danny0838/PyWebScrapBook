@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.12.2] - 2023-05-07
+* Fixed an issue that an error message is shown when caching an empty web page.
+* Fixed an issue that an exported archive with a bad version is not rejected on import.
+
 ## [1.12.1] - 2023-05-05
 * Fixed a potential issue of bad directory moving.
 * Miscellaneous optimization and refactoring of the source code and the unittest suite.
