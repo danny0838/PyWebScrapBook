@@ -435,8 +435,8 @@ class BookChecker:
                     if self._get_index_path_key(entry) in self.find_index_exclude:
                         continue
 
-                    basename, ext = os.path.splitext(entry.name.lower())
-                    if ext not in self.book.ITEM_INDEX_ALLOWED_EXT:
+                    basename, ext = os.path.splitext(entry.name)
+                    if ext.lower() not in self.book.ITEM_INDEX_ALLOWED_EXT:
                         continue
 
                     entries_to_handle.add(entry)
