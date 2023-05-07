@@ -104,8 +104,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -175,8 +173,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -247,8 +243,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -304,8 +298,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -356,8 +348,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -412,8 +402,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -472,8 +460,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -533,8 +519,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -594,8 +578,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -656,8 +638,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
             '20220101000000002': {
                 'title': 'mypage_archive',
@@ -671,9 +651,6 @@ page content
                 'index': '20220101000000003/index.html',
                 'create': '20220101000000003',
                 'modify': '20200102030405067',
-                'source': '',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -739,8 +716,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -800,8 +775,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -848,9 +821,6 @@ page content
                 'index': '20220101000000002/index.html',
                 'create': '20220101000000002',
                 'modify': '20200102030405067',
-                'source': '',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -899,9 +869,6 @@ page content
                 'index': '20220101000000002.txt',
                 'create': '20220101000000002',
                 'modify': '20200102030405067',
-                'source': '',
-                'icon': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {

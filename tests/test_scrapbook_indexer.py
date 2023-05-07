@@ -94,7 +94,6 @@ page content
                 'modify': '20200102030405067',
                 'icon': 'favicon.png',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -152,7 +151,6 @@ page content
                 'modify': '20200102030405067',
                 'icon': 'favicon.png',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -260,9 +258,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -299,9 +295,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -358,9 +352,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -400,9 +392,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -438,9 +428,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -496,9 +484,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -537,9 +523,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -573,9 +557,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com/mypage.html',
-                'comment': '',
             },
         })
 
@@ -608,9 +590,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com/mypage.html',
-                'comment': '',
             },
         })
 
@@ -644,9 +624,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com/mypage.html',
-                'comment': '',
             },
         })
 
@@ -680,9 +658,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com/mypage.html',
-                'comment': '',
             },
         })
 
@@ -714,9 +690,6 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -751,9 +724,7 @@ page content
                 'type': 'separator',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
         })
 
@@ -794,8 +765,6 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -835,9 +804,6 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -874,9 +840,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200102030405067',
-                'icon': '',
                 'source': 'http://example.com/?a=123#456',
-                'comment': '',
             },
         })
 
@@ -913,9 +877,6 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200102030405067',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -952,9 +913,7 @@ page content
                 'type': '',
                 'create': '20200101020000000',
                 'modify': '20200102030405067',
-                'icon': '',
                 'source': 'http://example.com/?a=123#456',
-                'comment': '',
             },
         })
 
@@ -991,9 +950,6 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200102030405067',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -1033,9 +989,7 @@ page content
                 'type': '',
                 'create': '20200101020000000',
                 'modify': '20200102030405067',
-                'icon': '',
                 'source': 'http://example.com/?a=123#456',
-                'comment': '',
             },
         })
 
@@ -1075,9 +1029,6 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200102030405067',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -1114,9 +1065,7 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200102030405067',
-                'icon': '',
                 'source': 'http://example.com/?a=123#456',
-                'comment': '',
             },
         })
 
@@ -1153,9 +1102,6 @@ page content
                 'type': '',
                 'create': '20200101000000000',
                 'modify': '20200102030405067',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 
@@ -1181,9 +1127,6 @@ page content
                 'type': 'file',
                 'create': mock.ANY,
                 'modify': '20200102030405067',
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
 

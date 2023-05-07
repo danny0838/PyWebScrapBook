@@ -281,22 +281,15 @@ class Indexer:
         # icon
         if meta.get('icon') is None:
             if is_webpage:
-                favicon_elem = next(iter_favicon_elems(tree), None)
-                icon = favicon_elem.attrib.get('href', '') if favicon_elem is not None else ''
-                meta['icon'] = icon
-            else:
-                meta['icon'] = ''
+                try:
+                    favicon_elem = next(iter_favicon_elems(tree))
+                except StopIteration:
+                    pass
+                else:
+                    meta['icon'] = favicon_elem.attrib.get('href', '')
 
         generator = FavIconCacher(self.book, cache_archive=True)
         yield from generator.run([id])
-
-        # source
-        if meta.get('source') is None:
-            meta['source'] = ''
-
-        # comment
-        if meta.get('comment') is None:
-            meta['comment'] = ''
 
         return id
 

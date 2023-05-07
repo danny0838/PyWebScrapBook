@@ -964,9 +964,7 @@ page content 2
                 'type': '',
                 'create': '20200101030405067',
                 'modify': '20210101030405067',
-                'icon': '',
                 'source': 'http://example.com',
-                'comment': '',
             },
             '20200102000000000': {
                 'index': '20200102000000000.html',
@@ -974,9 +972,7 @@ page content 2
                 'type': '',
                 'create': '20200102030405067',
                 'modify': '20210102030405067',
-                'icon': '',
                 'source': 'https://example.com',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
@@ -1010,8 +1006,6 @@ page content 2
                 'create': mock.ANY,
                 'modify': mock.ANY,
                 'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                'source': '',
-                'comment': '',
             },
         })
         self.assertEqual(
@@ -1071,9 +1065,6 @@ page content 2
                 'type': '',
                 'create': mock.ANY,
                 'modify': mock.ANY,
-                'icon': '',
-                'source': '',
-                'comment': '',
             },
         })
         self.assertDictEqual(book.toc, {
