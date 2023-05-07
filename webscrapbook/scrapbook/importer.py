@@ -203,6 +203,9 @@ class Importer():
             with zh.open('export.json') as fh:
                 export_info = json.load(fh)
 
+            if export_info['version'] != 1:
+                raise RuntimeError(f'Unsupported archive version: {export_info["version"]!r}')
+
             id = meta.pop('id')
             if id in Book.SPECIAL_ITEM_ID:
                 raise RuntimeError(f'invalid ID "{id}"')

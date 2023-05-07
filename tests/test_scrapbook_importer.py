@@ -1636,6 +1636,66 @@ scrapbook.toc({
         self.assertTrue(os.path.isfile(wsba_file))
         self.assertFalse(os.path.lexists(wsba_file2))
 
+    def test_version(self):
+        """Unsupported version should be rejected."""
+        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.meta({
+  "20200101000000000": {
+    "type": "folder"
+  }
+})""")
+        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+scrapbook.toc({
+  "root": [
+    "20200101000000000"
+  ]
+})""")
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
+            }))
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000000': {
+                'type': 'folder'
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000000',
+            ],
+        })
+        self.assertFalse(os.path.lexists(os.path.join(self.test_output, '20200101000000001')))
+
 
 if __name__ == '__main__':
     unittest.main()
