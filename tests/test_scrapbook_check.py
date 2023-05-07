@@ -1041,8 +1041,8 @@ page content 2
         self.assertDictEqual(book.toc, {
             'root': [
                 'item1',
-                '20200102000000000',
                 '20200101000000000',
+                '20200102000000000',
             ],
         })
 

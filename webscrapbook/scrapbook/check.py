@@ -396,7 +396,7 @@ class BookChecker:
             self.cnt_errors += 1
             return
 
-        subdirs = {}
+        entries_to_handle = set()
         with entries as entries:
             for entry in entries:
                 try:
@@ -417,7 +417,7 @@ class BookChecker:
 
                 if entry.is_dir():
                     self.cnt_dirs += 1
-                    subdirs.setdefault(entry, True)
+                    entries_to_handle.add(entry)
 
                 elif entry.is_file():
                     try:
@@ -439,9 +439,7 @@ class BookChecker:
                     if ext not in self.book.ITEM_INDEX_ALLOWED_EXT:
                         continue
 
-                    yield Info('warn', f'File "{self.book.get_subpath(entry)}" not used as item index')
-                    self.cnt_warns += 1
-                    unindexed_files[entry.path] = True
+                    entries_to_handle.add(entry)
 
                     if not util.is_html(entry.path):
                         continue
@@ -451,10 +449,16 @@ class BookChecker:
                         yield Info('debug', f'Excluding "{p}" from index finding')
                         self.find_index_exclude.add(p)
 
-        for entry in subdirs:
-            p = self._get_index_path_key(entry)
-            chk = find_index and p not in self.find_index_exclude
-            yield from self._check_data_dir_internal(entry, unindexed_files, find_index=chk)
+        for entry in sorted(entries_to_handle, key=lambda x: x.path):
+            if entry.is_dir():
+                p = self._get_index_path_key(entry)
+                chk = find_index and p not in self.find_index_exclude
+                yield from self._check_data_dir_internal(entry, unindexed_files, find_index=chk)
+
+            elif entry.is_file():
+                yield Info('warn', f'File "{self.book.get_subpath(entry)}" not used as item index')
+                self.cnt_warns += 1
+                unindexed_files[entry.path] = True
 
     def _check_favicon_cache(self):
         unused_icons = {}
