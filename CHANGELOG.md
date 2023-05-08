@@ -3,6 +3,12 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.13.0] - 2023-05-08
+* Fixed an issue that `*/index.html` are always added after `*.htz`, `*.maff`, `*.html` in the same directory when adding unindexed files by the checker.
+* Fixed an issue that a support folder may be incorrectly handled on a case sensitive filesystem when checking for unindexed files.
+* Fixed an issue that the icon property may be incorrect when importing an item into a different book.
+* Miscellaneous optimization and refactoring of the source code.
+
 ## [1.12.2] - 2023-05-07
 * Fixed an issue that an error message is shown when caching an empty web page.
 * Fixed an issue that an exported archive with a bad version is not rejected on import.
