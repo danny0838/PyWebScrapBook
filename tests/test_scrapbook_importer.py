@@ -123,7 +123,7 @@ class TestImporter(unittest.TestCase):
     def test_basic02(self):
         """Test importing a common *.htz
 
-        - Favicon cache should be imported.
+        - Favicon should be imported and icon property should be consistent with the book.
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         buf = io.BytesIO()
@@ -138,7 +138,7 @@ class TestImporter(unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
-                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
@@ -186,6 +186,8 @@ class TestImporter(unittest.TestCase):
 
     def test_basic03(self):
         """Test importing a common no-index item.
+
+        - Favicon should be imported and icon property should be consistent with the book.
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -197,7 +199,7 @@ class TestImporter(unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
-                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,

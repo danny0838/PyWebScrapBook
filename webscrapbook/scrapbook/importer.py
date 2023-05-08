@@ -8,6 +8,7 @@ import traceback
 import uuid
 from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
+from urllib.request import pathname2url
 
 from .. import util
 from .._polyfill import zipfile
@@ -310,15 +311,25 @@ class Importer():
         # import favicon
         for f in zh.namelist():
             if f.startswith('favicon/') and not f.endswith('/'):
+                basename = os.path.basename(f)
+                iconfile = os.path.join(self.book.tree_dir, 'favicon', basename)
+                os.makedirs(os.path.dirname(iconfile), exist_ok=True)
+
                 try:
-                    basename = os.path.basename(f)
-                    dst = os.path.join(self.book.tree_dir, 'favicon', basename)
-                    os.makedirs(os.path.dirname(dst), exist_ok=True)
-                    util.fs.zip_extract(zh, dst, f, tzoffset=export_info['timezone'])
+                    util.fs.zip_extract(zh, iconfile, f, tzoffset=export_info['timezone'])
                 except FileExistsError:
                     yield Info('debug', f'Skipped existing favicon cache "{basename}"')
                 else:
                     yield Info('info', f'Added favicon cache "{basename}"')
+
+                # rewrite icon property to be consistent with the importing book
+                try:
+                    base = os.path.dirname(dst)
+                except UnboundLocalError:
+                    base = self.book.data_dir
+                meta['icon'] = pathname2url(os.path.relpath(iconfile, base))
+
+                break
 
         self.book.meta[id] = meta
         return id
