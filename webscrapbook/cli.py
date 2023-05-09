@@ -167,7 +167,19 @@ def cmd_cache(args):
 
 
 def cmd_export(args):
-    """Export data items into archive files (*.wsba)."""
+    """Export data items into archive files (*.wsba).
+
+    The export/import utilities provide a basic way to backup and restore the
+    data and metadata (i.e. item properties) of specific item(s). Nevertheless,
+    a technical limitation is that: if an item is referenced (i.e. be put under
+    another item) multiple times, exporting may results in duplicated archive
+    files and re-importing all of them cannot perfectly restore the original
+    tree structure.
+
+    For a reliable way to backup and restore the scrapbook tree as well as the
+    items, it's generally more recommended to create another scrapbook and copy
+    items between them.
+    """
     kwargs = args.copy()
     debug = kwargs.pop('debug')
 
@@ -180,8 +192,9 @@ def cmd_export(args):
 def cmd_import(args):
     """Import data items from archive files (*.wsba).
 
-    To faithfully recover original tree structure, import items using the same
-    order as how they have been exported.
+    To faithfully reconstruct the original scrapbook tree, the archive files
+    should be imported together using the same Unicode filename order as how
+    they have been exported.
     """
     kwargs = args.copy()
     debug = kwargs.pop('debug')
