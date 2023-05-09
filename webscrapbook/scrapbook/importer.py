@@ -211,14 +211,15 @@ class Importer():
             if id in Book.SPECIAL_ITEM_ID:
                 raise RuntimeError(f'invalid ID "{id}"')
 
-            # duplicated occurrence of a previously imported id
-            # add to TOC only
-            if self.map_eid_to_id.get(export_info['id']) == id:
-                parent_id = yield from self._insert_to_toc(id, export_info)
-                return (id, export_info['id'], parent_id)
+            # skip importing data for a duplicated occurrence of a previously
+            # imported item
+            imported_id = self.map_eid_to_id.get(export_info['id'])
+            if imported_id is not None:
+                id = imported_id
+                yield Info('debug', f'Skipped importing data for multi-referenced "{id}"')
+            else:
+                id = yield from self._import_meta_and_data(id, meta, zh, export_info)
 
-            # do the import
-            id = yield from self._import_meta_and_data(id, meta, zh, export_info)
             parent_id = yield from self._insert_to_toc(id, export_info)
             return (id, export_info['id'], parent_id)
 

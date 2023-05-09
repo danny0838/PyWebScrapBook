@@ -1582,6 +1582,29 @@ scrapbook.toc({
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1f',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content f')
+
         for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='new'):
             pass
 
