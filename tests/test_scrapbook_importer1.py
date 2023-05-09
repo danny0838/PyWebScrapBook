@@ -8,7 +8,7 @@ from unittest import mock
 
 from webscrapbook import WSB_DIR
 from webscrapbook._polyfill import zipfile
-from webscrapbook.scrapbook import importer as wsb_importer
+from webscrapbook.scrapbook import importer1 as wsb_importer
 from webscrapbook.scrapbook.host import Host
 
 from . import TEMP_DIR, TestBookMixin, glob_files
@@ -3666,10 +3666,11 @@ new_at_top = true
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',

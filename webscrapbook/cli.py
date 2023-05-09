@@ -180,11 +180,9 @@ def cmd_export(args):
     """Export data items into archive files (*.wsba).
 
     The export/import utilities provide a basic way to backup and restore the
-    data and metadata (i.e. item properties) of specific item(s). Nevertheless,
-    a technical limitation is that: if an item is referenced (i.e. be put under
-    another item) multiple times, exporting may results in duplicated archive
-    files and re-importing all of them cannot perfectly restore the original
-    tree structure.
+    data and metadata (i.e. item properties) of specific item(s). To
+    reconstruct the original scrapbook tree the exported archive files should
+    be re-imported together using the original Unicode filename order.
 
     For a reliable way to backup and restore the scrapbook tree as well as the
     items, it's generally more recommended to create another scrapbook and copy

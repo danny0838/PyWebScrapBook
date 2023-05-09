@@ -126,11 +126,12 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
-                'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+                'timezone': int(datetime.now().astimezone().utcoffset().total_seconds()),
                 'path': [{'id': 'root', 'title': ''}],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -186,11 +187,12 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
-                'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+                'timezone': int(datetime.now().astimezone().utcoffset().total_seconds()),
                 'path': [{'id': 'root', 'title': ''}],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -274,13 +276,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -293,7 +296,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
@@ -301,6 +304,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -313,13 +317,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item1.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 1,
             },
             'meta': {
                 'id': '20200101000000001',
@@ -332,13 +337,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000003',
                 'timestamp': '20230101000000003',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'hidden', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -435,13 +441,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -454,13 +461,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'hidden', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -473,13 +481,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item6.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'recycle', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000006',
@@ -542,13 +551,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -561,7 +571,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
@@ -569,6 +579,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -581,7 +592,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
@@ -590,6 +601,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -661,13 +673,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -680,13 +693,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 1,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -699,13 +713,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item1.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 2,
             },
             'meta': {
                 'id': '20200101000000001',
@@ -718,7 +733,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000003',
                 'timezone': mock.ANY,
@@ -726,6 +741,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -738,13 +754,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000004-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000004',
                 'timestamp': '20230101000000004',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 3,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -757,7 +774,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000005-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000005',
                 'timestamp': '20230101000000005',
                 'timezone': mock.ANY,
@@ -765,6 +782,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -777,7 +795,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000006-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000006',
                 'timezone': mock.ANY,
@@ -786,6 +804,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000002', 'title': 'item2'},
                     {'id': '20200101000000003', 'title': 'item3'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -851,13 +870,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -870,13 +890,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item1.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 2,
             },
             'meta': {
                 'id': '20200101000000001',
@@ -889,13 +910,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 3,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -908,7 +930,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000003',
                 'timestamp': '20230101000000003',
                 'timezone': mock.ANY,
@@ -916,6 +938,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -966,13 +989,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -985,7 +1009,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item1.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
@@ -993,6 +1017,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000001',
@@ -1005,7 +1030,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
@@ -1014,6 +1039,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -1081,13 +1107,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000000',
@@ -1100,7 +1127,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item1.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000001',
                 'timezone': mock.ANY,
@@ -1108,6 +1135,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000001',
@@ -1120,7 +1148,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000002',
                 'timezone': mock.ANY,
@@ -1129,6 +1157,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -1141,7 +1170,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000003',
                 'timestamp': '20230101000000003',
                 'timezone': mock.ANY,
@@ -1150,6 +1179,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 1,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -1162,7 +1192,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000004-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000004',
                 'timezone': mock.ANY,
@@ -1171,6 +1201,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 2,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -1183,13 +1214,14 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000005-item1.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000001',
                 'timestamp': '20230101000000005',
                 'timezone': mock.ANY,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 1,
             },
             'meta': {
                 'id': '20200101000000001',
@@ -1202,7 +1234,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000006-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000006',
                 'timezone': mock.ANY,
@@ -1210,6 +1242,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 0,
             },
             'meta': {
                 'id': '20200101000000002',
@@ -1222,7 +1255,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000007-item3.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000003',
                 'timestamp': '20230101000000007',
                 'timezone': mock.ANY,
@@ -1230,6 +1263,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 1,
             },
             'meta': {
                 'id': '20200101000000003',
@@ -1242,7 +1276,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000008-item2.wsba')), {
             'export_info': {
-                'version': 1,
+                'version': 2,
                 'id': '20230101000000002',
                 'timestamp': '20230101000000008',
                 'timezone': mock.ANY,
@@ -1250,6 +1284,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'item1'},
                 ],
+                'index': 2,
             },
             'meta': {
                 'id': '20200101000000002',

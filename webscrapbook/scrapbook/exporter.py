@@ -12,7 +12,7 @@ from ..util import Info
 from .book import _id_now
 from .host import Host
 
-EXPORTER_VERSION = 1
+EXPORTER_VERSION = 2
 
 
 class Exporter():
@@ -48,23 +48,23 @@ class Exporter():
 
         parent_ids = OrderedDict()
         for root in self.book.SPECIAL_ITEM_ID:
-            for id in self._iter_child_items(root, parent_ids):
+            for i, id in self._enum_child_items(root, parent_ids):
                 if id in id_pool:
-                    yield from self._export_item(id, parent_ids)
+                    yield from self._export_item(i, id, parent_ids)
 
-    def _iter_child_items(self, id, parent_ids):
+    def _enum_child_items(self, id, parent_ids):
         """Generate descendant items for the item of id."""
         # do not export a circular descendant
         if id in parent_ids:
             return
 
         parent_ids[id] = True
-        for child_id in self.book.toc.get(id, ()):
-            yield child_id
-            yield from self._iter_child_items(child_id, parent_ids)
+        for i, child_id in enumerate(self.book.toc.get(id, ())):
+            yield i, child_id
+            yield from self._enum_child_items(child_id, parent_ids)
         parent_ids.popitem()
 
-    def _export_item(self, id, parent_ids):
+    def _export_item(self, pos, id, parent_ids):
         if id in self.map_id_to_eid:
             if self.singleton:
                 yield Info('debug', f'Skipped exporting item {id!r} (singleton mode)')
@@ -72,13 +72,13 @@ class Exporter():
 
         yield Info('debug', f'Exporting item {id!r}')
         try:
-            yield from self._export_item_internal(id, parent_ids)
+            yield from self._export_item_internal(pos, id, parent_ids)
         except Exception as exc:
             # unexpected error
             traceback.print_exc()
             yield Info('error', f'Failed to export {id!r}: {exc}', exc=exc)
 
-    def _export_item_internal(self, id, parent_ids):
+    def _export_item_internal(self, pos, id, parent_ids):
         meta = self.book.meta[id]
         index = meta.get('index', '')
 
@@ -115,8 +115,9 @@ class Exporter():
             'version': EXPORTER_VERSION,
             'id': eid,
             'timestamp': ets,
-            'timezone': util.id_to_datetime(ets).astimezone().utcoffset().total_seconds(),
+            'timezone': int(util.id_to_datetime(ets).astimezone().utcoffset().total_seconds()),
             'path': parents,
+            'index': pos,
         }
         with zipfile.ZipFile(dst, 'w') as zh:
             fn = 'meta.json'

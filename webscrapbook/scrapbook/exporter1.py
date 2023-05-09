@@ -1,3 +1,4 @@
+"""Legacy module for exporting version 1 *.wsba"""
 import json
 import os
 import time

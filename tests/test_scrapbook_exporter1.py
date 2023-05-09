@@ -8,7 +8,7 @@ from unittest import mock
 
 from webscrapbook import WSB_DIR
 from webscrapbook._polyfill import zipfile
-from webscrapbook.scrapbook import exporter as wsb_exporter
+from webscrapbook.scrapbook import exporter1 as wsb_exporter
 
 from . import TEMP_DIR, TestBookMixin, glob_files
 
@@ -89,7 +89,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': favicon_data,
         }
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_basic01(self):
         """Test exporting a common */index.html"""
         self.init_book(
@@ -146,7 +146,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': None,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_basic02(self):
         """Test exporting a common *.htz"""
         self.init_book(
@@ -206,7 +206,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc01(self):
         """Export all if item_ids not set
 
@@ -349,7 +349,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': mock.ANY,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc02(self):
         """Export only those specified by item_ids
 
@@ -490,7 +490,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': mock.ANY,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc03(self):
         """Export descendants if recursive"""
         self.init_book(
@@ -600,7 +600,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': mock.ANY,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc04(self):
         """Export all occurrences
 
@@ -796,7 +796,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': mock.ANY,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc05(self):
         """Export first occurrence if singleton"""
         self.init_book(
@@ -926,7 +926,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': mock.ANY,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc06(self):
         """Export circular item but no children"""
         self.init_book(
@@ -1024,7 +1024,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': mock.ANY,
         })
 
-    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.exporter1._id_now', lambda: '20230101000000000')
     def test_toc07(self):
         """Test multi-referenced parent"""
         self.init_book(

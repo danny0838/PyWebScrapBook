@@ -17,31 +17,7 @@ REGEX_TARGET_FILENAME_FORMATTER = re.compile(r'%([^%]*)%')
 
 
 class Importer():
-    """Main class for importing.
-
-    For a scrapbook tree:
-
-        item0
-            item1
-                item1-1
-                item1-1
-                item1-2
-        item1
-            item1-1
-            item1-1
-            item1-2
-
-    Due to a technical limitation, items with same ID won't be inserted to the
-    same parent, and thus the reconstructed scrapbook tree will be:
-
-        item0
-            item1
-                item1-1
-                item1-2
-        item1
-            item1-1
-            item1-2
-    """
+    """Main class for importing."""
     def __init__(self, book, *,
                  target_id=None,
                  target_index=None,
@@ -229,12 +205,13 @@ class Importer():
             except Exception as exc:
                 raise RuntimeError(f"Unable to read 'export.json': {exc}") from exc
 
-            if export_info['version'] == 1:
+            if export_info['version'] == 2:
                 try:
                     assert isinstance(export_info['id'], str)
                     assert isinstance(export_info['timestamp'], str)
-                    assert isinstance(export_info['timezone'], float)
+                    assert isinstance(export_info['timezone'], int)
                     assert isinstance(export_info['path'], list)
+                    assert isinstance(export_info['index'], int)
                 except (AssertionError, KeyError) as exc:
                     raise RuntimeError("Malformed 'export.json'") from exc
 
@@ -405,9 +382,9 @@ class Importer():
         # deduplicate by checking the ref_key
         if self.rebuild_folders:
             export_path = export_info['path']
-            ref_key = export_path[-1]['id']
+            ref_key = (export_path[-1]['id'], export_info['index'])
         else:
-            ref_key = self.target_id
+            ref_key = (self.target_id, None)
 
         if ref_key in self.map_eid_to_info[export_info['id']].setdefault('refs', set()):
             yield Info('debug', f'Skipped inserting multi-referenced {id!r}')

@@ -66,14 +66,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -128,14 +129,15 @@ new_at_top = true
             zh.writestr('index.html', 'page content')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -187,14 +189,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -240,14 +243,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -310,14 +314,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -333,14 +338,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -387,14 +393,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -410,14 +417,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -462,14 +470,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -485,14 +494,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -537,14 +547,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -560,14 +571,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -612,14 +624,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -635,14 +648,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -692,14 +706,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -715,14 +730,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -773,14 +789,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -796,14 +813,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -851,13 +869,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -917,13 +936,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -983,13 +1003,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -1046,13 +1067,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -1116,13 +1138,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20220607232425267.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20220607232425267',
                 'timestamp': '20220607232425267',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -1216,15 +1239,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1240,15 +1264,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -1323,15 +1348,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1347,15 +1373,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -1440,15 +1467,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1464,15 +1492,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -1541,14 +1570,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1564,15 +1594,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -1641,14 +1672,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1664,15 +1696,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -1742,15 +1775,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1766,14 +1800,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -1843,10 +1878,10 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
@@ -1854,6 +1889,7 @@ new_at_top = true
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1915,16 +1951,17 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -1986,10 +2023,10 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
@@ -1998,6 +2035,7 @@ new_at_top = true
                     {'id': '20200101000000002', 'title': 'Folder 2'},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -2059,15 +2097,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200201000000001', 'title': 'Item 1'},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -2122,16 +2161,17 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200201000000001', 'title': 'Item 1'},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -2186,14 +2226,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200201000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -2208,14 +2249,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200201000000003', 'title': 'Folder 3'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -2298,14 +2340,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -2321,14 +2364,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -2414,15 +2458,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000001', 'title': 'Folder 1'},
                     {'id': '20200101000000003', 'title': 'Folder 3'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000001',
@@ -2438,14 +2483,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000004', 'title': 'Folder 4'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200201000000002',
@@ -2539,14 +2585,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -2608,14 +2655,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -2694,14 +2742,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -2778,14 +2827,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -2853,14 +2903,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -2929,14 +2980,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -2952,14 +3004,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3034,13 +3087,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3056,13 +3110,14 @@ new_at_top = true
         wsba_file2 = os.path.join(self.test_input, '20200401000000002.wsba')
         with zipfile.ZipFile(wsba_file2, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000002',
                 'timestamp': '20200401000000002',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 1,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
@@ -3098,13 +3153,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3120,14 +3176,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000002',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             # Normally all occurrences have identical meta.json and data files.
             # Use a different content here to test if the second occurrence is
@@ -3191,13 +3248,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3213,14 +3271,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000002',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
@@ -3293,15 +3352,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20220101000000001', 'title': 'folder1'},
                     {'id': '20220101000000002', 'title': 'folder2'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3317,15 +3377,16 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000002',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20220101000000001', 'title': 'folder1'},
                     {'id': '20220101000000002', 'title': 'folder2'},
                 ],
+                'index': 1,
             }))
             # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
@@ -3342,14 +3403,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000003.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000003',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20220101000000002', 'title': 'folder2'},
                 ],
+                'index': 0,
             }))
             # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
@@ -3366,14 +3428,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000004.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000004',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20220101000000002', 'title': 'folder2'},
                 ],
+                'index': 1,
             }))
             # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
@@ -3420,6 +3483,7 @@ new_at_top = true
             ],
             '20220101000000002': [
                 '20200101000000001',
+                '20200101000000001',
             ],
         })
 
@@ -3453,14 +3517,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3476,14 +3541,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
@@ -3550,14 +3616,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3573,14 +3640,15 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+                'index': 1,
             }))
             # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
@@ -3626,7 +3694,7 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 0,
+                'version': 1,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
                 'timezone': 28800.0,
@@ -3663,13 +3731,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 2,
+                'version': 3,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3728,13 +3797,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }) + 'abc')
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3765,13 +3835,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
                 'timezone': '28800',
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
@@ -3802,13 +3873,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content 1')
 
@@ -3830,13 +3902,14 @@ new_at_top = true
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 1,
+                'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
-                'timezone': 28800.0,
+                'timezone': 28800,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+                'index': 0,
             }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',

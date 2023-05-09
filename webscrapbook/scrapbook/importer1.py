@@ -1,3 +1,4 @@
+"""Legacy module for importing version 1 *.wsba"""
 import copy
 import json
 import os
