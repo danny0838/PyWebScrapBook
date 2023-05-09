@@ -1659,18 +1659,17 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             wsba_file,
         })
 
-    def test_version(self):
-        """Unsupported version should be rejected."""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+    def test_multi_occurrence01(self):
+        """Skip multi-occurred item (same export id) if not rebuild_folders."""
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
-                'version': 2,
-                'id': '20200401000000000',
-                'timestamp': '20200401000000000',
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
                 'timezone': 28800.0,
                 'path': [
                     {'id': 'root', 'title': ''},
-                    {'id': '20200101000000000', 'title': 'item0'},
                 ],
             }))
             zh.writestr('meta.json', json.dumps({
@@ -1684,6 +1683,33 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
+        wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000002',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            # Normally all occurrences have identical meta.json and data files.
+            # Use a different content here to test if the second occurrence is
+            # unexpectedly taken.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item2',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+
         for _info in wsb_importer.run(self.test_output, [self.test_input]):
             pass
 
@@ -1691,13 +1717,26 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
         })
 
-    def test_multi_occurrence(self):
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'page content')
+
+    def test_multi_occurrence02(self):
         """For a multi-occurrent item (same export id), import only TOC for
         following ones.
         """
@@ -1749,9 +1788,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
             }))
-            # Normally all occurrences have identical meta.json and data files.
-            # Use a different content here to test if the second occurrence is
-            # unexpectedly taken.
+            # Use a different content for testing.
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
@@ -1795,6 +1832,435 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
+
+    def test_multi_occurrence03(self):
+        """Multi-occurred item under a multi-occurred parent."""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20220101000000001': {
+                    'type': 'folder',
+                },
+                '20220101000000002': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20220101000000001',
+                    '20220101000000002',
+                ],
+                '20220101000000001': [
+                    '20220101000000002',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20220101000000001', 'title': 'folder1'},
+                    {'id': '20220101000000002', 'title': 'folder2'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000002',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20220101000000001', 'title': 'folder1'},
+                    {'id': '20220101000000002', 'title': 'folder2'},
+                ],
+            }))
+            # Use a different content for testing.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item2',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000003.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000003',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20220101000000002', 'title': 'folder2'},
+                ],
+            }))
+            # Use a different content for testing.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item3',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 3')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000004.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000004',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20220101000000002', 'title': 'folder2'},
+                ],
+            }))
+            # Use a different content for testing.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item4',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 4')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20220101000000001': {
+                'type': 'folder',
+            },
+            '20220101000000002': {
+                'type': 'folder',
+            },
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20220101000000001',
+                '20220101000000002',
+            ],
+            '20220101000000001': [
+                '20220101000000002',
+            ],
+            '20220101000000002': [
+                '20200101000000001',
+            ],
+        })
+
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'page content')
+
+    def test_multi_occurrence04(self):
+        """A replaced item should be imported only once and never inserted. (rebuild_folders=False)"""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001/index.html',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
+        os.makedirs(os.path.join(self.test_output, '20200101000000001'))
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('original page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            # Use a different content for testing.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item2',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+        })
+
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'page content')
+
+    @unittest.expectedFailure
+    def test_multi_occurrence05(self):
+        """A replaced item should be imported only once and never inserted. (rebuild_folders=True)"""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001/index.html',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
+        os.makedirs(os.path.join(self.test_output, '20200101000000001'))
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
+            fh.write('original page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            # Use a different content for testing.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item2',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace',
+                                      rebuild_folders=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+        })
+
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'page content')
+
+    def test_bad_version01(self):
+        """Unsupported version should be rejected."""
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 0,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200101000000001',
+                'modify': '20200101000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {})
+        self.assertEqual(book.toc, {})
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+        })
+
+    def test_bad_version02(self):
+        """Unsupported version should be rejected."""
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200101000000001',
+                'modify': '20200101000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {})
+        self.assertEqual(book.toc, {})
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+        })
 
 
 if __name__ == '__main__':
