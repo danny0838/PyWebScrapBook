@@ -61,16 +61,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -80,6 +70,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
             zh.writestr(
@@ -125,16 +125,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         with zipfile.ZipFile(buf, 'w') as zh:
             zh.writestr('index.html', 'page content')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.htz',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -144,6 +134,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.htz',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('data/20200101000000001.htz', buf.getvalue())
             zh.writestr(
@@ -186,16 +186,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': 'bookmark',
-                'index': '',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -205,6 +195,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': 'bookmark',
+                'index': '',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr(
                 'favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
@@ -242,16 +242,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': '../../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -261,6 +251,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '../../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
             zh.writestr(
@@ -316,6 +316,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
@@ -326,29 +335,10 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000001',
-                'timestamp': '20200401000000001',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                ],
-            }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
         wsba_file2 = os.path.join(self.test_input, '20200401000000002.wsba')
         with zipfile.ZipFile(wsba_file2, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item2',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000001',
@@ -358,6 +348,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item2',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             # Normally all occurrences have identical meta.json and data files.
             # Use a different content here to test if the second occurrence is
@@ -417,15 +417,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -436,19 +427,19 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
             }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000002',
-                'type': '',
-                'index': '20200101000000002/index.html',
-                'title': 'item2',
-                'create': '20200102000000002',
-                'modify': '20200103000000002',
-                'source': 'https://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200402000000000',
@@ -458,6 +449,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'item2',
+                'create': '20200102000000002',
+                'modify': '20200103000000002',
+                'source': 'https://example.com',
             }))
             zh.writestr('data/20200101000000002/index.html', 'page content 2')
 
@@ -495,15 +495,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -514,19 +505,19 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
             }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
         wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000002',
-                'type': '',
-                'index': '20200101000000002/index.html',
-                'title': 'item2',
-                'create': '20200102000000002',
-                'modify': '20200103000000002',
-                'source': 'https://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200402000000000',
@@ -536,6 +527,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'item2',
+                'create': '20200102000000002',
+                'modify': '20200103000000002',
+                'source': 'https://example.com',
             }))
             zh.writestr('data/20200101000000002/index.html', 'page content 2')
 
@@ -573,6 +573,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
@@ -582,15 +591,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
-            }))
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000001',
-                'timestamp': '20200401000000001',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                ],
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -640,15 +640,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.maff',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000001',
@@ -657,6 +648,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.maff',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001.maff', b'dummy')
 
@@ -707,6 +707,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
@@ -716,15 +725,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
-            }))
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000001',
-                'timestamp': '20200401000000001',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                ],
             }))
             zh.writestr('data/20200101000000001.html', 'page content')
 
@@ -771,15 +771,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.htz',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000001',
@@ -788,6 +779,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.htz',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001.htz', b'dummy')
 
@@ -842,15 +842,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20220607232425267.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.html',
-                'title': 'item1',
-                'create': '20200102030405067',
-                'modify': '20211112131415167',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20220607232425267',
@@ -859,6 +850,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.html',
+                'title': 'item1',
+                'create': '20200102030405067',
+                'modify': '20211112131415167',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001.html', 'dummy')
 
@@ -933,16 +933,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -953,6 +943,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -981,16 +981,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1001,6 +991,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -1067,16 +1067,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         )
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1087,6 +1077,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -1137,16 +1137,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1156,6 +1146,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                     {'id': '20200101000000002', 'title': 'item2'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -1220,16 +1220,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1239,6 +1229,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -1290,16 +1290,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1309,6 +1299,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
             zh.writestr(
@@ -1375,15 +1375,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.htz',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1393,6 +1384,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.htz',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001.htz', b'dummy')
 
@@ -1449,15 +1449,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.htz',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1467,6 +1458,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.htz',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001.htz', b'dummy')
 
@@ -1523,15 +1523,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1541,6 +1532,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001.html', 'dummy')
 
@@ -1598,15 +1598,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1617,19 +1608,19 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
-                'title': 'item1f',
+                'title': 'item1',
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000000',
@@ -1639,6 +1630,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1f',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content f')
 
@@ -1698,6 +1698,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
@@ -1708,19 +1717,19 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file2 = os.path.join(self.test_input, '20200401000000002.wsba')
+        with zipfile.ZipFile(wsba_file2, 'w') as zh:
             zh.writestr('export.json', json.dumps({
                 'version': 1,
-                'id': '20200401000000001',
-                'timestamp': '20200401000000001',
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
                 'timezone': 28800.0,
                 'path': [
                     {'id': 'root', 'title': ''},
                 ],
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-
-        wsba_file2 = os.path.join(self.test_input, '20200401000000002.wsba')
-        with zipfile.ZipFile(wsba_file2, 'w') as zh:
             zh.writestr('meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
@@ -1730,15 +1739,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'modify': '20200203000000000',
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
-            }))
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000002',
-                'timestamp': '20200401000000002',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                ],
             }))
             zh.writestr('data/20200101000000002/index.html', 'page content')
 
@@ -1777,16 +1777,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
             zh.writestr('export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
@@ -1796,6 +1786,16 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                     {'id': 'root', 'title': ''},
                     {'id': '20200101000000000', 'title': 'item0'},
                 ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
