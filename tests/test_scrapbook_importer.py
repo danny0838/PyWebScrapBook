@@ -11,7 +11,7 @@ from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import importer as wsb_importer
 from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR, TestBookMixin
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -46,8 +46,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         cls.maxDiff = 8192
 
     def setUp(self):
-        """Set up a general temp test folder
-        """
+        """Set up a general temp test folder"""
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
         self.test_output = os.path.join(self.test_root, 'output')
@@ -57,8 +56,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         os.makedirs(self.test_output_tree, exist_ok=True)
 
     def test_basic01(self):
-        """Test importing a common */index.html
-        """
+        """Test importing a common */index.html"""
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
@@ -82,10 +80,8 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
-            zh.writestr(
-                'data/20200101000000001/favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
-            )
+            zh.writestr('data/20200101000000001/favicon.bmp',
+                        b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         for _info in wsb_importer.run(self.test_output, [self.test_input]):
             pass
@@ -146,10 +142,8 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('data/20200101000000001.htz', buf.getvalue())
-            zh.writestr(
-                'favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
-            )
+            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                        b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         for _info in wsb_importer.run(self.test_output, [self.test_input]):
             pass
@@ -206,10 +200,8 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'source': 'http://example.com',
                 'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
-            zh.writestr(
-                'favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
-            )
+            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                        b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         for _info in wsb_importer.run(self.test_output, [self.test_input]):
             pass
@@ -238,8 +230,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
     def test_basic04(self):
-        """Test importing a common */index.html with cached favicon
-        """
+        """Test importing */index.html with cached favicon"""
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
@@ -263,10 +254,8 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'icon': '../../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
-            zh.writestr(
-                'favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
-            )
+            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                        b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         for _info in wsb_importer.run(self.test_output, [self.test_input]):
             pass
@@ -296,111 +285,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         with open(os.path.join(self.test_output_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'), 'rb') as fh:
             self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-    def test_multi_occurrence(self):
-        """For a multi-occurrent item (same export id), import only TOC for
-        following ones.
-        """
-        self.init_book(
-            self.test_output,
-            meta={
-                '20200101000000000': {
-                    'type': 'folder',
-                },
-            },
-            toc={
-                'root': [
-                    '20200101000000000',
-                ],
-            },
-        )
-
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000001',
-                'timestamp': '20200401000000001',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                ],
-            }))
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-
-        wsba_file2 = os.path.join(self.test_input, '20200401000000002.wsba')
-        with zipfile.ZipFile(wsba_file2, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000001',
-                'timestamp': '20200401000000002',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                    {'id': '20200101000000000', 'title': 'item0'},
-                ],
-            }))
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item2',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
-            # Normally all occurrences have identical meta.json and data files.
-            # Use a different content here to test if the second occurrence is
-            # unexpectedly copied.
-            zh.writestr('data/20200101000000001/index.html', 'page content 2')
-
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
-            pass
-
-        book = Host(self.test_output).books['']
-        book.load_meta_files()
-        book.load_toc_files()
-
-        self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'type': 'folder'
-            },
-            '20200101000000001': {
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            },
-        })
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-                '20200101000000001',
-            ],
-            '20200101000000000': [
-                '20200101000000001',
-            ],
-        })
-
-        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), 'page content')
-
     def test_param_target_id(self):
-        """Test for target_id
-        """
         self.init_book(
             self.test_output,
             meta={
@@ -477,8 +362,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         })
 
     def test_param_target_index(self):
-        """Test for target_index
-        """
         self.init_book(
             self.test_output,
             meta={
@@ -553,8 +436,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         })
 
     def test_param_target_filename01(self):
-        """For */index.html
-        """
+        """For */index.html"""
         self.init_book(
             self.test_output,
             meta={
@@ -620,8 +502,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.test_output, 'test', 'index.html')))
 
     def test_param_target_filename02(self):
-        """For *.maff
-        """
+        """For *.maff"""
         self.init_book(
             self.test_output,
             meta={
@@ -685,8 +566,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.test_output, 'test.maff')))
 
     def test_param_target_filename03(self):
-        """Fail out if target file exists
-        """
+        """Fail out if target file exists"""
         self.init_book(
             self.test_output,
             meta={
@@ -751,8 +631,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             self.assertEqual(fh.read(), 'some page content')
 
     def test_param_target_filename04(self):
-        """Test formatters
-        """
+        """Test formatters"""
         self.init_book(
             self.test_output,
             meta={
@@ -822,8 +701,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         )))
 
     def test_param_target_filename05(self):
-        """Test time related formatters
-        """
+        """Test time related formatters"""
         self.init_book(
             self.test_output,
             meta={
@@ -907,25 +785,24 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         ))))
 
     def test_param_rebuild_folders01(self):
-        """Test for rebuild_folders
-        """
+        """Insert under parent if it exists"""
         self.init_book(
             self.test_output,
             meta={
-                '20200101000000000': {
+                '20200101000000001': {
                     'type': 'folder',
-                    'title': 'current item0',
+                    'title': 'Folder 1 current',
                 },
                 '20200101000000002': {
                     'type': 'folder',
-                    'title': 'current item2',
+                    'title': 'Folder 2 current',
                 },
             },
             toc={
                 'root': [
-                    '20200101000000000',
+                    '20200101000000001',
                 ],
-                '20200101000000000': [
+                '20200101000000001': [
                     '20200101000000002',
                 ],
             },
@@ -940,69 +817,20 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'timezone': 28800.0,
                 'path': [
                     {'id': 'root', 'title': ''},
-                    {'id': '20200101000000000', 'title': 'item0'},
-                    {'id': '20200101000000002', 'title': 'item2'},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
             }))
             zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
+                'id': '20200201000000001',
                 'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
-            pass
-
-        book = Host(self.test_output).books['']
-        book.load_meta_files()
-        book.load_toc_files()
-
-        self.assertEqual(book.toc, {
-            'root': [
-                '20200101000000000',
-            ],
-            '20200101000000000': [
-                '20200101000000002',
-            ],
-            '20200101000000002': [
-                '20200101000000001',
-            ],
-        })
-
-    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
-    def test_param_rebuild_folders02(self):
-        """Generate folders if parent not exist
-        """
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
-                'version': 1,
-                'id': '20200401000000000',
-                'timestamp': '20200401000000000',
-                'timezone': 28800.0,
-                'path': [
-                    {'id': 'root', 'title': ''},
-                    {'id': '20200101000000000', 'title': 'item0'},
-                    {'id': '20200101000000002', 'title': 'item2'},
-                ],
-            }))
-            zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
-                'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
-                'source': 'http://example.com',
-                'icon': 'favicon.bmp',
-            }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('data/20200201000000001/index.html', 'page content')
 
         for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
@@ -1012,56 +840,118 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_toc_files()
 
         self.assertEqual(book.meta, {
-            '20230101000000000': {
-                'title': 'item0',
-                'type': 'folder',
-                'create': '20230101000000000',
-                'modify': '20230101000000000',
-            },
-            '20230101000000001': {
-                'title': 'item2',
-                'type': 'folder',
-                'create': '20230101000000000',
-                'modify': '20230101000000000',
-            },
             '20200101000000001': {
+                'title': 'Folder 1 current',
+                'type': 'folder',
+            },
+            '20200101000000002': {
+                'title': 'Folder 2 current',
+                'type': 'folder',
+            },
+            '20200201000000001': {
                 'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             },
         })
         self.assertEqual(book.toc, {
             'root': [
-                '20230101000000000',
-            ],
-            '20230101000000000': [
-                '20230101000000001',
-            ],
-            '20230101000000001': [
                 '20200101000000001',
+            ],
+            '20200101000000001': [
+                '20200101000000002',
+            ],
+            '20200101000000002': [
+                '20200201000000001',
             ],
         })
 
-    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders02(self):
+        """Generate folders if parent not exist"""
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20230101000000001': {
+                'title': 'Folder 1',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20230101000000002': {
+                'title': 'Folder 2',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20230101000000002',
+            ],
+            '20230101000000002': [
+                '20200201000000001',
+            ],
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders03(self):
-        """Generate folders if parent not exist (partial)
-        """
+        """Generate folders if parent not exist (partial)"""
         self.init_book(
             self.test_output,
             meta={
-                '20200101000000000': {
+                '20200101000000001': {
                     'type': 'bookmark',
-                    'title': 'current item0',
+                    'title': 'Folder 1 current',
                     'source': 'http://example.com',
                 },
             },
             toc={
                 'root': [
-                    '20200101000000000',
+                    '20200101000000001',
                 ],
             },
         )
@@ -1074,21 +964,20 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'timezone': 28800.0,
                 'path': [
                     {'id': 'root', 'title': ''},
-                    {'id': '20200101000000000', 'title': 'item0'},
-                    {'id': '20200101000000002', 'title': 'item2'},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
             }))
             zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
+                'id': '20200201000000001',
                 'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('data/20200201000000001/index.html', 'page content')
 
         for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
@@ -1098,43 +987,41 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_toc_files()
 
         self.assertEqual(book.meta, {
-            '20200101000000000': {
-                'title': 'current item0',
+            '20200101000000001': {
+                'title': 'Folder 1 current',
                 'type': 'bookmark',
                 'source': 'http://example.com',
             },
-            '20230101000000000': {
-                'title': 'item2',
+            '20230101000000001': {
+                'title': 'Folder 2',
                 'type': 'folder',
-                'create': '20230101000000000',
-                'modify': '20230101000000000',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
             },
-            '20200101000000001': {
+            '20200201000000001': {
                 'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             },
         })
         self.assertEqual(book.toc, {
             'root': [
-                '20200101000000000',
-            ],
-            '20200101000000000': [
-                '20230101000000000',
-            ],
-            '20230101000000000': [
                 '20200101000000001',
+            ],
+            '20200101000000001': [
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20200201000000001',
             ],
         })
 
-    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders04(self):
-        """Assume path starting from 'root' if no matching id
-        """
+        """Assume path starting from 'root' if no part exists in meta or special"""
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
@@ -1143,21 +1030,20 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'timestamp': '20200401000000000',
                 'timezone': 28800.0,
                 'path': [
-                    {'id': '20200101000000000', 'title': 'item0'},
-                    {'id': '20200101000000002', 'title': 'item2'},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
                 ],
             }))
             zh.writestr('meta.json', json.dumps({
-                'id': '20200101000000001',
+                'id': '20200201000000001',
                 'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('data/20200201000000001/index.html', 'page content')
 
         for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
@@ -1167,43 +1053,41 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_toc_files()
 
         self.assertEqual(book.meta, {
-            '20230101000000000': {
-                'title': 'item0',
-                'type': 'folder',
-                'create': '20230101000000000',
-                'modify': '20230101000000000',
-            },
             '20230101000000001': {
-                'title': 'item2',
+                'title': 'Folder 1',
                 'type': 'folder',
-                'create': '20230101000000000',
-                'modify': '20230101000000000',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
             },
-            '20200101000000001': {
+            '20230101000000002': {
+                'title': 'Folder 2',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000001': {
                 'type': '',
-                'index': '20200101000000001/index.html',
-                'title': 'item1',
-                'create': '20200102000000000',
-                'modify': '20200103000000000',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             },
         })
         self.assertEqual(book.toc, {
             'root': [
-                '20230101000000000',
-            ],
-            '20230101000000000': [
                 '20230101000000001',
             ],
             '20230101000000001': [
-                '20200101000000001',
+                '20230101000000002',
+            ],
+            '20230101000000002': [
+                '20200201000000001',
             ],
         })
 
     def test_param_resolve_id_used_skip01(self):
-        """No import if ID exists
-        """
+        """No import if ID exists"""
         self.init_book(
             self.test_output,
             meta={
@@ -1261,8 +1145,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         })
 
     def test_param_resolve_id_used_replace01(self):
-        """Test */index.html
-        """
+        """Test */index.html"""
         self.init_book(
             self.test_output,
             meta={
@@ -1311,10 +1194,8 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
-            zh.writestr(
-                'data/20200101000000001/favicon.bmp',
-                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
-            )
+            zh.writestr('data/20200101000000001/favicon.bmp',
+                        b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
             pass
@@ -1339,7 +1220,12 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000001',
             ],
         })
-
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000001'),
+            os.path.join(self.test_output, '20200101000000001', 'index.html'),
+            os.path.join(self.test_output, '20200101000000001', 'favicon.bmp'),
+        })
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
         with open(os.path.join(self.test_output, '20200101000000001', 'favicon.bmp'), 'rb') as fh:
@@ -1347,11 +1233,9 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 fh.read(),
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
-        self.assertFalse(os.path.lexists(os.path.join(self.test_output, '20200101000000001', 'favicon.ico')))
 
     def test_param_resolve_id_used_replace02(self):
-        """Test *.htz
-        """
+        """Test *.htz"""
         self.init_book(
             self.test_output,
             meta={
@@ -1393,8 +1277,11 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
+                'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
             zh.writestr('data/20200101000000001.htz', b'dummy')
+            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                        b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
         for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
             pass
@@ -1411,6 +1298,7 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             },
         })
         self.assertEqual(book.toc, {
@@ -1418,13 +1306,19 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000001',
             ],
         })
-
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000001.htz'),
+        })
+        self.assertCountEqual(glob_files(os.path.join(self.test_output, '.wsb', 'tree', 'favicon')), {
+            os.path.join(self.test_output, '.wsb', 'tree', 'favicon', ''),
+            os.path.join(self.test_output, '.wsb', 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'),
+        })
         with open(os.path.join(self.test_output, '20200101000000001.htz'), 'rb') as fh:
             self.assertEqual(fh.read(), b'dummy')
 
     def test_param_resolve_id_used_replace03(self):
-        """Fail if index file extension not match
-        """
+        """Fail if index file extension not match"""
         self.init_book(
             self.test_output,
             meta={
@@ -1492,13 +1386,14 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000001',
             ],
         })
-
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output, '20200101000000001', 'index.html')))
-        self.assertFalse(os.path.lexists(os.path.join(self.test_output, '20200101000000001.htz')))
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000001'),
+            os.path.join(self.test_output, '20200101000000001', 'index.html'),
+        })
 
     def test_param_resolve_id_used_replace04(self):
-        """Don't match */index.html and *.html
-        """
+        """Don't match */index.html and *.html"""
         self.init_book(
             self.test_output,
             meta={
@@ -1566,14 +1461,15 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000001',
             ],
         })
-
-        self.assertTrue(os.path.isfile(os.path.join(self.test_output, '20200101000000001', 'index.html')))
-        self.assertFalse(os.path.lexists(os.path.join(self.test_output, '20200101000000001.html')))
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000001'),
+            os.path.join(self.test_output, '20200101000000001', 'index.html'),
+        })
 
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000000')
     def test_param_resolve_id_used_new01(self):
-        """Test */index.html
-        """
+        """Test */index.html"""
         self.init_book(
             self.test_output,
             meta={
@@ -1673,15 +1569,20 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20230101000000000',
             ],
         })
-
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000001'),
+            os.path.join(self.test_output, '20200101000000001', 'index.html'),
+            os.path.join(self.test_output, '20230101000000000'),
+            os.path.join(self.test_output, '20230101000000000', 'index.html'),
+        })
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'original page content')
         with open(os.path.join(self.test_output, '20230101000000000', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
 
     def test_param_prune(self):
-        """Remove successfully imported *.wsba
-        """
+        """Remove successfully imported *.wsba"""
         self.init_book(
             self.test_output,
             meta={
@@ -1715,7 +1616,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -1738,7 +1638,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'create': '20200202000000000',
                 'modify': '20200203000000000',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000002/index.html', 'page content')
 
@@ -1755,26 +1654,13 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000002',
             ],
         })
-
-        self.assertTrue(os.path.isfile(wsba_file))
-        self.assertFalse(os.path.lexists(wsba_file2))
+        self.assertCountEqual(glob_files(self.test_input), {
+            os.path.join(self.test_input, ''),
+            wsba_file,
+        })
 
     def test_version(self):
         """Unsupported version should be rejected."""
-        self.init_book(
-            self.test_output,
-            meta={
-                '20200101000000000': {
-                    'type': 'folder',
-                },
-            },
-            toc={
-                'root': [
-                    '20200101000000000',
-                ],
-            },
-        )
-
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
@@ -1795,7 +1681,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 'create': '20200102000000000',
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
-                'icon': 'favicon.bmp',
             }))
             zh.writestr('data/20200101000000001/index.html', 'page content')
 
@@ -1806,17 +1691,110 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         book.load_meta_files()
         book.load_toc_files()
 
+        self.assertEqual(book.meta, {})
+        self.assertEqual(book.toc, {})
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+        })
+
+    def test_multi_occurrence(self):
+        """For a multi-occurrent item (same export id), import only TOC for
+        following ones.
+        """
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000002',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            # Normally all occurrences have identical meta.json and data files.
+            # Use a different content here to test if the second occurrence is
+            # unexpectedly taken.
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item2',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
         self.assertEqual(book.meta, {
             '20200101000000000': {
                 'type': 'folder'
+            },
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
             },
         })
         self.assertEqual(book.toc, {
             'root': [
                 '20200101000000000',
+                '20200101000000001',
+            ],
+            '20200101000000000': [
+                '20200101000000001',
             ],
         })
-        self.assertFalse(os.path.lexists(os.path.join(self.test_output, '20200101000000001')))
+
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'page content')
 
 
 if __name__ == '__main__':

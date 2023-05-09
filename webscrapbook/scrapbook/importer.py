@@ -12,7 +12,6 @@ from urllib.request import pathname2url
 from .. import util
 from .._polyfill import zipfile
 from ..util import Info
-from .book import Book
 from .host import Host
 
 REGEX_TARGET_FILENAME_FORMATTER = re.compile(r'%([^%]*)%')
@@ -20,6 +19,29 @@ REGEX_TARGET_FILENAME_FORMATTER = re.compile(r'%([^%]*)%')
 
 class Importer():
     """Main class for importing.
+
+    For a scrapbook tree:
+
+        item0
+            item1
+                item1-1
+                item1-1
+                item1-2
+        item1
+            item1-1
+            item1-1
+            item1-2
+
+    Due to a technical limitation, items with same ID won't be inserted to the
+    same parent, and thus the reconstructed scrapbook tree will be:
+
+        item0
+            item1
+                item1-1
+                item1-2
+        item1
+            item1-1
+            item1-2
     """
     def __init__(self, book, *,
                  target_id=None,
@@ -37,19 +59,15 @@ class Importer():
         self.prune = prune
         self.resolve_id_used = resolve_id_used
 
-        self.map_eid_to_id = None
-        self.map_id_to_new_id = None
-
     def run(self, files=None):
-        book = self.book
         self.book.load_meta_files()
         self.book.load_toc_files()
 
         self.map_eid_to_id = {}
         self.map_id_to_new_id = {}
 
-        book_meta_orig = copy.deepcopy(book.meta)
-        book_toc_orig = copy.deepcopy(book.toc)
+        book_meta_orig = copy.deepcopy(self.book.meta)
+        book_toc_orig = copy.deepcopy(self.book.toc)
 
         for file in files:
             if os.path.isdir(file):
@@ -197,17 +215,17 @@ class Importer():
 
     def _import_file(self, file):
         with zipfile.ZipFile(file) as zh:
-            with zh.open('meta.json') as fh:
-                meta = json.load(fh)
-
             with zh.open('export.json') as fh:
                 export_info = json.load(fh)
 
             if export_info['version'] != 1:
                 raise RuntimeError(f'Unsupported archive version: {export_info["version"]!r}')
 
+            with zh.open('meta.json') as fh:
+                meta = json.load(fh)
+
             id = meta.pop('id')
-            if id in Book.SPECIAL_ITEM_ID:
+            if id in self.book.SPECIAL_ITEM_ID:
                 raise RuntimeError(f'invalid ID {id!r}')
 
             # skip importing data for a duplicated occurrence of a previously
@@ -220,7 +238,7 @@ class Importer():
                 id = yield from self._import_meta_and_data(id, meta, zh, export_info)
 
             parent_id = yield from self._insert_to_toc(id, export_info)
-            return (id, export_info['id'], parent_id)
+            return id, export_info['id'], parent_id
 
     def _import_meta_and_data(self, id, meta, zh, export_info):
         """Import meta and data
@@ -341,13 +359,13 @@ class Importer():
         else:
             parent_id = self.target_id
 
-        if parent_id in self.book.meta or parent_id in Book.SPECIAL_ITEM_ID:
+        if parent_id in self.book.meta or parent_id in self.book.SPECIAL_ITEM_ID:
             yield from self._insert_to_id(id, parent_id)
             return parent_id
 
         for i in reversed(range(len(export_path) - 1)):
             parent_id = export_path[i]['id']
-            if parent_id in self.book.meta or parent_id in Book.SPECIAL_ITEM_ID:
+            if parent_id in self.book.meta or parent_id in self.book.SPECIAL_ITEM_ID:
                 break
         else:
             # for a bad path data not starting from 'root'
@@ -368,7 +386,7 @@ class Importer():
         return parent_id
 
     def _insert_to_id(self, id, parent_id, allow_insert=True):
-        if id in self.book.toc.get(parent_id, []):
+        if id in self.book.toc.get(parent_id, ()):
             yield Info('debug', f'Skipped appending {id!r} to {parent_id!r}: already in')
             return
 

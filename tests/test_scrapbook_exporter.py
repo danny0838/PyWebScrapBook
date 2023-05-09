@@ -45,8 +45,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
         cls.maxDiff = 8192
 
     def setUp(self):
-        """Set up a general temp test folder
-        """
+        """Set up a general temp test folder"""
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
         self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
@@ -92,8 +91,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
     @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_basic01(self):
-        """Test exporting a common */index.html
-        """
+        """Test exporting a common */index.html"""
         self.init_book(
             self.test_input,
             meta={
@@ -150,8 +148,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
     @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_basic02(self):
-        """Test exporting a common *.htz
-        """
+        """Test exporting a common *.htz"""
         self.init_book(
             self.test_input,
             meta={

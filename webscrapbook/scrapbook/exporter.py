@@ -2,6 +2,7 @@ import json
 import os
 import time
 import traceback
+from collections import OrderedDict
 from contextlib import nullcontext
 from datetime import timedelta
 
@@ -11,65 +12,56 @@ from ..util import Info
 from .book import _id_now
 from .host import Host
 
+EXPORTER_VERSION = 1
+
 
 class Exporter():
-    """Main class for generating exports.
-    """
+    """Main class for generating exports."""
     def __init__(self, output, book, *, singleton=False):
         self.output = output
         self.book = book
         self.singleton = singleton
 
-        self.recycle = None
-        self.used_ts = None
-        self.map_id_to_eid = None
-
     def run(self, item_ids=None, recursive=False):
-        book = self.book
         self.book.load_meta_files()
         self.book.load_toc_files()
 
         os.makedirs(self.output, exist_ok=True)
 
-        self.recycle = set(book.toc.get('recycle', []))
         self.used_ts = set()
         self.map_id_to_eid = {}
 
+        id_pool = set(self.book.meta)
+        id_pool.difference_update(self.book.toc.get(self.book.RECYCLE_ITEM_ID, ()))
         if item_ids:
-            id_pool = {id for id in item_ids if id in book.meta and id not in self.recycle}
-
             # add descendant id if recursive mode
             if recursive:
-                for id in list(id_pool):
-                    for desc_id in self._iter_child_items(id, [id]):
-                        id_pool.add(desc_id)
-                        yield Info('debug', f'Included descendant item of {id!r}: {desc_id!r}')
-        else:
-            id_pool = {id for id in book.meta if id not in self.recycle}
+                dict_ = {}
+                for id in item_ids:
+                    self.book.get_reachable_items(id, dict_)
+                item_ids = dict_
 
-        id_chain = [book.ROOT_ITEM_ID]
-        for id in self._iter_child_items(book.ROOT_ITEM_ID, id_chain):
-            if id in id_pool:
-                yield from self._export_item(id, id_chain)
+            id_pool.intersection_update(item_ids)
 
-        id_chain = [book.HIDDEN_ITEM_ID]
-        for id in self._iter_child_items(book.HIDDEN_ITEM_ID, id_chain):
-            if id in id_pool:
-                yield from self._export_item(id, id_chain)
+        parent_ids = OrderedDict()
+        for root in (self.book.ROOT_ITEM_ID, self.book.HIDDEN_ITEM_ID):
+            for id in self._iter_child_items(root, parent_ids):
+                if id in id_pool:
+                    yield from self._export_item(id, parent_ids)
 
-    def _iter_child_items(self, id, id_chain):
-        """Generate descendant items for the item of id.
-        """
-        for ref_id in self.book.toc.get(id, []):
-            yield ref_id
+    def _iter_child_items(self, id, parent_ids):
+        """Generate descendant items for the item of id."""
+        # do not export a circular descendant
+        if id in parent_ids:
+            return
 
-            # do not export children of a circular item
-            if ref_id not in id_chain:
-                id_chain.append(ref_id)
-                yield from self._iter_child_items(ref_id, id_chain)
-                id_chain.pop()
+        parent_ids[id] = True
+        for child_id in self.book.toc.get(id, ()):
+            yield child_id
+            yield from self._iter_child_items(child_id, parent_ids)
+        parent_ids.popitem()
 
-    def _export_item(self, id, id_chain):
+    def _export_item(self, id, parent_ids):
         if id in self.map_id_to_eid:
             if self.singleton:
                 yield Info('debug', f'Skipped exporting item {id!r} (singleton mode)')
@@ -77,13 +69,13 @@ class Exporter():
 
         yield Info('debug', f'Exporting item {id!r}')
         try:
-            yield from self._export_item_internal(id, id_chain)
+            yield from self._export_item_internal(id, parent_ids)
         except Exception as exc:
             # unexpected error
             traceback.print_exc()
             yield Info('error', f'Failed to export {id!r}: {exc}', exc=exc)
 
-    def _export_item_internal(self, id, id_chain):
+    def _export_item_internal(self, id, parent_ids):
         meta = self.book.meta[id]
         index = meta.get('index', '')
 
@@ -114,10 +106,10 @@ class Exporter():
             dst = os.path.join(self.output, f'{basename}-{i}.wsba')
 
         yield Info('info', f'Exporting {id!r} to {os.path.basename(dst)!r}')
-        parents = [{'id': id, 'title': self.book.meta.get(id, {}).get('title', '')} for id in id_chain]
+        parents = [{'id': id, 'title': self.book.meta.get(id, {}).get('title', '')} for id in parent_ids]
         meta_data = {'id': id, **meta}
         export_data = {
-            'version': 1,
+            'version': EXPORTER_VERSION,
             'id': eid,
             'timestamp': ets,
             'timezone': util.id_to_datetime(ets).astimezone().utcoffset().total_seconds(),
