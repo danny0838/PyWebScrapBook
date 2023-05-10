@@ -2240,7 +2240,6 @@ class TestImporter(TestBookMixin, unittest.TestCase):
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
             self.assertEqual(fh.read(), 'page content')
 
-    @unittest.expectedFailure
     def test_multi_occurrence05(self):
         """A replaced item should be imported only once and never inserted. (rebuild_folders=True)"""
         self.init_book(

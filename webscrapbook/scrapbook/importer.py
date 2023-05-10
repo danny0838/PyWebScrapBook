@@ -63,7 +63,7 @@ class Importer():
         self.book.load_meta_files()
         self.book.load_toc_files()
 
-        self.map_eid_to_id = {}
+        self.map_eid_to_info = {}
         self.map_id_to_new_id = {}
 
         book_meta_orig = copy.deepcopy(self.book.meta)
@@ -95,8 +95,9 @@ class Importer():
                     yield Info('error', f'Failed to import file {os.path.basename(src)!r}: {exc}', exc=exc)
                 else:
                     # finalize a successful import
-                    yield Info('info', f'Imported {id!r} (under {parent_id!r})')
-                    self.map_eid_to_id.setdefault(eid, id)
+                    text_parent = '' if parent_id is None else f' (under {parent_id!r})'
+                    yield Info('info', f'Imported {id!r}{text_parent}')
+                    self.map_eid_to_info.setdefault(eid, {}).setdefault('id', id)
                     if self.prune:
                         yield Info('debug', f'Removing {os.path.basename(src)!r} (prune)')
                         os.remove(src)
@@ -230,7 +231,7 @@ class Importer():
 
             # skip importing data for a duplicated occurrence of a previously
             # imported item
-            imported_id = self.map_eid_to_id.get(export_info['id'])
+            imported_id = self.map_eid_to_info.setdefault(export_info['id'], {}).get('id')
             if imported_id is not None:
                 id = imported_id
                 yield Info('debug', f'Skipped importing data for multi-referenced {id!r}')
@@ -296,6 +297,8 @@ class Importer():
                         except FileNotFoundError:
                             pass
 
+                self.map_eid_to_info.setdefault(export_info['id'], {}).setdefault('replaced', True)
+
             elif self.resolve_id_used == 'new':
                 new_id = self.book.get_unique_id()
                 yield Info('info', f'Importing duplicated {id!r} as {new_id!r}...')
@@ -352,15 +355,25 @@ class Importer():
         Returns:
             string: ID of the parent the item is inserted under
         """
+        if self.map_eid_to_info.setdefault(export_info['id'], {}).get('replaced'):
+            yield Info('debug', f'Skipped inserting replaced {id!r}')
+            return None
+
         if self.rebuild_folders:
             export_path = export_info['path']
-            parent_id = export_path[-1]['id']
+            ref_key = parent_id = export_path[-1]['id']
             parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
         else:
-            parent_id = self.target_id
+            ref_key = parent_id = self.target_id
+
+        if ref_key in self.map_eid_to_info[export_info['id']].setdefault('refs', set()):
+            yield Info('debug', f'Skipped inserting multi-referenced {id!r}')
+            return None
+
+        self.map_eid_to_info[export_info['id']]['refs'].add(ref_key)
 
         if parent_id in self.book.meta or parent_id in self.book.SPECIAL_ITEM_ID:
-            yield from self._insert_to_id(id, parent_id)
+            self._insert_to_id(id, parent_id)
             return parent_id
 
         for i in reversed(range(len(export_path) - 1)):
@@ -382,14 +395,10 @@ class Importer():
             self.map_id_to_new_id[export_path[j]['id']] = new_id
             parent_id = new_id
 
-        yield from self._insert_to_id(id, parent_id, allow_insert=False)
+        self._insert_to_id(id, parent_id, allow_insert=False)
         return parent_id
 
     def _insert_to_id(self, id, parent_id, allow_insert=True):
-        if id in self.book.toc.get(parent_id, ()):
-            yield Info('debug', f'Skipped appending {id!r} to {parent_id!r}: already in')
-            return
-
         parent = self.book.toc.setdefault(parent_id, [])
 
         if allow_insert and self.target_index is not None:
