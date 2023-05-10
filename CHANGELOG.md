@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.13.1] - 2023-05-10
+* Fixed an issue that importing archive files of a multi-referenced item using "new" mode gets duplicated items.
+* Improved the documentation about the `export`/`import` command.
+
 ## [1.13.0] - 2023-05-08
 * Fixed an issue that `*/index.html` are always added after `*.htz`, `*.maff`, `*.html` in the same directory when adding unindexed files by the checker.
 * Fixed an issue that a support folder may be incorrectly handled on a case sensitive filesystem when checking for unindexed files.
