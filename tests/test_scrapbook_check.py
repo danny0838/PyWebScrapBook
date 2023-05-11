@@ -862,21 +862,10 @@ class TestBookChecker(TestCheck):
         """Resolve empty TOC item lists."""
         book = self.init_book(
             self.test_root,
-            meta={
-                'item1': {
-                    'title': 'MyTitle中文',
-                    'type': 'folder',
-                },
-                'item2': {
-                    'title': 'MyTitle2',
-                    'type': 'separator',
-                },
-            },
             toc={
-                'root': [
-                    'item1',
-                    'item2',
-                ],
+                'root': [],
+                'hidden': [],
+                'recycle': [],
                 'item1': [],
                 'item2': [],
             },
@@ -886,23 +875,7 @@ class TestBookChecker(TestCheck):
         for _info in generator.run():
             pass
 
-        self.assertDictEqual(book.meta, {
-            'item1': {
-                'title': 'MyTitle中文',
-                'type': 'folder',
-            },
-            'item2': {
-                'title': 'MyTitle2',
-                'type': 'separator',
-            },
-        })
-
-        self.assertDictEqual(book.toc, {
-            'root': [
-                'item1',
-                'item2',
-            ],
-        })
+        self.assertDictEqual(book.toc, {})
 
     def test_resolve_unindexed_files(self):
         book = self.init_book(

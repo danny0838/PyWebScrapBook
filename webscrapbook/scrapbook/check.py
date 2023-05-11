@@ -354,12 +354,8 @@ class BookChecker:
         yield Info('debug', 'Checking empty lists in TOC...')
 
         items_empty_toc = {}
-
         for id, ref_ids in self.book.toc.items():
-            if ref_ids is None:
-                continue
-
-            if not ref_ids and id != self.book.ROOT_ITEM_ID:
+            if not ref_ids:
                 yield Info('warn', f'{id!r}: TOC list is empty')
                 self.cnt_warns += 1
                 items_empty_toc[id] = True
