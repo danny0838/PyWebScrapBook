@@ -76,6 +76,10 @@ class Book:
         'source': None,
         'icon': None,
         'comment': None,
+        'charset': None,
+        'marked': None,
+        'locked': None,
+        'location': None,
     }
     ROOT_ITEM_ID = 'root'
     HIDDEN_ITEM_ID = 'hidden'
