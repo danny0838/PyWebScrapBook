@@ -266,8 +266,8 @@ class StaticSiteGenerator():
 
         book = self.book
         level = 0
-        id_chain = {'root'}
-        yield from add_child_items('root')
+        id_chain = {book.ROOT_ITEM_ID}
+        yield from add_child_items(book.ROOT_ITEM_ID)
 
 
 class RssFeedGenerator():

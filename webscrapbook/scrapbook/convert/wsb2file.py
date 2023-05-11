@@ -6,7 +6,6 @@ import traceback
 
 from ... import util
 from ...util import Info
-from ..book import Book
 from ..host import Host
 
 
@@ -33,13 +32,13 @@ class Converter:
 
         id_chain = set()
         path_chain = []
-        ref_ids = self.book.toc.get('root', [])
+        ref_ids = self.book.toc.get(self.book.ROOT_ITEM_ID, [])
         idx_len = len(str(len(ref_ids)))
         for idx, ref_id in enumerate(ref_ids):
             yield from self._export_item(ref_id, idx, idx_len, id_chain, path_chain)
 
     def _export_item(self, id, idx, idx_len, id_chain, path_chain):
-        if id not in self.book.meta or id in Book.SPECIAL_ITEM_ID:
+        if id not in self.book.meta or id in self.book.SPECIAL_ITEM_ID:
             return
 
         yield Info('debug', f'Exporting item {id!r}')

@@ -12,7 +12,6 @@ from lxml import etree
 from ... import util
 from ...util import Info
 from ...util.html import HtmlRewriter, Markup, MarkupTag
-from ..book import Book
 from ..host import Host
 
 RDF = '{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
@@ -156,7 +155,7 @@ class Converter:
             yield Info('debug', f'Generating TOC node for {id!r}')
 
             node = etree.SubElement(root, f'{RDF}Seq')
-            if id == 'root':
+            if id == book.ROOT_ITEM_ID:
                 node.attrib[f'{RDF}about'] = 'urn:scrapbook:root'
             else:
                 oid = self.id_to_oid[id]
@@ -187,8 +186,8 @@ class Converter:
         for id, meta in book.meta.items():
             yield from make_meta_node(id, meta)
 
-        seen_in_toc = {'root'}
-        yield from make_toc_node('root')
+        seen_in_toc = {book.ROOT_ITEM_ID}
+        yield from make_toc_node(book.ROOT_ITEM_ID)
 
         try:
             etree.indent(root)
@@ -208,7 +207,7 @@ class Converter:
         for id, oid in self.id_to_oid.items():
             yield Info('debug', f'Copying data files for {id!r} => {oid!r}')
             type = book.meta[id].get('type', '')
-            if type in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
+            if type in book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
                 yield Info('debug', f'Skipped copying data for {id!r}: type is {type!r}')
                 continue
 

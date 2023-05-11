@@ -11,7 +11,6 @@ from lxml import etree
 
 from ... import WSB_CONFIG, WSB_DIR, util
 from ...util import Info
-from ..book import Book
 from ..host import Host
 
 RDF = '{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
@@ -260,7 +259,7 @@ class Converter:
                 meta['marked'] = True
 
             # meta['index']
-            if meta['type'] not in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
+            if meta['type'] not in book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
                 meta['index'] = f'{id}/index.html'
             elif meta.get('icon', '').startswith(f'{RES_PROTOCOL_BASE}data/{id}/'):
                 # Add a dummy index.html to relate the icon file with the item

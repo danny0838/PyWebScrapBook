@@ -46,13 +46,13 @@ class Exporter():
         else:
             id_pool = {id for id in book.meta if id not in self.recycle}
 
-        id_chain = ['root']
-        for id in self._iter_child_items('root', id_chain):
+        id_chain = [book.ROOT_ITEM_ID]
+        for id in self._iter_child_items(book.ROOT_ITEM_ID, id_chain):
             if id in id_pool:
                 yield from self._export_item(id, id_chain)
 
-        id_chain = ['hidden']
-        for id in self._iter_child_items('hidden', id_chain):
+        id_chain = [book.HIDDEN_ITEM_ID]
+        for id in self._iter_child_items(book.HIDDEN_ITEM_ID, id_chain):
             if id in id_pool:
                 yield from self._export_item(id, id_chain)
 

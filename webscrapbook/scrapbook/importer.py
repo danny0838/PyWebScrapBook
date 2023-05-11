@@ -31,7 +31,7 @@ class Importer():
                  resolve_id_used='skip',  # skip, replace, new
                  ):
         self.book = book
-        self.target_id = target_id or 'root'
+        self.target_id = target_id or book.ROOT_ITEM_ID
         self.target_index = target_index
         self.target_filename = target_filename or '%ID%'
         self.rebuild_folders = rebuild_folders
@@ -359,7 +359,7 @@ class Importer():
         else:
             # for a bad path data not starting from 'root'
             i = -1
-            parent_id = 'root'
+            parent_id = self.book.ROOT_ITEM_ID
 
         for j in range(i + 1, len(export_path)):
             # generate a new unique id

@@ -11,7 +11,7 @@ from urllib.parse import unquote, urlsplit
 from .. import WSB_DIR, util
 from .._polyfill import zipfile
 from ..util import Info
-from .book import Book, TreeFileError
+from .book import TreeFileError
 from .host import Host
 from .indexer import (
     SUPPORT_FOLDER_SUFFIXES,
@@ -149,7 +149,7 @@ class BookChecker:
             yield Info('debug', f'Checking item meta for {id!r}')
 
             # id
-            if id in Book.SPECIAL_ITEM_ID:
+            if id in self.book.SPECIAL_ITEM_ID:
                 yield Info('error', f'{id!r}: invalid ID (special item)')
                 self.cnt_errors += 1
                 items_invalid_id[id] = True
@@ -177,7 +177,7 @@ class BookChecker:
                     yield Info('warn', f"{id!r}: a bookmark item should use '*.htm' as index file.")
                     self.cnt_warns += 1
             else:
-                if type not in Book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
+                if type not in self.book.ITEM_TYPES_WITH_OPTIONAL_INDEX:
                     yield Info('error', f"{id!r}: missing 'index' property.")
                     self.cnt_errors += 1
                     items_missing_index[id] = True
@@ -312,7 +312,7 @@ class BookChecker:
             yield Info('debug', f'Checking item TOC for {id!r}')
 
             # missing meta
-            if not self.book.meta.get(id) and id not in Book.SPECIAL_ITEM_ID:
+            if not self.book.meta.get(id) and id not in self.book.SPECIAL_ITEM_ID:
                 yield Info('error', f'{id!r}: invalid ID (missing metadata entry)')
                 self.cnt_errors += 1
                 items_missing_meta[id] = True
@@ -322,7 +322,7 @@ class BookChecker:
                 self.seen_in_toc.add(ref_id)
 
                 # special item ID is invalid
-                if ref_id in Book.SPECIAL_ITEM_ID:
+                if ref_id in self.book.SPECIAL_ITEM_ID:
                     yield Info('error', f'{id!r}: invalid reference ID {ref_id!r} (special item)')
                     self.cnt_errors += 1
                     ref_items_invalid.setdefault(id, {})[ref_id] = True
@@ -337,7 +337,7 @@ class BookChecker:
 
         # items not reachable from TOC
         for id in self.book.meta:
-            if id not in self.seen_in_toc and id not in Book.SPECIAL_ITEM_ID:
+            if id not in self.seen_in_toc and id not in self.book.SPECIAL_ITEM_ID:
                 yield Info('error', f'{id!r}: not recheable from TOC.')
                 self.cnt_errors += 1
                 items_unreachable[id] = True
@@ -359,7 +359,7 @@ class BookChecker:
             if ref_ids is None:
                 continue
 
-            if not ref_ids and id != 'root':
+            if not ref_ids and id != self.book.ROOT_ITEM_ID:
                 yield Info('warn', f'{id!r}: TOC list is empty')
                 self.cnt_warns += 1
                 items_empty_toc[id] = True
@@ -582,9 +582,9 @@ class BookChecker:
 
     def _resolve_toc_unreachable(self, ids):
         yield Info('info', 'Adding unreachable items to root TOC...')
-        self.book.toc.setdefault('root', [])
+        toc = self.book.toc.setdefault(self.book.ROOT_ITEM_ID, [])
         for id in ids:
-            self.book.toc['root'].append(id)
+            toc.append(id)
             yield Info('info', f'Added {id!r} to root TOC.')
             self.cnt_resolves += 1
 
@@ -609,7 +609,7 @@ class BookChecker:
         for id in indexed:
             # add to TOC if not seen
             if id not in self.seen_in_toc:
-                self.book.toc.setdefault('root', []).append(id)
+                self.book.toc.setdefault(self.book.ROOT_ITEM_ID, []).append(id)
                 self.seen_in_toc.add(id)
 
             # record added cached favicons

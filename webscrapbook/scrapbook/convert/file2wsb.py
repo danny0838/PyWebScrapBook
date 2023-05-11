@@ -83,7 +83,7 @@ class Converter:
             self.book.toc.setdefault(parent_id, []).append(id)
             yield Info('info', f'Generated folder item {id!r} under {parent_id!r}')
         else:
-            id = 'root'
+            id = self.book.ROOT_ITEM_ID
 
         try:
             entries = os.scandir(data_dir)
