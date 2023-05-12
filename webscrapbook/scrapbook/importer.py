@@ -386,16 +386,13 @@ class Importer():
             self._insert_to_id(id, parent_id)
             return parent_id
 
-        parent_id = export_path[-1]['id']
-        parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
-
-        if parent_id in self.book.meta or parent_id in self.book.SPECIAL_ITEM_ID:
-            self._insert_to_id(id, parent_id)
-            return parent_id
-
-        for i in reversed(range(len(export_path) - 1)):
+        for i in reversed(range(len(export_path))):
             parent_id = export_path[i]['id']
-            if parent_id in self.book.meta or parent_id in self.book.SPECIAL_ITEM_ID:
+            if parent_id in self.book.SPECIAL_ITEM_ID:
+                break
+
+            parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
+            if parent_id in self.book.meta:
                 break
         else:
             # for a bad path data not starting from 'root'
@@ -403,13 +400,22 @@ class Importer():
             parent_id = self.book.ROOT_ITEM_ID
 
         for j in range(i + 1, len(export_path)):
-            new_items = self.book.add_item({
-                'title': export_path[j]['title'],
-                'type': 'folder',
-            }, parent_id)
-            new_id = next(iter(new_items))
-            yield Info('info', f'Generated folder {new_id!r} under {parent_id!r}')
-            self.map_id_to_new_id[export_path[j]['id']] = new_id
+            folder_id = export_path[j]['id']
+            folder_title = export_path[j]['title']
+            try:
+                new_id = self.map_id_to_new_id[folder_id]
+            except KeyError:
+                new_items = self.book.add_item({
+                    'title': folder_title,
+                    'type': 'folder',
+                }, parent_id)
+                new_id = next(iter(new_items))
+                self.map_id_to_new_id[folder_id] = new_id
+                yield Info('info', f'Generated folder {new_id!r} for missing {folder_id!r} under {parent_id!r}')
+            else:
+                if new_id not in self.book.toc.get(parent_id, ()):
+                    self._insert_to_id(new_id, parent_id, allow_insert=False)
+                    yield Info('info', f'Inserted folder {new_id!r} for missing {folder_id!r} under {parent_id!r}')
             parent_id = new_id
 
         self._insert_to_id(id, parent_id, allow_insert=False)
