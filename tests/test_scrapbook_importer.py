@@ -361,7 +361,8 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             ],
         })
 
-    def test_param_target_index(self):
+    def test_param_target_index01(self):
+        """Test normal target_index"""
         self.init_book(
             self.test_output,
             meta={
@@ -432,6 +433,156 @@ class TestImporter(TestBookMixin, unittest.TestCase):
                 '20200101000000001',
                 '20200101000000002',
                 '20200101000000000',
+            ],
+        })
+
+    def test_param_target_index02(self):
+        """Insert to last if target_index is too large"""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'item2',
+                'create': '20200102000000002',
+                'modify': '20200103000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=10):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_toc_files()
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
+            ],
+        })
+
+    def test_param_target_index03(self):
+        """Treat as None if target_index < 0"""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'item2',
+                'create': '20200102000000002',
+                'modify': '20200103000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=-1):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_toc_files()
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000000',
+                '20200101000000001',
+                '20200101000000002',
             ],
         })
 

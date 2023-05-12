@@ -53,7 +53,7 @@ class Importer():
                  ):
         self.book = book
         self.target_id = target_id or book.ROOT_ITEM_ID
-        self.target_index = target_index
+        self.target_index = target_index if (isinstance(target_index, int) and target_index >= 0) else None
         self.target_filename = target_filename or '%ID%'
         self.rebuild_folders = rebuild_folders
         self.prune = prune
