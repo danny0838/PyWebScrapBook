@@ -52,7 +52,7 @@ class Importer():
                  resolve_id_used='skip',  # skip, replace, new
                  ):
         self.book = book
-        self.target_id = target_id or book.ROOT_ITEM_ID
+        self.target_id = target_id
         self.target_index = target_index if (isinstance(target_index, int) and target_index >= 0) else None
         self.target_filename = target_filename or '%ID%'
         self.rebuild_folders = rebuild_folders
@@ -68,6 +68,14 @@ class Importer():
 
         book_meta_orig = copy.deepcopy(self.book.meta)
         book_toc_orig = copy.deepcopy(self.book.toc)
+
+        # fix target_id
+        if not self.rebuild_folders:
+            if self.target_id is None:
+                self.target_id = self.book.ROOT_ITEM_ID
+            elif not (self.target_id in self.book.meta or self.target_id in self.book.SPECIAL_ITEM_ID):
+                yield Info('warn', f'Target ID {self.target_id!r} is invalid. Use {self.book.ROOT_ITEM_ID!r} instead.')
+                self.target_id = self.book.ROOT_ITEM_ID
 
         for file in files:
             if os.path.isdir(file):
@@ -359,18 +367,27 @@ class Importer():
             yield Info('debug', f'Skipped inserting replaced {id!r}')
             return None
 
+        # deduplicate by checking the ref_key
         if self.rebuild_folders:
             export_path = export_info['path']
-            ref_key = parent_id = export_path[-1]['id']
-            parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
+            ref_key = export_path[-1]['id']
         else:
-            ref_key = parent_id = self.target_id
+            ref_key = self.target_id
 
         if ref_key in self.map_eid_to_info[export_info['id']].setdefault('refs', set()):
             yield Info('debug', f'Skipped inserting multi-referenced {id!r}')
             return None
 
         self.map_eid_to_info[export_info['id']]['refs'].add(ref_key)
+
+        # perform the insertion
+        if not self.rebuild_folders:
+            parent_id = self.target_id
+            self._insert_to_id(id, parent_id)
+            return parent_id
+
+        parent_id = export_path[-1]['id']
+        parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
 
         if parent_id in self.book.meta or parent_id in self.book.SPECIAL_ITEM_ID:
             self._insert_to_id(id, parent_id)
