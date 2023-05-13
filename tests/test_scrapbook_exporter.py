@@ -210,7 +210,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
     @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc01(self):
-        """Export all if item_ids not set
+        """Export all if items not set
 
         - Include hidden (at last).
         - Exclude recycle.
@@ -357,7 +357,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
     @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_toc02(self):
-        """Export only those specified by item_ids
+        """Export only those specified by items
 
         - Can include recycle.
         """
@@ -428,7 +428,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         for _info in wsb_exporter.run(
             self.test_input, self.test_output,
-            item_ids=['20200101000000000', '20200101000000003', '20200101000000006'],
+            items=['20200101000000000', '20200101000000003', '20200101000000006'],
         ):
             pass
 
@@ -538,7 +538,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
 
         for _info in wsb_exporter.run(
             self.test_input, self.test_output,
-            item_ids=['20200101000000000'], recursive=True,
+            items=['20200101000000000'], recursive=True,
         ):
             pass
 

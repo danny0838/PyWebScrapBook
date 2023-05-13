@@ -22,7 +22,7 @@ class Exporter():
         self.book = book
         self.singleton = singleton
 
-    def run(self, item_ids=None, recursive=False):
+    def run(self, items=None, recursive=False):
         self.book.load_meta_files()
         self.book.load_toc_files()
 
@@ -32,15 +32,15 @@ class Exporter():
         self.map_id_to_eid = {}
 
         id_pool = set(self.book.meta)
-        if item_ids:
+        if items:
             # add descendant id if recursive mode
             if recursive:
                 dict_ = {}
-                for id in item_ids:
+                for id in items:
                     self.book.get_reachable_items(id, dict_)
-                item_ids = dict_
+                items = dict_
 
-            id_pool.intersection_update(item_ids)
+            id_pool.intersection_update(items)
         else:
             # exclude recycled items by default
             dict_ = self.book.get_reachable_items(self.book.RECYCLE_ITEM_ID)
@@ -147,7 +147,7 @@ class Exporter():
             util.fs.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
 
 
-def run(host, output, book_id='', item_ids=None, *, recursive=False, singleton=False, lock=True):
+def run(host, output, book_id='', items=None, *, recursive=False, singleton=False, lock=True):
     start = time.time()
 
     if isinstance(host, Host):
@@ -175,7 +175,7 @@ def run(host, output, book_id='', item_ids=None, *, recursive=False, singleton=F
         lh = book.get_tree_lock().acquire() if lock else nullcontext()
         with lh:
             generator = Exporter(output, book, singleton=singleton)
-            yield from generator.run(item_ids, recursive)
+            yield from generator.run(items, recursive)
 
     except Exception as exc:
         traceback.print_exc()

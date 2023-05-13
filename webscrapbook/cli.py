@@ -686,7 +686,7 @@ corresponding book) (default/empty: all items)""")
         '--book', dest='book_id', metavar='ID', default='', action='store',
         help="""the book ID to export (default: "")""")
     parser_export.add_argument(
-        '--item', dest='item_ids',
+        '--item', dest='items',
         metavar='ID', action='store', default=None, nargs='+',
         help="""the items ID(s) to export (default: all)""")
     parser_export.add_argument(
