@@ -224,14 +224,29 @@ class Importer():
 
     def _import_file(self, file):
         with zipfile.ZipFile(file) as zh:
-            with zh.open('export.json') as fh:
-                export_info = json.load(fh)
+            try:
+                with zh.open('export.json') as fh:
+                    export_info = json.load(fh)
+            except Exception as exc:
+                raise RuntimeError(f"Unable to read 'export.json': {exc}") from exc
 
-            if export_info['version'] != 1:
+            if export_info['version'] == 1:
+                try:
+                    assert isinstance(export_info['id'], str)
+                    assert isinstance(export_info['timestamp'], str)
+                    assert isinstance(export_info['timezone'], float)
+                    assert isinstance(export_info['path'], list)
+                except (AssertionError, KeyError) as exc:
+                    raise RuntimeError("Malformed 'export.json'") from exc
+
+            else:
                 raise RuntimeError(f'Unsupported archive version: {export_info["version"]!r}')
 
-            with zh.open('meta.json') as fh:
-                meta = json.load(fh)
+            try:
+                with zh.open('meta.json') as fh:
+                    meta = json.load(fh)
+            except Exception as exc:
+                raise RuntimeError(f"Unable to read 'meta.json': {exc}") from exc
 
             id = meta.pop('id')
             if id in self.book.SPECIAL_ITEM_ID:
