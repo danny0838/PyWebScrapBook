@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import tempfile
@@ -39,7 +40,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestExporter(TestBookMixin, unittest.TestCase):
+class TestExporterBase(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -89,6 +90,45 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             'favicon_data': favicon_data,
         }
 
+
+class TestExporter(TestExporterBase):
+    @mock.patch('sys.stderr', io.StringIO())
+    def test_bad_scheme(self):
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        infos = list(wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                (['root'], 0),
+                (['root', '20200101000000001'], 0),
+            ],
+            scheme=3,
+        ))
+
+        self.assertIn(
+            wsb_exporter.Info(type='critical', msg='Unknown items scheme: 3', exc=mock.ANY),
+            infos,
+        )
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+        })
+
+
+class TestExporterSchemeItemIds(TestExporterBase):
     @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
     def test_basic01(self):
         """Test exporting a common */index.html"""
@@ -1290,6 +1330,907 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                 'id': '20200101000000002',
                 'type': 'folder',
                 'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+
+class TestExporterSchemeRootIndexes(TestExporterBase):
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_basic01(self):
+        """Export duplicated parents as specified."""
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000000001',
+                ],
+                '20200101000000000': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000002',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['root', 0, 0, 0],
+                ['root', 0, 0, 2],
+                ['root', 1, 0],
+                ['root', 1, 2],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item2.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 2,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 2,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_basic02(self):
+        """Export circular parents as specified."""
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+                '20200101000000000': [
+                    '20200101000000000',
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['root', 0],
+                ['root', 0, 0],
+                ['root', 0, 0, 0],
+                ['root', 0, 1],
+                ['root', 0, 1, 0],
+                ['root', 0, 1, 0, 1],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000004-item0.wsba'),
+            os.path.join(self.test_output, '20230101000000005-item1.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item0.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item0.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000003',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+                'index': 1,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000004-item0.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000004',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000005-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000003',
+                'timestamp': '20230101000000005',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+                'index': 1,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_basic03(self):
+        """Export recycle as specified."""
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+            },
+            toc={
+                'recycle': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['recycle', 0],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item0.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'recycle', 'title': ''},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000000',
+                'type': 'folder',
+                'title': 'item0',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_param_singleton(self):
+        """Export first occurrence of ID if singleton."""
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000000001',
+                ],
+                '20200101000000000': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000002',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['root', 0, 0, 0],
+                ['root', 0, 0, 2],
+                ['root', 1, 0],
+                ['root', 1, 2],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+            singleton=True,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item2.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_param_recursive01(self):
+        """Include descendants if recursive.
+
+        - Export circular decendants but no their children.
+        """
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000001',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['root', 0],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+            recursive=True,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item3.wsba'),
+            os.path.join(self.test_output, '20230101000000004-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000005-item1.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000003',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 1,
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000004-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000004',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 2,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000005-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000005',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_param_recursive02(self):
+        """Don't include descendants if the specified path is already circular."""
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000001',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['root', 0, 0, 0],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+            recursive=True,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item1.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000000')
+    def test_param_recursive03(self):
+        """Skip duplicated following item if having been exported as a descendant."""
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000001',
+                ],
+            },
+        )
+
+        for _info in wsb_exporter.run(
+            self.test_input, self.test_output,
+            items=[
+                ['root', 0],
+                ['root', 0, 0],
+                ['root', 0, 0, 0],
+                ['root', 0, 1],
+                ['root', 0, 2],
+                ['root', 0, 2, 0],
+            ],
+            scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+            recursive=True,
+        ):
+            pass
+
+        self.assertCountEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20230101000000000-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000001-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item1.wsba'),
+            os.path.join(self.test_output, '20230101000000003-item3.wsba'),
+            os.path.join(self.test_output, '20230101000000004-item2.wsba'),
+            os.path.join(self.test_output, '20230101000000005-item1.wsba'),
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000000',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000001-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000001',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000003-item3.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000003',
+                'timestamp': '20230101000000003',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 1,
+            },
+            'meta': {
+                'id': '20200101000000003',
+                'type': 'folder',
+                'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000004-item2.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000001',
+                'timestamp': '20230101000000004',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                ],
+                'index': 2,
+            },
+            'meta': {
+                'id': '20200101000000002',
+                'type': 'folder',
+                'title': 'item2',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000005-item1.wsba')), {
+            'export_info': {
+                'version': 2,
+                'id': '20230101000000000',
+                'timestamp': '20230101000000005',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'item1'},
+                    {'id': '20200101000000002', 'title': 'item2'},
+                ],
+                'index': 0,
+            },
+            'meta': {
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'item1',
             },
             'index_data': mock.ANY,
             'favicon_data': mock.ANY,

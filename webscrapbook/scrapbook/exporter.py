@@ -14,12 +14,16 @@ from .host import Host
 
 EXPORTER_VERSION = 2
 
+SCHEME_ITEM_IDS = 0
+SCHEME_ROOT_INDEXES = 1
+
 
 class Exporter():
     """Main class for generating exports."""
-    def __init__(self, output, book, *, singleton=False):
+    def __init__(self, output, book, *, scheme=SCHEME_ITEM_IDS, singleton=False):
         self.output = output
         self.book = book
+        self.scheme = scheme
         self.singleton = singleton
 
     def run(self, items=None, recursive=False):
@@ -31,6 +35,14 @@ class Exporter():
         self.used_ts = set()
         self.map_id_to_eid = {}
 
+        if self.scheme == SCHEME_ITEM_IDS:
+            yield from self._export_from_item_ids(items, recursive)
+        elif self.scheme == SCHEME_ROOT_INDEXES:
+            yield from self._export_from_root_indexes(items, recursive)
+        else:
+            raise ValueError(f'Unknown items scheme: {self.scheme!r}')
+
+    def _export_from_item_ids(self, items, recursive):
         id_pool = set(self.book.meta)
         if items:
             # add descendant id if recursive mode
@@ -52,6 +64,38 @@ class Exporter():
                 if id in id_pool:
                     yield from self._export_item(i, id, parent_ids)
 
+    def _export_from_root_indexes(self, items, recursive):
+        pool = set()
+        for item in items:
+            root_id, *indexes = item
+
+            # skip invalid item
+            if not indexes:
+                continue
+
+            # deduplicate
+            key = tuple(item)
+            if key in pool:
+                continue
+            pool.add(key)
+
+            item_id = root_id
+            parent_ids = []
+            for index in indexes:
+                parent_ids.append(item_id)
+                item_id = self.book.toc[item_id][index]
+
+            yield from self._export_item(index, item_id, parent_ids)
+            if recursive:
+                for _index, _item_id in self._enum_child_items2(item_id, parent_ids, indexes):
+                    # deduplicate
+                    key = (root_id, *indexes)
+                    if key in pool:
+                        continue
+                    pool.add(key)
+
+                    yield from self._export_item(_index, _item_id, parent_ids)
+
     def _enum_child_items(self, id, parent_ids):
         """Generate descendant items for the item of id."""
         # do not export a circular descendant
@@ -63,6 +107,20 @@ class Exporter():
             yield i, child_id
             yield from self._enum_child_items(child_id, parent_ids)
         parent_ids.popitem()
+
+    def _enum_child_items2(self, id, parent_ids, indexes):
+        """Generate descendant items for the item of id."""
+        # do not export a circular descendant
+        if id in parent_ids:
+            return
+
+        parent_ids.append(id)
+        for i, child_id in enumerate(self.book.toc.get(id, ())):
+            indexes.append(i)
+            yield i, child_id
+            yield from self._enum_child_items2(child_id, parent_ids, indexes)
+            indexes.pop()
+        parent_ids.pop()
 
     def _export_item(self, pos, id, parent_ids):
         if id in self.map_id_to_eid:
@@ -147,7 +205,8 @@ class Exporter():
             util.fs.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
 
 
-def run(host, output, book_id='', items=None, *, recursive=False, singleton=False, lock=True):
+def run(host, output, book_id='', items=None, *,
+        scheme=SCHEME_ITEM_IDS, recursive=False, singleton=False, lock=True):
     start = time.time()
 
     if isinstance(host, Host):
@@ -174,7 +233,7 @@ def run(host, output, book_id='', items=None, *, recursive=False, singleton=Fals
         yield Info('info', f'Exporting from book {book_id!r} ({book.name!r}).')
         lh = book.get_tree_lock().acquire() if lock else nullcontext()
         with lh:
-            generator = Exporter(output, book, singleton=singleton)
+            generator = Exporter(output, book, scheme=scheme, singleton=singleton)
             yield from generator.run(items, recursive)
 
     except Exception as exc:
