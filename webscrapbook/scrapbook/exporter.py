@@ -32,7 +32,6 @@ class Exporter():
         self.map_id_to_eid = {}
 
         id_pool = set(self.book.meta)
-        id_pool.difference_update(self.book.toc.get(self.book.RECYCLE_ITEM_ID, ()))
         if item_ids:
             # add descendant id if recursive mode
             if recursive:
@@ -42,9 +41,13 @@ class Exporter():
                 item_ids = dict_
 
             id_pool.intersection_update(item_ids)
+        else:
+            # exclude recycled items by default
+            dict_ = self.book.get_reachable_items(self.book.RECYCLE_ITEM_ID)
+            id_pool.difference_update(dict_)
 
         parent_ids = OrderedDict()
-        for root in (self.book.ROOT_ITEM_ID, self.book.HIDDEN_ITEM_ID):
+        for root in self.book.SPECIAL_ITEM_ID:
             for id in self._iter_child_items(root, parent_ids):
                 if id in id_pool:
                     yield from self._export_item(id, parent_ids)

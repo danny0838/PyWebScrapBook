@@ -430,6 +430,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item3.wsba'),
+            os.path.join(self.test_output, '20230101000000002-item6.wsba'),
         })
 
         self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000000-item0.wsba')), {
@@ -465,6 +466,25 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                 'id': '20200101000000003',
                 'type': 'folder',
                 'title': 'item3',
+            },
+            'index_data': mock.ANY,
+            'favicon_data': mock.ANY,
+        })
+
+        self.assertEqual(self.read_exported_archive(os.path.join(self.test_output, '20230101000000002-item6.wsba')), {
+            'export_info': {
+                'version': 1,
+                'id': '20230101000000002',
+                'timestamp': '20230101000000002',
+                'timezone': mock.ANY,
+                'path': [
+                    {'id': 'recycle', 'title': ''},
+                ],
+            },
+            'meta': {
+                'id': '20200101000000006',
+                'type': 'folder',
+                'title': 'item6',
             },
             'index_data': mock.ANY,
             'favicon_data': mock.ANY,
