@@ -392,6 +392,12 @@ class Importer():
                 break
 
             parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
+
+            # Assume that an item in meta also exists somewhere in toc, except
+            # for id, which is the one being imported and is not in toc (yet).
+            if parent_id == id:
+                continue
+
             if parent_id in self.book.meta:
                 break
         else:
@@ -402,20 +408,37 @@ class Importer():
         for j in range(i + 1, len(export_path)):
             folder_id = export_path[j]['id']
             folder_title = export_path[j]['title']
-            try:
-                new_id = self.map_id_to_new_id[folder_id]
-            except KeyError:
-                new_items = self.book.add_item({
-                    'title': folder_title,
-                    'type': 'folder',
-                }, parent_id)
-                new_id = next(iter(new_items))
-                self.map_id_to_new_id[folder_id] = new_id
-                yield Info('info', f'Generated folder {new_id!r} for missing {folder_id!r} under {parent_id!r}')
-            else:
-                if new_id not in self.book.toc.get(parent_id, ()):
+
+            # special handling for id
+            if folder_id == id:
+                new_id = folder_id
+                if parent_id == self.map_id_to_new_id.get(export_path[-1]['id'], export_path[-1]['id']):
+                    # this ancestor is identical to the direct parent,
+                    # and folder_id will eventually be inserted under it
+                    yield Info('debug', f'Skipped inserting {new_id!r} under {parent_id!r} (same as parent)')
+                elif new_id not in self.book.toc.get(parent_id, ()):
                     self._insert_to_id(new_id, parent_id, allow_insert=False)
-                    yield Info('info', f'Inserted folder {new_id!r} for missing {folder_id!r} under {parent_id!r}')
+                    yield Info('info', f'Inserted {new_id!r} under {parent_id!r}')
+                else:
+                    yield Info('debug', f'Skipped inserting {new_id!r} under {parent_id!r} (already in)')
+            else:
+                try:
+                    new_id = self.map_id_to_new_id[folder_id]
+                except KeyError:
+                    new_items = self.book.add_item({
+                        'title': folder_title,
+                        'type': 'folder',
+                    }, parent_id)
+                    new_id = next(iter(new_items))
+                    self.map_id_to_new_id[folder_id] = new_id
+                    yield Info('info', f'Generated folder {new_id!r} for missing {folder_id!r} under {parent_id!r}')
+                else:
+                    if new_id not in self.book.toc.get(parent_id, ()):
+                        self._insert_to_id(new_id, parent_id, allow_insert=False)
+                        yield Info('info', f'Inserted folder {new_id!r} under {parent_id!r}')
+                    else:
+                        yield Info('debug', f'Skipped inserting {new_id!r} under {parent_id!r} (already in)')
+
             parent_id = new_id
 
         self._insert_to_id(id, parent_id, allow_insert=False)

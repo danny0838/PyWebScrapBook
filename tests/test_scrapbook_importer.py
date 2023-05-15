@@ -1885,6 +1885,133 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             ],
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders10(self):
+        """Take care if path contains self. (The one before self is not direct parent)"""
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200201000000001', 'title': 'Item 1'},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+                                      target_id='root', target_index=0):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20230101000000001': {
+                'title': 'Folder 1',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200201000000001',
+            ],
+            '20200201000000001': [
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20200201000000001',
+            ],
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders11(self):
+        """Take care if path contains self. (The one before self is direct parent)"""
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200201000000001', 'title': 'Item 1'},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+                                      target_id='root', target_index=0):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20230101000000001': {
+                'title': 'Folder 1',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20200201000000001',
+            ],
+            '20200201000000001': [
+                '20230101000000001',
+            ],
+        })
+
     def test_param_resolve_id_used_skip01(self):
         """No import if ID exists"""
         self.init_book(
