@@ -90,7 +90,7 @@ class _FileLockAcquireProxy:
 
 
 class FileLock:
-    """Controller of file lock.
+    """Controller of a file lock.
     """
     def __init__(self, host, name, *,
                  timeout=5, stale=60, persist=False):
@@ -143,6 +143,9 @@ class FileLock:
                 '''do something'''
             finally:
                 lock.release()
+
+        In the former case an automatic keeper will be set to keep the lock
+        from getting expired during the context.
 
         Args:
             timeout: float timeout to wait for a lock. < 0 to block until the
@@ -237,6 +240,11 @@ class FileLock:
 
     def extend(self):
         """Extend duration of the lock.
+
+        Raises:
+            LockExtendError: if the lock cannot be extended
+            LockExtendNotAcquiredError: if the lock hasn't been acquired
+            LockExtendNotFoundError: if the lock file not exist
         """
         if not self._lock:
             raise LockExtendNotAcquiredError(
@@ -259,6 +267,11 @@ class FileLock:
 
     def release(self):
         """Release the lock.
+
+        Raises:
+            LockReleaseError: if the lock cannot be released
+            LockReleaseNotAcquiredError: if the lock hasn't been acquired
+            LockReleaseNotFoundError: if the lock file not exist
         """
         if not self._lock:
             raise LockReleaseNotAcquiredError(
