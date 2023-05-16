@@ -944,7 +944,7 @@ def generate(host, book_items=None, *,
                 continue
 
             yield Info('info', f'Caching book {book_id!r} ({book.name!r}).')
-            lh = book.get_tree_lock().acquire() if lock else nullcontext()
+            lh = book.get_tree_lock(persist=lock).acquire() if lock else nullcontext()
             with lh:
                 if fulltext:
                     generator = FulltextCacheGenerator(

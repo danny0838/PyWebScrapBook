@@ -1231,8 +1231,8 @@ def action_cache():
     gen = wsb_cache.generate(
         (host.root, host.config),
         book_items=book_items,
-        lock=not request.values.get('no_lock', default=False, type=bool),
-        backup=not request.values.get('no_backup', default=False, type=bool),
+        lock=request.values.get('lock', default=True),
+        backup=request.values.get('backup', default=True, type=bool),
         fulltext=request.values.get('fulltext', default=False, type=bool),
         recreate=request.values.get('recreate', default=False, type=bool),
         static_site=request.values.get('static_site', default=False, type=bool),
@@ -1274,8 +1274,8 @@ def action_check():
     gen = wsb_check.run(
         (host.root, host.config),
         book_ids=request.values.getlist('book'),
-        lock=not request.values.get('no_lock', default=False, type=bool),
-        backup=not request.values.get('no_backup', default=False, type=bool),
+        lock=request.values.get('lock', default=True),
+        backup=request.values.get('backup', default=True, type=bool),
         resolve_invalid_id=request.values.get('resolve_invalid_id', default=False, type=bool),
         resolve_missing_index=request.values.get('resolve_missing_index', default=False, type=bool),
         resolve_missing_index_file=request.values.get('resolve_missing_index_file', default=False, type=bool),
@@ -1321,7 +1321,7 @@ def action_query():
     query = request.values.getlist('q', type=json.loads)
     auto_cache = request.values.get('auto_cache', type=json.loads)
     details = request.values.get('details', default=False, type=bool)
-    lock = not request.values.get('no_lock', default=False, type=bool)
+    lock = request.values.get('lock', default=True)
 
     try:
         rv = wsb_util.HostQuery((host.root, host.config),
@@ -1349,7 +1349,7 @@ def action_search():
             'source': request.values.get('source', default=None, type=int),
             'fulltext': request.values.get('fulltext', default=None, type=int),
         },
-        lock=not request.values.get('no_lock', default=False, type=bool),
+        lock=request.values.get('lock', default=True),
     )
 
     if format == 'json':

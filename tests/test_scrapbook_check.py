@@ -63,7 +63,7 @@ class TestFuncRun(TestCheck):
         for _info in wsb_check.run(self.test_root, lock=True):
             pass
 
-        mock_func.assert_called_once_with()
+        mock_func.assert_called_once_with(persist=True)
 
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_param_lock02(self, mock_func):

@@ -682,7 +682,7 @@ def run(host, book_ids=None, *, lock=True, backup=True, **kwargs):
                 continue
 
             yield Info('info', f'Checking book {book_id!r} ({book.name!r}).')
-            lh = book.get_tree_lock().acquire() if lock else nullcontext()
+            lh = book.get_tree_lock(persist=lock).acquire() if lock else nullcontext()
             with lh:
                 generator = BookChecker(book, **kwargs)
                 yield from generator.run()

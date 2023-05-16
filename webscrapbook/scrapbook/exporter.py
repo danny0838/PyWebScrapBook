@@ -231,7 +231,7 @@ def run(host, output, book_id='', items=None, *,
             return
 
         yield Info('info', f'Exporting from book {book_id!r} ({book.name!r}).')
-        lh = book.get_tree_lock().acquire() if lock else nullcontext()
+        lh = book.get_tree_lock(persist=lock).acquire() if lock else nullcontext()
         with lh:
             generator = Exporter(output, book, scheme=scheme, singleton=singleton)
             yield from generator.run(items, recursive)

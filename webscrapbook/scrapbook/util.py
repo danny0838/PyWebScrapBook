@@ -83,7 +83,7 @@ class HostQuery:
             return
 
         book = self.host.books[book_id]
-        lh = book.get_tree_lock().acquire() if self.lock else nullcontext()
+        lh = book.get_tree_lock(persist=self.lock).acquire() if self.lock else nullcontext()
         with lh:
             if 'meta' in self.loads[book_id]:
                 book.load_meta_files()

@@ -101,7 +101,7 @@ class FileLock:
         self.file = os.path.join(host.locks, f'{util.encrypt(name, method="md5")}.lock')
         self._keeper = None
 
-        if persist:
+        if isinstance(persist, str) and persist:
             try:
                 with open(self.file, encoding='UTF-8') as fh:
                     assert fh.read() == persist

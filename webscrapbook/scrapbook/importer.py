@@ -513,7 +513,7 @@ def run(host, files, book_id='', *, lock=True, **kwargs):
             return
 
         yield Info('info', f'Impoting to book {book_id!r} ({book.name!r}).')
-        lh = book.get_tree_lock().acquire() if lock else nullcontext()
+        lh = book.get_tree_lock(persist=lock).acquire() if lock else nullcontext()
         with lh:
             generator = Importer(book, **kwargs)
             yield from generator.run(files)

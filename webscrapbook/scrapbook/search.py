@@ -476,7 +476,7 @@ class SearchEngine:
             if book_id in self.query.books.setdefault('exclude', []):
                 continue
 
-            lh = self.host.books[book_id].get_tree_lock().acquire() if self.lock else nullcontext()
+            lh = self.host.books[book_id].get_tree_lock(persist=self.lock).acquire() if self.lock else nullcontext()
             with lh:
                 for item in self.search_book_sorted(book_id):
                     yield item
