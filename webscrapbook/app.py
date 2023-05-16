@@ -1228,18 +1228,17 @@ def action_cache():
     for i, book_id in enumerate(book_ids):
         book_items[book_id] = request.values.getlist(f'item[{i}]') + item_ids
 
-    kwargs = {
-        'book_items': book_items,
-        'lock': not request.values.get('no_lock', default=False, type=bool),
-        'backup': not request.values.get('no_backup', default=False, type=bool),
-        'fulltext': request.values.get('fulltext', default=False, type=bool),
-        'recreate': request.values.get('recreate', default=False, type=bool),
-        'static_site': request.values.get('static_site', default=False, type=bool),
-        'static_index': request.values.get('static_index', default=None, type=bool),
-        'rss': request.values.get('rss', default=None, type=bool),
-    }
-
-    gen = wsb_cache.generate((host.root, host.config), **kwargs)
+    gen = wsb_cache.generate(
+        (host.root, host.config),
+        book_items=book_items,
+        lock=not request.values.get('no_lock', default=False, type=bool),
+        backup=not request.values.get('no_backup', default=False, type=bool),
+        fulltext=request.values.get('fulltext', default=False, type=bool),
+        recreate=request.values.get('recreate', default=False, type=bool),
+        static_site=request.values.get('static_site', default=False, type=bool),
+        static_index=request.values.get('static_index', default=None, type=bool),
+        rss=request.values.get('rss', default=None, type=bool),
+    )
 
     if format == 'sse':
         def wrapper():
@@ -1272,24 +1271,23 @@ def action_check():
     """Invoke the checker."""
     format = request.format
 
-    kwargs = {
-        'book_ids': request.values.getlist('book'),
-        'lock': not request.values.get('no_lock', default=False, type=bool),
-        'backup': not request.values.get('no_backup', default=False, type=bool),
-        'resolve_invalid_id': request.values.get('resolve_invalid_id', default=False, type=bool),
-        'resolve_missing_index': request.values.get('resolve_missing_index', default=False, type=bool),
-        'resolve_missing_index_file': request.values.get('resolve_missing_index_file', default=False, type=bool),
-        'resolve_missing_date': request.values.get('resolve_missing_date', default=False, type=bool),
-        'resolve_older_mtime': request.values.get('resolve_older_mtime', default=False, type=bool),
-        'resolve_toc_unreachable': request.values.get('resolve_toc_unreachable', default=False, type=bool),
-        'resolve_toc_invalid': request.values.get('resolve_toc_invalid', default=False, type=bool),
-        'resolve_toc_empty_subtree': request.values.get('resolve_toc_empty_subtree', default=False, type=bool),
-        'resolve_unindexed_files': request.values.get('resolve_unindexed_files', default=False, type=bool),
-        'resolve_absolute_icon': request.values.get('resolve_absolute_icon', default=False, type=bool),
-        'resolve_unused_icon': request.values.get('resolve_unused_icon', default=False, type=bool),
-    }
-
-    gen = wsb_check.run((host.root, host.config), **kwargs)
+    gen = wsb_check.run(
+        (host.root, host.config),
+        book_ids=request.values.getlist('book'),
+        lock=not request.values.get('no_lock', default=False, type=bool),
+        backup=not request.values.get('no_backup', default=False, type=bool),
+        resolve_invalid_id=request.values.get('resolve_invalid_id', default=False, type=bool),
+        resolve_missing_index=request.values.get('resolve_missing_index', default=False, type=bool),
+        resolve_missing_index_file=request.values.get('resolve_missing_index_file', default=False, type=bool),
+        resolve_missing_date=request.values.get('resolve_missing_date', default=False, type=bool),
+        resolve_older_mtime=request.values.get('resolve_older_mtime', default=False, type=bool),
+        resolve_toc_unreachable=request.values.get('resolve_toc_unreachable', default=False, type=bool),
+        resolve_toc_invalid=request.values.get('resolve_toc_invalid', default=False, type=bool),
+        resolve_toc_empty_subtree=request.values.get('resolve_toc_empty_subtree', default=False, type=bool),
+        resolve_unindexed_files=request.values.get('resolve_unindexed_files', default=False, type=bool),
+        resolve_absolute_icon=request.values.get('resolve_absolute_icon', default=False, type=bool),
+        resolve_unused_icon=request.values.get('resolve_unused_icon', default=False, type=bool),
+    )
 
     if format == 'sse':
         def wrapper():
