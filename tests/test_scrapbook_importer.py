@@ -242,6 +242,65 @@ class TestImporter(unittest.TestCase):
         with open(os.path.join(self.test_output_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'), 'rb') as fh:
             self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
+    def test_basic04(self):
+        """Test importing a common */index.html with cached favicon
+        """
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '../../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            }))
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000000', 'title': 'item0'},
+                ],
+            }))
+            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr(
+                'favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+                'title': 'item1',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': '../.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+        })
+        with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'page content')
+        with open(os.path.join(self.test_output_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'), 'rb') as fh:
+            self.assertEqual(fh.read(), b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
     def test_multi_occurrence(self):
         """For a multi-occurrent item (same export id), import only TOC for
         following ones.

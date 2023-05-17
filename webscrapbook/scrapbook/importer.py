@@ -325,7 +325,7 @@ class Importer():
 
                 # rewrite icon property to be consistent with the importing book
                 try:
-                    base = os.path.dirname(dst)
+                    base = dst if index.endswith('/index.html') else os.path.dirname(dst)
                 except UnboundLocalError:
                     base = self.book.data_dir
                 meta['icon'] = pathname2url(os.path.relpath(iconfile, base))
