@@ -398,24 +398,43 @@ class Importer():
             self._insert_to_id(id, parent_id)
             return parent_id
 
-        for i in reversed(range(len(export_path))):
-            parent_id = export_path[i]['id']
-            if parent_id in self.book.SPECIAL_ITEM_ID:
-                break
+        if self.target_id is None:
+            for i in reversed(range(len(export_path))):
+                parent_id = export_path[i]['id']
+                if parent_id in self.book.SPECIAL_ITEM_ID:
+                    break
 
-            parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
+                parent_id = self.map_id_to_new_id.get(parent_id, parent_id)
 
-            # Assume that an item in meta also exists somewhere in toc, except
-            # for id, which is the one being imported and is not in toc (yet).
-            if parent_id == id:
-                continue
+                # Assume that an item in meta also exists somewhere in toc, except
+                # for id, which is the one being imported and is not in toc (yet).
+                if parent_id == id:
+                    continue
 
-            if parent_id in self.book.meta:
-                break
+                if parent_id in self.book.meta:
+                    break
+            else:
+                # for a bad path data not starting from 'root'
+                i = -1
+                parent_id = self.book.ROOT_ITEM_ID
         else:
-            # for a bad path data not starting from 'root'
-            i = -1
-            parent_id = self.book.ROOT_ITEM_ID
+            for i in reversed(range(len(export_path))):
+                parent_id = export_path[i]['id']
+                if parent_id in self.book.SPECIAL_ITEM_ID:
+                    parent_id = self.target_id
+                    break
+
+                parent_id = self.map_id_to_new_id.get(parent_id)
+
+                if parent_id == id:
+                    continue
+
+                if parent_id in self.book.meta:
+                    break
+            else:
+                # for a bad path data not starting from 'root'
+                i = -1
+                parent_id = self.target_id
 
         for j in range(i + 1, len(export_path)):
             folder_id = export_path[j]['id']
@@ -429,7 +448,7 @@ class Importer():
                     # and folder_id will eventually be inserted under it
                     yield Info('debug', f'Skipped inserting {new_id!r} under {parent_id!r} (same as parent)')
                 elif new_id not in self.book.toc.get(parent_id, ()):
-                    self._insert_to_id(new_id, parent_id, allow_insert=False)
+                    self._insert_to_id(new_id, parent_id, allow_insert=parent_id == self.target_id)
                     yield Info('info', f'Inserted {new_id!r} under {parent_id!r}')
                 else:
                     yield Info('debug', f'Skipped inserting {new_id!r} under {parent_id!r} (already in)')
@@ -440,20 +459,21 @@ class Importer():
                     new_items = self.book.add_item({
                         'title': folder_title,
                         'type': 'folder',
-                    }, parent_id)
+                    }, None)
                     new_id = next(iter(new_items))
                     self.map_id_to_new_id[folder_id] = new_id
+                    self._insert_to_id(new_id, parent_id, allow_insert=parent_id == self.target_id)
                     yield Info('info', f'Generated folder {new_id!r} for missing {folder_id!r} under {parent_id!r}')
                 else:
                     if new_id not in self.book.toc.get(parent_id, ()):
-                        self._insert_to_id(new_id, parent_id, allow_insert=False)
+                        self._insert_to_id(new_id, parent_id, allow_insert=parent_id == self.target_id)
                         yield Info('info', f'Inserted folder {new_id!r} under {parent_id!r}')
                     else:
                         yield Info('debug', f'Skipped inserting {new_id!r} under {parent_id!r} (already in)')
 
             parent_id = new_id
 
-        self._insert_to_id(id, parent_id, allow_insert=False)
+        self._insert_to_id(id, parent_id, allow_insert=parent_id == self.target_id)
         return parent_id
 
     def _insert_to_id(self, id, parent_id, allow_insert=True):

@@ -1203,10 +1203,7 @@ new_at_top = true
         ))))
 
     def test_param_rebuild_folders01(self):
-        """Insert under parent if it exists.
-
-        - Ignore target_id and target_index when rebuild_folders=True.
-        """
+        """Insert under parent if it exists."""
         self.init_book(
             self.test_output,
             meta={
@@ -1286,8 +1283,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1395,8 +1391,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1514,8 +1509,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1718,8 +1712,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1821,8 +1814,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1902,8 +1894,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1974,8 +1965,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2048,8 +2038,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2119,8 +2108,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2184,8 +2172,7 @@ new_at_top = true
             }))
             zh.writestr('data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
-                                      target_id='root', target_index=0):
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2563,6 +2550,640 @@ new_at_top = true
             ],
             '20230101000000002': [
                 '20200201000000002',
+            ],
+        })
+
+    def test_param_rebuild_folders15(self):
+        """Ignore target_index if target_id is not specified."""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder 1 current',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'Folder 2 current',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'Folder 3 current',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000003',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 1,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000002',
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+                                      target_index=0):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'title': 'Folder 1 current',
+                'type': 'folder',
+            },
+            '20200101000000002': {
+                'title': 'Folder 2 current',
+                'type': 'folder',
+            },
+            '20200101000000003': {
+                'title': 'Folder 3 current',
+                'type': 'folder',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            },
+            '20200201000000002': {
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+            '20200101000000001': [
+                '20200101000000002',
+            ],
+            '20200101000000002': [
+                '20200101000000003',
+                '20200201000000001',
+                '20200201000000002',
+            ],
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders16(self):
+        """If target_id is specified, insert under it and generate intermediate
+        folders even if they exists.
+        """
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder 1 current',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'Folder 2 current',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'Folder 3 current',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000003',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000002',
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+
+        wsba_file = os.path.join(self.test_input, '20200403000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200403000000000',
+                'timestamp': '20200403000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 1,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000003',
+                'type': '',
+                'index': '20200201000000003/index.html',
+                'title': 'Item 3',
+                'create': '20200202000000003',
+                'modify': '20200203000000003',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000003/index.html', 'page content 3')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+                                      target_id='20200101000000003'):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'title': 'Folder 1 current',
+                'type': 'folder',
+            },
+            '20200101000000002': {
+                'title': 'Folder 2 current',
+                'type': 'folder',
+            },
+            '20200101000000003': {
+                'title': 'Folder 3 current',
+                'type': 'folder',
+            },
+            '20230101000000001': {
+                'title': 'Folder 1',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20230101000000002': {
+                'title': 'Folder 2',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            },
+            '20200201000000002': {
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            },
+            '20200201000000003': {
+                'type': '',
+                'index': '20200201000000003/index.html',
+                'title': 'Item 3',
+                'create': '20200202000000003',
+                'modify': '20200203000000003',
+                'source': 'https://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+            '20200101000000001': [
+                '20200101000000002',
+            ],
+            '20200101000000002': [
+                '20200101000000003',
+            ],
+            '20200101000000003': [
+                '20200201000000001',
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20230101000000002',
+            ],
+            '20230101000000002': [
+                '20200201000000002',
+                '20200201000000003',
+            ],
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders17(self):
+        """If target_id and target_index are specified, insert under that position."""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder 1 current',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'Folder 2 current',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content')
+
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000002',
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+
+        wsba_file = os.path.join(self.test_input, '20200403000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200403000000000',
+                'timestamp': '20200403000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 1,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000003',
+                'type': '',
+                'index': '20200201000000003/index.html',
+                'title': 'Item 3',
+                'create': '20200202000000003',
+                'modify': '20200203000000003',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000003/index.html', 'page content 3')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+                                      target_id='20200101000000001', target_index=0):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000001': {
+                'title': 'Folder 1 current',
+                'type': 'folder',
+            },
+            '20200101000000002': {
+                'title': 'Folder 2 current',
+                'type': 'folder',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200202000000001',
+                'modify': '20200203000000001',
+                'source': 'http://example.com',
+            },
+            '20230101000000001': {
+                'title': 'Folder 1',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20230101000000002': {
+                'title': 'Folder 2',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000002': {
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            },
+            '20200201000000003': {
+                'type': '',
+                'index': '20200201000000003/index.html',
+                'title': 'Item 3',
+                'create': '20200202000000003',
+                'modify': '20200203000000003',
+                'source': 'https://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+            ],
+            '20200101000000001': [
+                '20200201000000001',
+                '20230101000000001',
+                '20200101000000002',
+            ],
+            '20230101000000001': [
+                '20230101000000002',
+            ],
+            '20230101000000002': [
+                '20200201000000002',
+                '20200201000000003',
+            ],
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders18(self):
+        """Insert under previously imported items."""
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'Folder 0',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
+
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200101000000001',
+                'type': 'folder',
+                'title': 'Item 1',
+                'create': '20200102000000001',
+                'modify': '20200103000000001',
+            }))
+
+        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200402000000000',
+                'timestamp': '20200402000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000002',
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+
+        wsba_file = os.path.join(self.test_input, '20200403000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 2,
+                'id': '20200403000000000',
+                'timestamp': '20200403000000000',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200101000000001', 'title': 'Folder 1'},
+                    {'id': '20200101000000002', 'title': 'Folder 2'},
+                ],
+                'index': 1,
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000003',
+                'type': '',
+                'index': '20200201000000003/index.html',
+                'title': 'Item 3',
+                'create': '20200202000000003',
+                'modify': '20200203000000003',
+                'source': 'https://example.com',
+            }))
+            zh.writestr('data/20200201000000003/index.html', 'page content 3')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+                                      target_id='root', target_index=0):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200101000000000': {
+                'type': 'folder',
+                'title': 'Folder 0',
+            },
+            '20200101000000001': {
+                'type': 'folder',
+                'title': 'Item 1',
+                'create': '20200102000000001',
+                'modify': '20200103000000001',
+            },
+            '20230101000000001': {
+                'title': 'Folder 2',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000002': {
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200202000000002',
+                'modify': '20200203000000002',
+                'source': 'https://example.com',
+            },
+            '20200201000000003': {
+                'type': '',
+                'index': '20200201000000003/index.html',
+                'title': 'Item 3',
+                'create': '20200202000000003',
+                'modify': '20200203000000003',
+                'source': 'https://example.com',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000001',
+                '20200101000000000',
+            ],
+            '20200101000000001': [
+                '20200201000000002',
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20200201000000003',
             ],
         })
 

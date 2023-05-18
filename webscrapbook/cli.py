@@ -755,9 +755,12 @@ child files are imported in unicode filename order.""")
 inserted at (default: last)""")
     parser_import.add_argument(
         '--rebuild-folders', default=False, action='store_true',
-        help="""insert imported items under the original parent, and
-auto-generate parent folders if not found (ignores --target and
---target-index)""")
+        help="""rebuild the original scrapbook tree and auto-genereate missing
+ancestor folders. When `--target` is not specified, imported items are inserted
+under the original parent whenever possible (with `--target-index` ignored).
+When `--target` is specified, imported items are inserted under it (at the
+position specified by `--target-index`), and descendant items are inserted
+under them accordingly.""")
     parser_import.add_argument(
         '--resolve-id-used', metavar='MODE',
         default='skip', action='store',
