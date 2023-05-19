@@ -6,7 +6,7 @@ from unittest import mock
 from webscrapbook import WSB_DIR
 from webscrapbook.scrapbook.convert import wsb2file
 
-from . import TEMP_DIR, glob_files
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -35,7 +35,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestRun(unittest.TestCase):
+class TestRun(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -45,71 +45,66 @@ class TestRun(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
-        self.test_input_config = os.path.join(self.test_input, WSB_DIR, 'config.ini')
         self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
-        self.test_input_meta = os.path.join(self.test_input_tree, 'meta.js')
-        self.test_input_toc = os.path.join(self.test_input_tree, 'toc.js')
         self.test_output = os.path.join(self.test_root, 'output')
 
         os.makedirs(self.test_input_tree, exist_ok=True)
-        os.makedirs(self.test_output, exist_ok=True)
 
     def test_basic01(self):
         """Check for typical WebScrapBook items. (prefix=True)"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "index": "20200101000000001/index.html",
-    "type": "",
-    "title": "Page item - folder"
-  },
-  "20200101000000002": {
-    "index": "20200101000000002.htz",
-    "type": "",
-    "title": "Page item - htz"
-  },
-  "20200101000000003": {
-    "index": "20200101000000003.maff",
-    "type": "",
-    "title": "Page item - maff"
-  },
-  "20200101000000004": {
-    "index": "20200101000000004.html",
-    "type": "",
-    "title": "Page item - single html"
-  },
-  "20200101000000005": {
-    "type": "bookmark",
-    "title": "Bookmark item",
-    "source": "http://example.com/mypath?a=123&b=456"
-  },
-  "20200101000000006": {
-    "type": "folder",
-    "title": "Folder item"
-  },
-  "20200101000000007": {
-    "type": "separator",
-    "title": "Separator item"
-  },
-  "20200101000000008": {
-    "type": "separator"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001",
-    "20200101000000002",
-    "20200101000000003",
-    "20200101000000004",
-    "20200101000000005",
-    "20200101000000006",
-    "20200101000000007",
-    "20200101000000008"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'index': '20200101000000001/index.html',
+                    'type': '',
+                    'title': 'Page item - folder',
+                },
+                '20200101000000002': {
+                    'index': '20200101000000002.htz',
+                    'type': '',
+                    'title': 'Page item - htz',
+                },
+                '20200101000000003': {
+                    'index': '20200101000000003.maff',
+                    'type': '',
+                    'title': 'Page item - maff',
+                },
+                '20200101000000004': {
+                    'index': '20200101000000004.html',
+                    'type': '',
+                    'title': 'Page item - single html',
+                },
+                '20200101000000005': {
+                    'type': 'bookmark',
+                    'title': 'Bookmark item',
+                    'source': 'http://example.com/mypath?a=123&b=456',
+                },
+                '20200101000000006': {
+                    'type': 'folder',
+                    'title': 'Folder item',
+                },
+                '20200101000000007': {
+                    'type': 'separator',
+                    'title': 'Separator item',
+                },
+                '20200101000000008': {
+                    'type': 'separator',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000004',
+                    '20200101000000005',
+                    '20200101000000006',
+                    '20200101000000007',
+                    '20200101000000008',
+                ],
+            },
+        )
 
         index_file = os.path.join(self.test_input, '20200101000000001', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -166,60 +161,59 @@ scrapbook.toc({
 
     def test_basic02(self):
         """Check for typical WebScrapBook items. (prefix=False)"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "index": "20200101000000001/index.html",
-    "type": "",
-    "title": "Page item - folder"
-  },
-  "20200101000000002": {
-    "index": "20200101000000002.htz",
-    "type": "",
-    "title": "Page item - htz"
-  },
-  "20200101000000003": {
-    "index": "20200101000000003.maff",
-    "type": "",
-    "title": "Page item - maff"
-  },
-  "20200101000000004": {
-    "index": "20200101000000004.html",
-    "type": "",
-    "title": "Page item - single html"
-  },
-  "20200101000000005": {
-    "type": "bookmark",
-    "title": "Bookmark item",
-    "source": "http://example.com/mypath?a=123&b=456"
-  },
-  "20200101000000006": {
-    "type": "folder",
-    "title": "Folder item"
-  },
-  "20200101000000007": {
-    "type": "separator",
-    "title": "Separator item"
-  },
-  "20200101000000008": {
-    "type": "separator"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001",
-    "20200101000000002",
-    "20200101000000003",
-    "20200101000000004",
-    "20200101000000005",
-    "20200101000000006",
-    "20200101000000007",
-    "20200101000000008"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'index': '20200101000000001/index.html',
+                    'type': '',
+                    'title': 'Page item - folder',
+                },
+                '20200101000000002': {
+                    'index': '20200101000000002.htz',
+                    'type': '',
+                    'title': 'Page item - htz',
+                },
+                '20200101000000003': {
+                    'index': '20200101000000003.maff',
+                    'type': '',
+                    'title': 'Page item - maff',
+                },
+                '20200101000000004': {
+                    'index': '20200101000000004.html',
+                    'type': '',
+                    'title': 'Page item - single html',
+                },
+                '20200101000000005': {
+                    'type': 'bookmark',
+                    'title': 'Bookmark item',
+                    'source': 'http://example.com/mypath?a=123&b=456',
+                },
+                '20200101000000006': {
+                    'type': 'folder',
+                    'title': 'Folder item',
+                },
+                '20200101000000007': {
+                    'type': 'separator',
+                    'title': 'Separator item',
+                },
+                '20200101000000008': {
+                    'type': 'separator',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000004',
+                    '20200101000000005',
+                    '20200101000000006',
+                    '20200101000000007',
+                    '20200101000000008',
+                ],
+            },
+        )
 
         index_file = os.path.join(self.test_input, '20200101000000001', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -273,43 +267,42 @@ scrapbook.toc({
 
         - An item with data and descendants is transformed into <title>/ and <title>.htd/
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "folder",
-    "title": "Folder1"
-  },
-  "20200101000000002": {
-    "index": "20200101000000002/index.html",
-    "type": "",
-    "title": "Folder1 sub"
-  },
-  "20200101000000003": {
-    "index": "20200101000000003/index.html",
-    "type": "",
-    "title": "Folder2"
-  },
-  "20200101000000004": {
-    "index": "20200101000000004/index.html",
-    "type": "",
-    "title": "Folder2 sub"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001",
-    "20200101000000003"
-  ],
-  "20200101000000001": [
-    "20200101000000002"
-  ],
-  "20200101000000003": [
-    "20200101000000004"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder1',
+                },
+                '20200101000000002': {
+                    'index': '20200101000000002/index.html',
+                    'type': '',
+                    'title': 'Folder1 sub',
+                },
+                '20200101000000003': {
+                    'index': '20200101000000003/index.html',
+                    'type': '',
+                    'title': 'Folder2',
+                },
+                '20200101000000004': {
+                    'index': '20200101000000004/index.html',
+                    'type': '',
+                    'title': 'Folder2 sub',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000003',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+                '20200101000000003': [
+                    '20200101000000004',
+                ],
+            },
+        )
 
         index_file = os.path.join(self.test_input, '20200101000000002', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -346,43 +339,42 @@ scrapbook.toc({
 
         - An item with data and descendants is transformed into <title>/ and <title>.htd/
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "folder",
-    "title": "Folder1"
-  },
-  "20200101000000002": {
-    "index": "20200101000000002/index.html",
-    "type": "",
-    "title": "Folder1 sub"
-  },
-  "20200101000000003": {
-    "index": "20200101000000003/index.html",
-    "type": "",
-    "title": "Folder2"
-  },
-  "20200101000000004": {
-    "index": "20200101000000004/index.html",
-    "type": "",
-    "title": "Folder2 sub"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001",
-    "20200101000000003"
-  ],
-  "20200101000000001": [
-    "20200101000000002"
-  ],
-  "20200101000000003": [
-    "20200101000000004"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder1',
+                },
+                '20200101000000002': {
+                    'index': '20200101000000002/index.html',
+                    'type': '',
+                    'title': 'Folder1 sub',
+                },
+                '20200101000000003': {
+                    'index': '20200101000000003/index.html',
+                    'type': '',
+                    'title': 'Folder2',
+                },
+                '20200101000000004': {
+                    'index': '20200101000000004/index.html',
+                    'type': '',
+                    'title': 'Folder2 sub',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000003',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+                '20200101000000003': [
+                    '20200101000000004',
+                ],
+            },
+        )
 
         index_file = os.path.join(self.test_input, '20200101000000002', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -420,30 +412,29 @@ scrapbook.toc({
         - An item index file without extension is transformed to <filename>._
           to prevent conflict with folder name.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "index": "20200101000000001",
-    "type": "file",
-    "title": "File1"
-  },
-  "20200101000000002": {
-    "type": "bookmark",
-    "title": "Bookmark1",
-    "source": "http://example.com"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ],
-  "20200101000000001": [
-    "20200101000000002"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'index': '20200101000000001',
+                    'type': 'file',
+                    'title': 'File1',
+                },
+                '20200101000000002': {
+                    'type': 'bookmark',
+                    'title': 'Bookmark1',
+                    'source': 'http://example.com',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+            },
+        )
 
         index_file = os.path.join(self.test_input, '20200101000000001')
         with open(index_file, 'wb') as fh:
@@ -461,66 +452,65 @@ scrapbook.toc({
 
     def test_numbering(self):
         """Check filename prefix is correctly zero-padded. (prefix=True)"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "folder",
-    "title": "Folder1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "Folder2"
-  },
-  "20200101000000003": {
-    "type": "folder",
-    "title": "Folder3"
-  },
-  "20200101000000004": {
-    "type": "folder",
-    "title": "Folder4"
-  },
-  "20200101000000005": {
-    "type": "folder",
-    "title": "Folder5"
-  },
-  "20200101000000006": {
-    "type": "folder",
-    "title": "Folder6"
-  },
-  "20200101000000007": {
-    "type": "folder",
-    "title": "Folder7"
-  },
-  "20200101000000008": {
-    "type": "folder",
-    "title": "Folder8"
-  },
-  "20200101000000009": {
-    "type": "folder",
-    "title": "Folder9"
-  },
-  "20200101000000010": {
-    "type": "folder",
-    "title": "Folder10"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001",
-    "20200101000000002",
-    "20200101000000003",
-    "20200101000000004",
-    "20200101000000005",
-    "20200101000000006",
-    "20200101000000007",
-    "20200101000000008",
-    "20200101000000009",
-    "20200101000000010"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'Folder2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'Folder3',
+                },
+                '20200101000000004': {
+                    'type': 'folder',
+                    'title': 'Folder4',
+                },
+                '20200101000000005': {
+                    'type': 'folder',
+                    'title': 'Folder5',
+                },
+                '20200101000000006': {
+                    'type': 'folder',
+                    'title': 'Folder6',
+                },
+                '20200101000000007': {
+                    'type': 'folder',
+                    'title': 'Folder7',
+                },
+                '20200101000000008': {
+                    'type': 'folder',
+                    'title': 'Folder8',
+                },
+                '20200101000000009': {
+                    'type': 'folder',
+                    'title': 'Folder9',
+                },
+                '20200101000000010': {
+                    'type': 'folder',
+                    'title': 'Folder10',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000004',
+                    '20200101000000005',
+                    '20200101000000006',
+                    '20200101000000007',
+                    '20200101000000008',
+                    '20200101000000009',
+                    '20200101000000010',
+                ],
+            },
+        )
 
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass
@@ -544,56 +534,55 @@ scrapbook.toc({
 
         - Deduplicate even if extension is different.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "index": "20200101000000001/index.html",
-    "type": "",
-    "title": "myitem"
-  },
-  "20200101000000002": {
-    "index": "20200101000000002.htz",
-    "type": "",
-    "title": "myitem"
-  },
-  "20200101000000003": {
-    "index": "20200101000000003.maff",
-    "type": "",
-    "title": "myitem"
-  },
-  "20200101000000004": {
-    "index": "20200101000000004.html",
-    "type": "",
-    "title": "myitem"
-  },
-  "20200101000000005": {
-    "type": "bookmark",
-    "title": "myitem",
-    "source": "http://example.com/mypath?a=123&b=456"
-  },
-  "20200101000000006": {
-    "type": "folder",
-    "title": "myitem"
-  },
-  "20200101000000007": {
-    "type": "separator",
-    "title": "myitem"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001",
-    "20200101000000002",
-    "20200101000000003",
-    "20200101000000004",
-    "20200101000000005",
-    "20200101000000006",
-    "20200101000000007"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'index': '20200101000000001/index.html',
+                    'type': '',
+                    'title': 'myitem',
+                },
+                '20200101000000002': {
+                    'index': '20200101000000002.htz',
+                    'type': '',
+                    'title': 'myitem',
+                },
+                '20200101000000003': {
+                    'index': '20200101000000003.maff',
+                    'type': '',
+                    'title': 'myitem',
+                },
+                '20200101000000004': {
+                    'index': '20200101000000004.html',
+                    'type': '',
+                    'title': 'myitem',
+                },
+                '20200101000000005': {
+                    'type': 'bookmark',
+                    'title': 'myitem',
+                    'source': 'http://example.com/mypath?a=123&b=456',
+                },
+                '20200101000000006': {
+                    'type': 'folder',
+                    'title': 'myitem',
+                },
+                '20200101000000007': {
+                    'type': 'separator',
+                    'title': 'myitem',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000002',
+                    '20200101000000003',
+                    '20200101000000004',
+                    '20200101000000005',
+                    '20200101000000006',
+                    '20200101000000007',
+                ],
+            },
+        )
 
         index_file = os.path.join(self.test_input, '20200101000000001', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -628,31 +617,30 @@ scrapbook.toc({
 
     def test_recursive(self):
         """Check if recursive item is correctly handled."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "folder",
-    "title": "Folder1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "Folder2"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ],
-  "20200101000000001": [
-    "20200101000000002"
-  ],
-  "20200101000000002": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'Folder2',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000001',
+                ],
+            },
+        )
 
         for _info in wsb2file.run(self.test_input, self.test_output):
             pass

@@ -8,9 +8,8 @@ from unittest import mock
 from webscrapbook import WSB_DIR, util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import check as wsb_check
-from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR
+from . import TEMP_DIR, TestBookMixin
 
 
 def setUpModule():
@@ -39,7 +38,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestCheck(unittest.TestCase):
+class TestCheck(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -49,7 +48,6 @@ class TestCheck(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_tree = os.path.join(self.test_root, WSB_DIR, 'tree')
-        self.test_config = os.path.join(self.test_root, WSB_DIR, 'config.ini')
         os.makedirs(self.test_tree)
 
 
@@ -85,8 +83,7 @@ class TestFuncRun(TestCheck):
     @mock.patch('webscrapbook.scrapbook.host.Book')
     def test_param_book_ids01(self, mock_book):
         """Include effective provided IDs"""
-        with open(self.test_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_host(self.test_root, config="""\
 [book "id1"]
 
 [book "id2"]
@@ -109,8 +106,7 @@ class TestFuncRun(TestCheck):
     @mock.patch('webscrapbook.scrapbook.host.Book')
     def test_param_book_ids02(self, mock_book):
         """Include all available IDs if None provided"""
-        with open(self.test_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_host(self.test_root, config="""\
 [book "id1"]
 
 [book "id2"]
@@ -134,8 +130,7 @@ class TestFuncRun(TestCheck):
     @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
     def test_no_tree(self, mock_lock):
         """Books with no_tree=True should be skipped."""
-        with open(self.test_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_host(self.test_root, config="""\
 [book ""]
 no_tree = true
 """)
@@ -167,32 +162,30 @@ no_tree = true
 class TestBookChecker(TestCheck):
     def test_normal(self):
         """A simple normal check case. No error should raise."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book)
         for _info in generator.run():
             pass
@@ -217,32 +210,30 @@ scrapbook.toc({
 
     def test_resolve_invalid_id(self):
         """Resolve item with invalid ID"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'root': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "root": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_invalid_id=True)
         for _info in generator.run():
             pass
@@ -252,31 +243,29 @@ scrapbook.toc({
 
     def test_resolve_missing_index(self):
         """Resolve item with missing index"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_index=True)
         for _info in generator.run():
             pass
@@ -286,28 +275,26 @@ scrapbook.toc({
 
     def test_resolve_missing_index_file(self):
         """Resolve item with missing index file"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_index_file=True)
         for _info in generator.run():
             pass
@@ -317,32 +304,30 @@ scrapbook.toc({
 
     def test_resolve_missing_create01(self):
         """Resolve item with empty create (infer from ID)"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -367,31 +352,29 @@ scrapbook.toc({
 
     def test_resolve_missing_create02(self):
         """Resolve item with missing create (infer from ID)"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -416,33 +399,31 @@ scrapbook.toc({
 
     def test_resolve_missing_create03(self):
         """Resolve item with empty create (infer from ctime)"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'foobar': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    'foobar',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "foobar": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "foobar"
-  ]
-})""")
         ts = util.id_to_datetime(util.datetime_to_id()).timestamp()
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -467,25 +448,23 @@ scrapbook.toc({
 
     def test_resolve_missing_create04(self):
         """Resolve item with empty create (infer from modify)"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "foobar": {
-    "title": "MyTitle中文",
-    "type": "folder",
-    "create": "",
-    "modify": "20200101000000000"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "foobar"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'foobar': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                    'create': '',
+                    'modify': '20200101000000000',
+                },
+            },
+            toc={
+                'root': [
+                    'foobar',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -507,24 +486,22 @@ scrapbook.toc({
 
     def test_resolve_missing_create05(self):
         """Resolve item with empty create (no change)"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "foobar": {
-    "title": "MyTitle中文",
-    "type": "folder",
-    "create": ""
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "foobar"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'foobar': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                    'create': '',
+                },
+            },
+            toc={
+                'root': [
+                    'foobar',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -545,34 +522,32 @@ scrapbook.toc({
 
     def test_resolve_missing_modify01(self):
         """Resolve item with empty modify (infer from mtime)"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -597,33 +572,31 @@ scrapbook.toc({
 
     def test_resolve_missing_modify02(self):
         """Resolve item with missing modify (infer from mtime)"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -648,25 +621,23 @@ scrapbook.toc({
 
     def test_resolve_missing_modify03(self):
         """Resolve item with empty modify (infer from create)"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "title": "MyTitle中文",
-    "type": "folder",
-    "create": "20200101000000000",
-    "modify": ""
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                    'create': '20200101000000000',
+                    'modify': '',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -688,25 +659,23 @@ scrapbook.toc({
 
     def test_resolve_missing_modify04(self):
         """Resolve item with empty modify (infer from none)"""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "foobar": {
-    "title": "MyTitle中文",
-    "type": "folder",
-    "create": "",
-    "modify": ""
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "foobar"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'foobar': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                    'create': '',
+                    'modify': '',
+                },
+            },
+            toc={
+                'root': [
+                    'foobar',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_missing_date=True)
         for _info in generator.run():
             pass
@@ -728,34 +697,32 @@ scrapbook.toc({
 
     def test_resolve_older_mtime(self):
         """Resolve item with modify older than mtime of index file"""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'title': 'MyTitle中文',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "title": "MyTitle中文",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "source": "http://example.com",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""page content""")
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_older_mtime=True)
         for _info in generator.run():
             pass
@@ -780,42 +747,40 @@ scrapbook.toc({
 
     def test_resolve_toc_invalid01(self):
         """Remove invalid items from TOC."""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "item1": {
-    "title": "MyTitle中文",
-    "type": "folder"
-  },
-  "item2": {
-    "title": "MyTitle2",
-    "type": "separator"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "item1",
-    "unknown1",
-    "unknown2",
-    "hidden",
-    "recycle"
-  ],
-  "item1": [
-    "item2",
-    "unknown3",
-    "root"
-  ],
-  "item3": [
-    "item1"
-  ],
-  "recycle": [
-    "item4"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'item1': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                },
+                'item2': {
+                    'title': 'MyTitle2',
+                    'type': 'separator',
+                }
+            },
+            toc={
+                'root': [
+                    'item1',
+                    'unknown1',
+                    'unknown2',
+                    'hidden',
+                    'recycle',
+                ],
+                'item1': [
+                    'item2',
+                    'unknown3',
+                    'root',
+                ],
+                'item3': [
+                    'item1',
+                ],
+                'recycle': [
+                    'item4',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_toc_invalid=True)
         for _info in generator.run():
             pass
@@ -843,22 +808,19 @@ scrapbook.toc({
 
     def test_resolve_toc_invalid02(self):
         """Don't error if toc[id] has been removed when checking its ref IDs."""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "unknown"
-  ],
-  "unknown": [
-    "item1"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={},
+            toc={
+                'root': [
+                    'unknown',
+                ],
+                'unknown': [
+                    'item1',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_toc_invalid=True, resolve_missing_index=True)
         for _info in generator.run():
             pass
@@ -871,25 +833,23 @@ scrapbook.toc({
 
     def test_resolve_toc_unreachable(self):
         """Resolve unreachable items."""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "item1": {
-    "title": "MyTitle中文",
-    "type": "folder"
-  },
-  "item2": {
-    "title": "MyTitle2",
-    "type": "separator"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": []
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'item1': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                },
+                'item2': {
+                    'title': 'MyTitle2',
+                    'type': 'separator',
+                },
+            },
+            toc={
+                'root': [],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_toc_unreachable=True)
         for _info in generator.run():
             pass
@@ -914,30 +874,28 @@ scrapbook.toc({
 
     def test_resolve_toc_empty_subtree(self):
         """Resolve empty TOC item lists."""
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "item1": {
-    "title": "MyTitle中文",
-    "type": "folder"
-  },
-  "item2": {
-    "title": "MyTitle2",
-    "type": "separator"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "item1",
-    "item2"
-  ],
-  "item1": [],
-  "item2": []
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'item1': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                },
+                'item2': {
+                    'title': 'MyTitle2',
+                    'type': 'separator',
+                },
+            },
+            toc={
+                'root': [
+                    'item1',
+                    'item2',
+                ],
+                'item1': [],
+                'item2': [],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_toc_empty_subtree=True)
         for _info in generator.run():
             pass
@@ -961,19 +919,17 @@ scrapbook.toc({
         })
 
     def test_resolve_unindexed_files(self):
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "item1": {}
-})""")
-
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "item1"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'item1': {},
+            },
+            toc={
+                'root': [
+                    'item1',
+                ],
+            },
+        )
 
         test_file = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_file), exist_ok=True)
@@ -1010,7 +966,6 @@ page content 2
         ts = datetime(2021, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_file, (ts, ts))
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
         for _info in generator.run():
             pass
@@ -1056,7 +1011,7 @@ page content 2
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
         for _info in generator.run():
             pass
@@ -1079,21 +1034,19 @@ page content 2
         )
 
     def test_resolve_unindexed_files_exclude_support_folders(self):
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "item1": {
-    "index": "item1.html"
-  }
-})""")
-
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "item1"
-  ]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'item1': {
+                    'index': 'item1.html',
+                },
+            },
+            toc={
+                'root': [
+                    'item1',
+                ],
+            },
+        )
         test_file = os.path.join(self.test_root, 'item1.html')
         with open(test_file, 'w', encoding='UTF-8') as fh:
             fh.write('item page content')
@@ -1118,7 +1071,6 @@ scrapbook.toc({
         with open(os.path.join(sup_dir, 'frame.html'), 'w', encoding='UTF-8') as fh:
             fh.write('frame content')
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
         for _info in generator.run():
             pass
@@ -1147,9 +1099,7 @@ scrapbook.toc({
 
     def test_resolve_unindexed_files_exclude_wsb(self):
         """<book>/.wsb should be skipped."""
-        config_file = os.path.join(self.test_root, WSB_DIR, 'config.ini')
-        with open(config_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        book = self.init_book(self.test_root, config="""\
 [book ""]
 top_dir = top
 data_dir =
@@ -1161,7 +1111,6 @@ tree_dir = .wsb/tree
         with open(wsb_file, 'w', encoding='UTF-8') as fh:
             fh.write("""<!DOCTYPE html>index content""")
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_unindexed_files=True)
         for _info in generator.run():
             pass
@@ -1171,20 +1120,20 @@ tree_dir = .wsb/tree
 
     def test_resolve_absolute_icon01(self):
         """Check favicon with absolute URL."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'index': '20200101000000000.html',
+                    'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+                },
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": "data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
-  }
-})""")
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write('dummy')
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
@@ -1203,20 +1152,20 @@ scrapbook.meta({
 
     def test_resolve_absolute_icon02(self):
         """Keep original value for bad data URL."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'index': '20200101000000000.html',
+                    'icon': 'data:',
+                },
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": "data:"
-  }
-})""")
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write('dummy')
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
@@ -1232,20 +1181,20 @@ scrapbook.meta({
 
     def test_resolve_absolute_icon03(self):
         """Keep original value for bad data URL."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'index': '20200101000000000.html',
+                    'icon': 'data:image/bmp;base64,Qk08AAA-------',
+                },
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": "data:image/bmp;base64,Qk08AAA-------"
-  }
-})""")
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write('dummy')
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
@@ -1261,20 +1210,20 @@ scrapbook.meta({
 
     def test_resolve_absolute_icon04(self):
         """Keep original value for bad protocol."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'index': '20200101000000000.html',
+                    'icon': 'blob:http%3A//example.com/c94d498c-7818-49b3-8e79-d3959938ba0a',
+                },
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": "blob:http%3A//example.com/c94d498c-7818-49b3-8e79-d3959938ba0a"
-  }
-})""")
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write('dummy')
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_absolute_icon=True)
         for _info in generator.run():
             pass
@@ -1290,16 +1239,17 @@ scrapbook.meta({
 
     def test_resolve_unused_icon(self):
         """Check for unused favicons."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000.htz',
+                    'type': '',
+                    'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                },
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000.htz')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.htz",
-    "type": "",
-    "icon": ".wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp"
-  }
-})""")
         with zipfile.ZipFile(test_index, 'w') as zh:
             zh.writestr('index.html', 'dummy')
         os.makedirs(os.path.join(self.test_tree, 'favicon'))
@@ -1312,7 +1262,6 @@ scrapbook.meta({
         with open(os.path.join(self.test_tree, 'favicon', 'baz.jpg'), 'w') as fh:
             fh.write('dummy')
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_unused_icon=True)
         for _info in generator.run():
             pass
@@ -1334,35 +1283,38 @@ scrapbook.meta({
 
         - Resolve empty TOC item lists after other resolves.
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "item1": {
-    "title": "MyTitle中文",
-    "type": "folder"
-  },
-  "item2": {
-    "title": "MyTitle2",
-    "type": "separator"
-  },
-  "item3": {
-    "title": "MyTitle2",
-    "type": "",
-    "index": "item3.html"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "item1",
-    "item2"
-  ],
-  "item1": ["item3", "nonexistent"],
-  "item2": ["recycle"]
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'item1': {
+                    'title': 'MyTitle中文',
+                    'type': 'folder',
+                },
+                'item2': {
+                    'title': 'MyTitle2',
+                    'type': 'separator',
+                },
+                'item3': {
+                    'title': 'MyTitle2',
+                    'type': '',
+                    'index': 'item3.html',
+                },
+            },
+            toc={
+                'root': [
+                    'item1',
+                    'item2',
+                ],
+                'item1': [
+                    'item3',
+                    'nonexistent',
+                ],
+                'item2': [
+                    'recycle',
+                ],
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = wsb_check.BookChecker(book, resolve_all=True)
         for _info in generator.run():
             pass

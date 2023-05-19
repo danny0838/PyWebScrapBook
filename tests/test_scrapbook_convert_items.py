@@ -10,7 +10,7 @@ from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import items as conv_items
 from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR, glob_files
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -39,7 +39,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestRun(unittest.TestCase):
+class TestRun(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -49,17 +49,10 @@ class TestRun(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
-        self.test_input_config = os.path.join(self.test_input, WSB_DIR, 'config.ini')
         self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
-        self.test_input_meta = os.path.join(self.test_input_tree, 'meta.js')
-        self.test_input_toc = os.path.join(self.test_input_tree, 'toc.js')
         self.test_output = os.path.join(self.test_root, 'output')
-        self.test_output_tree = os.path.join(self.test_output, WSB_DIR, 'tree')
-        self.test_output_meta = os.path.join(self.test_output_tree, 'meta.js')
-        self.test_output_toc = os.path.join(self.test_output_tree, 'toc.js')
 
         os.makedirs(self.test_input_tree, exist_ok=True)
-        os.makedirs(self.test_output, exist_ok=True)
 
     def test_param_type(self):
         """Check type filter
@@ -69,14 +62,12 @@ class TestRun(unittest.TestCase):
             with self.subTest(type=type):
                 self.setUp()
                 try:
-                    with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-                        fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "%s",
-    "index": "20200101000000000/index.html"
-  }
-})""" % type)
+                    self.init_book(self.test_input, meta={
+                        '20200101000000000': {
+                            'type': type,
+                            'index': '20200101000000000/index.html',
+                        },
+                    })
 
                     index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
                     os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -95,14 +86,12 @@ scrapbook.meta({
 
                 self.setUp()
                 try:
-                    with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-                        fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "%s",
-    "index": "20200101000000000/index.html"
-  }
-})""" % type)
+                    self.init_book(self.test_input, meta={
+                        '20200101000000000': {
+                            'type': type,
+                            'index': '20200101000000000/index.html',
+                        },
+                    })
 
                     index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
                     os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -123,35 +112,33 @@ scrapbook.meta({
     def _test_param_format_sample(self):
         """Generate sample files for test_param_format_*
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000001/index.html"
-  },
-  "20200101000000002": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000002.htz"
-  },
-  "20200101000000003": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000003.maff"
-  },
-  "20200101000000004": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000004.html"
-  },
-  "20200101000000005": {
-    "type": "",
-    "create": "20200101000000000",
-    "index": "20200101000000005.txt"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000001': {
+                'type': '',
+                'create': '20200101000000000',
+                'index': '20200101000000001/index.html',
+            },
+            '20200101000000002': {
+                'type': '',
+                'create': '20200101000000000',
+                'index': '20200101000000002.htz',
+            },
+            '20200101000000003': {
+                'type': '',
+                'create': '20200101000000000',
+                'index': '20200101000000003.maff',
+            },
+            '20200101000000004': {
+                'type': '',
+                'create': '20200101000000000',
+                'index': '20200101000000004.html',
+            },
+            '20200101000000005': {
+                'type': '',
+                'create': '20200101000000000',
+                'index': '20200101000000005.txt',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000001')
         os.makedirs(index_dir, exist_ok=True)
@@ -280,15 +267,13 @@ my page content
     def test_param_format_folder02(self):
         """Check if icon path is correctly handled for htz => folder.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.htz",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.htz')
         with zipfile.ZipFile(index_file, 'w') as zh:
@@ -326,15 +311,13 @@ scrapbook.meta({
     def test_param_format_folder03(self):
         """Check if icon path is correctly handled for maff => folder.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.maff",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.maff')
         with zipfile.ZipFile(index_file, 'w') as zh:
@@ -373,15 +356,13 @@ scrapbook.meta({
     def test_param_format_folder04(self):
         """Check if icon path is correctly handled for single_file => folder.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.html',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.html')
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -506,15 +487,13 @@ scrapbook.meta({
     def test_param_format_htz02(self):
         """Check if icon path is correctly handled for folder => htz.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html",
-    "icon": "favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': 'favicon.ico',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -549,15 +528,13 @@ scrapbook.meta({
     def test_param_format_htz03(self):
         """Check if icon path is correctly handled for maff => htz.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.maff",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.maff')
         with zipfile.ZipFile(index_file, 'w') as zh:
@@ -595,15 +572,13 @@ scrapbook.meta({
     def test_param_format_htz04(self):
         """Check if icon path is correctly handled for single_file => htz.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.html',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.html')
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -771,22 +746,20 @@ scrapbook.meta({
     def test_param_format_maff02(self):
         """Fail if index.rdf already exists
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001/index.html"
-  },
-  "20200101000000002": {
-    "type": "",
-    "index": "20200101000000002.htz"
-  },
-  "20200101000000003": {
-    "type": "",
-    "index": "20200101000000003.maff"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000001': {
+                'type': '',
+                'index': '20200101000000001/index.html',
+            },
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002.htz',
+            },
+            '20200101000000003': {
+                'type': '',
+                'index': '20200101000000003.maff',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000001')
         os.makedirs(index_dir, exist_ok=True)
@@ -842,15 +815,13 @@ scrapbook.meta({
     def test_param_format_maff03(self):
         """Check if icon path is correctly handled for folder => maff.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html",
-    "icon": "favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': 'favicon.ico',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -885,15 +856,13 @@ scrapbook.meta({
     def test_param_format_maff04(self):
         """Check if icon path is correctly handled for htz => maff.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.htz",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.htz')
         with zipfile.ZipFile(index_file, 'w') as zh:
@@ -930,15 +899,13 @@ scrapbook.meta({
     def test_param_format_maff05(self):
         """Check if icon path is correctly handled for single_file => maff.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.html',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.html')
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -1067,15 +1034,13 @@ my page content
     def test_param_format_single_file02(self):
         """Check if icon path is correctly handled for folder => single_file.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html",
-    "icon": "favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+                'icon': 'favicon.ico',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -1110,15 +1075,13 @@ scrapbook.meta({
     def test_param_format_single_file03(self):
         """Check if icon path is correctly handled for htz => single_file.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.htz",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.htz')
         with zipfile.ZipFile(index_file, 'w') as zh:
@@ -1155,15 +1118,13 @@ scrapbook.meta({
     def test_param_format_single_file04(self):
         """Check if icon path is correctly handled for maff => single_file.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.maff",
-    "icon": ".wsb/tree/favicon/favicon.ico"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+                'icon': '.wsb/tree/favicon/favicon.ico',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000.maff')
         with zipfile.ZipFile(index_file, 'w') as zh:
@@ -1201,14 +1162,12 @@ scrapbook.meta({
     def test_param_format_single_file05(self):
         """Check if meta refresh is resolved recursively.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -1245,14 +1204,12 @@ scrapbook.meta({
     def test_param_format_single_file06(self):
         """Check if meta refresh target is non-HTML, and SVG rewriting.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -1301,14 +1258,12 @@ scrapbook.meta({
     def test_param_format_single_file07(self):
         """Check that a deleyed meta refresh should not be resolved.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -1339,14 +1294,12 @@ scrapbook.meta({
     def test_param_format_single_file08(self):
         """Check that a meta refresh to an absolute URL should not be resolved.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)

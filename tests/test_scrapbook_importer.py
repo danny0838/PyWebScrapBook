@@ -12,7 +12,7 @@ from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import importer as wsb_importer
 from webscrapbook.scrapbook.host import Host
 
-from . import TEMP_DIR
+from . import TEMP_DIR, TestBookMixin
 
 
 def setUpModule():
@@ -41,7 +41,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestImporter(unittest.TestCase):
+class TestImporter(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -52,11 +52,7 @@ class TestImporter(unittest.TestCase):
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
         self.test_output = os.path.join(self.test_root, 'output')
-        self.test_output_wsb = os.path.join(self.test_output, WSB_DIR)
-        self.test_output_config = os.path.join(self.test_output_wsb, 'config.ini')
-        self.test_output_tree = os.path.join(self.test_output_wsb, 'tree')
-        self.test_output_meta = os.path.join(self.test_output_tree, 'meta.js')
-        self.test_output_toc = os.path.join(self.test_output_tree, 'toc.js')
+        self.test_output_tree = os.path.join(self.test_output, WSB_DIR, 'tree')
 
         os.makedirs(self.test_input, exist_ok=True)
         os.makedirs(self.test_output_tree, exist_ok=True)
@@ -305,20 +301,19 @@ class TestImporter(unittest.TestCase):
         """For a multi-occurrent item (same export id), import only TOC for
         following ones.
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -407,20 +402,19 @@ scrapbook.toc({
     def test_param_target_id(self):
         """Test for target_id
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -486,20 +480,19 @@ scrapbook.toc({
     def test_param_target_index(self):
         """Test for target_index
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -563,22 +556,21 @@ scrapbook.toc({
     def test_param_target_filename01(self):
         """For */index.html
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "title": "item0",
-    "index": "20200101000000000.html"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'title': 'item0',
+                    'index': '20200101000000000.html',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -631,22 +623,21 @@ scrapbook.toc({
     def test_param_target_filename02(self):
         """For *.maff
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "title": "item0",
-    "index": "20200101000000000.html"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'title': 'item0',
+                    'index': '20200101000000000.html',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -697,22 +688,21 @@ scrapbook.toc({
     def test_param_target_filename03(self):
         """Fail out if target file exists
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "title": "item0",
-    "index": "20200101000000000.html"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'title': 'item0',
+                    'index': '20200101000000000.html',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         with open(os.path.join(self.test_output, '20200101000000000.html'), 'w', encoding='UTF-8') as fh:
             fh.write('some page content')
 
@@ -764,22 +754,21 @@ scrapbook.toc({
     def test_param_target_filename04(self):
         """Test formatters
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "title": "item0",
-    "index": "20200101000000000.html"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'title': 'item0',
+                    'index': '20200101000000000.html',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -836,22 +825,21 @@ scrapbook.toc({
     def test_param_target_filename05(self):
         """Test time related formatters
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "title": "item0",
-    "index": "20200101000000000.html"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'title': 'item0',
+                    'index': '20200101000000000.html',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20220607232425267.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -922,28 +910,27 @@ scrapbook.toc({
     def test_param_rebuild_folders01(self):
         """Test for rebuild_folders
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "current item0"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "current item2"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ],
-  "20200101000000000": [
-    "20200101000000002"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'current item0',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'current item2',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+                '20200101000000000': [
+                    '20200101000000002',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -1064,22 +1051,21 @@ scrapbook.toc({
     def test_param_rebuild_folders03(self):
         """Generate folders if parent not exist (partial)
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "bookmark",
-    "title": "current item0",
-    "source": "http://example.com"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'bookmark',
+                    'title': 'current item0',
+                    'source': 'http://example.com',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('meta.json', json.dumps({
@@ -1221,20 +1207,19 @@ scrapbook.toc({
     def test_param_resolve_id_used_skip01(self):
         """No import if ID exists
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -1281,26 +1266,25 @@ scrapbook.toc({
     def test_param_resolve_id_used_replace01(self):
         """Test */index.html
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001/index.html",
-    "title": "original title",
-    "create": "20200201000000000",
-    "modify": "20200301000000000",
-    "source": "http://example.com/original",
-    "icon": "favicon.ico"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001/index.html',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                    'icon': 'favicon.ico',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
         os.makedirs(os.path.join(self.test_output, '20200101000000001'))
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
@@ -1371,25 +1355,24 @@ scrapbook.toc({
     def test_param_resolve_id_used_replace02(self):
         """Test *.htz
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001.htz",
-    "title": "original title",
-    "create": "20200201000000000",
-    "modify": "20200301000000000",
-    "source": "http://example.com/original"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001.htz',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000001.htz'), 'w') as zh:
             zh.writestr('index.html', 'page content')
 
@@ -1445,25 +1428,24 @@ scrapbook.toc({
     def test_param_resolve_id_used_replace03(self):
         """Fail if index file extension not match
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001/index.html",
-    "title": "original title",
-    "create": "20200201000000000",
-    "modify": "20200301000000000",
-    "source": "http://example.com/original"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001/index.html',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
         os.makedirs(os.path.join(self.test_output, '20200101000000001'))
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
@@ -1520,25 +1502,24 @@ scrapbook.toc({
     def test_param_resolve_id_used_replace04(self):
         """Don't match */index.html and *.html
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001/index.html",
-    "title": "original title",
-    "create": "20200201000000000",
-    "modify": "20200301000000000",
-    "source": "http://example.com/original"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001/index.html',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
         os.makedirs(os.path.join(self.test_output, '20200101000000001'))
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
@@ -1595,25 +1576,24 @@ scrapbook.toc({
     def test_param_resolve_id_used_new01(self):
         """Test */index.html
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001/index.html",
-    "title": "original title",
-    "create": "20200201000000000",
-    "modify": "20200301000000000",
-    "source": "http://example.com/original"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001/index.html',
+                    'title': 'original title',
+                    'create': '20200201000000000',
+                    'modify': '20200301000000000',
+                    'source': 'http://example.com/original',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
         os.makedirs(os.path.join(self.test_output, '20200101000000001'))
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
@@ -1706,20 +1686,19 @@ scrapbook.toc({
     def test_param_prune(self):
         """Remove successfully imported *.wsba
         """
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000001"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
@@ -1786,20 +1765,19 @@ scrapbook.toc({
 
     def test_version(self):
         """Unsupported version should be rejected."""
-        with open(self.test_output_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_output_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_output,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:

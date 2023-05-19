@@ -12,7 +12,7 @@ from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import wsb2sb
 from webscrapbook.scrapbook.convert.wsb2sb import NC, NS1, RDF
 
-from . import TEMP_DIR, glob_files
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -41,7 +41,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class Test(unittest.TestCase):
+class Test(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -51,36 +51,30 @@ class Test(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
-        self.test_input_config = os.path.join(self.test_input, WSB_DIR, 'config.ini')
         self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
-        self.test_input_meta = os.path.join(self.test_input_tree, 'meta.js')
-        self.test_input_toc = os.path.join(self.test_input_tree, 'toc.js')
         self.test_output = os.path.join(self.test_root, 'output')
         self.test_output_rdf = os.path.join(self.test_output, 'scrapbook.rdf')
 
         os.makedirs(self.test_input_tree, exist_ok=True)
-        os.makedirs(self.test_output, exist_ok=True)
 
 
 class TestRun(Test):
     def test_meta_basic(self):
         """A sample of typical WebScrapBook item."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "title": "Hello 中文",
-    "create": "20200102000000000",
-    "modify": "20200103000000000",
-    "source": "http://example.com",
-    "icon": "favicon.bmp",
-    "comment": "some comment\\nsecond line\\nthird line",
-    "charset": "UTF-8",
-    "locked": true
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'title': 'Hello 中文',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'icon': 'favicon.bmp',
+                'comment': 'some comment\nsecond line\nthird line',
+                'charset': 'UTF-8',
+                'locked': True,
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -116,16 +110,14 @@ scrapbook.meta({
 
     def test_meta_separator(self):
         """A sample of typical WebScrapBook separator item."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "separator",
-    "title": "Hello 中文",
-    "create": "20200102000000000",
-    "modify": "20200103000000000"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': 'separator',
+                'title': 'Hello 中文',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+            },
+        })
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -149,14 +141,12 @@ scrapbook.meta({
 
     def test_meta_type01(self):
         """postit => note"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "postit"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': 'postit',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -188,14 +178,12 @@ postit page content < & > &lt; &amp; &gt;
 
     def test_meta_type02(self):
         """note => notex"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "note"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': 'note',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -212,15 +200,13 @@ scrapbook.meta({
 
     def test_meta_marked01(self):
         """true marked property with "" type => marked type"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "marked": true
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'marked': True,
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -238,15 +224,13 @@ scrapbook.meta({
 
     def test_meta_marked02(self):
         """marked property with other type => discard marked"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "file",
-    "marked": true
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': 'file',
+                'marked': True,
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -264,15 +248,13 @@ scrapbook.meta({
 
     def test_meta_marked03(self):
         """false marked property => normal type"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "marked": false
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'marked': False,
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -290,15 +272,13 @@ scrapbook.meta({
 
     def test_meta_create(self):
         """empty create property => no create property"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "create": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'create': '',
+            },
+        })
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -310,15 +290,13 @@ scrapbook.meta({
 
     def test_meta_modify(self):
         """empty modify property => no modify property"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "modify": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'modify': '',
+            },
+        })
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -330,16 +308,14 @@ scrapbook.meta({
 
     def test_meta_icon01(self):
         """Empty icon with icon-moz property => moz-icon:// """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "image",
-    "icon": "",
-    "icon-moz": "moz-icon://myimage.png?size=16"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': 'image',
+                'icon': '',
+                'icon-moz': 'moz-icon://myimage.png?size=16',
+            },
+        })
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -354,15 +330,13 @@ scrapbook.meta({
 
     def test_meta_icon02(self):
         """File with empty icon => moz-icon:// """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "file",
-    "icon": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': 'file',
+                'icon': '',
+            },
+        })
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -381,15 +355,13 @@ scrapbook.meta({
 
     def test_meta_icon03(self):
         """Absolute URL => use as-is"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "icon": "data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+            },
+        })
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -404,15 +376,13 @@ scrapbook.meta({
 
     def test_meta_icon04(self):
         """Favicon cache => icon folder"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.html",
-    "type": "",
-    "icon": ".wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'type': '',
+                'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            },
+        })
         icon_file = os.path.join(self.test_input_tree, 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp')
         os.makedirs(os.path.dirname(icon_file), exist_ok=True)
         with open(icon_file, 'wb') as fh:
@@ -434,15 +404,13 @@ scrapbook.meta({
 
     def test_meta_icon05(self):
         """Item folder => mapped item folder"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "icon": "favicon.bmp"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'icon': 'favicon.bmp',
+            },
+        })
         icon_file = os.path.join(self.test_input, '20200101000000000', 'favicon.bmp')
         os.makedirs(os.path.dirname(icon_file), exist_ok=True)
         with open(icon_file, 'wb') as fh:
@@ -465,15 +433,13 @@ scrapbook.meta({
 
     def test_meta_icon06(self):
         """Data folder => data folder"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "icon": "../icons/favicon.bmp"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+                'icon': '../icons/favicon.bmp',
+            },
+        })
         icon_file = os.path.join(self.test_input, 'icons', 'favicon.bmp')
         os.makedirs(os.path.dirname(icon_file), exist_ok=True)
         with open(icon_file, 'wb') as fh:
@@ -495,23 +461,21 @@ scrapbook.meta({
 
     def test_meta_icon07(self):
         """Outside of data folder => scrapbook folder"""
-        with open(self.test_input_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_book(
+            self.test_input,
+            config="""\
 [book ""]
 data_dir = data
 tree_dir = tree
-""")
-        meta_file = os.path.join(self.test_input, 'tree', 'meta.js')
-        os.makedirs(os.path.dirname(meta_file), exist_ok=True)
-        with open(meta_file, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "icon": "../../icons/favicon.bmp"
-  }
-})""")
+""",
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'type': '',
+                    'icon': '../../icons/favicon.bmp',
+                },
+            },
+        )
         icon_file = os.path.join(self.test_input, 'icons', 'favicon.bmp')
         os.makedirs(os.path.dirname(icon_file), exist_ok=True)
         with open(icon_file, 'wb') as fh:
@@ -533,28 +497,27 @@ scrapbook.meta({
 
     def test_id_mapping01(self):
         """WebScrapBook timestamp => legacy ScrapBook timestamp"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  },
-  "20200101000001000": {
-    "type": "folder"
-  },
-  "20200101000002000": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000",
-    "20200101000001000",
-    "20200101000002000"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+                '20200101000001000': {
+                    'type': 'folder',
+                },
+                '20200101000002000': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000001000',
+                    '20200101000002000',
+                ],
+            },
+        )
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -575,28 +538,27 @@ scrapbook.toc({
 
     def test_id_mapping02(self):
         """If conflict, increament by 1 from timestamp"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder"
-  },
-  "20200101000000001": {
-    "type": "folder"
-  },
-  "20200101000000010": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000",
-    "20200101000000001",
-    "20200101000000010"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                },
+                '20200101000000010': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000000001',
+                    '20200101000000010',
+                ],
+            },
+        )
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -617,28 +579,27 @@ scrapbook.toc({
 
     def test_id_mapping03(self):
         """Legacy timestamp => use as-is"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000": {
-    "type": "folder"
-  },
-  "20200101000010": {
-    "type": "folder"
-  },
-  "20200101000100": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000",
-    "20200101000010",
-    "20200101000100"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000': {
+                    'type': 'folder',
+                },
+                '20200101000010': {
+                    'type': 'folder',
+                },
+                '20200101000100': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000',
+                    '20200101000010',
+                    '20200101000100',
+                ],
+            },
+        )
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -659,28 +620,27 @@ scrapbook.toc({
 
     def test_id_mapping04(self):
         """Increament by 1 from now if not timestamp"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "dummy1": {
-    "type": "folder"
-  },
-  "dummy2": {
-    "type": "folder"
-  },
-  "dummy3": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "dummy1",
-    "dummy2",
-    "dummy3"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                'dummy1': {
+                    'type': 'folder',
+                },
+                'dummy2': {
+                    'type': 'folder',
+                },
+                'dummy3': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    'dummy1',
+                    'dummy2',
+                    'dummy3',
+                ],
+            },
+        )
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -714,31 +674,30 @@ scrapbook.toc({
 
     def test_toc_duplicate(self):
         """Duplicated item => preserve only the first one (depth first)"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000001": {
-    "type": "folder"
-  },
-  "20200101000002": {
-    "type": "folder"
-  },
-  "20200101000003": {
-    "type": "folder"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000001",
-    "20200101000002",
-    "20200101000003"
-  ],
-  "20200101000001": [
-    "20200101000002"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000001': {
+                    'type': 'folder'
+                },
+                '20200101000002': {
+                    'type': 'folder'
+                },
+                '20200101000003': {
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000001',
+                    '20200101000002',
+                    '20200101000003',
+                ],
+                '20200101000001': [
+                    '20200101000002',
+                ],
+            },
+        )
 
         for _info in wsb2sb.run(self.test_input, self.test_output):
             pass
@@ -771,14 +730,12 @@ scrapbook.toc({
 
     def test_copy_data_files01(self):
         """###/index.html => copy ###/* to <ID>/*"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         index_dir = os.path.join(self.test_input, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -805,14 +762,12 @@ scrapbook.meta({
 
     def test_copy_data_files02(self):
         """###.html => copy ###.html to <ID>/*"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000.html',
+                'type': '',
+            },
+        })
 
         with open(os.path.join(self.test_input, '20200101000000000.html'), 'w', encoding='UTF-8') as fh:
             fh.write('page content')
@@ -833,14 +788,12 @@ scrapbook.meta({
 
     def test_copy_data_files03(self):
         """###.htz => copy internal files to <ID>/*"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.htz",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000.htz',
+                'type': '',
+            },
+        })
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000000.htz'), 'w') as zh:
             zh.writestr('index.html', 'page content')
@@ -864,14 +817,12 @@ scrapbook.meta({
 
     def test_copy_data_files04(self):
         """###.maff => copy internal files of first topdir to <ID>/*"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.maff",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000.maff',
+                'type': '',
+            },
+        })
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000000.maff'), 'w') as zh:
             zh.writestr('20200101000000000/index.html', 'page content')
@@ -896,14 +847,12 @@ scrapbook.meta({
 
     def test_copy_data_files05(self):
         """###.maff => copy nothing if no page"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000.maff",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000.maff',
+                'type': '',
+            },
+        })
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000000.maff'), 'w') as zh:
             zh.writestr('index.html', 'dummy')
@@ -918,14 +867,12 @@ scrapbook.meta({
 
     def test_copy_data_files06(self):
         """foo.bar => copy it and create meta refresh"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "中文#1.xhtml",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '中文#1.xhtml',
+                'type': '',
+            },
+        })
 
         with open(os.path.join(self.test_input, '中文#1.xhtml'), 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -961,14 +908,12 @@ some content
 class TestConvertHtmlFile(Test):
     def test_convert_html_file_linemarker01(self):
         """Convert linemarker."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);" class="first">Lorem ipsum dolor </scrapbook-linemarker><strong><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);">sit amet</scrapbook-linemarker></strong><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="background: #FFFF00; background: linear-gradient(transparent 40%, rgba(255,255,0,0.9) 90%, transparent 100%);" class="last">, consectetur adipiscing elit.</scrapbook-linemarker></body></html>"""  # noqa: E501
 
@@ -988,14 +933,12 @@ scrapbook.meta({
 
     def test_convert_html_file_linemarker02(self):
         """Convert annotated linemarker."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="first" title="inline annotation
 2nd line">Suspendisse eget</scrapbook-linemarker></b><scrapbook-linemarker data-scrapbook-id="20200101000000000" data-scrapbook-elem="linemarker" style="border-bottom: 2px dotted #FF0000;" class="last" title="inline annotation
@@ -1019,14 +962,12 @@ scrapbook.meta({
 
     def test_convert_html_file_sticky01(self):
         """Convert sticky (styled plaintext)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled plaintext" style="width: 250px; height: 100px; left: 572px; top: 83px;">annotation
 2nd line</scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""  # noqa: E501
@@ -1047,14 +988,12 @@ scrapbook.meta({
 
     def test_convert_html_file_sticky02(self):
         """Convert sticky (styled plaintext relative)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled plaintext relative">annotation
 2nd line</scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""  # noqa: E501
@@ -1075,14 +1014,12 @@ scrapbook.meta({
 
     def test_convert_html_file_sticky03(self):
         """Convert sticky (styled)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled" style="left: 367px; top: 323px; width: 250px; height: 100px;">annotation<div><b>2nd</b> line</div></scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""  # noqa: E501
 
@@ -1102,14 +1039,12 @@ scrapbook.meta({
 
     def test_convert_html_file_sticky04(self):
         """Convert sticky (styled relative)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><scrapbook-sticky data-scrapbook-id="20200101000000000" data-scrapbook-elem="sticky" class="styled relative" style="height: 42.6px;">annotation<div><b>2nd</b> line</div></scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""  # noqa: E501
 
@@ -1129,14 +1064,12 @@ scrapbook.meta({
 
     def test_convert_html_file_sticky05(self):
         """Convert sticky (plaintext relative)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """<html><body><scrapbook-sticky data-scrapbook-elem="sticky" class="plaintext relative" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important; white-space: pre-wrap;">Legacy block comment.
 Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">/* stylesheet */</style><script data-scrapbook-elem="annotation-loader">/* script */</script></body></html>"""  # noqa: E501
@@ -1158,14 +1091,12 @@ Second line.</div></body></html>"""  # noqa: E501
 
     def test_convert_html_file_other(self):
         """Convert other elements."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": ""
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'type': '',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -1208,14 +1139,12 @@ Donec nec lacus<span data-sb-obj="annotation">(my legacy <em>inline</em>annotati
     def test_convert_html_file_skip_special_tags(self):
         """Do not rewrite content in <template>, <xml>, <math>, etc.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>

@@ -3,11 +3,10 @@ import tempfile
 import unittest
 from unittest import mock
 
-from webscrapbook import WSB_DIR
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.convert import migrate
 
-from . import TEMP_DIR, glob_files
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -36,7 +35,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class Test(unittest.TestCase):
+class Test(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -46,30 +45,18 @@ class Test(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
-        self.test_input_config = os.path.join(self.test_input, WSB_DIR, 'config.ini')
-        self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
-        self.test_input_meta = os.path.join(self.test_input_tree, 'meta.js')
-        self.test_input_toc = os.path.join(self.test_input_tree, 'toc.js')
         self.test_output = os.path.join(self.test_root, 'output')
-        self.test_output_tree = os.path.join(self.test_output, WSB_DIR, 'tree')
-        self.test_output_meta = os.path.join(self.test_output_tree, 'meta.js')
-        self.test_output_toc = os.path.join(self.test_output_tree, 'toc.js')
-
-        os.makedirs(self.test_input_tree, exist_ok=True)
-        os.makedirs(self.test_output, exist_ok=True)
 
 
 class TestConvertDataFilesLegacy(Test):
     def test_data_postit(self):
         """Convert postit."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "postit",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': 'postit',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -94,14 +81,12 @@ postit page content < & > &lt; &amp; &gt;
 
     def test_data_annotations_linemarker01(self):
         """Convert linemarker."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">Lorem ipsum dolor sit </span><b><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">amet</span></b><span data-sb-id="1577836800000" data-sb-obj="linemarker" class="linemarker-marked-line" style="background-color: yellow;">, consectetur adipiscing elit.</span></body></html>"""  # noqa: E501
 
@@ -120,14 +105,12 @@ scrapbook.meta({
 
     def test_data_annotations_linemarker02(self):
         """Convert legacy ScrapBook linemarker."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body><span class="linemarker-marked-line" style="background-color: yellow;">Lorem ipsum dolor sit </span><b><span class="linemarker-marked-line" style="background-color: yellow;">amet</span></b><span class="linemarker-marked-line" style="background-color: yellow;">, consectetur adipiscing elit.</span></body></html>"""  # noqa: E501
 
@@ -146,14 +129,12 @@ scrapbook.meta({
 
     def test_data_annotations_inline01(self):
         """Convert inline annotation."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>Lorem ipsum dolor <span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">sit amet, </span><b><span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation">consectetur</span></b><span data-sb-id="1577836800000" data-sb-obj="inline" class="scrapbook-inline" style="border-bottom: 2px dotted rgb(255, 51, 51); cursor: help;" title="test inline annotation"> adipiscing elit</span>.</body></html>"""  # noqa: E501
 
@@ -174,14 +155,12 @@ scrapbook.meta({
 
     def test_data_annotations_inline02(self):
         """Convert legacy ScrapBook inline annotation."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>Lorem ipsum dolor <span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="test inline annotation">sit amet, </span><b><span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="123">consectetur</span></b><span style="border-bottom: 2px dotted #FF3333; cursor: help;" class="scrapbook-inline" title="123"> adipiscing elit</span>.</body></html>"""  # noqa: E501
 
@@ -202,14 +181,12 @@ scrapbook.meta({
 
     def test_data_annotations_freenote01(self):
         """Convert freenote (absolute)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 0px; border-width: 12px 1px 1px; border-style: solid; border-color: rgb(204, 204, 204); border-image: none; background: rgb(250, 255, 250) none repeat scroll 0% 0%; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; overflow-wrap: break-word; width: 337px; height: 179px; position: absolute; left: 144px; top: 481px;">Test freenote with <b>HTML</b> <u>markups</u>. <br><br>晱瓨扚醏碙螒劦一晹掁舁彾圢柂乜，凗兟兀衩臿趐匼犮屮肸慞垞毌呦。</div></body></html>"""  # noqa: E501
 
@@ -230,14 +207,12 @@ scrapbook.meta({
 
     def test_data_annotations_freenote02(self):
         """Convert freenote (relative)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body><div data-sb-obj="freenote" style="cursor: help; overflow: visible; margin: 16px auto; border-width: 12px 1px 1px; border-style: solid; border-color: rgb(204, 204, 204); border-image: none; background: rgb(250, 255, 250) none repeat scroll 0% 0%; opacity: 0.95; padding: 0px; z-index: 500000; text-align: start; font-size: small; line-height: 1.2em; overflow-wrap: break-word; width: 233px; height: 89px; position: static;">This is a relative freenote.<br>Anchored between paragraphs.</div></body></html>"""  # noqa: E501
 
@@ -258,14 +233,12 @@ scrapbook.meta({
 
     def test_data_annotations_sticky01(self):
         """Convert legacy ScrapBook sticky (absolute)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><head><link media="all" href="chrome://scrapbook/skin/annotation.css" type="text/css" id="scrapbook-sticky-css" rel="stylesheet"></head><body><div style="left: 376px; top: 107px; position: absolute; width: 240px; height: 79px;" class="scrapbook-sticky"><div class="scrapbook-sticky-header"></div>Sample sticky annotation.
 Second line.</div></body></html>"""  # noqa: E501
@@ -288,14 +261,12 @@ Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  
 
     def test_data_annotations_sticky02(self):
         """Convert legacy ScrapBook sticky (relative)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><head><link media="all" href="chrome://scrapbook/skin/annotation.css" type="text/css" id="scrapbook-sticky-css" rel="stylesheet"></head><body><div style="width: 511px; height: 70px;" class="scrapbook-sticky scrapbook-sticky-relative"><div class="scrapbook-sticky-header"></div>Relative sticky.
 Second line.</div></body></html>"""  # noqa: E501
@@ -318,14 +289,12 @@ Second line.</scrapbook-sticky><style data-scrapbook-elem="annotation-css">"""  
 
     def test_data_annotations_sticky03(self):
         """Convert improperly saved legacy ScrapBook sticky (absolute)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><head><div style="left: 303px; top: 212px; position: absolute; width: 250px; height: 100px;" class="scrapbook-sticky"><div class="scrapbook-sticky-header"></div><textarea style="height: 74px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""  # noqa: E501
 
@@ -346,14 +315,12 @@ scrapbook.meta({
 
     def test_data_annotations_sticky04(self):
         """Convert improperly saved legacy ScrapBook sticky (relative)."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><head><div style="width: 640px; height: 92px;" class="scrapbook-sticky scrapbook-sticky-relative"><div class="scrapbook-sticky-header"></div><textarea style="height: 66px;"></textarea><div class="scrapbook-sticky-footer"><input src="chrome://scrapbook/skin/sticky_save.png" onclick="this.parentNode.parentNode.appendChild(document.createTextNode(this.parentNode.previousSibling.value));this.parentNode.parentNode.removeChild(this.parentNode.previousSibling);this.parentNode.parentNode.removeChild(this.parentNode);" type="image"><input src="chrome://scrapbook/skin/sticky_delete.png" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);" type="image"></div></div></body></html>"""  # noqa: E501
 
@@ -374,14 +341,12 @@ scrapbook.meta({
 
     def test_data_annotations_block_comment01(self):
         """Convert legacy ScrapBook block comment."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</div></body></html>"""  # noqa: E501
 
@@ -405,14 +370,12 @@ scrapbook.meta({
 
         - Do not add 'white-space: pre-wrap;' style if already exists.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body><div class="scrapbook-block-comment" style="border: 1px dotted rgb(215, 221, 191) !important; margin: 10px !important; padding: 10px !important; font-size: 12px !important; font-weight: normal !important; line-height: 16px !important; text-decoration: none !important; color: rgb(96, 96, 96) !important; background-color: rgb(239, 248, 206) !important; WHITE-SPACE:PRE-WRAP !important; cursor: pointer !important;">This is a sample of a very legacy block comment.</div></body></html>"""  # noqa: E501
 
@@ -434,14 +397,12 @@ scrapbook.meta({
     def test_data_annotations_other01(self):
         """Convert other legacy ScrapBook elements.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -484,14 +445,12 @@ Donec nec lacus<span data-scrapbook-elem="annotation">(my legacy <em>inline</em>
     def test_data_annotations_other02(self):
         """Don't error out if a legacy id is bad.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -535,14 +494,12 @@ scrapbook.meta({
 
     def test_data_combine(self):
         """Convert legacy ScrapBook combine page."""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -672,14 +629,12 @@ Page3 content
     def test_data_other(self):
         """Convert other legacy ScrapBook attributes.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -726,14 +681,12 @@ scrapbook.meta({
     def test_data_loaders_replace(self):
         """Replace old loaders if there's a change.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>
 <span data-sb-obj="custom">foo</span>
@@ -764,14 +717,12 @@ scrapbook.meta({
     def test_data_loaders_unchanged(self):
         """Don't update loaders if there's no change detected.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>
 <style data-scrapbook-elem="annotation-css"></style>
@@ -798,14 +749,12 @@ scrapbook.meta({
     def test_data_skip_special_tags(self):
         """Do not rewrite content in <template>, <xml>, <math>, etc.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -864,14 +813,12 @@ class TestConvertDataFilesV1(Test):
     def test_skip_postit(self):
         """Do not touch postit items (even if HTML content happens to meet the criteria).
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "postit",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': 'postit',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = r"""\
 <!DOCTYPE html><html><head>\
@@ -897,14 +844,12 @@ postit page content
     def test_folder_data_loaders_unchanged(self):
         """Don't update loaders if there's no change detected.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>
 <style data-scrapbook-elem="annotation-css"></style>
@@ -931,14 +876,12 @@ scrapbook.meta({
     def test_folder_data_canvas_loader(self):
         """Migrate [data-scrapbook-elem="canvas-loader"].
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>foo</body><script data-scrapbook-elem="canvas-loader"></script></html>"""
 
@@ -959,14 +902,12 @@ scrapbook.meta({
     def test_folder_data_shadowroot_loader(self):
         """Migrate [data-scrapbook-elem="shadowroot-loader"].
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """<html><body>foo</body><script data-scrapbook-elem="shadowroot-loader"></script></html>"""
 
@@ -987,14 +928,12 @@ scrapbook.meta({
     def test_folder_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
@@ -1020,14 +959,12 @@ scrapbook.meta({
     def test_folder_data_skip_special_tags(self):
         """Do not rewrite content in <template>, <xml>, <math>, etc.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000/index.html',
+            },
+        })
 
         input = """\
 <!DOCTYPE html>
@@ -1084,14 +1021,12 @@ scrapbook.meta({
     def test_htz_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.htz"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+            },
+        })
 
         input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
@@ -1118,14 +1053,12 @@ scrapbook.meta({
     def test_htz_timestamp(self):
         """Don't touch ZIP file if no content is changed.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.htz"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.htz',
+            },
+        })
 
         input = r"""<html><body>foo</body></html>"""
 
@@ -1151,14 +1084,12 @@ scrapbook.meta({
     def test_maff_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.maff"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+            },
+        })
 
         input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
@@ -1186,14 +1117,12 @@ scrapbook.meta({
     def test_maff_timestamp(self):
         """Don't touch ZIP file if no content is changed.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.maff"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.maff',
+            },
+        })
 
         input = r"""<html><body>foo</body></html>"""
 
@@ -1220,14 +1149,12 @@ scrapbook.meta({
     def test_single_file_data_shadowroot(self):
         """Migrate [data-scrapbook-shadowroot].
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000.html"
-  }
-})""")
+        self.init_book(self.test_input, meta={
+            '20200101000000000': {
+                'type': '',
+                'index': '20200101000000000.html',
+            },
+        })
 
         input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;\n<div>Sub-content.</div>\n\n<p data-scrapbook-shadowroot=\&quot;{&amp;quot;data&amp;quot;:&amp;quot;\\n<div>Deep sub-content.</div>\\n&amp;quot;,&amp;quot;mode&amp;quot;:&amp;quot;open&amp;quot;}\&quot;>Hidden content.</p>&quot;,&quot;mode&quot;:&quot;open&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 

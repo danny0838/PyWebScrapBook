@@ -8,8 +8,9 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import webscrapbook
-from webscrapbook import util
+from webscrapbook import WSB_CONFIG, WSB_DIR, util
 from webscrapbook._polyfill import zipfile
+from webscrapbook.scrapbook import host as wsb_host
 from webscrapbook.util.fs import zip_timestamp
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -297,3 +298,35 @@ class TestFileMixin:
         stat2['bytes'] = data2.get('bytes')
 
         return stat1, stat2
+
+
+class TestBookMixin:
+    """A mixin class for unittest.TestCase to support book testing utilities"""
+    @staticmethod
+    def init_host(root, config=None):
+        if config is not None:
+            config_file = os.path.join(root, WSB_DIR, WSB_CONFIG)
+            os.makedirs(os.path.dirname(config_file), exist_ok=True)
+            with open(config_file, 'w', encoding='UTF-8') as fh:
+                fh.write(config)
+
+        return wsb_host.Host(root)
+
+    @staticmethod
+    def init_book(root, book_id='', config=None, meta=None, toc=None, fulltext=None):
+        host = TestBookMixin.init_host(root, config)
+        book = host.books[book_id]
+
+        if meta is not None:
+            book.meta = meta
+            book.save_meta_files()
+
+        if toc is not None:
+            book.toc = toc
+            book.save_toc_files()
+
+        if fulltext is not None:
+            book.fulltext = fulltext
+            book.save_fulltext_files()
+
+        return book

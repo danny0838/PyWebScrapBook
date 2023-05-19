@@ -7,7 +7,6 @@ from unittest import mock
 
 from webscrapbook import WSB_DIR
 from webscrapbook._polyfill import zipfile
-from webscrapbook.scrapbook.host import Host
 from webscrapbook.scrapbook.indexer import (
     FavIconCacher,
     Indexer,
@@ -15,7 +14,7 @@ from webscrapbook.scrapbook.indexer import (
     UnSingleHtmlConverter,
 )
 
-from . import TEMP_DIR, glob_files
+from . import TEMP_DIR, TestBookMixin, glob_files
 
 
 def setUpModule():
@@ -44,7 +43,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class Test(unittest.TestCase):
+class Test(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -81,7 +80,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -108,7 +107,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -139,7 +138,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -159,15 +158,16 @@ page content
 
     def test_item_id_used(self):
         """Skip if id is provided but used."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                'myid': {
+                    'title': 'dummy',
+                    'type': 'folder',
+                },
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "myid": {
-    "title": "dummy",
-    "type": "folder"
-  }
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -187,7 +187,6 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -221,7 +220,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -249,7 +248,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -288,7 +287,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -308,22 +307,21 @@ page content
 
     def test_item_id_dirname03(self):
         """Generate new ID if dirname corresponds to standard ID format but used."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'title': 'dummy',
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "title": "dummy",
-    "type": "folder"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""\
@@ -342,7 +340,6 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -388,7 +385,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -429,7 +426,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -449,22 +446,21 @@ page content
 
     def test_item_id_filename02(self):
         """Generate new ID if filename corresponds to standard ID format but used."""
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'title': 'dummy',
+                    'type': 'folder',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         test_index = os.path.join(self.test_root, '20200101000000000.html')
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "title": "dummy",
-    "type": "folder"
-  }
-})""")
-        with open(os.path.join(self.test_tree, 'toc.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
         with open(test_index, 'w', encoding='UTF-8') as fh:
             fh.write("""\
 <!DOCTYPE html>
@@ -482,7 +478,6 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -527,7 +522,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -566,7 +561,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -601,7 +596,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -637,7 +632,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -673,7 +668,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -707,7 +702,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -744,7 +739,7 @@ page content
 </html>
 """)
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -786,7 +781,7 @@ page content
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -828,7 +823,7 @@ page content
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -867,7 +862,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_ie_meta=True)
         for _info in generator.run([test_index]):
             pass
@@ -906,7 +901,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_ie_meta=False)
         for _info in generator.run([test_index]):
             pass
@@ -945,7 +940,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_singlefile_meta=True)
         for _info in generator.run([test_index]):
             pass
@@ -984,7 +979,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_singlefile_meta=False)
         for _info in generator.run([test_index]):
             pass
@@ -1026,7 +1021,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_savepagewe_meta=True)
         for _info in generator.run([test_index]):
             pass
@@ -1068,7 +1063,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_savepagewe_meta=False)
         for _info in generator.run([test_index]):
             pass
@@ -1107,7 +1102,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_maoxian_meta=True)
         for _info in generator.run([test_index]):
             pass
@@ -1146,7 +1141,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book, handle_maoxian_meta=False)
         for _info in generator.run([test_index]):
             pass
@@ -1173,7 +1168,7 @@ page content
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
-        book = Host(self.test_root).books['']
+        book = self.init_book(self.test_root)
         generator = Indexer(book)
         for _info in generator.run([test_index]):
             pass
@@ -1199,19 +1194,19 @@ class TestFavIconCacher(Test):
 
         Test using data URL. Should also work for a remote URL.
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "icon": "data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+                },
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book)
         for _info in generator.run():
             pass
@@ -1235,19 +1230,19 @@ scrapbook.meta({
     def test_cache_absolute_url02(self):
         """Cache absolute URL off.
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "icon": "data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'icon': 'data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+                },
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_url=False)
         for _info in generator.run():
             pass
@@ -1265,19 +1260,19 @@ scrapbook.meta({
     def test_cache_absolute_url03(self):
         """Test Image with MIME = application/octet-stream
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "icon": "data:application/octet-stream;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'icon': 'data:application/octet-stream;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+                },
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book)
         for _info in generator.run():
             pass
@@ -1301,19 +1296,19 @@ scrapbook.meta({
     def test_cache_absolute_url04(self):
         """Test Image with an invalid MIME should not be cached
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "index": "20200101000000000/index.html",
-    "type": "",
-    "create": "20200101000000000",
-    "modify": "20200101000000000",
-    "icon": "data:text/plain;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'index': '20200101000000000/index.html',
+                    'type': '',
+                    'create': '20200101000000000',
+                    'modify': '20200101000000000',
+                    'icon': 'data:text/plain;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA',
+                },
+            },
+        )
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book)
         for _info in generator.run():
             pass
@@ -1331,20 +1326,21 @@ scrapbook.meta({
     def test_cache_archive01(self):
         """Cache in-ZIP path
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001.htz",
-    "icon": "favicon.bmp"
-  },
-  "20200101000000002": {
-    "type": "",
-    "index": "20200101000000002.maff",
-    "icon": "favicon.bmp"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001.htz',
+                    'icon': 'favicon.bmp',
+                },
+                '20200101000000002': {
+                    'type': '',
+                    'index': '20200101000000002.maff',
+                    'icon': 'favicon.bmp',
+                }
+            },
+        )
 
         with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000001.htz'), 'w') as zh:
             zh.writestr('index.html', 'dummy')
@@ -1360,7 +1356,6 @@ scrapbook.meta({
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_archive=True)
         for _info in generator.run():
             pass
@@ -1381,20 +1376,21 @@ scrapbook.meta({
     def test_cache_archive02(self):
         """Cache in-ZIP path off
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000001": {
-    "type": "",
-    "index": "20200101000000001.htz",
-    "icon": "favicon.bmp"
-  },
-  "20200101000000002": {
-    "type": "",
-    "index": "20200101000000002.maff",
-    "icon": "favicon.bmp"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000001': {
+                    'type': '',
+                    'index': '20200101000000001.htz',
+                    'icon': 'favicon.bmp',
+                },
+                '20200101000000002': {
+                    'type': '',
+                    'index': '20200101000000002.maff',
+                    'icon': 'favicon.bmp',
+                },
+            },
+        )
 
         with zipfile.ZipFile(os.path.join(self.test_root, '20200101000000001.htz'), 'w') as zh:
             zh.writestr('index.html', 'dummy')
@@ -1410,7 +1406,6 @@ scrapbook.meta({
                 b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
             )
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_archive=False)
         for _info in generator.run():
             pass
@@ -1431,15 +1426,16 @@ scrapbook.meta({
     def test_cache_file01(self):
         """Cache relative path
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html",
-    "icon": "favicon.bmp"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'index': '20200101000000000/index.html',
+                    'icon': 'favicon.bmp',
+                },
+            },
+        )
 
         index_dir = os.path.join(self.test_root, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -1448,7 +1444,6 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'favicon.bmp'), 'wb') as fh:
             fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_file=True)
         for _info in generator.run():
             pass
@@ -1464,15 +1459,16 @@ scrapbook.meta({
     def test_cache_file02(self):
         """Cache relative path off
         """
-        with open(os.path.join(self.test_tree, 'meta.js'), 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "",
-    "index": "20200101000000000/index.html",
-    "icon": "favicon.bmp"
-  }
-})""")
+        book = self.init_book(
+            self.test_root,
+            meta={
+                '20200101000000000': {
+                    'type': '',
+                    'index': '20200101000000000/index.html',
+                    'icon': 'favicon.bmp',
+                },
+            },
+        )
 
         index_dir = os.path.join(self.test_root, '20200101000000000')
         os.makedirs(index_dir, exist_ok=True)
@@ -1481,7 +1477,6 @@ scrapbook.meta({
         with open(os.path.join(index_dir, 'favicon.bmp'), 'wb') as fh:
             fh.write(b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        book = Host(self.test_root).books['']
         generator = FavIconCacher(book, cache_file=False)
         for _info in generator.run():
             pass

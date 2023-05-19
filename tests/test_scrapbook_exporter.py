@@ -10,7 +10,7 @@ from webscrapbook import WSB_DIR, util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import exporter as wsb_exporter
 
-from . import TEMP_DIR
+from . import TEMP_DIR, TestBookMixin
 
 
 def setUpModule():
@@ -39,7 +39,7 @@ def tearDownModule():
         mocking.stop()
 
 
-class TestExporter(unittest.TestCase):
+class TestExporter(TestBookMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = 8192
@@ -49,39 +49,33 @@ class TestExporter(unittest.TestCase):
         """
         self.test_root = tempfile.mkdtemp(dir=tmpdir)
         self.test_input = os.path.join(self.test_root, 'input')
-        self.test_input_wsb = os.path.join(self.test_input, WSB_DIR)
-        self.test_input_config = os.path.join(self.test_input_wsb, 'config.ini')
-        self.test_input_tree = os.path.join(self.test_input_wsb, 'tree')
-        self.test_input_meta = os.path.join(self.test_input_tree, 'meta.js')
-        self.test_input_toc = os.path.join(self.test_input_tree, 'toc.js')
+        self.test_input_tree = os.path.join(self.test_input, WSB_DIR, 'tree')
         self.test_output = os.path.join(self.test_root, 'output')
 
         os.makedirs(self.test_input_tree, exist_ok=True)
-        os.makedirs(self.test_output, exist_ok=True)
 
     def test_basic01(self):
         """Test exporting a common */index.html
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0",
-    "index": "20200101000000000/index.html",
-    "create": "20200102000000000",
-    "modify": "20200103000000000",
-    "source": "http://example.com",
-    "icon": "favicon.bmp"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                    'index': '20200101000000000/index.html',
+                    'create': '20200102000000000',
+                    'modify': '20200103000000000',
+                    'source': 'http://example.com',
+                    'icon': 'favicon.bmp',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file))
         with open(index_file, 'w', encoding='UTF-8') as fh:
@@ -124,26 +118,25 @@ scrapbook.toc({
     def test_basic02(self):
         """Test exporting a common *.htz
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0",
-    "index": "20200101000000000.htz",
-    "create": "20200102000000000",
-    "modify": "20200103000000000",
-    "source": "http://example.com",
-    "icon": ".wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                    'index': '20200101000000000.htz',
+                    'create': '20200102000000000',
+                    'modify': '20200103000000000',
+                    'source': 'http://example.com',
+                    'icon': '.wsb/tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+            },
+        )
         index_file = os.path.join(self.test_input, '20200101000000000.htz')
         with zipfile.ZipFile(index_file, 'w') as zh:
             zh.writestr('index.html', 'ABC123')
@@ -197,47 +190,46 @@ scrapbook.toc({
         - Include hidden (at last).
         - Exclude recycle.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0"
-  },
-  "20200101000000001": {
-    "type": "folder",
-    "title": "item1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "item2"
-  },
-  "20200101000000003": {
-    "type": "folder",
-    "title": "item3"
-  },
-  "20200101000000004": {
-    "type": "folder",
-    "title": "item4"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "hidden": [
-    "20200101000000003"
-  ],
-  "root": [
-    "20200101000000000",
-    "20200101000000001"
-  ],
-  "20200101000000000": [
-    "20200101000000002"
-  ],
-  "recycle": [
-    "20200101000000004"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+                '20200101000000004': {
+                    'type': 'folder',
+                    'title': 'item4',
+                },
+            },
+            toc={
+                'hidden': [
+                    '20200101000000003',
+                ],
+                'root': [
+                    '20200101000000000',
+                    '20200101000000001',
+                ],
+                '20200101000000000': [
+                    '20200101000000002',
+                ],
+                'recycle': [
+                    '20200101000000004',
+                ],
+            },
+        )
 
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
@@ -299,57 +291,56 @@ scrapbook.toc({
 
         - Never include recycle.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0"
-  },
-  "20200101000000001": {
-    "type": "folder",
-    "title": "item1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "item2"
-  },
-  "20200101000000003": {
-    "type": "folder",
-    "title": "item3"
-  },
-  "20200101000000004": {
-    "type": "folder",
-    "title": "item4"
-  },
-  "20200101000000005": {
-    "type": "folder",
-    "title": "item5"
-  },
-  "20200101000000006": {
-    "type": "folder",
-    "title": "item6"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "hidden": [
-    "20200101000000003",
-    "20200101000000004"
-  ],
-  "root": [
-    "20200101000000000",
-    "20200101000000001"
-  ],
-  "20200101000000000": [
-    "20200101000000002"
-  ],
-  "recycle": [
-    "20200101000000005",
-    "20200101000000006"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+                '20200101000000004': {
+                    'type': 'folder',
+                    'title': 'item4',
+                },
+                '20200101000000005': {
+                    'type': 'folder',
+                    'title': 'item5',
+                },
+                '20200101000000006': {
+                    'type': 'folder',
+                    'title': 'item6',
+                },
+            },
+            toc={
+                'hidden': [
+                    '20200101000000003',
+                    '20200101000000004',
+                ],
+                'root': [
+                    '20200101000000000',
+                    '20200101000000001',
+                ],
+                '20200101000000000': [
+                    '20200101000000002',
+                ],
+                'recycle': [
+                    '20200101000000005',
+                    '20200101000000006',
+                ],
+            },
+        )
 
         for _info in wsb_exporter.run(
             self.test_input, self.test_output,
@@ -391,40 +382,39 @@ scrapbook.toc({
 
     def test_toc03(self):
         """Export descendants if recursive"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0"
-  },
-  "20200101000000001": {
-    "type": "folder",
-    "title": "item1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "item2"
-  },
-  "20200101000000003": {
-    "type": "folder",
-    "title": "item3"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000",
-    "20200101000000001"
-  ],
-  "20200101000000000": [
-    "20200101000000002"
-  ],
-  "20200101000000002": [
-    "20200101000000003"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000000001',
+                ],
+                '20200101000000000': [
+                    '20200101000000002',
+                ],
+                '20200101000000002': [
+                    '20200101000000003',
+                ],
+            },
+        )
 
         for _info in wsb_exporter.run(
             self.test_input, self.test_output,
@@ -481,45 +471,44 @@ scrapbook.toc({
 
         - Occurrences of the same item should share same export id.
         """
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0"
-  },
-  "20200101000000001": {
-    "type": "folder",
-    "title": "item1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "item2"
-  },
-  "20200101000000003": {
-    "type": "folder",
-    "title": "item3"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000",
-    "20200101000000000",
-    "20200101000000001",
-    "20200101000000002"
-  ],
-  "20200101000000001": [
-    "20200101000000000"
-  ],
-  "20200101000000002": [
-    "20200101000000003"
-  ],
-  "20200101000000003": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000000000',
+                    '20200101000000001',
+                    '20200101000000002',
+                ],
+                '20200101000000001': [
+                    '20200101000000000',
+                ],
+                '20200101000000002': [
+                    '20200101000000003',
+                ],
+                '20200101000000003': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass
@@ -610,45 +599,44 @@ scrapbook.toc({
 
     def test_toc05(self):
         """Export first occurrence if singleton"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0"
-  },
-  "20200101000000001": {
-    "type": "folder",
-    "title": "item1"
-  },
-  "20200101000000002": {
-    "type": "folder",
-    "title": "item2"
-  },
-  "20200101000000003": {
-    "type": "folder",
-    "title": "item3"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000",
-    "20200101000000000",
-    "20200101000000001",
-    "20200101000000002"
-  ],
-  "20200101000000001": [
-    "20200101000000000"
-  ],
-  "20200101000000002": [
-    "20200101000000003"
-  ],
-  "20200101000000003": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'item2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'item3',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200101000000000',
+                    '20200101000000001',
+                    '20200101000000002',
+                ],
+                '20200101000000001': [
+                    '20200101000000000',
+                ],
+                '20200101000000002': [
+                    '20200101000000003',
+                ],
+                '20200101000000003': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         for _info in wsb_exporter.run(self.test_input, self.test_output, singleton=True):
             pass
@@ -706,31 +694,30 @@ scrapbook.toc({
 
     def test_toc06(self):
         """Export circular item but no children"""
-        with open(self.test_input_meta, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.meta({
-  "20200101000000000": {
-    "type": "folder",
-    "title": "item0"
-  },
-  "20200101000000001": {
-    "type": "folder",
-    "title": "item1"
-  }
-})""")
-        with open(self.test_input_toc, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
-scrapbook.toc({
-  "root": [
-    "20200101000000000"
-  ],
-  "20200101000000000": [
-    "20200101000000001"
-  ],
-  "20200101000000001": [
-    "20200101000000000"
-  ]
-})""")
+        self.init_book(
+            self.test_input,
+            meta={
+                '20200101000000000': {
+                    'type': 'folder',
+                    'title': 'item0',
+                },
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'item1',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                ],
+                '20200101000000000': [
+                    '20200101000000001',
+                ],
+                '20200101000000001': [
+                    '20200101000000000',
+                ],
+            },
+        )
 
         for _info in wsb_exporter.run(self.test_input, self.test_output):
             pass

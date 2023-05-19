@@ -11,11 +11,11 @@ from unittest import mock
 
 from flask import request
 
-from webscrapbook import WSB_CONFIG, WSB_DIR
+from webscrapbook import WSB_DIR
 from webscrapbook import app as wsbapp
 from webscrapbook.app import make_app
 
-from . import PROG_DIR, ROOT_DIR, TEMP_DIR
+from . import PROG_DIR, ROOT_DIR, TEMP_DIR, TestBookMixin
 
 THEMES_DIR = os.path.join(PROG_DIR, 'themes')
 
@@ -27,10 +27,8 @@ def setUpModule():
     tmpdir = os.path.realpath(os.path.join(_tmpdir.name, 'd'))
     shutil.copytree(os.path.join(ROOT_DIR, 'test_app_config'), tmpdir)
 
-    global server_root, server_config
+    global server_root
     server_root = tmpdir
-    server_config = os.path.join(server_root, WSB_DIR, WSB_CONFIG)
-    os.makedirs(os.path.dirname(server_config), exist_ok=True)
 
     # mock out user config
     global WSB_USER_DIR
@@ -59,10 +57,9 @@ def token(get):
     return get('/', query_string={'a': 'token'}).data.decode('UTF-8')
 
 
-class TestApp(unittest.TestCase):
+class TestApp(TestBookMixin, unittest.TestCase):
     def test_name(self):
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 name = mywsb
 """)
 
@@ -83,8 +80,7 @@ name = mywsb
 
     def test_name2(self):
         """app.name should be used as auth realm"""
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 name = mywsb
 
 [auth "id1"]
@@ -106,8 +102,7 @@ permission = all
 
     @mock.patch('jinja2.FileSystemLoader')
     def test_theme(self, mock_loader):
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 theme = default
 """)
 
@@ -119,8 +114,7 @@ theme = default
         ])
 
     def test_root(self):
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 root = subdir
 """)
 
@@ -155,8 +149,7 @@ root = subdir
 
     def test_x_prefix(self):
         # allowed_x_prefix = 0
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_prefix = 0
 """)
 
@@ -197,8 +190,7 @@ allowed_x_prefix = 0
             self.assertIn('data-base="" data-path="/subdir/"', html)
 
         # allowed_x_prefix = 1
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_prefix = 1
 """)
 
@@ -240,8 +232,7 @@ allowed_x_prefix = 1
 
     def test_x_host(self):
         # x_.. = 0
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_proto = 0
 allowed_x_host = 0
 allowed_x_port = 0
@@ -262,8 +253,7 @@ allowed_x_port = 0
             self.assertEqual(r.headers['Location'], 'http://localhost/subdir/')
 
         # x_.. = 1
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_proto = 1
 allowed_x_host = 1
 allowed_x_port = 1
@@ -308,8 +298,7 @@ allowed_x_port = 1
     @mock.patch('werkzeug.wrappers.request.Request.host', 'example.com')
     def test_x_for(self):
         # allowed_x_for = 0
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_for = 0
 """)
 
@@ -337,8 +326,7 @@ allowed_x_for = 0
             self.assertTrue(data['data']['app']['is_local'])
 
         # allowed_x_for = 1
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_for = 1
 """)
 
@@ -366,8 +354,7 @@ allowed_x_for = 1
             self.assertFalse(data['data']['app']['is_local'])
 
         # allowed_x_for > 1
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 allowed_x_for = 2
 """)
 
@@ -396,8 +383,7 @@ allowed_x_for = 2
 
     def test_csp(self):
         # content_security_policy == 'strict'
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 content_security_policy = strict
 """)
 
@@ -415,8 +401,7 @@ content_security_policy = strict
             self.assertEqual(r.headers['Content-Security-Policy'], "connect-src 'none'; form-action 'none';")
 
         # content_security_policy == ''
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""[app]
+        self.init_host(server_root, config="""[app]
 content_security_policy =
 """)
 
@@ -434,7 +419,7 @@ content_security_policy =
             self.assertIsNone(r.headers.get('Content-Security-Policy'))
 
 
-class TestAuth(unittest.TestCase):
+class TestAuth(TestBookMixin, unittest.TestCase):
     def simple_auth_headers(self, user, password):
         credentials = b64encode(f'{user}:{password}'.encode('utf-8')).decode('utf-8')
         return {'Authorization': f'Basic {credentials}'}
@@ -449,8 +434,7 @@ class TestAuth(unittest.TestCase):
     @mock.patch('webscrapbook.app.get_permission', side_effect=SystemExit)
     def test_get_permission(self, mock_perm):
         """Check if HTTP authorization info is passed to get_permission()."""
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_host(server_root, config="""\
 [auth "anony"]
 user =
 pw = salt
@@ -483,8 +467,7 @@ permission = view
     @mock.patch('webscrapbook.app.verify_authorization', side_effect=SystemExit)
     def test_verify_authorization(self, mock_auth):
         """Check if action is passed to verify_authorization()."""
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_host(server_root, config="""\
 [auth "anony"]
 user =
 pw = salt
@@ -515,8 +498,7 @@ permission = view
 
     def test_request(self):
         """Random request challanges."""
-        with open(server_config, 'w', encoding='UTF-8') as fh:
-            fh.write("""\
+        self.init_host(server_root, config="""\
 [auth "anony"]
 user =
 pw = salt
