@@ -271,6 +271,7 @@ class Importer():
 
         # handle resolve cases if id exists
         # may overwrite id, dst, and meta['index']
+        new_id = id
         if id in self.book.meta:
             if self.resolve_id_used == 'skip':
                 raise RuntimeError(f'ID {id!r} already exists')
@@ -310,17 +311,41 @@ class Importer():
             elif self.resolve_id_used == 'new':
                 new_id = self.book.get_unique_id()
                 yield Info('info', f'Importing duplicated {id!r} as {new_id!r}...')
-                self.map_id_to_new_id[id] = new_id
-                id = new_id
 
                 if index:
                     # overwrite dst and index
-                    filename = self.generate_imported_filename(id, meta, export_info) + ext
+                    filename = self.generate_imported_filename(new_id, meta, export_info) + ext
                     dst = os.path.normpath(os.path.join(self.book.data_dir, filename))
                     meta['index'] = filename + ('/index.html' if index.endswith('/index.html') else '')
 
             else:
                 raise RuntimeError(f'unknown resolve mode: {self.resolve_id_used!r}')
+
+        # if a new folder for id has been generated, replace it with new_id
+        # (e.g. when X/Y has been imported before Z/X, there will be an X' when
+        # importing X under Z)
+        try:
+            folder_id = self.map_id_to_new_id[id]
+        except KeyError:
+            pass
+        else:
+            yield Info('info', f'Replacing {folder_id!r} with {new_id!r}')
+            try:
+                self.book.toc[new_id] = self.book.toc.pop(folder_id)
+            except KeyError:
+                # folder_id not in toc
+                pass
+
+            # @TODO: better algorithm for the global replacement
+            for toc in self.book.toc.values():
+                for i, v in enumerate(toc):
+                    if v == folder_id:
+                        toc[i] = new_id
+
+            del self.book.meta[folder_id]
+
+        # mark id as generated
+        self.map_id_to_new_id[id] = new_id
 
         # import data files
         if index:
@@ -354,8 +379,8 @@ class Importer():
 
                 break
 
-        self.book.meta[id] = meta
-        return id
+        self.book.meta[new_id] = meta
+        return new_id
 
     def _insert_to_toc(self, id, export_info):
         """Insert the importing item to TOC

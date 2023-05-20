@@ -2012,6 +2012,95 @@ class TestImporter(TestBookMixin, unittest.TestCase):
             ],
         })
 
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
+    def test_param_rebuild_folders12(self):
+        """Handle X/Y => Z/X"""
+        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000000',
+                'timestamp': '20200401000000000',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200201000000001', 'title': 'Folder 1'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000002',
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200201000000002',
+                'modify': '20200201000000002',
+            }))
+            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+
+        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        with zipfile.ZipFile(wsba_file, 'w') as zh:
+            zh.writestr('export.json', json.dumps({
+                'version': 1,
+                'id': '20200401000000001',
+                'timestamp': '20200401000000001',
+                'timezone': 28800.0,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                    {'id': '20200201000000003', 'title': 'Folder 3'},
+                ],
+            }))
+            zh.writestr('meta.json', json.dumps({
+                'id': '20200201000000001',
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200201000000001',
+                'modify': '20200201000000001',
+            }))
+            zh.writestr('data/20200201000000001/index.html', 'page content 1')
+
+        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertEqual(book.meta, {
+            '20200201000000002': {
+                'type': '',
+                'index': '20200201000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200201000000002',
+                'modify': '20200201000000002',
+            },
+            '20230101000000001': {
+                'title': 'Folder 3',
+                'type': 'folder',
+                'create': '20230101000000001',
+                'modify': '20230101000000001',
+            },
+            '20200201000000001': {
+                'type': '',
+                'index': '20200201000000001/index.html',
+                'title': 'Item 1',
+                'create': '20200201000000001',
+                'modify': '20200201000000001',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200201000000001',
+                '20230101000000001',
+            ],
+            '20230101000000001': [
+                '20200201000000001',
+            ],
+            '20200201000000001': [
+                '20200201000000002',
+            ],
+        })
+
     def test_param_resolve_id_used_skip01(self):
         """No import if ID exists"""
         self.init_book(
