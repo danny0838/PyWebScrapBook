@@ -210,7 +210,7 @@ class FileLock:
                     raise LockTimeoutError(
                         f'timeout when acquiring lock "{self.name}"',
                         name=self.name, file=self.file
-                    )
+                    ) from None
 
                 stale_time = st.st_mtime + self.stale
 
