@@ -303,7 +303,7 @@ class TestFunctions(Test):
         for action in {
             'token', 'lock', 'unlock',
             'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
-            'backup', 'unbackup', 'cache', 'check', 'query',
+            'backup', 'unbackup', 'cache', 'check', 'export', 'import', 'query',
         }:
             with self.subTest(action=action):
                 self.assertFalse(wsbapp.verify_authorization('', action))

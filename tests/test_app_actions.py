@@ -5777,6 +5777,298 @@ class TestCheck(TestActions):
             mock_abort.assert_called_once_with(500, 'An unexpected error happened.')
 
 
+class TestExport(TestActions):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+
+        # init an app for the class
+        cls.root = tempfile.mkdtemp(dir=tmpdir)
+        cls.init_host(
+            cls.root,
+            config="""\
+[book ""]
+name = scrapbook1
+top_dir = scrapbook1
+data_dir = data
+tree_dir = tree
+
+[book "b2"]
+name = scrapbook2
+top_dir = scrapbook2
+data_dir = data
+tree_dir = tree
+""")
+        cls.init_book(
+            cls.root,
+            book_id='',
+            meta={
+                '20000101000000001': {
+                    'type': 'folder',
+                    'title': 'Folder 1',
+                },
+            },
+            toc={
+                'root': [
+                    '20000101000000001',
+                ],
+            },
+        )
+        cls.init_book(
+            cls.root,
+            book_id='b2',
+            meta={
+                '20200101000000001': {
+                    'type': 'folder',
+                    'title': 'Item 1',
+                },
+                '20200101000000002': {
+                    'type': 'folder',
+                    'title': 'Item 2',
+                },
+                '20200101000000003': {
+                    'type': 'folder',
+                    'title': 'Item 3',
+                },
+                '20200101000000004': {
+                    'type': 'folder',
+                    'title': 'Item 4',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000001',
+                    '20200101000000004',
+                ],
+                '20200101000000001': [
+                    '20200101000000002',
+                    '20200101000000003',
+                ],
+            },
+        )
+
+        cls.app = wsb_app.make_app(cls.root)
+        cls.app.testing = True
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'server'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'locks'))
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_method_check(self, mock_abort):
+        """Require POST."""
+        with self.app.test_client() as c:
+            c.get('/', query_string={
+                'token': token(c),
+                'a': 'export',
+            })
+
+            mock_abort.assert_called_once_with(405, valid_methods=['POST'])
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with self.app.test_client() as c:
+            c.post('/', data={'a': 'export'})
+
+        mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000001')
+    @mock.patch('webscrapbook.app.wsb_exporter.run', wraps=wsb_app.wsb_exporter.run)
+    def test_default(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            items = [
+                ['root', 0],
+            ]
+            r = c.post('/', data={
+                'a': 'export', 'token': token(c),
+                'items': json.dumps(items),
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                os.path.join(wsb_app.host.root, 'scrapbook1', 'tree', 'exports'),
+                book_id='',
+                items=items,
+                scheme=wsb_app.wsb_exporter.SCHEME_ROOT_INDEXES,
+                recursive=False,
+                singleton=False,
+                lock=True,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Disposition'],
+                             '''attachment; filename*=UTF-8''exports.zip; filename="exports.zip"''')
+            with zipfile.ZipFile(io.BytesIO(r.data)) as zh:
+                self.assertCountEqual(zh.namelist(), {
+                    '20230101000000001-Folder 1.wsba',
+                })
+
+    @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000001')
+    @mock.patch('webscrapbook.app.wsb_exporter.run', wraps=wsb_app.wsb_exporter.run)
+    def test_basic(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            items = [
+                ['root', 0],
+                ['root', 0, 0],
+                ['root', 1],
+            ]
+            r = c.post('/', data={
+                'a': 'export', 'token': token(c),
+                'book': 'b2',
+                'items': json.dumps(items),
+                'recursive': 1,
+                'singleton': 1,
+                'lock': '',
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                os.path.join(wsb_app.host.root, 'scrapbook2', 'tree', 'exports'),
+                book_id='b2',
+                items=items,
+                scheme=wsb_app.wsb_exporter.SCHEME_ROOT_INDEXES,
+                recursive=True,
+                singleton=True,
+                lock='',
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Cache-Control'], 'no-store')
+            self.assertEqual(r.headers['Content-Disposition'],
+                             '''attachment; filename*=UTF-8''exports.zip; filename="exports.zip"''')
+            with zipfile.ZipFile(io.BytesIO(r.data)) as zh:
+                self.assertCountEqual(zh.namelist(), {
+                    '20230101000000001-Item 1.wsba',
+                    '20230101000000002-Item 2.wsba',
+                    '20230101000000003-Item 3.wsba',
+                    '20230101000000004-Item 4.wsba',
+                })
+
+
+class TestImport(TestActions):
+    @classmethod
+    def setUpClass(cls):
+        cls.maxDiff = 8192
+
+        # init an app for the class
+        cls.root = tempfile.mkdtemp(dir=tmpdir)
+        cls.init_host(cls.root, config="""\
+[book ""]
+name = scrapbook1
+top_dir = scrapbook1
+data_dir = data
+tree_dir = tree
+
+[book "b2"]
+name = scrapbook2
+top_dir = scrapbook2
+data_dir = data
+tree_dir = tree
+""")
+
+        cls.app = wsb_app.make_app(cls.root)
+        cls.app.testing = True
+
+    def setUp(self):
+        file = os.path.join(self.root, 'scrapbook1', 'tree', 'exports', '11.wsba')
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with zipfile.ZipFile(file, 'w'):
+            pass
+
+        file = os.path.join(self.root, 'scrapbook2', 'tree', 'exports', '21.wsba')
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with zipfile.ZipFile(file, 'w'):
+            pass
+
+        file = os.path.join(self.root, 'scrapbook2', 'tree', 'exports', '22.wsba')
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with zipfile.ZipFile(file, 'w'):
+            pass
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'server'))
+        except FileNotFoundError:
+            pass
+        try:
+            shutil.rmtree(os.path.join(self.root, WSB_DIR, 'locks'))
+        except FileNotFoundError:
+            pass
+
+    @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
+    def test_token_check(self, mock_abort):
+        """Require token."""
+        with self.app.test_client() as c:
+            c.get('/', query_string={'a': 'import', 'f': 'sse'})
+
+        mock_abort.assert_called_once_with(400, 'Invalid access token.')
+
+    @mock.patch('webscrapbook.app.wsb_importer.run', autospec=True,
+                return_value=iter(()))
+    def test_default_sse(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            r = c.get('/', query_string={
+                'a': 'import', 'f': 'sse', 'token': token(c),
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                [os.path.join(wsb_app.host.root, 'scrapbook1', 'tree', 'exports')],
+                book_id='',
+                target_id=None,
+                target_index=None,
+                rebuild_folders=False,
+                resolve_id_used='new',
+                lock=True,
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('complete', None),
+            ])
+
+    @mock.patch('webscrapbook.app.wsb_importer.run', autospec=True,
+                return_value=iter(()))
+    def test_basic_sse(self, mock_func):
+        with self.app.app_context(), self.app.test_client() as c:
+            r = c.get('/', query_string={
+                'a': 'import', 'f': 'sse', 'token': token(c),
+                'book': 'b2',
+                'target': '20200101000000000',
+                'index': 0,
+                'rebuild': 1,
+                'resolve': 'skip',
+                'lock': '',
+            })
+
+            mock_func.assert_called_once_with(
+                (wsb_app.host.root, wsb_app.host.config),
+                [os.path.join(wsb_app.host.root, 'scrapbook2', 'tree', 'exports')],
+                book_id='b2',
+                target_id='20200101000000000',
+                target_index=0,
+                rebuild_folders=1,
+                resolve_id_used='skip',
+                lock='',
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'text/event-stream; charset=utf-8')
+            self.assertEqual(self.parse_sse_objects(r.data.decode('UTF-8')), [
+                ('complete', None),
+            ])
+
+
 class TestQuery(TestActions):
     @classmethod
     def setUpClass(cls):

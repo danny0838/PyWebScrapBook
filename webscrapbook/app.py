@@ -39,7 +39,9 @@ from . import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION, __version__, util
 from ._polyfill import mimetypes, zipfile
 from .scrapbook import cache as wsb_cache
 from .scrapbook import check as wsb_check
+from .scrapbook import exporter as wsb_exporter
 from .scrapbook import host as wsb_host
+from .scrapbook import importer as wsb_importer
 from .scrapbook import search as wsb_search
 from .scrapbook import util as wsb_util
 from .util.fs import (
@@ -265,7 +267,7 @@ def verify_authorization(perm, action):
         return action not in {
             'token', 'lock', 'unlock',
             'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
-            'backup', 'unbackup', 'cache', 'check', 'query',
+            'backup', 'unbackup', 'cache', 'check', 'export', 'import', 'query',
         }
 
     if perm == 'view':
@@ -1310,6 +1312,112 @@ def action_check():
     stream = stream_template('cli.html',
                              title='Checking...',
                              messages=gen,
+                             debug=False,
+                             )
+
+    return Response(stream)
+
+
+@handle_action_advanced
+@handle_action_token
+def action_export():
+    """Export items as an archive file."""
+    format = request.format
+
+    if format:
+        abort(400, 'Action not supported.')
+
+    book_id = request.values.get('book', default='')
+    export_dir = os.path.join(host.books[book_id].tree_dir, 'exports')
+
+    try:
+        util.fs.delete(export_dir)
+    except util.fs.FSEntryNotFoundError:
+        pass
+
+    gen = wsb_exporter.run(
+        (host.root, host.config), export_dir,
+        book_id=book_id,
+        items=request.values.get('items', default=(), type=json.loads),
+        scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
+        recursive=request.values.get('recursive', default=False, type=bool),
+        singleton=request.values.get('singleton', default=False, type=bool),
+        lock=request.values.get('lock', default=True),
+    )
+
+    def wrapper():
+        try:
+            for info in gen:
+                if info.type == 'critical':
+                    abort(500, info.msg)
+
+            zs = util.fs.ZipStream()
+            yield from util.fs.zip_compress(zs, export_dir, '', stream=zs)
+        finally:
+            try:
+                util.fs.delete(export_dir)
+            except util.fs.FSEntryNotFoundError:
+                pass
+
+    filename = 'exports.zip'
+    mimetype, _ = mimetypes.guess_type(filename)
+    filename = quote_path(filename)
+    response = Response(wrapper(), mimetype=mimetype)
+    response.headers.set('Content-Disposition',
+                         f'''attachment; filename*=UTF-8''{filename}; filename="{filename}"''')
+    return response
+
+
+@handle_action_advanced
+@handle_action_token
+def action_import():
+    """Import items from the archive files in the "exports" directory."""
+    format = request.format
+
+    book_id = request.values.get('book', default='')
+    target_id = request.values.get('target')
+    target_index = request.values.get('index', type=int)
+    rebuild_folders = request.values.get('rebuild', default=False, type=bool)
+    resolve_id_used = request.values.get('resolve', default='new')
+    lock = request.values.get('lock', default=True)
+
+    export_dir = os.path.join(host.books[book_id].tree_dir, 'exports')
+    os.makedirs(export_dir, exist_ok=True)
+    _gen = wsb_importer.run(
+        (host.root, host.config), [export_dir],
+        book_id=book_id,
+        target_id=target_id,
+        target_index=target_index,
+        rebuild_folders=rebuild_folders,
+        resolve_id_used=resolve_id_used,
+        lock=lock,
+    )
+
+    def gen():
+        try:
+            yield from _gen
+        finally:
+            util.fs.delete(export_dir)
+
+    if format == 'sse':
+        def wrapper():
+            for info in gen():
+                yield json.dumps({
+                    'type': info.type,
+                    'msg': info.msg,
+                }, ensure_ascii=False)
+
+        return http_response(wrapper(), format=format)
+
+    elif format:
+        for info in gen():
+            if info.type == 'critical':
+                abort(500, info.msg)
+        return None
+
+    stream = stream_template('cli.html',
+                             title='Importing...',
+                             messages=gen(),
                              debug=False,
                              )
 
