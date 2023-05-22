@@ -20,27 +20,35 @@ SCHEME_ROOT_INDEXES = 1
 
 class Exporter():
     """Main class for generating exports."""
-    def __init__(self, output, book, *, scheme=SCHEME_ITEM_IDS, singleton=False):
+    def __init__(self, output, book, *, scheme=SCHEME_ITEM_IDS, singleton=False, stream=None):
         self.output = output
         self.book = book
         self.scheme = scheme
         self.singleton = singleton
+        self.stream = stream
 
     def run(self, items=None, recursive=False):
         self.book.load_meta_files()
         self.book.load_toc_files()
 
-        os.makedirs(self.output, exist_ok=True)
-
         self.used_ts = set()
         self.map_id_to_eid = {}
 
-        if self.scheme == SCHEME_ITEM_IDS:
-            yield from self._export_from_item_ids(items, recursive)
-        elif self.scheme == SCHEME_ROOT_INDEXES:
-            yield from self._export_from_root_indexes(items, recursive)
+        if isinstance(self.output, zipfile.ZipFile):
+            cm = nullcontext(self.output)
         else:
-            raise ValueError(f'Unknown items scheme: {self.scheme!r}')
+            cm = zipfile.ZipFile(self.output, 'w')
+
+        with cm as self._zh:
+            if self.scheme == SCHEME_ITEM_IDS:
+                yield from self._export_from_item_ids(items, recursive)
+            elif self.scheme == SCHEME_ROOT_INDEXES:
+                yield from self._export_from_root_indexes(items, recursive)
+            else:
+                raise ValueError(f'Unknown items scheme: {self.scheme!r}')
+
+        if self.stream is not None:
+            yield Info('debug', 'Streaming...', self.stream.get())
 
     def _export_from_item_ids(self, items, recursive):
         id_pool = set(self.book.meta)
@@ -155,18 +163,7 @@ class Exporter():
         # occurrences of the same id, to the ets of the first occurrence
         eid = self.map_id_to_eid.setdefault(id, ets)
 
-        # generate a unique timestamp prefix
-        basename = ets + '-' + meta.get('title', meta.get('id', ''))
-        basename = util.crop(util.validate_filename(basename), 128)
-
-        # generate a unique filename
-        i = 0
-        dst = os.path.join(self.output, f'{basename}.wsba')
-        while os.path.lexists(dst):
-            i += 1
-            dst = os.path.join(self.output, f'{basename}-{i}.wsba')
-
-        yield Info('info', f'Exporting {id!r} to {os.path.basename(dst)!r}')
+        yield Info('info', f'Exporting {id!r} to {ets!r}')
         parents = [{'id': id, 'title': self.book.meta.get(id, {}).get('title', '')} for id in parent_ids]
         meta_data = {'id': id, **meta}
         export_data = {
@@ -177,36 +174,49 @@ class Exporter():
             'path': parents,
             'index': pos,
         }
-        with zipfile.ZipFile(dst, 'w') as zh:
-            fn = 'meta.json'
-            zh.writestr(fn, json.dumps(meta_data, ensure_ascii=False, indent=2),
-                        **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
-            fn = 'export.json'
-            zh.writestr(fn, json.dumps(export_data, ensure_ascii=False, indent=2),
-                        **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
 
-            # include data file(s)
-            if index:
-                zh.writestr('data/', '')
-                src = os.path.join(self.book.data_dir, os.path.dirname(index) if index.endswith('/index.html') else index)
-                yield Info('debug', f'Saving data files for {id!r}: {self.book.get_subpath(src)!r}')
-                util.fs.zip_compress(zh, src, f'data/{os.path.basename(src)}')
+        zh = self._zh
 
-            # include favicon cache
-            iconfile = self.book.get_icon_file(meta)
-            if not iconfile:
-                return
+        # add topdir and info files
+        zh.writestr(f'{ets}/', '')
+        fn = f'{ets}/meta.json'
+        zh.writestr(fn, json.dumps(meta_data, ensure_ascii=False, indent=2),
+                    **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
+        fn = f'{ets}/export.json'
+        zh.writestr(fn, json.dumps(export_data, ensure_ascii=False, indent=2),
+                    **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
+        if self.stream is not None:
+            yield Info('debug', 'Streaming...', self.stream.get())
 
-            favicon_dir = os.path.join(self.book.tree_dir, 'favicon', '')
-            if not os.path.normcase(iconfile).startswith(os.path.normcase(favicon_dir)):
-                return
+        # include data file(s)
+        if index:
+            zh.writestr(f'{ets}/data/', '')
+            src = os.path.join(self.book.data_dir, os.path.dirname(index) if index.endswith('/index.html') else index)
+            yield Info('debug', f'Saving data files for {id!r}: {self.book.get_subpath(src)!r}')
+            gen = util.fs.zip_compress(zh, src, f'{ets}/data/{os.path.basename(src)}', stream=self.stream)
+            if self.stream is not None:
+                for bytes_ in gen:
+                    yield Info('debug', 'Streaming...', bytes_)
 
-            zh.writestr('favicon/', '')
-            util.fs.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
+        # include favicon cache
+        iconfile = self.book.get_icon_file(meta)
+        if not iconfile:
+            return
+
+        favicon_dir = os.path.join(self.book.tree_dir, 'favicon', '')
+        if not os.path.normcase(iconfile).startswith(os.path.normcase(favicon_dir)):
+            return
+
+        zh.writestr(f'{ets}/favicon/', '')
+        gen = util.fs.zip_compress(zh, iconfile, f'{ets}/favicon/{os.path.basename(iconfile)}', stream=self.stream)
+        if self.stream is not None:
+            for bytes_ in gen:
+                yield Info('debug', 'Streaming...', bytes_)
 
 
 def run(host, output, book_id='', items=None, *,
-        scheme=SCHEME_ITEM_IDS, recursive=False, singleton=False, lock=True):
+        scheme=SCHEME_ITEM_IDS, recursive=False, singleton=False, stream=None,
+        lock=True):
     start = time.time()
 
     if isinstance(host, Host):
@@ -233,7 +243,7 @@ def run(host, output, book_id='', items=None, *,
         yield Info('info', f'Exporting from book {book_id!r} ({book.name!r}).')
         lh = book.get_tree_lock(persist=lock).acquire() if lock else nullcontext()
         with lh:
-            generator = Exporter(output, book, scheme=scheme, singleton=singleton)
+            generator = Exporter(output, book, scheme=scheme, singleton=singleton, stream=stream)
             yield from generator.run(items, recursive)
 
     except Exception as exc:

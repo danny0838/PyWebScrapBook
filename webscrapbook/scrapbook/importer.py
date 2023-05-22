@@ -53,37 +53,18 @@ class Importer():
                 self.target_id = self.book.ROOT_ITEM_ID
 
         for file in files:
-            if os.path.isdir(file):
-                with os.scandir(file) as entries:
-                    srcs = sorted(f.path for f in entries if util.is_wsba(f.path))
-            elif os.path.isfile(file):
-                if not util.is_wsba(file):
-                    yield Info('warn', f'Skipped invalid file {os.path.basename(file)!r}')
-                    continue
-                srcs = [file]
+            yield Info('info', f'Importing archive file {os.path.basename(file)!r}')
+            try:
+                successful = yield from self._import_file(file)
+            except Exception as exc:
+                # unexpected error
+                traceback.print_exc()
+                yield Info('error', f'Failed to import file {os.path.basename(file)!r}: {exc}', exc=exc)
             else:
-                yield Info('error', f'Failed to import file {os.path.basename(file)!r}: unable to access file')
-                continue
-
-            for src in srcs:
-                try:
-                    yield Info('debug', f'Importing file {os.path.basename(src)!r}')
-                    id, eid, parent_id = yield from self._import_file(src)
-                except RuntimeError as exc:
-                    # intended raise to skip the import
-                    yield Info('error', f'Failed to import file {os.path.basename(src)!r}: {exc}', exc=exc)
-                except Exception as exc:
-                    # unexpected error
-                    traceback.print_exc()
-                    yield Info('error', f'Failed to import file {os.path.basename(src)!r}: {exc}', exc=exc)
-                else:
-                    # finalize a successful import
-                    text_parent = '' if parent_id is None else f' (under {parent_id!r})'
-                    yield Info('info', f'Imported {id!r}{text_parent}')
-                    self.map_eid_to_info.setdefault(eid, {}).setdefault('id', id)
-                    if self.prune:
-                        yield Info('debug', f'Removing {os.path.basename(src)!r} (prune)')
-                        os.remove(src)
+                # finalize a successfully imported file
+                if successful and self.prune:
+                    yield Info('debug', f'Removing {os.path.basename(file)!r} (prune)')
+                    os.remove(file)
 
         # update files
         if self.book.meta != book_meta_orig:
@@ -198,49 +179,74 @@ class Importer():
         return filename
 
     def _import_file(self, file):
+        successful = True
         with zipfile.ZipFile(file) as zh:
-            try:
-                with zh.open('export.json') as fh:
-                    export_info = json.load(fh)
-            except Exception as exc:
-                raise RuntimeError(f"Unable to read 'export.json': {exc}") from exc
+            topdirs = set()
+            for zinfo in zh.infolist():
+                topdir, _, _ = zinfo.filename.partition('/')
+                topdirs.add(topdir)
 
-            if export_info['version'] == 2:
+            for topdir in sorted(topdirs):
+                yield Info('debug', f'Importing entry {topdir!r}')
                 try:
-                    assert isinstance(export_info['id'], str)
-                    assert isinstance(export_info['timestamp'], str)
-                    assert isinstance(export_info['timezone'], int)
-                    assert isinstance(export_info['path'], list)
-                    assert isinstance(export_info['index'], int)
-                except (AssertionError, KeyError) as exc:
-                    raise RuntimeError("Malformed 'export.json'") from exc
+                    yield from self._import_topdir(zh, topdir)
+                except RuntimeError as exc:
+                    # intended raise to skip the import
+                    yield Info('error', f'Failed to import entry {topdir!r}: {exc}', exc=exc)
+                    successful = False
+                except Exception as exc:
+                    # unexpected error
+                    traceback.print_exc()
+                    yield Info('error', f'Failed to import entry {topdir!r}: {exc}', exc=exc)
+                    successful = False
 
-            else:
-                raise RuntimeError(f'Unsupported archive version: {export_info["version"]!r}')
+        return successful
 
+    def _import_topdir(self, zh, topdir):
+        try:
+            with zh.open(f'{topdir}/export.json') as fh:
+                export_info = json.load(fh)
+        except Exception as exc:
+            raise RuntimeError(f"Unable to read 'export.json': {exc}") from exc
+
+        if export_info['version'] == 2:
             try:
-                with zh.open('meta.json') as fh:
-                    meta = json.load(fh)
-            except Exception as exc:
-                raise RuntimeError(f"Unable to read 'meta.json': {exc}") from exc
+                assert isinstance(export_info['id'], str)
+                assert isinstance(export_info['timestamp'], str)
+                assert isinstance(export_info['timezone'], int)
+                assert isinstance(export_info['path'], list)
+                assert isinstance(export_info['index'], int)
+            except (AssertionError, KeyError) as exc:
+                raise RuntimeError("Malformed 'export.json'") from exc
 
-            id = meta.pop('id')
-            if id in self.book.SPECIAL_ITEM_ID:
-                raise RuntimeError(f'invalid ID {id!r}')
+        else:
+            raise RuntimeError(f'Unsupported archive version: {export_info["version"]!r}')
 
-            # skip importing data for a duplicated occurrence of a previously
-            # imported item
-            imported_id = self.map_eid_to_info.setdefault(export_info['id'], {}).get('id')
-            if imported_id is not None:
-                id = imported_id
-                yield Info('debug', f'Skipped importing data for multi-referenced {id!r}')
-            else:
-                id = yield from self._import_meta_and_data(id, meta, zh, export_info)
+        try:
+            with zh.open(f'{topdir}/meta.json') as fh:
+                meta = json.load(fh)
+        except Exception as exc:
+            raise RuntimeError(f"Unable to read 'meta.json': {exc}") from exc
 
-            parent_id = yield from self._insert_to_toc(id, export_info)
-            return id, export_info['id'], parent_id
+        id = meta.pop('id')
+        if id in self.book.SPECIAL_ITEM_ID:
+            raise RuntimeError(f'invalid ID {id!r}')
 
-    def _import_meta_and_data(self, id, meta, zh, export_info):
+        # skip importing data for a duplicated occurrence of a previously
+        # imported item
+        imported_id = self.map_eid_to_info.setdefault(export_info['id'], {}).get('id')
+        if imported_id is not None:
+            id = imported_id
+            yield Info('debug', f'Skipped importing data for multi-referenced {id!r}')
+        else:
+            id = yield from self._import_meta_and_data(id, meta, zh, topdir, export_info)
+
+        parent_id = yield from self._insert_to_toc(id, export_info)
+        text_parent = '' if parent_id is None else f' (under {parent_id!r})'
+        yield Info('info', f'Imported {id!r}{text_parent}')
+        self.map_eid_to_info.setdefault(export_info['id'], {}).setdefault('id', id)
+
+    def _import_meta_and_data(self, id, meta, zh, topdir, export_info):
         """Import meta and data
 
         Returns:
@@ -250,9 +256,9 @@ class Importer():
 
         if index:
             if index.endswith('/index.html'):
-                src = f'data/{os.path.dirname(index)}'
+                src = f'{topdir}/data/{os.path.dirname(index)}'
             else:
-                src = f'data/{index}'
+                src = f'{topdir}/data/{index}'
 
             # determine normal copy dst
             _, ext = os.path.splitext(src)
@@ -345,7 +351,7 @@ class Importer():
 
         # import favicon
         for f in zh.namelist():
-            if f.startswith('favicon/') and not f.endswith('/'):
+            if f.startswith(f'{topdir}/favicon/') and not f.endswith('/'):
                 basename = os.path.basename(f)
                 iconfile = os.path.join(self.book.tree_dir, 'favicon', basename)
                 os.makedirs(os.path.dirname(iconfile), exist_ok=True)

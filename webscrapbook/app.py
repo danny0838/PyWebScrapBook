@@ -1328,38 +1328,27 @@ def action_export():
         abort(400, 'Action not supported.')
 
     book_id = request.values.get('book', default='')
-    export_dir = os.path.join(host.books[book_id].tree_dir, 'exports')
 
-    try:
-        util.fs.delete(export_dir)
-    except util.fs.FSEntryNotFoundError:
-        pass
-
+    zs = util.fs.ZipStream()
     gen = wsb_exporter.run(
-        (host.root, host.config), export_dir,
+        (host.root, host.config), zs,
         book_id=book_id,
         items=request.values.get('items', default=(), type=json.loads),
         scheme=wsb_exporter.SCHEME_ROOT_INDEXES,
         recursive=request.values.get('recursive', default=False, type=bool),
         singleton=request.values.get('singleton', default=False, type=bool),
         lock=request.values.get('lock', default=True),
+        stream=zs,
     )
 
     def wrapper():
-        try:
-            for info in gen:
-                if info.type == 'critical':
-                    abort(500, info.msg)
+        for info in gen:
+            if info.type == 'critical':
+                abort(500, info.msg)
+            if isinstance(info.data, bytes):
+                yield info.data
 
-            zs = util.fs.ZipStream()
-            yield from util.fs.zip_compress(zs, export_dir, '', stream=zs)
-        finally:
-            try:
-                util.fs.delete(export_dir)
-            except util.fs.FSEntryNotFoundError:
-                pass
-
-    filename = 'exports.zip'
+    filename = 'exports.wsba'
     mimetype, _ = mimetypes.guess_type(filename)
     filename = quote_path(filename)
     response = Response(wrapper(), mimetype=mimetype)
@@ -1383,8 +1372,11 @@ def action_import():
 
     export_dir = os.path.join(host.books[book_id].tree_dir, 'exports')
     os.makedirs(export_dir, exist_ok=True)
+    with os.scandir(export_dir) as it:
+        files = sorted(f.path for f in it)
+
     _gen = wsb_importer.run(
-        (host.root, host.config), [export_dir],
+        (host.root, host.config), files,
         book_id=book_id,
         target_id=target_id,
         target_index=target_index,

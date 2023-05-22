@@ -765,16 +765,14 @@ class TestExport(Test):
     @mock.patch('webscrapbook.scrapbook.exporter.run', autospec=True)
     @mock.patch('webscrapbook.cli.cmd_export', wraps=cli.cmd_export)
     def test_default(self, mock_handler, mock_func):
-        output_dir = os.path.join(self.root, 'export')
         cli.main([
             '--root', self.root,
             'export',
-            output_dir,
         ])
 
         mock_handler.assert_called_once_with(dict(
             root=self.root,
-            output=output_dir,
+            output=None,
             book_id='',
             items=None,
             recursive=False,
@@ -784,7 +782,7 @@ class TestExport(Test):
 
         mock_func.assert_called_once_with(
             self.root,
-            output=output_dir,
+            output=sys.stdout.buffer,
             book_id='',
             items=None,
             recursive=False,

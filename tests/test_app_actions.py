@@ -5895,23 +5895,25 @@ tree_dir = tree
             })
 
             mock_func.assert_called_once_with(
-                (wsb_app.host.root, wsb_app.host.config),
-                os.path.join(wsb_app.host.root, 'scrapbook1', 'tree', 'exports'),
+                (wsb_app.host.root, wsb_app.host.config), mock.ANY,
                 book_id='',
                 items=items,
                 scheme=wsb_app.wsb_exporter.SCHEME_ROOT_INDEXES,
                 recursive=False,
                 singleton=False,
                 lock=True,
+                stream=mock.ANY,
             )
             self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Type'], 'application/wsba+zip')
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Disposition'],
-                             '''attachment; filename*=UTF-8''exports.zip; filename="exports.zip"''')
+                             '''attachment; filename*=UTF-8''exports.wsba; filename="exports.wsba"''')
             with zipfile.ZipFile(io.BytesIO(r.data)) as zh:
                 self.assertCountEqual(zh.namelist(), {
-                    '20230101000000001-Folder 1.wsba',
+                    '20230101000000001/',
+                    '20230101000000001/export.json',
+                    '20230101000000001/meta.json',
                 })
 
     @mock.patch('webscrapbook.scrapbook.exporter._id_now', lambda: '20230101000000001')
@@ -5933,26 +5935,34 @@ tree_dir = tree
             })
 
             mock_func.assert_called_once_with(
-                (wsb_app.host.root, wsb_app.host.config),
-                os.path.join(wsb_app.host.root, 'scrapbook2', 'tree', 'exports'),
+                (wsb_app.host.root, wsb_app.host.config), mock.ANY,
                 book_id='b2',
                 items=items,
                 scheme=wsb_app.wsb_exporter.SCHEME_ROOT_INDEXES,
                 recursive=True,
                 singleton=True,
                 lock='',
+                stream=mock.ANY,
             )
             self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.headers['Content-Type'], 'application/zip')
+            self.assertEqual(r.headers['Content-Type'], 'application/wsba+zip')
             self.assertEqual(r.headers['Cache-Control'], 'no-store')
             self.assertEqual(r.headers['Content-Disposition'],
-                             '''attachment; filename*=UTF-8''exports.zip; filename="exports.zip"''')
+                             '''attachment; filename*=UTF-8''exports.wsba; filename="exports.wsba"''')
             with zipfile.ZipFile(io.BytesIO(r.data)) as zh:
                 self.assertCountEqual(zh.namelist(), {
-                    '20230101000000001-Item 1.wsba',
-                    '20230101000000002-Item 2.wsba',
-                    '20230101000000003-Item 3.wsba',
-                    '20230101000000004-Item 4.wsba',
+                    '20230101000000001/',
+                    '20230101000000001/export.json',
+                    '20230101000000001/meta.json',
+                    '20230101000000002/',
+                    '20230101000000002/export.json',
+                    '20230101000000002/meta.json',
+                    '20230101000000003/',
+                    '20230101000000003/export.json',
+                    '20230101000000003/meta.json',
+                    '20230101000000004/',
+                    '20230101000000004/export.json',
+                    '20230101000000004/meta.json',
                 })
 
 
@@ -6024,7 +6034,7 @@ tree_dir = tree
 
             mock_func.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
-                [os.path.join(wsb_app.host.root, 'scrapbook1', 'tree', 'exports')],
+                [os.path.join(wsb_app.host.root, 'scrapbook1', 'tree', 'exports', '11.wsba')],
                 book_id='',
                 target_id=None,
                 target_index=None,
@@ -6054,7 +6064,10 @@ tree_dir = tree
 
             mock_func.assert_called_once_with(
                 (wsb_app.host.root, wsb_app.host.config),
-                [os.path.join(wsb_app.host.root, 'scrapbook2', 'tree', 'exports')],
+                [
+                    os.path.join(wsb_app.host.root, 'scrapbook2', 'tree', 'exports', '21.wsba'),
+                    os.path.join(wsb_app.host.root, 'scrapbook2', 'tree', 'exports', '22.wsba'),
+                ],
                 book_id='b2',
                 target_id='20200101000000000',
                 target_index=0,

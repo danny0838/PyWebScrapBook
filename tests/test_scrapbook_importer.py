@@ -63,9 +63,9 @@ new_at_top = true
 
     def test_basic01(self):
         """Test importing a common */index.html"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -76,7 +76,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -86,11 +86,11 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-            zh.writestr('data/20200101000000001/favicon.bmp',
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/favicon.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
@@ -123,12 +123,12 @@ new_at_top = true
 
         - Favicon should be imported and icon property should be consistent with the book.
         """
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w') as zh:
             zh.writestr('index.html', 'page content')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -139,7 +139,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.htz',
@@ -149,11 +149,11 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
-            zh.writestr('data/20200101000000001.htz', buf.getvalue())
-            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            zh.writestr('20200401000000000/data/20200101000000001.htz', buf.getvalue())
+            zh.writestr('20200401000000000/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
@@ -186,9 +186,9 @@ new_at_top = true
 
         - Favicon should be imported and icon property should be consistent with the book.
         """
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -199,7 +199,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': 'bookmark',
                 'index': '',
@@ -209,10 +209,10 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
-            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            zh.writestr('20200401000000000/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
@@ -240,9 +240,9 @@ new_at_top = true
 
     def test_basic04(self):
         """Test importing */index.html with cached favicon"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -253,7 +253,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -263,11 +263,11 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': '../../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
@@ -311,9 +311,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -324,7 +324,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -333,11 +333,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -348,7 +346,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -357,9 +355,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_id='20200101000000000'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_id='20200101000000000'):
             pass
 
         book = Host(self.test_output).books['']
@@ -390,9 +388,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -403,7 +401,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -412,11 +410,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -427,7 +423,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -436,9 +432,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_id='20230101000000000'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_id='20230101000000000'):
             pass
 
         book = Host(self.test_output).books['']
@@ -467,9 +463,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -480,7 +476,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -489,11 +485,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -504,7 +498,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -513,9 +507,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=0):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_index=0):
             pass
 
         book = Host(self.test_output).books['']
@@ -544,9 +538,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -557,7 +551,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -566,11 +560,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -581,7 +573,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -590,9 +582,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=10):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_index=10):
             pass
 
         book = Host(self.test_output).books['']
@@ -621,9 +613,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -634,7 +626,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -643,11 +635,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -658,7 +648,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -667,9 +657,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=-1):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_index=-1):
             pass
 
         book = Host(self.test_output).books['']
@@ -703,9 +693,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -716,7 +706,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -725,11 +715,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -740,7 +728,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -749,9 +737,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
@@ -786,9 +774,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -799,7 +787,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -808,11 +796,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -823,7 +809,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -832,9 +818,9 @@ new_at_top = true
                 'modify': '20200103000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200101000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_index=1):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_index=1):
             pass
 
         book = Host(self.test_output).books['']
@@ -866,9 +852,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -878,7 +864,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -888,9 +874,9 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_filename='test'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_filename='test'):
             pass
 
         book = Host(self.test_output).books['']
@@ -933,9 +919,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -945,7 +931,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.maff',
@@ -954,9 +940,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001.maff', b'dummy')
+            zh.writestr('20200401000000001/data/20200101000000001.maff', b'dummy')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_filename='test'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_filename='test'):
             pass
 
         book = Host(self.test_output).books['']
@@ -1000,9 +986,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000000.html'), 'w', encoding='UTF-8') as fh:
             fh.write('some page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -1012,7 +998,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.html',
@@ -1022,9 +1008,9 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001.html', 'page content')
+            zh.writestr('20200401000000001/data/20200101000000001.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], target_filename='20200101000000000'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], target_filename='20200101000000000'):
             pass
 
         book = Host(self.test_output).books['']
@@ -1064,9 +1050,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -1076,7 +1062,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.htz',
@@ -1085,10 +1071,10 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001.htz', b'dummy')
+            zh.writestr('20200401000000001/data/20200101000000001.htz', b'dummy')
 
         for _info in wsb_importer.run(
-            self.test_output, [self.test_input],
+            self.test_output, [wsba_file],
             target_filename='%EID%/%CREATE%-%MODIFY%-%unknown%%%/%TITLE%',
         ):
             pass
@@ -1135,9 +1121,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20220607232425267.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20220607232425267/export.json', json.dumps({
                 'version': 2,
                 'id': '20220607232425267',
                 'timestamp': '20220607232425267',
@@ -1147,7 +1133,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20220607232425267/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.html',
@@ -1156,10 +1142,10 @@ new_at_top = true
                 'modify': '20211112131415167',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001.html', 'dummy')
+            zh.writestr('20220607232425267/data/20200101000000001.html', 'dummy')
 
         for _info in wsb_importer.run(
-            self.test_output, [self.test_input],
+            self.test_output, [wsba_file],
             target_filename='%CREATE:UTC_DATE%=%CREATE:UTC_TIME%+'
             '%CREATE:UTC_YEAR%=%CREATE:UTC_MONTH%=%CREATE:UTC_DAY%+'
             '%CREATE:UTC_HOURS%=%CREATE:UTC_MINUTES%=%CREATE:UTC_SECONDS%_'
@@ -1233,9 +1219,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1247,7 +1233,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1256,11 +1242,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -1272,7 +1256,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -1281,9 +1265,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1341,9 +1325,9 @@ new_at_top = true
         - Imported items should be put under the same generated parent folder
           for the same original ID.
         """
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1355,7 +1339,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1364,11 +1348,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -1380,7 +1362,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -1389,9 +1371,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1459,9 +1441,9 @@ new_at_top = true
                 ],
             },
         )
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1473,7 +1455,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1482,11 +1464,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -1498,7 +1478,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -1507,9 +1487,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1561,9 +1541,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders04(self):
         """Insert generated parent folders under root if path not connected."""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1574,7 +1554,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1583,11 +1563,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -1599,7 +1577,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -1608,9 +1586,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1663,9 +1641,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders05(self):
         """Share same generated folders. (item2.path under item1.path)"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1676,7 +1654,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1685,11 +1663,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -1701,7 +1677,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -1710,9 +1686,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1765,9 +1741,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders06(self):
         """Share same generated folders. (item1.path under item2.path)"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1779,7 +1755,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1788,11 +1764,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -1803,7 +1777,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -1812,9 +1786,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1867,9 +1841,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders07(self):
         """Reuse same generated folders if path contains duplicated ancestors."""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1883,7 +1857,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1892,9 +1866,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -1939,9 +1913,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders08(self):
         """Insert a generated folder under its parent which is circularly its descendant."""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -1954,7 +1928,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -1963,9 +1937,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2010,9 +1984,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders09(self):
         """Don't insert a generated folder under its parent duplicately."""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2027,7 +2001,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2036,9 +2010,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2083,9 +2057,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders10(self):
         """Take care if path contains self. (The one before self is not direct parent)"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2097,7 +2071,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2106,9 +2080,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2146,9 +2120,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders11(self):
         """Take care if path contains self. (The one before self is direct parent)"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2161,7 +2135,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2170,9 +2144,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2210,9 +2184,9 @@ new_at_top = true
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20230101000000001')
     def test_param_rebuild_folders12(self):
         """Handle X/Y => Z/X"""
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2223,7 +2197,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -2231,11 +2205,9 @@ new_at_top = true
                 'create': '20200201000000002',
                 'modify': '20200201000000002',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200401000000000/data/20200201000000002/index.html', 'page content 2')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -2246,7 +2218,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2254,9 +2226,9 @@ new_at_top = true
                 'create': '20200201000000001',
                 'modify': '20200201000000001',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200201000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2324,9 +2296,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2337,7 +2309,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2346,11 +2318,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -2361,7 +2331,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -2370,9 +2340,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2442,9 +2412,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2456,7 +2426,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2465,11 +2435,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -2480,7 +2448,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -2489,9 +2457,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -2584,9 +2552,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2598,7 +2566,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2607,11 +2575,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -2623,7 +2589,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -2632,9 +2598,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True,
                                       target_index=0):
             pass
 
@@ -2720,9 +2686,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2732,7 +2698,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2741,11 +2707,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -2757,7 +2721,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -2766,11 +2730,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        wsba_file = os.path.join(self.test_input, '20200403000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200403000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200403000000000',
                 'timestamp': '20200403000000000',
@@ -2782,7 +2744,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200403000000000/meta.json', json.dumps({
                 'id': '20200201000000003',
                 'type': '',
                 'index': '20200201000000003/index.html',
@@ -2791,9 +2753,9 @@ new_at_top = true
                 'modify': '20200203000000003',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000003/index.html', 'page content 3')
+            zh.writestr('20200403000000000/data/20200201000000003/index.html', 'page content 3')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True,
                                       target_id='20200101000000003'):
             pass
 
@@ -2899,9 +2861,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -2911,7 +2873,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200201000000001',
                 'type': '',
                 'index': '20200201000000001/index.html',
@@ -2920,11 +2882,9 @@ new_at_top = true
                 'modify': '20200203000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200201000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200201000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -2936,7 +2896,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -2945,11 +2905,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        wsba_file = os.path.join(self.test_input, '20200403000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200403000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200403000000000',
                 'timestamp': '20200403000000000',
@@ -2961,7 +2919,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200403000000000/meta.json', json.dumps({
                 'id': '20200201000000003',
                 'type': '',
                 'index': '20200201000000003/index.html',
@@ -2970,9 +2928,9 @@ new_at_top = true
                 'modify': '20200203000000003',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000003/index.html', 'page content 3')
+            zh.writestr('20200403000000000/data/20200201000000003/index.html', 'page content 3')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True,
                                       target_id='20200101000000001', target_index=0):
             pass
 
@@ -3062,9 +3020,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3074,7 +3032,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': 'folder',
                 'title': 'Item 1',
@@ -3082,9 +3040,7 @@ new_at_top = true
                 'modify': '20200103000000001',
             }))
 
-        wsba_file = os.path.join(self.test_input, '20200402000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200402000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200402000000000',
                 'timestamp': '20200402000000000',
@@ -3095,7 +3051,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200402000000000/meta.json', json.dumps({
                 'id': '20200201000000002',
                 'type': '',
                 'index': '20200201000000002/index.html',
@@ -3104,11 +3060,9 @@ new_at_top = true
                 'modify': '20200203000000002',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000002/index.html', 'page content 2')
+            zh.writestr('20200402000000000/data/20200201000000002/index.html', 'page content 2')
 
-        wsba_file = os.path.join(self.test_input, '20200403000000000.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200403000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200403000000000',
                 'timestamp': '20200403000000000',
@@ -3120,7 +3074,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200403000000000/meta.json', json.dumps({
                 'id': '20200201000000003',
                 'type': '',
                 'index': '20200201000000003/index.html',
@@ -3129,9 +3083,9 @@ new_at_top = true
                 'modify': '20200203000000003',
                 'source': 'https://example.com',
             }))
-            zh.writestr('data/20200201000000003/index.html', 'page content 3')
+            zh.writestr('20200403000000000/data/20200201000000003/index.html', 'page content 3')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True,
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True,
                                       target_id='root', target_index=0):
             pass
 
@@ -3203,9 +3157,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3216,7 +3170,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3226,9 +3180,9 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='skip'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='skip'):
             pass
 
         book = Host(self.test_output).books['']
@@ -3273,9 +3227,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000001', 'favicon.ico'), 'wb') as fh:
             fh.write(b'dummy')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3286,7 +3240,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3296,11 +3250,11 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
-            zh.writestr('data/20200101000000001/favicon.bmp',
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/favicon.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='replace'):
             pass
 
         book = Host(self.test_output).books['']
@@ -3360,9 +3314,9 @@ new_at_top = true
         with zipfile.ZipFile(os.path.join(self.test_output, '20200101000000001.htz'), 'w') as zh:
             zh.writestr('index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3373,7 +3327,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.htz',
@@ -3383,11 +3337,11 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
-            zh.writestr('data/20200101000000001.htz', b'dummy')
-            zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
+            zh.writestr('20200401000000000/data/20200101000000001.htz', b'dummy')
+            zh.writestr('20200401000000000/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='replace'):
             pass
 
         book = Host(self.test_output).books['']
@@ -3445,9 +3399,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3458,7 +3412,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.htz',
@@ -3467,9 +3421,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001.htz', b'dummy')
+            zh.writestr('20200401000000000/data/20200101000000001.htz', b'dummy')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='replace'):
             pass
 
         book = Host(self.test_output).books['']
@@ -3521,9 +3475,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3534,7 +3488,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001.html',
@@ -3543,9 +3497,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001.html', 'dummy')
+            zh.writestr('20200401000000000/data/20200101000000001.html', 'dummy')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='replace'):
             pass
 
         book = Host(self.test_output).books['']
@@ -3598,9 +3552,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -3611,7 +3565,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3620,11 +3574,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000001',
@@ -3635,7 +3587,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3644,9 +3596,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content f')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content f')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='new'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='new'):
             pass
 
         book = Host(self.test_output).books['']
@@ -3705,9 +3657,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports1.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -3717,7 +3669,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3726,11 +3678,11 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content')
 
-        wsba_file2 = os.path.join(self.test_input, '20200401000000002.wsba')
+        wsba_file2 = os.path.join(self.test_input, 'exports2.wsba')
         with zipfile.ZipFile(wsba_file2, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000002/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000002',
                 'timestamp': '20200401000000002',
@@ -3740,7 +3692,7 @@ new_at_top = true
                 ],
                 'index': 1,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000002/meta.json', json.dumps({
                 'id': '20200101000000002',
                 'type': '',
                 'index': '20200101000000002/index.html',
@@ -3749,9 +3701,9 @@ new_at_top = true
                 'modify': '20200203000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000002/index.html', 'page content')
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='skip', prune=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file, wsba_file2], resolve_id_used='skip', prune=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -3771,9 +3723,9 @@ new_at_top = true
 
     def test_multi_occurrence01(self):
         """Skip multi-occurred item (same export id) if not rebuild_folders."""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -3783,7 +3735,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3792,11 +3744,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000002/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000002',
@@ -3810,7 +3760,7 @@ new_at_top = true
             # Normally all occurrences have identical meta.json and data files.
             # Use a different content here to test if the second occurrence is
             # unexpectedly taken.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000002/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3820,9 +3770,9 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': 'favicon.bmp',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+            zh.writestr('20200401000000002/data/20200101000000001/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
@@ -3866,9 +3816,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -3878,7 +3828,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3887,11 +3837,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000002/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000002',
@@ -3903,7 +3851,7 @@ new_at_top = true
                 'index': 1,
             }))
             # Use a different content for testing.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000002/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3912,9 +3860,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+            zh.writestr('20200401000000002/data/20200101000000001/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -3970,9 +3918,9 @@ new_at_top = true
             },
         )
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -3984,7 +3932,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -3993,11 +3941,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000002.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000002/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000002',
@@ -4010,7 +3956,7 @@ new_at_top = true
                 'index': 1,
             }))
             # Use a different content for testing.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000002/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4019,11 +3965,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+            zh.writestr('20200401000000002/data/20200101000000001/index.html', 'page content 2')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000003.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000003/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000003',
@@ -4035,7 +3979,7 @@ new_at_top = true
                 'index': 0,
             }))
             # Use a different content for testing.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000003/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4044,11 +3988,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 3')
+            zh.writestr('20200401000000003/data/20200101000000001/index.html', 'page content 3')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000004.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000004/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000004',
@@ -4060,7 +4002,7 @@ new_at_top = true
                 'index': 1,
             }))
             # Use a different content for testing.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000004/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4069,9 +4011,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 4')
+            zh.writestr('20200401000000004/data/20200101000000001/index.html', 'page content 4')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], rebuild_folders=True):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], rebuild_folders=True):
             pass
 
         book = Host(self.test_output).books['']
@@ -4135,9 +4077,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -4148,7 +4090,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4157,11 +4099,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000001',
@@ -4173,7 +4113,7 @@ new_at_top = true
                 'index': 1,
             }))
             # Use a different content for testing.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4182,9 +4122,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace'):
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='replace'):
             pass
 
         book = Host(self.test_output).books['']
@@ -4234,9 +4174,9 @@ new_at_top = true
         with open(os.path.join(self.test_output, '20200101000000001', 'index.html'), 'w', encoding='UTF-8') as fh:
             fh.write('original page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000000/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000000',
@@ -4247,7 +4187,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000000/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4256,11 +4196,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content')
+            zh.writestr('20200401000000000/data/20200101000000001/index.html', 'page content')
 
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
-        with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000000',
                 'timestamp': '20200401000000001',
@@ -4272,7 +4210,7 @@ new_at_top = true
                 'index': 1,
             }))
             # Use a different content for testing.
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4281,9 +4219,9 @@ new_at_top = true
                 'modify': '20200103000000000',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 2')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 2')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input], resolve_id_used='replace',
+        for _info in wsb_importer.run(self.test_output, [wsba_file], resolve_id_used='replace',
                                       rebuild_folders=True):
             pass
 
@@ -4312,9 +4250,9 @@ new_at_top = true
 
     def test_bad_version01(self):
         """Unsupported version should be rejected."""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 1,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -4323,7 +4261,7 @@ new_at_top = true
                     {'id': 'root', 'title': ''},
                 ],
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4332,26 +4270,60 @@ new_at_top = true
                 'modify': '20200101000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
     def test_bad_version02(self):
         """Unsupported version should be rejected."""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 3,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -4361,7 +4333,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4370,26 +4342,60 @@ new_at_top = true
                 'modify': '20200101000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
     def test_bad_export_info01(self):
         """Missing export.json"""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4398,26 +4404,60 @@ new_at_top = true
                 'modify': '20200101000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
     def test_bad_export_info02(self):
         """Malformed JSON for export.json"""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -4427,7 +4467,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }) + 'abc')
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4436,26 +4476,60 @@ new_at_top = true
                 'modify': '20200101000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
     def test_bad_export_info03(self):
         """Malformed JSON scheme for export.json"""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -4465,7 +4539,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4474,26 +4548,60 @@ new_at_top = true
                 'modify': '20200101000000001',
                 'source': 'http://example.com',
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
     def test_bad_meta01(self):
         """Missing meta.json"""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -4503,26 +4611,60 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
     def test_bad_meta02(self):
         """Malformed JSON for meta.json"""
-        wsba_file = os.path.join(self.test_input, '20200401000000001.wsba')
+        wsba_file = os.path.join(self.test_input, 'exports.wsba')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
-            zh.writestr('export.json', json.dumps({
+            zh.writestr('20200401000000001/export.json', json.dumps({
                 'version': 2,
                 'id': '20200401000000001',
                 'timestamp': '20200401000000001',
@@ -4532,7 +4674,7 @@ new_at_top = true
                 ],
                 'index': 0,
             }))
-            zh.writestr('meta.json', json.dumps({
+            zh.writestr('20200401000000001/meta.json', json.dumps({
                 'id': '20200101000000001',
                 'type': '',
                 'index': '20200101000000001/index.html',
@@ -4541,19 +4683,53 @@ new_at_top = true
                 'modify': '20200101000000001',
                 'source': 'http://example.com',
             }) + 'abc')
-            zh.writestr('data/20200101000000001/index.html', 'page content 1')
+            zh.writestr('20200401000000001/data/20200101000000001/index.html', 'page content 1')
 
-        for _info in wsb_importer.run(self.test_output, [self.test_input]):
+            zh.writestr('20200401000000002/export.json', json.dumps({
+                'version': 2,
+                'id': '20200401000000002',
+                'timestamp': '20200401000000002',
+                'timezone': 28800,
+                'path': [
+                    {'id': 'root', 'title': ''},
+                ],
+                'index': 0,
+            }))
+            zh.writestr('20200401000000002/meta.json', json.dumps({
+                'id': '20200101000000002',
+                'index': '20200101000000002/index.html',
+                'type': '',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            }))
+            zh.writestr('20200401000000002/data/20200101000000002/index.html', 'page content 2')
+
+        for _info in wsb_importer.run(self.test_output, [wsba_file]):
             pass
 
         book = Host(self.test_output).books['']
         book.load_meta_files()
         book.load_toc_files()
 
-        self.assertEqual(book.meta, {})
-        self.assertEqual(book.toc, {})
+        self.assertEqual(book.meta, {
+            '20200101000000002': {
+                'type': '',
+                'index': '20200101000000002/index.html',
+                'title': 'Item 2',
+                'create': '20200101000000002',
+                'modify': '20200101000000002',
+            },
+        })
+        self.assertEqual(book.toc, {
+            'root': [
+                '20200101000000002',
+            ],
+        })
         self.assertCountEqual(glob_files(self.test_output), {
             os.path.join(self.test_output, ''),
+            os.path.join(self.test_output, '20200101000000002'),
+            os.path.join(self.test_output, '20200101000000002', 'index.html'),
         })
 
 

@@ -177,12 +177,12 @@ def cmd_cache(args):
 
 
 def cmd_export(args):
-    """Export data items into archive files (*.wsba).
+    """Export data items into an archive file (*.wsba).
 
     The export/import utilities provide a basic way to backup and restore the
     data and metadata (i.e. item properties) of specific item(s). To
     reconstruct the original scrapbook tree the exported archive files should
-    be re-imported together using the original Unicode filename order.
+    be re-imported together using the original order.
 
     For a reliable way to backup and restore the scrapbook tree as well as the
     items, it's generally more recommended to create another scrapbook and copy
@@ -191,6 +191,9 @@ def cmd_export(args):
     kwargs = args.copy()
     root = kwargs.pop('root')
     debug = kwargs.pop('debug')
+
+    if kwargs['output'] is None:
+        kwargs['output'] = sys.stdout.buffer
 
     from .scrapbook import exporter
     for info in exporter.run(root, **kwargs):
@@ -680,8 +683,8 @@ corresponding book) (default/empty: all items)""")
         help="""export data items into archive files (*.wsba)""")
     parser_export.set_defaults(func=cmd_export)
     parser_export.add_argument(
-        'output', action='store',
-        help="""the output directory""")
+        'output', action='store', default=None, nargs='?',
+        help="""the output file (default: stdout)""")
     parser_export.add_argument(
         '--book', dest='book_id', metavar='ID', default='', action='store',
         help="""the book ID to export (default: "")""")
@@ -739,8 +742,7 @@ time. For example, "%CREATE:UTC_DATE%".
     parser_import.set_defaults(func=cmd_import)
     parser_import.add_argument(
         'files', metavar='file', action='store', nargs='+',
-        help="""the file(s) to import in order. If a directory is provided, all
-child files are imported in unicode filename order.""")
+        help="""the file(s) to import in order.""")
     parser_import.add_argument(
         '--book', dest='book_id', metavar='ID', default='', action='store',
         help="""the book ID to import into (default: "")""")
