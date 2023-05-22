@@ -35,6 +35,7 @@ class Converter:
         self.book = None
 
     def run(self):
+        os.makedirs(self.output, exist_ok=True)
         self.host = Host(self.output)
         self.book = self.host.books['']
 

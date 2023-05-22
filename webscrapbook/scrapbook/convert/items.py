@@ -27,6 +27,7 @@ class Converter:
     def run(self):
         if self.input != self.output:
             yield Info('info', 'Copying files...')
+            os.makedirs(self.output, exist_ok=True)
             self._copy_files()
 
         yield Info('info', 'Applying conversion...')

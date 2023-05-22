@@ -55,7 +55,6 @@ class TestRun(unittest.TestCase):
         self.test_output_toc = os.path.join(self.test_output_tree, 'toc.js')
 
         os.makedirs(self.test_input, exist_ok=True)
-        os.makedirs(self.test_output, exist_ok=True)
 
     def test_meta_basic01(self):
         """A typical item sample of legacy ScrapBook X."""
