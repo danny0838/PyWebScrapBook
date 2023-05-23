@@ -729,8 +729,9 @@ def action_download():
 
         if not response:
             def gen():
+                zs = util.fs.ZipStream()
                 with util.fs.open_archive_path(localpaths) as zh:
-                    yield from util.fs.zip_copy(zh, localpaths[-1], None, '', filter)
+                    yield from util.fs.zip_copy(zh, localpaths[-1], zs, '', filter, stream=zs)
 
             response = Response(gen(), mimetype=mimetype)
             response.headers.set('Cache-Control', 'no-store')
@@ -738,7 +739,8 @@ def action_download():
         if os.path.isdir(localpaths[0]):
             filename = os.path.basename(request.localrealpath) + '.zip'
             mimetype, _ = mimetypes.guess_type(filename)
-            gen = util.fs.zip_compress(None, localpaths[0], '', filter)
+            zs = util.fs.ZipStream()
+            gen = util.fs.zip_compress(zs, localpaths[0], '', filter, stream=zs)
             response = Response(gen, mimetype=mimetype)
             response.headers.set('Cache-Control', 'no-store')
         else:

@@ -976,37 +976,35 @@ def zip_check_subpath(zip, subpath, allow_invalid=False):
     return ZIP_SUBPATH_NONE
 
 
-def zip_compress(zip, filename, subpath, filter=None, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+def zip_compress(zip, filename, subpath, filter=None, *,
+                 stream=None, buffer_size=io.DEFAULT_BUFFER_SIZE):
     """Compress src to be the subpath in the zip.
 
     Args:
-        zip: path, file-like object, or zipfile.ZipFile, or None to generate
-            bytes of the output ZIP file
+        zip: path, file-like object, or zipfile.ZipFile
         filename: path of the source file or directory
         subpath: internal path to a file or folder (without trailing slash)
         filter: an iterable of permitted subentries if filename is a directory
             (with normcase'd absolute path)
+        stream: a ZipStream for streaming output
 
     Raises:
         shutil.Error: if any child file cannot be added to the zip
     """
     filename = os.path.abspath(filename)
 
-    if zip is None:
-        zs = ZipStream()
-        cm = zipfile.ZipFile(zs, 'w')
-        return _zip_compress_gen(cm, filename, subpath, filter,
-                                 stream=zs, buffer_size=buffer_size)
-
     if isinstance(zip, zipfile.ZipFile):
-        zs = None
         cm = nullcontext(zip)
     else:
-        zs = None
         cm = zipfile.ZipFile(zip, 'w')
 
-    for _ in _zip_compress_gen(cm, filename, subpath, filter,
-                               buffer_size=buffer_size):
+    gen = _zip_compress_gen(cm, filename, subpath, filter,
+                            stream=stream, buffer_size=buffer_size)
+
+    if stream is not None:
+        return gen
+
+    for _ in gen:
         pass
 
 
@@ -1076,44 +1074,40 @@ def _zip_compress_iter(filename, subpath, filter=None):
             yield src, dst
 
 
-def zip_copy(zsrc, base, zdst, subpath, filter=None, *, buffer_size=io.DEFAULT_BUFFER_SIZE):
+def zip_copy(zsrc, base, zdst, subpath, filter=None, *,
+             stream=None, buffer_size=io.DEFAULT_BUFFER_SIZE):
     """Coopy entries from zsrc to be the subpath in zdst.
 
     Args:
         zsrc: path, file-like object, or zipfile.ZipFile
         base: internal path to a file or folder (without trailing slash)
-        zdst: path, file-like object, or zipfile.ZipFile, or None to generate
-            bytes of the output ZIP file
+        zdst: path, file-like object, or zipfile.ZipFile
         subpath: internal path to a file or folder (without trailing slash)
         filter: an iterable of permitted subentries if zsrcpath is a directory
             (without trailing slash)
+        stream: a ZipStream for streaming output
 
     Returns:
         set: names that are copied
     """
     base = base.rstrip('/')
-    if zdst is None:
-        zs = ZipStream()
-        cm = zipfile.ZipFile(zs, 'w')
-        return _zip_copy_gen(zsrc, base, cm, subpath, filter,
-                             stream=zs, buffer_size=buffer_size)
 
     if isinstance(zdst, zipfile.ZipFile):
         cm = nullcontext(zdst)
     else:
         cm = zipfile.ZipFile(zdst, 'w')
 
-    copied = None
+    gen = _zip_copy_gen(zsrc, base, cm, subpath, filter,
+                        stream=stream, buffer_size=buffer_size)
 
-    def gen():
-        nonlocal copied
-        copied = yield from _zip_copy_gen(zsrc, base, cm, subpath, filter,
-                                          buffer_size=buffer_size)
+    if stream is not None:
+        return gen
 
-    for _ in gen():
-        pass
-
-    return copied
+    try:
+        while True:
+            next(gen)
+    except StopIteration as exc:
+        return exc.value
 
 
 def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,

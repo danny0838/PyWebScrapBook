@@ -3074,7 +3074,8 @@ class TestHelpers(unittest.TestCase):
             fh.write('ABC中文')
 
         buf = io.BytesIO()
-        for chunk in util.fs.zip_compress(None, src, 'myfolder'):
+        zs = util.fs.ZipStream()
+        for chunk in util.fs.zip_compress(zs, src, 'myfolder', stream=zs):
             buf.write(chunk)
 
         with zipfile.ZipFile(buf) as zh:
@@ -3394,8 +3395,9 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz', compress_type=zipfile.ZIP_BZIP2)
 
         buf = io.BytesIO()
+        zs = util.fs.ZipStream()
         with zipfile.ZipFile(zfile) as zi:
-            for chunk in util.fs.zip_copy(zi, 'deep/subdir', None, 'deep/subdir2'):
+            for chunk in util.fs.zip_copy(zi, 'deep/subdir', zs, 'deep/subdir2', stream=zs):
                 buf.write(chunk)
 
         with zipfile.ZipFile(buf) as zh:
