@@ -301,7 +301,7 @@ class Importer():
                 if index_old.endswith('/index.html') != index.endswith('/index.html'):
                     raise RuntimeError('index type not match')
 
-                yield Info('info', f'Force importing duplicated {id!r}...')
+                yield Info('warn', f'Importing duplicated {id!r} in place of the current...')
 
                 if index:
                     # use original index
@@ -325,7 +325,7 @@ class Importer():
 
             elif self.resolve_id_used == 'new':
                 new_id = self.book.get_unique_id()
-                yield Info('info', f'Importing duplicated {id!r} as {new_id!r}...')
+                yield Info('warn', f'Importing duplicated {id!r} as {new_id!r}...')
 
                 if index:
                     # overwrite dst and index
