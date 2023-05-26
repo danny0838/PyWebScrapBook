@@ -2,7 +2,6 @@ import copy
 import json
 import os
 import re
-import shutil
 import time
 import traceback
 import uuid
@@ -310,16 +309,12 @@ class Importer():
                     # remove current index file or folder
                     if index.endswith('/index.html'):
                         dst = os.path.normpath(os.path.join(self.book.data_dir, os.path.dirname(index_old)))
-                        try:
-                            shutil.rmtree(dst)
-                        except FileNotFoundError:
-                            pass
                     else:
                         dst = os.path.normpath(os.path.join(self.book.data_dir, index_old))
-                        try:
-                            os.remove(dst)
-                        except FileNotFoundError:
-                            pass
+                    try:
+                        util.fs.delete(dst)
+                    except util.fs.FSEntryNotFoundError:
+                        pass
 
                 self.map_eid_to_info.setdefault(export_info['id'], {}).setdefault('replaced', True)
 
