@@ -58,21 +58,21 @@ new_at_top = true
 
 
 class TestFuncRun(TestCheck):
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_tree_lock')
     def test_param_lock01(self, mock_func):
         for _info in wsb_check.run(self.test_root, lock=True):
             pass
 
         mock_func.assert_called_once_with(persist=True)
 
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_tree_lock')
     def test_param_lock02(self, mock_func):
         for _info in wsb_check.run(self.test_root, lock=False):
             pass
 
         mock_func.assert_not_called()
 
-    @mock.patch('webscrapbook.scrapbook.host.Book')
+    @mock.patch('webscrapbook.scrapbook.book.Book')
     def test_param_book_ids01(self, mock_book):
         """Include effective provided IDs"""
         self.init_host(self.test_root, config="""\
@@ -95,7 +95,7 @@ class TestFuncRun(TestCheck):
             mock.call(mock.ANY, 'id4'),
         ])
 
-    @mock.patch('webscrapbook.scrapbook.host.Book')
+    @mock.patch('webscrapbook.scrapbook.book.Book')
     def test_param_book_ids02(self, mock_book):
         """Include all available IDs if None provided"""
         self.init_host(self.test_root, config="""\
@@ -119,7 +119,7 @@ class TestFuncRun(TestCheck):
             mock.call(mock.ANY, 'id5'),
         ])
 
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_tree_lock')
     def test_no_tree(self, mock_lock):
         """Books with no_tree=True should be skipped."""
         self.init_host(self.test_root, config="""\

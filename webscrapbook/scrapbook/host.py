@@ -10,7 +10,7 @@ from threading import Thread
 
 from .. import WSB_DIR, WSB_USER_DIR, Config, util
 from ..locales import I18N
-from .book import Book
+from . import book
 
 
 class LockError(Exception):
@@ -341,7 +341,7 @@ class BooksProxy(UserDict):
     def __getitem__(self, key):
         rv = self.data[key]
         if rv is NotImplemented:
-            rv = self.data[key] = Book(self.host, key)
+            rv = self.data[key] = book.Book(self.host, key)
         return rv
 
 

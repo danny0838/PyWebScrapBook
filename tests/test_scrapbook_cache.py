@@ -54,21 +54,21 @@ class TestCache(TestBookMixin, unittest.TestCase):
 
 
 class TestFuncGenerate(TestCache):
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_tree_lock')
     def test_param_lock01(self, mock_func):
         for _info in wsb_cache.generate(self.test_root, lock=True):
             pass
 
         mock_func.assert_called_once_with(persist=True)
 
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_tree_lock')
     def test_param_lock02(self, mock_func):
         for _info in wsb_cache.generate(self.test_root, lock=False):
             pass
 
         mock_func.assert_not_called()
 
-    @mock.patch('webscrapbook.scrapbook.host.Book')
+    @mock.patch('webscrapbook.scrapbook.book.Book')
     def test_param_book_items01(self, mock_book):
         """Include all available books for None or empty dict"""
         self.init_host(self.test_root, config="""\
@@ -86,7 +86,7 @@ class TestFuncGenerate(TestCache):
             mock.call(mock.ANY, 'b2'),
         ])
 
-    @mock.patch('webscrapbook.scrapbook.host.Book')
+    @mock.patch('webscrapbook.scrapbook.book.Book')
     def test_param_book_items02(self, mock_book):
         """Include effective books in order"""
         self.init_host(self.test_root, config="""\
@@ -143,7 +143,7 @@ class TestFuncGenerate(TestCache):
             mock.ANY,  # iter
         ])
 
-    @mock.patch('webscrapbook.scrapbook.host.Book.get_tree_lock')
+    @mock.patch('webscrapbook.scrapbook.book.Book.get_tree_lock')
     def test_no_tree(self, mock_lock):
         """Books with no_tree=True should be skipped."""
         self.init_host(self.test_root, config="""\
