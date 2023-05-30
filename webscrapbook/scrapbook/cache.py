@@ -319,7 +319,7 @@ class RssFeedGenerator():
                 'item': meta,
             })
         entries = sorted(entries, key=lambda d: d['modify'])
-        entries = list(reversed(entries))[:self.item_count]
+        entries = tuple(reversed(entries))[:self.item_count]
 
         # generate tree
         root = etree.XML(f'<feed xmlns="{self.NS}"></feed>'.encode('UTF-8'))

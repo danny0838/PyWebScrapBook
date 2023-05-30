@@ -172,7 +172,7 @@ class Book:
 
         # remove top-level None values to allow quick clear by appending file
         # e.g. add meta1.js with {'id1': None} to quickly delete 'id1' in meta.js
-        for k in list(data):
+        for k in tuple(data):
             if data[k] is None:
                 del data[k]
 
@@ -214,7 +214,7 @@ scrapbook.meta({json.dumps(data, ensure_ascii=False, indent=2).translate(self.JS
         i = 0
         size = 1
         meta = {}
-        for id in list(self.meta):
+        for id in tuple(self.meta):
             if self.meta[id] is None:
                 del self.meta[id]
                 continue
@@ -253,7 +253,7 @@ scrapbook.toc({json.dumps(data, ensure_ascii=False, indent=2).translate(self.JSO
         i = 0
         size = 1
         toc = {}
-        for id in list(self.toc):
+        for id in tuple(self.toc):
             if self.toc[id] is None:
                 del self.toc[id]
                 continue
@@ -292,7 +292,7 @@ scrapbook.fulltext({json.dumps(data, ensure_ascii=False, indent=1).translate(sel
         i = 0
         size = 1
         fulltext = {}
-        for id in list(self.fulltext):
+        for id in tuple(self.fulltext):
             if self.fulltext[id] is None:
                 del self.fulltext[id]
                 continue
