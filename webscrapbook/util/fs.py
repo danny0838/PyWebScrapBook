@@ -4,7 +4,6 @@ import functools
 import io
 import itertools
 import os
-import re
 import shutil
 import stat
 import subprocess
@@ -190,7 +189,7 @@ class CPath:
         return self._path == other
 
     def copy(self):
-        return CPath(self._path)
+        return self.__class__(self._path)
 
     @property
     def path(self):
@@ -200,8 +199,8 @@ class CPath:
     def file(self):
         return self._path[0]
 
-    @staticmethod
-    def resolve(plainpath, resolver=None):
+    @classmethod
+    def resolve(cls, plainpath, resolver=None):
         """Resolves a plainpath with '!/' to a CPath.
 
         - Priority:
@@ -221,10 +220,10 @@ class CPath:
             CPath
         """
         paths = []
-        for m in reversed(list(re.finditer(r'!/', plainpath, flags=re.I))):
-            archivepath = plainpath[:m.start(0)]
+        for start, end in cls._resolve_iter_sep(plainpath):
+            archivepath = plainpath[:start]
             if resolver:
-                archivepath = CPath._resolve_tidy_subpath(archivepath)
+                archivepath = cls._resolve_tidy_subpath(archivepath)
                 archivefile = resolver(archivepath)
             else:
                 archivepath = archivefile = os.path.normpath(archivepath)
@@ -242,21 +241,21 @@ class CPath:
 
             with zh as zh:
                 paths.append(archivepath)
-                CPath._resolve_add_subpath(paths, zh, plainpath[m.end(0):])
-                return CPath(paths)
+                cls._resolve_add_subpath(paths, zh, plainpath[end:])
+                return cls(paths)
 
         archivepath = plainpath
         if resolver:
-            archivepath = CPath._resolve_tidy_subpath(archivepath)
+            archivepath = cls._resolve_tidy_subpath(archivepath)
         else:
             archivepath = os.path.normpath(archivepath)
         paths.append(archivepath)
-        return CPath(paths)
+        return cls(paths)
 
-    @staticmethod
-    def _resolve_add_subpath(paths, zh, subpath):
-        for m in reversed(list(re.finditer(r'!/', subpath, flags=re.I))):
-            archivepath = CPath._resolve_tidy_subpath(subpath[:m.start(0)], True)
+    @classmethod
+    def _resolve_add_subpath(cls, paths, zh, subpath):
+        for start, end in cls._resolve_iter_sep(subpath):
+            archivepath = cls._resolve_tidy_subpath(subpath[:start], True)
             conflicting = archivepath + '!/'
 
             if any(i.startswith(conflicting) for i in zh.namelist()):
@@ -275,13 +274,23 @@ class CPath:
 
                 with zh1 as zh1:
                     paths.append(archivepath)
-                    CPath._resolve_add_subpath(paths, zh1, subpath[m.end(0):])
+                    cls._resolve_add_subpath(paths, zh1, subpath[end:])
                     return
 
-        paths.append(CPath._resolve_tidy_subpath(subpath, True))
+        paths.append(cls._resolve_tidy_subpath(subpath, True))
 
-    @staticmethod
-    def _resolve_tidy_subpath(path, striproot=False):
+    @classmethod
+    def _resolve_iter_sep(cls, path):
+        pos = None
+        while True:
+            try:
+                pos = path.rindex('!/', 0, pos)
+            except ValueError:
+                break
+            yield pos, pos + 2
+
+    @classmethod
+    def _resolve_tidy_subpath(cls, path, striproot=False):
         """Tidy a subpath with possible '.', '..', '//', etc."""
         has_initial_slash = path.startswith('/')
         comps = path.split('/')
