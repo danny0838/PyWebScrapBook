@@ -228,22 +228,18 @@ def is_local_access():
     return util.is_localhost(server_host) or util.is_localhost(client_host) or server_host == client_host
 
 
-def get_permission(auth_info, auth_config):
+def get_permission(username, password, auth_config):
     """Calculate effective permission from provided auth info and config.
     """
-    auth = auth_info or {}
-    user = auth.get('username') or ''
-    pw = auth.get('password') or ''
-
     for _, entry in auth_config.items():
         entry_user = entry.get('user', '')
-        if user != entry_user:
+        if username != entry_user:
             continue
 
         entry_pw = entry.get('pw', '')
         entry_pw_salt = entry.get('pw_salt', '')
         entry_pw_type = entry.get('pw_type', '')
-        if util.encrypt(pw, entry_pw_salt, entry_pw_type) != entry_pw:
+        if util.encrypt(password, entry_pw_salt, entry_pw_type) != entry_pw:
             continue
 
         entry_permission = entry.get('permission', 'all')
@@ -1324,10 +1320,12 @@ def handle_before_request():
         # auth not required
         return
 
-    perm = get_permission(request.authorization, auth_config)
+    auth = request.authorization or {}
+    username = auth.get('username') or ''
+    password = auth.get('password') or ''
+    perm = get_permission(username, password, auth_config)
     if not verify_authorization(perm, request.action):
-        auth = WWWAuthenticate()
-        auth.set_basic(host.config['app']['name'])
+        auth = WWWAuthenticate('basic', {'realm': host.config['app']['name']})
         abort(401, 'You are not authorized.', www_authenticate=auth)
 
 

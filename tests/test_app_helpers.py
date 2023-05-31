@@ -212,16 +212,16 @@ class TestFunctions(Test):
             # and the salt and method for the matched user
             mock_encrypt.reset_mock()
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user1', 'password': 'pass1'}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('user1', 'pass1', auth_config), '')
             mock_encrypt.assert_called_with('pass1', '', 'plain')
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user2', 'password': 'pass2'}, auth_config), 'view')
+            self.assertEqual(wsbapp.get_permission('user2', 'pass2', auth_config), 'view')
             mock_encrypt.assert_called_with('pass2', 'salt', 'plain')
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user3', 'password': 'pass3'}, auth_config), 'read')
+            self.assertEqual(wsbapp.get_permission('user3', 'pass3', auth_config), 'read')
             mock_encrypt.assert_called_with('pass3', '', 'sha1')
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user4', 'password': 'pass4'}, auth_config), 'all')
+            self.assertEqual(wsbapp.get_permission('user4', 'pass4', auth_config), 'all')
             mock_encrypt.assert_called_with('pass4', 'salt4', 'sha256')
 
             # Password check should be handled by util.encrypt properly.
@@ -231,14 +231,15 @@ class TestFunctions(Test):
             # - inputting hashed value should not work
             mock_encrypt.reset_mock()
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user4', 'password': ''}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('user4', '', auth_config), '')
             mock_encrypt.assert_called_with('', 'salt4', 'sha256')
 
-            self.assertEqual(wsbapp.get_permission({'username': 'user4', 'password': 'salt4'}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('user4', 'salt4', auth_config), '')
             mock_encrypt.assert_called_with('salt4', 'salt4', 'sha256')
 
             self.assertEqual(wsbapp.get_permission(
-                {'username': 'user4', 'password': '49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53'},
+                'user4',
+                '49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53',
                 auth_config,
             ), '')
             mock_encrypt.assert_called_with('49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53', 'salt4', 'sha256')
@@ -246,19 +247,16 @@ class TestFunctions(Test):
             # util.encrypt should NOT be called for an unmatched user
             mock_encrypt.reset_mock()
 
-            self.assertEqual(wsbapp.get_permission(None, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('', '', auth_config), '')
             mock_encrypt.assert_not_called()
 
-            self.assertEqual(wsbapp.get_permission({'username': '', 'password': ''}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('', 'pass', auth_config), '')
             mock_encrypt.assert_not_called()
 
-            self.assertEqual(wsbapp.get_permission({'username': '', 'password': 'pass'}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('userx', '', auth_config), '')
             mock_encrypt.assert_not_called()
 
-            self.assertEqual(wsbapp.get_permission({'username': 'userx', 'password': ''}, auth_config), '')
-            mock_encrypt.assert_not_called()
-
-            self.assertEqual(wsbapp.get_permission({'username': 'userx', 'password': 'pass'}, auth_config), '')
+            self.assertEqual(wsbapp.get_permission('userx', 'pass', auth_config), '')
             mock_encrypt.assert_not_called()
 
     @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
@@ -268,10 +266,7 @@ class TestFunctions(Test):
         app = wsbapp.make_app(root)
         auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
         with app.app_context():
-            self.assertEqual(wsbapp.get_permission(None, auth_config), 'view')
-            mock_encrypt.assert_called_with('', 'salt', 'plain')
-
-            self.assertEqual(wsbapp.get_permission({'username': '', 'password': ''}, auth_config), 'view')
+            self.assertEqual(wsbapp.get_permission('', '', auth_config), 'view')
             mock_encrypt.assert_called_with('', 'salt', 'plain')
 
     @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
@@ -282,11 +277,11 @@ class TestFunctions(Test):
         auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
         with app.app_context():
             mock_encrypt.reset_mock()
-            self.assertEqual(wsbapp.get_permission({'username': '', 'password': ''}, auth_config), 'view')
+            self.assertEqual(wsbapp.get_permission('', '', auth_config), 'view')
             mock_encrypt.assert_called_once_with('', 'salt', 'plain')
 
             mock_encrypt.reset_mock()
-            self.assertEqual(wsbapp.get_permission({'username': 'user1', 'password': 'pass1'}, auth_config), 'read')
+            self.assertEqual(wsbapp.get_permission('user1', 'pass1', auth_config), 'read')
             self.assertEqual(mock_encrypt.call_args_list[0][0], ('pass1', 'salt', 'plain'))
             self.assertEqual(mock_encrypt.call_args_list[1][0], ('pass1', 'salt', 'plain'))
 

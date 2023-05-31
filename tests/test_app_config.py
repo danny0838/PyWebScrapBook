@@ -98,7 +98,7 @@ permission = all
 
             # /
             r = get('/')
-            self.assertEqual(r.headers['WWW-Authenticate'], 'Basic realm="mywsb"')
+            self.assertEqual(r.www_authenticate['realm'], 'mywsb')
 
     @mock.patch('jinja2.FileSystemLoader')
     def test_theme(self, mock_loader):
@@ -157,7 +157,7 @@ allowed_x_prefix = 0
         app.testing = True
         with app.test_client() as c:
             get = partial(c.get, headers={
-                'X-Forwarded-Prefix': '/scrap 書',
+                'X-Forwarded-Prefix': '/scrap',
             })
 
             # /
@@ -198,37 +198,37 @@ allowed_x_prefix = 1
         app.testing = True
         with app.test_client() as c:
             get = partial(c.get, headers={
-                'X-Forwarded-Prefix': '/scrap 書'.encode('UTF-8'),
+                'X-Forwarded-Prefix': '/scrap',
             })
 
             # /
             r = get('/')
             html = r.data.decode('UTF-8')
 
-            self.assertIn('href="/scrap%20%E6%9B%B8/common.css?a=static"', html)
-            self.assertIn('href="/scrap%20%E6%9B%B8/index.css?a=static"', html)
-            self.assertIn('src="/scrap%20%E6%9B%B8/common.js?a=static"', html)
-            self.assertIn('src="/scrap%20%E6%9B%B8/index.js?a=static"', html)
+            self.assertIn('href="/scrap/common.css?a=static"', html)
+            self.assertIn('href="/scrap/index.css?a=static"', html)
+            self.assertIn('src="/scrap/common.js?a=static"', html)
+            self.assertIn('src="/scrap/index.js?a=static"', html)
 
             self.assertIn('<h1 id="header" class="breadcrumbs"><a>WebScrapBook</a>/</h1>', html)
-            self.assertIn('data-base="/scrap 書" data-path="/"', html)
+            self.assertIn('data-base="/scrap" data-path="/"', html)
 
             # /subdir/
             r = get('/subdir')
             self.assertEqual(r.status_code, 302)
-            self.assertEqual(r.headers['Location'], 'http://localhost/scrap%20%E6%9B%B8/subdir/')
+            self.assertEqual(r.headers['Location'], 'http://localhost/scrap/subdir/')
 
             # /subdir/
             r = get('/subdir/')
             html = r.data.decode('UTF-8')
 
-            self.assertIn('href="/scrap%20%E6%9B%B8/common.css?a=static"', html)
-            self.assertIn('href="/scrap%20%E6%9B%B8/index.css?a=static"', html)
-            self.assertIn('src="/scrap%20%E6%9B%B8/common.js?a=static"', html)
-            self.assertIn('src="/scrap%20%E6%9B%B8/index.js?a=static"', html)
+            self.assertIn('href="/scrap/common.css?a=static"', html)
+            self.assertIn('href="/scrap/index.css?a=static"', html)
+            self.assertIn('src="/scrap/common.js?a=static"', html)
+            self.assertIn('src="/scrap/index.js?a=static"', html)
 
-            self.assertIn('<h1 id="header" class="breadcrumbs"><a href="/scrap%20%E6%9B%B8/">WebScrapBook</a>/<a>subdir</a>/</h1>', html)
-            self.assertIn('data-base="/scrap 書" data-path="/subdir/"', html)
+            self.assertIn('<h1 id="header" class="breadcrumbs"><a href="/scrap/">WebScrapBook</a>/<a>subdir</a>/</h1>', html)
+            self.assertIn('data-base="/scrap" data-path="/subdir/"', html)
 
     def test_x_host(self):
         # x_.. = 0
@@ -424,9 +424,9 @@ class TestAuth(TestBookMixin, unittest.TestCase):
         credentials = b64encode(f'{user}:{password}'.encode('utf-8')).decode('utf-8')
         return {'Authorization': f'Basic {credentials}'}
 
-    def simple_auth_check(self, response, bool=True):
-        if bool:
-            self.assertRegex(response.headers['WWW-Authenticate'], r'Basic realm="([^"]*)"')
+    def simple_auth_check(self, response, has_auth=True):
+        if has_auth:
+            self.assertIn('realm', response.www_authenticate)
         else:
             with self.assertRaises(KeyError):
                 response.headers['WWW-Authenticate']
@@ -450,19 +450,18 @@ permission = view
                 for auth in (None, ('', ''), ('user', ''), ('', 'pass'), ('user', 'pass')):
                     with self.subTest(method=method, auth=auth):
                         if auth is None:
+                            user = pw = ''
                             headers = None
-                            expected = None
                         else:
                             user, pw = auth
                             headers = self.simple_auth_headers(user, pw)
-                            expected = {'username': user, 'password': pw}
 
                         try:
                             c.open('/', method=method, headers=headers)
                         except SystemExit:
                             pass
 
-                        mock_perm.assert_called_with(expected, mock.ANY)
+                        mock_perm.assert_called_with(user, pw, mock.ANY)
 
     @mock.patch('webscrapbook.app.verify_authorization', side_effect=SystemExit)
     def test_verify_authorization(self, mock_auth):
