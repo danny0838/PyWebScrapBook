@@ -569,9 +569,9 @@ def checksum(file, method='sha1', chunk_size=4096):
     try:
         fh = open(file, 'rb')
     except TypeError:
-        fh = file
+        fh = nullcontext(file)
 
-    try:
+    with fh as fh:
         h = hashlib.new(method)
         while True:
             chunk = fh.read(chunk_size)
@@ -580,9 +580,6 @@ def checksum(file, method='sha1', chunk_size=4096):
             h.update(chunk)
 
         return h.hexdigest()
-    finally:
-        if fh != file:
-            fh.close()
 
 
 def format_filesize(bytes, si=False, space=' '):
@@ -878,12 +875,12 @@ def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
     try:
         fh = open(file, 'rb')
     except TypeError:
-        fh = file
+        fh = nullcontext(file)
     except FileNotFoundError:
         fh = None
 
     if fh:
-        try:
+        with fh as fh:
             # Seek for the correct charset (encoding).
             # If a charset is not specified, lxml may select a wrong encoding for
             # the entire document if there is text before first meta charset.
@@ -906,9 +903,6 @@ def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
                 charset = fix_codec(charset)
 
             return charset
-        finally:
-            if fh != file:
-                fh.close()
 
     return default
 
@@ -923,14 +917,14 @@ def load_html_tree(file, options=None):
     try:
         fh = open(file, 'rb')
     except TypeError:
-        fh = file
+        fh = nullcontext(file)
     except FileNotFoundError:
         fh = None
 
     if not fh:
         return None
 
-    try:
+    with fh as fh:
         charset = get_html_charset(fh)
         fh.seek(0)
 
@@ -938,9 +932,6 @@ def load_html_tree(file, options=None):
             return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset, **(options or {})))
         except etree.Error:
             return None
-    finally:
-        if fh != file:
-            fh.close()
 
 
 MetaRefreshInfo = namedtuple('MetaRefreshInfo', ('time', 'target', 'context'))
@@ -1035,14 +1026,14 @@ def iter_meta_refresh(file, encoding=None):
     try:
         fh = open(file, 'rb')
     except TypeError:
-        fh = file
+        fh = nullcontext(file)
     except FileNotFoundError:
         fh = None
 
     if not fh:
         return
 
-    try:
+    with fh as fh:
         if not encoding:
             encoding = get_html_charset(fh, default='ISO-8859-1')
             fh.seek(0)
@@ -1070,9 +1061,6 @@ def iter_meta_refresh(file, encoding=None):
                     except TypeError:
                         # broken html may generate extra root elem
                         break
-    finally:
-        if fh != file:
-            fh.close()
 
 
 def get_meta_refresh(file):
