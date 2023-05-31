@@ -493,9 +493,8 @@ scrapbook.meta({
         book.save_meta_files()
 
         with open(os.path.join(self.test_root, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.meta({
   "20200101000000000": {
     "title": "Dummy 1 中文"
@@ -519,9 +518,8 @@ scrapbook.meta({
         book.save_meta_files()
 
         with open(os.path.join(self.test_root, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.meta({
   "20200101000000000": {
     "title": "Dummy 1 中文"
@@ -531,9 +529,8 @@ scrapbook.meta({
   }
 })""")
         with open(os.path.join(self.test_root, 'tree', 'meta1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.meta({
   "20200101000000002": {
     "title": "Dummy 3 中文"
@@ -564,9 +561,8 @@ scrapbook.meta({
         book.save_meta_files()
 
         with open(os.path.join(self.test_root, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.meta({
   "20200101000000000": {
     "title": "Dummy 1 中文"
@@ -592,15 +588,14 @@ scrapbook.meta({
         book.save_meta_files()
 
         with open(os.path.join(self.test_root, 'tree', 'meta.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), r"""/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.meta({
-  "20200101\u2028000000000": {
-    "title\u20281": "Dummy 1\u2028中文"
+  "20200101\\u2028000000000": {
+    "title\\u20281": "Dummy 1\\u2028中文"
   },
-  "20200101\u2029000000001": {
-    "title\u20292": "Dummy 2\u2029中文"
+  "20200101\\u2029000000001": {
+    "title\\u20292": "Dummy 2\\u2029中文"
   }
 })""")
 
@@ -621,9 +616,8 @@ scrapbook.meta({
         book.save_toc_files()
 
         with open(os.path.join(self.test_root, 'tree', 'toc.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.toc({
   "root": [
     "20200101000000000",
@@ -662,9 +656,8 @@ scrapbook.toc({
         book.save_toc_files()
 
         with open(os.path.join(self.test_root, 'tree', 'toc.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.toc({
   "root": [
     "20200101000000000",
@@ -675,9 +668,8 @@ scrapbook.toc({
   ]
 })""")
         with open(os.path.join(self.test_root, 'tree', 'toc1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.toc({
   "20200101000000001": [
     "20200101000000011"
@@ -687,9 +679,8 @@ scrapbook.toc({
   ]
 })""")
         with open(os.path.join(self.test_root, 'tree', 'toc2.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.toc({
   "20200101000000003": [
     "20200101000000031",
@@ -724,9 +715,8 @@ scrapbook.toc({
         book.save_toc_files()
 
         with open(os.path.join(self.test_root, 'tree', 'toc.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.toc({
   "root": [
     "20200101000000000",
@@ -759,16 +749,15 @@ scrapbook.toc({
         book.save_toc_files()
 
         with open(os.path.join(self.test_root, 'tree', 'toc.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), r"""/**
- * Feel free to edit this file, but keep data code valid JSON format.
- */
+            self.assertEqual(fh.read(), """\
+/* Feel free to edit this file, but keep data code valid JSON format. */
 scrapbook.toc({
   "root": [
-    "20200101\u2028000000000",
-    "20200101\u2029000000001"
+    "20200101\\u2028000000000",
+    "20200101\\u2029000000001"
   ],
-  "20200101\u2028000000000": [
-    "20200101\u2029000000003"
+  "20200101\\u2028000000000": [
+    "20200101\\u2029000000003"
   ]
 })""")
 
@@ -791,9 +780,8 @@ scrapbook.toc({
         book.save_fulltext_files()
 
         with open(os.path.join(self.test_root, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -835,9 +823,8 @@ scrapbook.fulltext({
         book.save_fulltext_files()
 
         with open(os.path.join(self.test_root, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -849,9 +836,8 @@ scrapbook.fulltext({
  }
 })""")
         with open(os.path.join(self.test_root, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
  "20200101000000001": {
   "index.html": {
@@ -860,9 +846,8 @@ scrapbook.fulltext({
  }
 })""")
         with open(os.path.join(self.test_root, 'tree', 'fulltext2.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
  "20200101000000002": {
   "index.html": {
@@ -908,9 +893,8 @@ scrapbook.fulltext({
         book.save_fulltext_files()
 
         with open(os.path.join(self.test_root, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
  "20200101000000000": {
   "index.html": {
@@ -922,9 +906,8 @@ scrapbook.fulltext({
  }
 })""")
         with open(os.path.join(self.test_root, 'tree', 'fulltext1.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), """/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
  "20200101000000001": {
   "index.html": {
@@ -958,16 +941,15 @@ scrapbook.fulltext({
         book.save_fulltext_files()
 
         with open(os.path.join(self.test_root, 'tree', 'fulltext.js'), encoding='UTF-8') as fh:
-            self.assertEqual(fh.read(), r"""/**
- * This file is generated by WebScrapBook and is not intended to be edited.
- */
+            self.assertEqual(fh.read(), """\
+/* This file is generated by WebScrapBook and is not intended to be edited. */
 scrapbook.fulltext({
- "20200101\u2028000000000": {
+ "20200101\\u2028000000000": {
   "index.html": {
    "content": "dummy text 1 中文"
   }
  },
- "20200101\u2029000000001": {
+ "20200101\\u2029000000001": {
   "index.html": {
    "content": "dummy text 2 中文"
   }
