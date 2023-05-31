@@ -1,6 +1,5 @@
 """Generator of fulltext cache and/or static site pages.
 """
-import copy
 import functools
 import html
 import io
@@ -446,7 +445,7 @@ class FulltextCacheGenerator():
             book_fulltext_orig = None
         else:
             book.load_fulltext_files()
-            book_fulltext_orig = copy.deepcopy(book.fulltext)
+            book_fulltext_orig = book.checksum(book.fulltext)
 
         # generate cache for each item
         if item_ids:
@@ -458,7 +457,7 @@ class FulltextCacheGenerator():
             yield from self._cache_item(id)
 
         # update fulltext files
-        if book.fulltext != book_fulltext_orig:
+        if book.checksum(book.fulltext) != book_fulltext_orig:
             # changed => save new files
             yield Info('info', 'Saving fulltext files...')
             book.save_fulltext_files()

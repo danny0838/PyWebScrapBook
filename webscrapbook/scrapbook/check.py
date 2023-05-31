@@ -1,6 +1,5 @@
 """Generator of integrity check for scrapbook data.
 """
-import copy
 import os
 import time
 import traceback
@@ -74,8 +73,8 @@ class BookChecker:
         yield Info('info', 'Loading tree...')
         self._load_tree()
 
-        book_meta_orig = copy.deepcopy(self.book.meta)
-        book_toc_orig = copy.deepcopy(self.book.toc)
+        book_meta_orig = self.book.checksum(self.book.meta)
+        book_toc_orig = self.book.checksum(self.book.toc)
 
         yield Info('info', 'Checking metadata...')
         yield from self._check_meta()
@@ -91,11 +90,11 @@ class BookChecker:
         yield from self._check_favicon_cache()
 
         # update files
-        if self.book.meta != book_meta_orig:
+        if self.book.checksum(self.book.meta) != book_meta_orig:
             yield Info('info', 'Saving changed meta files...')
             self.book.save_meta_files()
 
-        if self.book.toc != book_toc_orig:
+        if self.book.checksum(self.book.toc) != book_toc_orig:
             yield Info('info', 'Saving changed TOC files...')
             self.book.save_toc_files()
 

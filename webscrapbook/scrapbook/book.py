@@ -2,6 +2,7 @@
 """
 import functools
 import glob
+import hashlib
 import html
 import json
 import os
@@ -149,6 +150,19 @@ class Book:
     def __repr__(self):
         repr_str = ', '.join(f'{attr}={repr(getattr(self, attr))}' for attr in self.REPR_ATTRS)
         return f'{self.__class__.__name__}({repr_str})'
+
+    @staticmethod
+    def checksum(obj, method='sha1'):
+        """Get a checksum of an object (by its JSONified string)."""
+        m = hashlib.new(method)
+        gen = json.JSONEncoder(
+            ensure_ascii=False,
+            check_circular=False,
+            separators=(',', ':'),
+        ).iterencode(obj)
+        for chunk in gen:
+            m.update(chunk.encode('UTF-8'))
+        return m.digest()
 
     def get_subpath(self, file):
         """Get subpath of a file related to root.

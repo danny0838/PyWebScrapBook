@@ -1,6 +1,5 @@
 """Miscellaneous Scrapbook book handler.
 """
-import copy
 from collections import defaultdict, deque
 from contextlib import nullcontext
 
@@ -92,19 +91,19 @@ class HostQuery:
                 book.load_toc_files()
 
             if 'meta' in self.changes[book_id]:
-                book_meta_orig = copy.deepcopy(book.meta)
+                book_meta_orig = book.checksum(book.meta)
 
             if 'toc' in self.changes[book_id]:
-                book_toc_orig = copy.deepcopy(book.toc)
+                book_toc_orig = book.checksum(book.toc)
 
             self._with_next_book(book_ids)
 
             if 'meta' in self.changes[book_id]:
-                if book.meta != book_meta_orig:
+                if book.checksum(book.meta) != book_meta_orig:
                     book.save_meta_files()
 
             if 'toc' in self.changes[book_id]:
-                if book.toc != book_toc_orig:
+                if book.checksum(book.toc) != book_toc_orig:
                     book.save_toc_files()
 
     def _run_tasks(self):

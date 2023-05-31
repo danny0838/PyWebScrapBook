@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import re
@@ -41,8 +40,8 @@ class Importer():
         self.map_eid_to_info = {}
         self.map_id_to_new_id = {}
 
-        book_meta_orig = copy.deepcopy(self.book.meta)
-        book_toc_orig = copy.deepcopy(self.book.toc)
+        book_meta_orig = self.book.checksum(self.book.meta)
+        book_toc_orig = self.book.checksum(self.book.toc)
 
         # fix target_id
         if not self.rebuild_folders:
@@ -67,11 +66,11 @@ class Importer():
                     os.remove(file)
 
         # update files
-        if self.book.meta != book_meta_orig:
+        if self.book.checksum(self.book.meta) != book_meta_orig:
             yield Info('info', 'Saving changed meta files...')
             self.book.save_meta_files()
 
-        if self.book.toc != book_toc_orig:
+        if self.book.checksum(self.book.toc) != book_toc_orig:
             yield Info('info', 'Saving changed TOC files...')
             self.book.save_toc_files()
 

@@ -1,4 +1,3 @@
-import copy
 import html
 import os
 import shutil
@@ -43,7 +42,7 @@ class Converter:
             yield Info('info', f'Handling book {book_id!r}...')
             book.load_meta_files()
 
-            book_meta_orig = copy.deepcopy(book.meta)
+            book_meta_orig = book.checksum(book.meta)
 
             for id in (item_ids or book.meta):
                 if id not in book.meta:
@@ -69,7 +68,7 @@ class Converter:
                         yield Info('error', f'Failed to convert {id!r}: {exc}', exc=exc)
 
             # update files
-            if book.meta != book_meta_orig:
+            if book.checksum(book.meta) != book_meta_orig:
                 yield Info('info', 'Saving changed meta files...')
                 book.save_meta_files()
 
