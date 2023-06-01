@@ -68,7 +68,8 @@ class TestUtils(unittest.TestCase):
         # create an ID from local datetime
         self.assertEqual(
             util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000)),
-            '20200102030405')
+            '20200102030405',
+        )
 
         # create an ID from the corresponding local time if datetime is at another timezone
         dt = datetime(2020, 1, 2, 3, 4, 5, 67000)
@@ -77,12 +78,13 @@ class TestUtils(unittest.TestCase):
             util.datetime_to_id_legacy(dt + dt.astimezone().utcoffset()),
         )
 
-        # create for now if datetime not provided
-        self.assertAlmostEqual(
-            util.id_to_datetime_legacy(util.datetime_to_id_legacy(None)).timestamp(),
-            datetime.now().timestamp(),
-            delta=3,
-        )
+        # create an ID from now if datetime not provided
+        with mock.patch('webscrapbook.util.util.datetime',
+                        **{'now.return_value': datetime(2020, 1, 1, 0, 0, 0, 50000)}):
+            self.assertEqual(
+                util.datetime_to_id_legacy(None),
+                '20200101000000',
+            )
 
     def test_id_to_datetime(self):
         self.assertEqual(
