@@ -3563,7 +3563,7 @@ class TestHelpers(unittest.TestCase):
 
         test_offset = -12345  # use a timezone offset which is unlikely really used
         util.fs.zip_extract(zfile, dst, tzoffset=test_offset)
-        delta = datetime.now().astimezone().utcoffset().total_seconds()
+        utc_offset = datetime.fromtimestamp(DUMMY_TS).astimezone().utcoffset().total_seconds()
 
         self.assertEqual(
             glob_files(dst),
@@ -3574,7 +3574,7 @@ class TestHelpers(unittest.TestCase):
         )
         self.assertEqual(
             os.stat(os.path.join(dst, 'file.txt')).st_mtime,
-            DUMMY_TS - test_offset + delta,
+            DUMMY_TS + utc_offset - test_offset,
         )
 
 

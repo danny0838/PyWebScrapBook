@@ -70,10 +70,11 @@ class TestUtils(unittest.TestCase):
             util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000)),
             '20200102030405')
 
-        # create an ID from corresponding local time if datetime is another timezone
+        # create an ID from the corresponding local time if datetime is at another timezone
+        dt = datetime(2020, 1, 2, 3, 4, 5, 67000)
         self.assertEqual(
             util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc)),
-            util.datetime_to_id_legacy(datetime(2020, 1, 2, 3, 4, 5, 67000) + datetime.now().astimezone().utcoffset())
+            util.datetime_to_id_legacy(dt + dt.astimezone().utcoffset()),
         )
 
         # create for now if datetime not provided

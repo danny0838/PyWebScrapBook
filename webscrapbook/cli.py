@@ -195,6 +195,13 @@ def cmd_import(args):
     To faithfully reconstruct the original scrapbook tree, the archive files
     should be imported together using the same Unicode filename order as how
     they have been exported.
+
+    To faithfully restore the timestamps for the imported files, the system
+    timezone should be configured to be identical to the original timezone
+    (i.e. the one where the archive has been generated in), as the ZIP archive
+    does not record timezone information for the internal files. The 'timezone'
+    property of the internal 'export.json' in the archive file can be consulted
+    to infer the original timezone.
     """
     kwargs = args.copy()
     debug = kwargs.pop('debug')

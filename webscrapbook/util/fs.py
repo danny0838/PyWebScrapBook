@@ -1218,10 +1218,12 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
                 file = os.path.join(tempdir, entry)
                 zinfo = zh.getinfo(entry)
 
+                # @FIXME: utcoffset may be different across timestamps when DST
+                #         is used
                 ts = zip_timestamp(zinfo)
                 if tzoffset is not None:
-                    delta = datetime.now().astimezone().utcoffset().total_seconds()
-                    ts = ts - tzoffset + delta
+                    utcoffset = datetime.fromtimestamp(ts).astimezone().utcoffset().total_seconds()
+                    ts = ts + utcoffset - tzoffset
                 os.utime(file, (ts, ts))
 
                 # @TODO: recover mode?

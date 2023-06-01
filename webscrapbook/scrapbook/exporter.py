@@ -87,11 +87,11 @@ class Exporter():
         index = meta.get('index', '')
 
         # generate a unique timestamp as prefix
-        ts = datetime.now(timezone.utc)
-        ets = util.datetime_to_id(ts)
+        dt = datetime.now(timezone.utc)
+        ets = util.datetime_to_id(dt)
         while ets in self.used_ts:
-            ts += timedelta(milliseconds=1)
-            ets = util.datetime_to_id(ts)
+            dt += timedelta(milliseconds=1)
+            ets = util.datetime_to_id(dt)
         self.used_ts.add(ets)
 
         # setup an export id (eid), which is unique and is same among all
@@ -116,7 +116,7 @@ class Exporter():
             'version': 1,
             'id': eid,
             'timestamp': ets,
-            'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+            'timezone': dt.astimezone().utcoffset().total_seconds(),
             'path': parents,
         }
         with zipfile.ZipFile(dst, 'w') as zh:
