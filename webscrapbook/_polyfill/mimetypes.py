@@ -34,6 +34,7 @@ _mimetypes.add_type('video/ogg', '.ogv')
 _mimetypes.add_type('application/ogg', '.ogx')  # IANA
 _mimetypes.add_type('application/ogg', '.ogg')  # MAFF
 _mimetypes.add_type('text/vtt', '.vtt')
+_mimetypes.add_type('application/x-shockwave-flash', '.swf')  # Apache, nginx, etc.
 _mimetypes.add_type('application/java-archive', '.jar')
 _mimetypes.add_type('application/java-vm', '.class')
 _mimetypes.add_type('application/epub+zip', '.epub')
