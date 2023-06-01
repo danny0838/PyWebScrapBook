@@ -801,9 +801,14 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
     def test_nonexist_mode(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         dst = os.path.join(root, 'deep', 'subdir')
+
+        # get current umask, which will be applied by os.makedirs
+        umask = os.umask(0)
+        os.umask(umask)
+
         util.fs.mkdir(dst, mode=0o660)
         self.assertTrue(os.path.isdir(dst))
-        self.assertEqual(oct(os.stat(dst).st_mode & 0o777), oct(0o660))
+        self.assertEqual(oct(os.stat(dst).st_mode & 0o777), oct(0o660 & ~umask))
 
     def test_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
