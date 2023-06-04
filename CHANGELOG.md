@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [1.16.0] - 2023-06-04
+* Fixed some potential errors for the unittest suite.
+* Fixed inconsistent MIME type for `*.swf` files on some platforms.
+* No more adjust the timestamp of the imported files automatically.
+
 ## [1.15.0] - 2023-05-31
 * Updated dependency to `Flask >= 2.0.0` and `Werkzeug >= 2.0.1`.
 * Fixed some compatibility issues for Werkzeug >= 2.3.
