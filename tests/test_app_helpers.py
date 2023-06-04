@@ -201,50 +201,63 @@ class TestFunctions(Test):
             ('directory', '/path/to/directory/', '/', True)
         ])
 
-    @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
+    @mock.patch('webscrapbook.app.check_password_hash', side_effect=wsbapp.check_password_hash)
     def test_get_permission1(self, mock_encrypt):
         """Return corresponding permission for the matched user and '' for unmatched."""
         root = self.setup_test('get_permission1')
         app = wsbapp.make_app(root)
         auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
         with app.app_context():
-            # util.encrypt should be called with the inputting password
-            # and the salt and method for the matched user
+            # check_password_hash should be called with the inputting password for the matched user
             mock_encrypt.reset_mock()
 
             self.assertEqual(wsbapp.get_permission('user1', 'pass1', auth_config), '')
-            mock_encrypt.assert_called_with('pass1', '', 'plain')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
+                'pass1',
+            )
 
             self.assertEqual(wsbapp.get_permission('user2', 'pass2', auth_config), 'view')
-            mock_encrypt.assert_called_with('pass2', 'salt', 'plain')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha1:1$ewiu$892bc69b184583b8c903328836a622284a279f2e',
+                'pass2',
+            )
 
             self.assertEqual(wsbapp.get_permission('user3', 'pass3', auth_config), 'read')
-            mock_encrypt.assert_called_with('pass3', '', 'sha1')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$d$2b5a1bca9321ed5e9cf0a7ac1fbe4b786a746d11664748278fb1fd1ff8ac6ab4',
+                'pass3',
+            )
 
             self.assertEqual(wsbapp.get_permission('user4', 'pass4', auth_config), 'all')
-            mock_encrypt.assert_called_with('pass4', 'salt4', 'sha256')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+                'pass4',
+            )
 
-            # Password check should be handled by util.encrypt properly.
+            # Password check should be handled by check_password_hash properly.
             # Here are just some quick fail tests for certain cases:
             # - empty input should not work
-            # - inputting password + salt should not work
             # - inputting hashed value should not work
             mock_encrypt.reset_mock()
 
             self.assertEqual(wsbapp.get_permission('user4', '', auth_config), '')
-            mock_encrypt.assert_called_with('', 'salt4', 'sha256')
-
-            self.assertEqual(wsbapp.get_permission('user4', 'salt4', auth_config), '')
-            mock_encrypt.assert_called_with('salt4', 'salt4', 'sha256')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+                '',
+            )
 
             self.assertEqual(wsbapp.get_permission(
                 'user4',
-                '49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53',
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
                 auth_config,
             ), '')
-            mock_encrypt.assert_called_with('49d1445a2989c509c5b5b1f78e092e3f30f05b1d219fd975ac77ff645ea68d53', 'salt4', 'sha256')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+            )
 
-            # util.encrypt should NOT be called for an unmatched user
+            # check_password_hash should NOT be called for an unmatched user
             mock_encrypt.reset_mock()
 
             self.assertEqual(wsbapp.get_permission('', '', auth_config), '')
@@ -259,7 +272,7 @@ class TestFunctions(Test):
             self.assertEqual(wsbapp.get_permission('userx', 'pass', auth_config), '')
             mock_encrypt.assert_not_called()
 
-    @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
+    @mock.patch('webscrapbook.app.check_password_hash', side_effect=wsbapp.check_password_hash)
     def test_get_permission2(self, mock_encrypt):
         """Use empty user and password if not provided."""
         root = self.setup_test('get_permission2')
@@ -267,9 +280,9 @@ class TestFunctions(Test):
         auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
         with app.app_context():
             self.assertEqual(wsbapp.get_permission('', '', auth_config), 'view')
-            mock_encrypt.assert_called_with('', 'salt', 'plain')
+            mock_encrypt.assert_called_with('pbkdf2:sha1:1$W$88164ca364990f201a63c36ad572ee70df4d7810', '')
 
-    @mock.patch('webscrapbook.util.encrypt', side_effect=webscrapbook.util.encrypt)
+    @mock.patch('webscrapbook.app.check_password_hash', side_effect=wsbapp.check_password_hash)
     def test_get_permission3(self, mock_encrypt):
         """Use permission for the first matched user and password."""
         root = self.setup_test('get_permission3')
@@ -278,12 +291,12 @@ class TestFunctions(Test):
         with app.app_context():
             mock_encrypt.reset_mock()
             self.assertEqual(wsbapp.get_permission('', '', auth_config), 'view')
-            mock_encrypt.assert_called_once_with('', 'salt', 'plain')
+            mock_encrypt.assert_not_called()
 
             mock_encrypt.reset_mock()
             self.assertEqual(wsbapp.get_permission('user1', 'pass1', auth_config), 'read')
-            self.assertEqual(mock_encrypt.call_args_list[0][0], ('pass1', 'salt', 'plain'))
-            self.assertEqual(mock_encrypt.call_args_list[1][0], ('pass1', 'salt', 'plain'))
+            self.assertEqual(mock_encrypt.call_args_list[0][0], ('pbkdf2:sha1:1$B$ad86239f72026404244ba6de19d4270ad2ecf397', 'pass1'))
+            self.assertEqual(mock_encrypt.call_args_list[1][0], ('pbkdf2:sha1:1$1$1cb0b20ced97f764a8ae152b282fc622b7d22303', 'pass1'))
 
     def test_verify_authorization(self):
         for action in {'view', 'info', 'source', 'download', 'static', 'unknown'}:

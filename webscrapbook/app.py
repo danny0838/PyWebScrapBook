@@ -33,6 +33,7 @@ from werkzeug.http import (
 )
 from werkzeug.local import LocalProxy
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import check_password_hash
 from werkzeug.utils import cached_property
 
 from . import WSB_CONFIG, WSB_DIR, WSB_EXTENSION_MIN_VERSION, __version__, util
@@ -251,10 +252,12 @@ def get_permission(username, password, auth_config):
             continue
 
         entry_pw = entry.get('pw', '')
-        entry_pw_salt = entry.get('pw_salt', '')
-        entry_pw_type = entry.get('pw_type', '')
-        if util.encrypt(password, entry_pw_salt, entry_pw_type) != entry_pw:
-            continue
+        if entry_pw:
+            if not check_password_hash(entry_pw, password):
+                continue
+        else:
+            if password != entry_pw:
+                continue
 
         entry_permission = entry.get('permission', 'all')
         return entry_permission

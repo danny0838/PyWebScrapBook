@@ -485,7 +485,7 @@ class TestConfig(Test):
 
 class TestEncrypt(Test):
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.encrypt', return_value='dummy_hash', autospec=True)
+    @mock.patch('werkzeug.security.generate_password_hash', return_value='dummy_hash', autospec=True)
     @mock.patch('webscrapbook.cli.getpass', return_value='1234', autospec=True)
     @mock.patch('webscrapbook.cli.cmd_encrypt', wraps=cli.cmd_encrypt)
     def test_default(self, mock_handler, mock_getpass, mock_encrypt, mock_stdout):
@@ -497,33 +497,41 @@ class TestEncrypt(Test):
         mock_handler.assert_called_once_with(dict(
             root=self.root,
             password=None,
-            salt='',
-            method='sha1',
+            method='pbkdf2',
+            salt=32,
         ))
 
-        mock_encrypt.assert_called_once_with('1234', salt='', method='sha1')
+        mock_encrypt.assert_called_once_with(
+            password='1234',
+            method='pbkdf2',
+            salt_length=32,
+        )
         self.assertEqual(mock_stdout.getvalue(), 'dummy_hash\n')
 
     @mock.patch('sys.stdout', new_callable=io.StringIO)
-    @mock.patch('webscrapbook.util.encrypt', return_value='dummy_hash', autospec=True)
+    @mock.patch('werkzeug.security.generate_password_hash', return_value='dummy_hash', autospec=True)
     @mock.patch('webscrapbook.cli.cmd_encrypt', wraps=cli.cmd_encrypt)
     def test_basic(self, mock_handler, mock_encrypt, mock_stdout):
         cli.main([
             '--root', self.root,
             'encrypt',
-            '--password', '1234',
-            '--salt', 'mysalt',
-            '--method', 'sha256',
+            '--password', '123456',
+            '--method', 'pbkdf2:sha1:100',
+            '--salt', '8',
         ])
 
         mock_handler.assert_called_once_with(dict(
             root=self.root,
-            password='1234',
-            salt='mysalt',
-            method='sha256',
+            password='123456',
+            method='pbkdf2:sha1:100',
+            salt=8,
         ))
 
-        mock_encrypt.assert_called_once_with('1234', salt='mysalt', method='sha256')
+        mock_encrypt.assert_called_once_with(
+            password='123456',
+            method='pbkdf2:sha1:100',
+            salt_length=8,
+        )
         self.assertEqual(mock_stdout.getvalue(), 'dummy_hash\n')
 
 

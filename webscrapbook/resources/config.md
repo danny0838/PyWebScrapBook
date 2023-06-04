@@ -293,17 +293,16 @@ alphabet). Authorization requirement is activated when at least one `[auth]`
 section exists. Each section defines a rule, and the user must fullfill at
 least one to be allowed to access.
 
-An encrypted password can be generated via the `encrypt` sub-command, For
+An encrypted password can be generated with the `encrypt` sub-command. For
 example:
 
-    webscrapbook encrypt -m sha1 -s mysalt
+    webscrapbook encrypt -m pbkdf2:sha256:600000 -s 32
 
-You'll then be promopted to input a password, and then you can use the output
-for `pw`, "mysalt" for `pw_salt`, and "sha1" for `pw_type`.
+You'll then be prompted to input a password, and the output can be used as the
+value of `pw`.
 
 To specify permission for an anonymous user, create an `[auth]` section with
-empty user and a password matching an empty string (e.g. "plain" `pw_type`,
-empty `pw`, and empty `pw_salt`.)
+empty user and password.
 
 NOTE: Use HTTPS protocol as possible when password authorization is activated,
 as input user name and password are unencrypted during HTTP transmission.
@@ -318,24 +317,9 @@ The user's name.
 
 #### `pw`
 
-The user's password, in encrypted form.
+The user's password in hashed form, or empty for no password.
 
 (default: )
-
-
-#### `pw_salt`
-
-A "salt" string which is added during encryption for better security.
-
-(default: )
-
-
-#### `pw_type`
-
-The encryption method for password. Supported methods are: plain, md5, sha1,
-sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512.
-
-(default: `sha1`)
 
 
 #### `permission`

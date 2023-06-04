@@ -85,9 +85,7 @@ name = mywsb
 
 [auth "id1"]
 user = user1
-pw = pass1salt
-pw_salt = salt
-pw_type = plain
+pw =
 permission = all
 """)
 
@@ -437,9 +435,7 @@ class TestAuth(TestBookMixin, unittest.TestCase):
         self.init_host(server_root, config="""\
 [auth "anony"]
 user =
-pw = salt
-pw_salt = salt
-pw_type = plain
+pw =
 permission = view
 """)
 
@@ -469,9 +465,7 @@ permission = view
         self.init_host(server_root, config="""\
 [auth "anony"]
 user =
-pw = salt
-pw_salt = salt
-pw_type = plain
+pw =
 permission = view
 """)
         all_actions = (fn[7:] for fn in dir(wsbapp) if fn.startswith('action_'))
@@ -500,23 +494,17 @@ permission = view
         self.init_host(server_root, config="""\
 [auth "anony"]
 user =
-pw = salt
-pw_salt = salt
-pw_type = plain
+pw =
 permission = view
 
 [auth "user1"]
 user = user1
-pw = pass1salt
-pw_salt = salt
-pw_type = plain
+pw = pbkdf2:sha1:1$GSk3v5eI4W1eInIt$546f08da9d5cccab930d5389fa0e84b870c97d44
 permission = read
 
 [auth "user2"]
 user = user2
-pw = 408b0a14ed182f24415c327b90981c3d89051920
-pw_salt = salt2
-pw_type = sha1
+pw = pbkdf2:sha256:2$4QPUFjmXG889iueH$4d8f317537a5ee661d094b481a9f4b6afadde905082679c12498a9084851acff
 permission = all
 """)
 

@@ -141,17 +141,25 @@ def cmd_encrypt(args):
 
     Primilarly to be used in auth config.
     """
+    kwargs = {}
+
     pw = args['password']
     if pw is None:
-        pw1 = getpass('Enter a password: ')
+        pw = getpass('Enter a password: ')
         pw2 = getpass('Confirm the password: ')
-
-        if pw1 != pw2:
+        if pw != pw2:
             die('Entered passwords do not match.')
+    kwargs['password'] = pw
 
-        pw = pw1
+    if args['method'] is not None:
+        kwargs['method'] = args['method']
 
-    print(util.encrypt(pw, salt=args['salt'], method=args['method']))
+    if args['salt'] is not None:
+        kwargs['salt_length'] = args['salt']
+
+    from werkzeug.security import generate_password_hash
+    result = generate_password_hash(**kwargs)
+    print(result)
 
 
 def cmd_cache(args):
@@ -572,13 +580,12 @@ as `server.browse` config)""")
         '-p', '--password', nargs='?', default=None, action='store',
         help="""the password to encrypt. Skip to provide via an interactive prompt.""")
     parser_encrypt.add_argument(
-        '-m', '--method', default='sha1', action='store',
-        help="""the encrypt method to use, which is one of: plain, md5, sha1,
-sha224, sha256, sha384, sha512, sha3_224, sha3_256, sha3_384, and sha3_512
-(default: %(default)s)""")
+        '-m', '--method', default='pbkdf2', action='store',
+        help="""the encrypt method to use, such as 'pbkdf2:sha256:600000', 'scrypt:32768:8:1',
+etc. (default: %(default)r)""")
     parser_encrypt.add_argument(
-        '-s', '--salt', default='', action='store',
-        help="""the salt to add during encryption""")
+        '-s', '--salt', default=32, action='store', type=int,
+        help="""the length of the salt for encryption (default: %(default)r)""")
 
     # subcommand: cache
     parser_cache = subparsers.add_parser(
