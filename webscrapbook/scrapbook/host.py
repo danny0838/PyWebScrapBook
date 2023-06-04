@@ -1,5 +1,6 @@
 """Scrapbook host handler.
 """
+import hashlib
 import os
 import shutil
 import stat
@@ -98,7 +99,7 @@ class FileLock:
         self.name = name
         self.timeout = timeout
         self.stale = stale
-        self.file = os.path.join(host.locks, f'{util.encrypt(name, method="md5")}.lock')
+        self.file = os.path.join(host.locks, f'{hashlib.md5(name.encode("utf8")).hexdigest()}.lock')
         self._keeper = None
 
         if isinstance(persist, str) and persist:

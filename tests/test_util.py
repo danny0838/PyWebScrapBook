@@ -1310,29 +1310,6 @@ foo   中文<br/>
                 (None, None, None, 'webpage3/index.svg', None),
             ])
 
-    @mock.patch('sys.stderr', io.StringIO())
-    def test_encrypt(self):
-        self.assertEqual(
-            util.encrypt('1234', 'salt', 'plain'),
-            '1234salt',
-        )
-        self.assertEqual(
-            util.encrypt('1234', 'salt', 'md5'),
-            '1fadcf6eb4345975be993f237c51d426',
-        )
-        self.assertEqual(
-            util.encrypt('1234', 'salt', 'sha1'),
-            '40c95464b7eacddb5572af5468ffb1cdb5b13f35',
-        )
-        self.assertEqual(
-            util.encrypt('1234', 'salt', 'sha256'),
-            '4b3bed8af7b7612e8c1e25f63ba24496f5b16b2df44efb2db7ce3cb24b7e96f7',
-        )
-        self.assertEqual(
-            util.encrypt('1234', 'salt', 'unknown'),
-            '1234salt',
-        )
-
 
 if __name__ == '__main__':
     unittest.main()
