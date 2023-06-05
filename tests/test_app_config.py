@@ -429,7 +429,7 @@ class TestAuth(TestBookMixin, unittest.TestCase):
             with self.assertRaises(KeyError):
                 response.headers['WWW-Authenticate']
 
-    @mock.patch('webscrapbook.app.get_permission', side_effect=SystemExit)
+    @mock.patch('webscrapbook.app.WebHost.get_permission', side_effect=SystemExit)
     def test_get_permission(self, mock_perm):
         """Check if HTTP authorization info is passed to get_permission()."""
         self.init_host(server_root, config="""\
@@ -457,11 +457,11 @@ permission = view
                         except SystemExit:
                             pass
 
-                        mock_perm.assert_called_with(user, pw, mock.ANY)
+                        mock_perm.assert_called_with(user, pw)
 
-    @mock.patch('webscrapbook.app.verify_authorization', side_effect=SystemExit)
-    def test_verify_authorization(self, mock_auth):
-        """Check if action is passed to verify_authorization()."""
+    @mock.patch('webscrapbook.app.WebHost.check_permission', side_effect=SystemExit)
+    def test_check_permission(self, mock_checker):
+        """Check if action is passed to check_permission()."""
         self.init_host(server_root, config="""\
 [auth "anony"]
 user =
@@ -487,7 +487,7 @@ permission = view
                         except SystemExit:
                             pass
 
-                        mock_auth.assert_called_with(mock.ANY, expected)
+                        mock_checker.assert_called_with(mock.ANY, expected)
 
     def test_request(self):
         """Random request challanges."""

@@ -243,47 +243,6 @@ def is_local_access():
     return util.is_localhost(server_host) or util.is_localhost(client_host) or server_host == client_host
 
 
-def get_permission(username, password, auth_config):
-    """Calculate effective permission from provided auth info and config.
-    """
-    for _, entry in auth_config.items():
-        entry_user = entry.get('user', '')
-        if username != entry_user:
-            continue
-
-        entry_pw = entry.get('pw', '')
-        if entry_pw:
-            if not check_password_hash(entry_pw, password):
-                continue
-        else:
-            if password != entry_pw:
-                continue
-
-        entry_permission = entry.get('permission', 'all')
-        return entry_permission
-
-    return ''
-
-
-def verify_authorization(perm, action):
-    """Check if authorized or not.
-    """
-    if perm == 'all':
-        return True
-
-    if perm == 'read':
-        return action not in {
-            'token', 'lock', 'unlock',
-            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
-            'backup', 'unbackup', 'cache', 'check', 'export', 'import', 'query',
-        }
-
-    if perm == 'view':
-        return action in {'view', 'info', 'source', 'download', 'static', 'unknown'}
-
-    return False
-
-
 def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=None):
     """List contents in a directory.
 
@@ -1504,20 +1463,7 @@ def action_search():
 
 @bp.before_request
 def handle_before_request():
-    # handle authorization
-    try:
-        auth_config = host.config['auth']
-    except KeyError:
-        # auth not required
-        return
-
-    auth = request.authorization or {}
-    username = auth.get('username') or ''
-    password = auth.get('password') or ''
-    perm = get_permission(username, password, auth_config)
-    if not verify_authorization(perm, request.action):
-        auth = WWWAuthenticate('basic', {'realm': host.config['app']['name']})
-        abort(401, 'You are not authorized.', www_authenticate=auth)
+    host.verify_authorization()
 
 
 @bp.route('/', methods=['GET', 'HEAD', 'POST'])
@@ -1663,6 +1609,61 @@ class WebHost(wsb_host.Host):
         if now >= self.token_last_purge + self.TOKEN_PURGE_INTERVAL:
             self.token_last_purge = now
             self.token_delete_expire(now)
+
+    def verify_authorization(self):
+        """Verify that the current request is adequately authorized.
+
+        - Must run in a request context.
+        - Abort the request if not authorized.
+        """
+        if 'auth' not in self.config:
+            return
+
+        auth = request.authorization or {}
+        username = auth.get('username') or ''
+        password = auth.get('password') or ''
+        perm = self.get_permission(username, password)
+        if not self.check_permission(perm, request.action):
+            auth = WWWAuthenticate('basic', {'realm': self.config['app']['name']})
+            abort(401, 'You are not authorized.', www_authenticate=auth)
+
+    def get_permission(self, username, password):
+        """Calculate effective permission from provided auth info."""
+        for _, entry in self.config['auth'].items():
+            entry_user = entry.get('user', '')
+            if username != entry_user:
+                continue
+
+            entry_pw = entry.get('pw', '')
+            if entry_pw:
+                if not check_password_hash(entry_pw, password):
+                    continue
+            else:
+                if password != entry_pw:
+                    continue
+
+            entry_permission = entry.get('permission', 'all')
+            return entry_permission
+
+        return ''
+
+    @staticmethod
+    def check_permission(perm, action):
+        """Check authorization for the provided perm and action."""
+        if perm == 'all':
+            return True
+
+        if perm == 'read':
+            return action not in {
+                'token', 'lock', 'unlock',
+                'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
+                'backup', 'unbackup', 'cache', 'check', 'export', 'import', 'query',
+            }
+
+        if perm == 'view':
+            return action in {'view', 'info', 'source', 'download', 'static', 'unknown'}
+
+        return False
 
 
 def make_app(root='.', config=None):

@@ -201,129 +201,6 @@ class TestFunctions(Test):
             ('directory', '/path/to/directory/', '/', True)
         ])
 
-    @mock.patch('webscrapbook.app.check_password_hash', side_effect=wsbapp.check_password_hash)
-    def test_get_permission1(self, mock_encrypt):
-        """Return corresponding permission for the matched user and '' for unmatched."""
-        root = self.setup_test('get_permission1')
-        app = wsbapp.make_app(root)
-        auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
-        with app.app_context():
-            # check_password_hash should be called with the inputting password for the matched user
-            mock_encrypt.reset_mock()
-
-            self.assertEqual(wsbapp.get_permission('user1', 'pass1', auth_config), '')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
-                'pass1',
-            )
-
-            self.assertEqual(wsbapp.get_permission('user2', 'pass2', auth_config), 'view')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha1:1$ewiu$892bc69b184583b8c903328836a622284a279f2e',
-                'pass2',
-            )
-
-            self.assertEqual(wsbapp.get_permission('user3', 'pass3', auth_config), 'read')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha256:1$d$2b5a1bca9321ed5e9cf0a7ac1fbe4b786a746d11664748278fb1fd1ff8ac6ab4',
-                'pass3',
-            )
-
-            self.assertEqual(wsbapp.get_permission('user4', 'pass4', auth_config), 'all')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
-                'pass4',
-            )
-
-            # Password check should be handled by check_password_hash properly.
-            # Here are just some quick fail tests for certain cases:
-            # - empty input should not work
-            # - inputting hashed value should not work
-            mock_encrypt.reset_mock()
-
-            self.assertEqual(wsbapp.get_permission('user4', '', auth_config), '')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
-                '',
-            )
-
-            self.assertEqual(wsbapp.get_permission(
-                'user4',
-                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
-                auth_config,
-            ), '')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
-                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
-            )
-
-            # check_password_hash should NOT be called for an unmatched user
-            mock_encrypt.reset_mock()
-
-            self.assertEqual(wsbapp.get_permission('', '', auth_config), '')
-            mock_encrypt.assert_not_called()
-
-            self.assertEqual(wsbapp.get_permission('', 'pass', auth_config), '')
-            mock_encrypt.assert_not_called()
-
-            self.assertEqual(wsbapp.get_permission('userx', '', auth_config), '')
-            mock_encrypt.assert_not_called()
-
-            self.assertEqual(wsbapp.get_permission('userx', 'pass', auth_config), '')
-            mock_encrypt.assert_not_called()
-
-    @mock.patch('webscrapbook.app.check_password_hash', side_effect=wsbapp.check_password_hash)
-    def test_get_permission2(self, mock_encrypt):
-        """Use empty user and password if not provided."""
-        root = self.setup_test('get_permission2')
-        app = wsbapp.make_app(root)
-        auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
-        with app.app_context():
-            self.assertEqual(wsbapp.get_permission('', '', auth_config), 'view')
-            mock_encrypt.assert_called_with('pbkdf2:sha1:1$W$88164ca364990f201a63c36ad572ee70df4d7810', '')
-
-    @mock.patch('webscrapbook.app.check_password_hash', side_effect=wsbapp.check_password_hash)
-    def test_get_permission3(self, mock_encrypt):
-        """Use permission for the first matched user and password."""
-        root = self.setup_test('get_permission3')
-        app = wsbapp.make_app(root)
-        auth_config = app.config['WEBSCRAPBOOK_HOST'].config['auth']
-        with app.app_context():
-            mock_encrypt.reset_mock()
-            self.assertEqual(wsbapp.get_permission('', '', auth_config), 'view')
-            mock_encrypt.assert_not_called()
-
-            mock_encrypt.reset_mock()
-            self.assertEqual(wsbapp.get_permission('user1', 'pass1', auth_config), 'read')
-            self.assertEqual(mock_encrypt.call_args_list[0][0], ('pbkdf2:sha1:1$B$ad86239f72026404244ba6de19d4270ad2ecf397', 'pass1'))
-            self.assertEqual(mock_encrypt.call_args_list[1][0], ('pbkdf2:sha1:1$1$1cb0b20ced97f764a8ae152b282fc622b7d22303', 'pass1'))
-
-    def test_verify_authorization(self):
-        for action in {'view', 'info', 'source', 'download', 'static', 'unknown'}:
-            with self.subTest(action=action):
-                self.assertFalse(wsbapp.verify_authorization('', action))
-                self.assertTrue(wsbapp.verify_authorization('view', action))
-                self.assertTrue(wsbapp.verify_authorization('read', action))
-                self.assertTrue(wsbapp.verify_authorization('all', action))
-
-        for action in {'list', 'edit', 'editx', 'exec', 'browse', 'config', 'search'}:
-            with self.subTest(action=action):
-                self.assertFalse(wsbapp.verify_authorization('', action))
-                self.assertFalse(wsbapp.verify_authorization('view', action))
-                self.assertTrue(wsbapp.verify_authorization('read', action))
-                self.assertTrue(wsbapp.verify_authorization('all', action))
-
-        for action in {
-            'token', 'lock', 'unlock',
-            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
-            'backup', 'unbackup', 'cache', 'check', 'export', 'import', 'query',
-        }:
-            with self.subTest(action=action):
-                self.assertFalse(wsbapp.verify_authorization('', action))
-                self.assertFalse(wsbapp.verify_authorization('view', action))
-                self.assertFalse(wsbapp.verify_authorization('read', action))
-                self.assertTrue(wsbapp.verify_authorization('all', action))
-
     def test_make_app1(self):
         # pass root
         root = self.setup_test('make_app1')
@@ -597,6 +474,125 @@ class TestWebHost(Test):
         handler.token_check_delete_expire(now)
         mock_delete.assert_not_called()
         self.assertEqual(handler.token_last_purge, now - 900)
+
+    @mock.patch('webscrapbook.app.check_password_hash', wraps=wsbapp.check_password_hash)
+    def test_get_permission1(self, mock_encrypt):
+        """Return corresponding permission for the matched user and '' for unmatched."""
+        root = self.setup_test('get_permission1')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            # check_password_hash should be called with the inputting password for the matched user
+            mock_encrypt.reset_mock()
+
+            self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), '')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
+                'pass1',
+            )
+
+            self.assertEqual(wsbapp.host.get_permission('user2', 'pass2'), 'view')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha1:1$ewiu$892bc69b184583b8c903328836a622284a279f2e',
+                'pass2',
+            )
+
+            self.assertEqual(wsbapp.host.get_permission('user3', 'pass3'), 'read')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$d$2b5a1bca9321ed5e9cf0a7ac1fbe4b786a746d11664748278fb1fd1ff8ac6ab4',
+                'pass3',
+            )
+
+            self.assertEqual(wsbapp.host.get_permission('user4', 'pass4'), 'all')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+                'pass4',
+            )
+
+            # Password check should be handled by check_password_hash properly.
+            # Here are just some quick fail tests for certain cases:
+            # - empty input should not work
+            # - inputting hashed value should not work
+            mock_encrypt.reset_mock()
+
+            self.assertEqual(wsbapp.host.get_permission('user4', ''), '')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+                '',
+            )
+
+            self.assertEqual(wsbapp.host.get_permission(
+                'user4',
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+            ), '')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
+            )
+
+            # check_password_hash should NOT be called for an unmatched user
+            mock_encrypt.reset_mock()
+
+            self.assertEqual(wsbapp.host.get_permission('', ''), '')
+            mock_encrypt.assert_not_called()
+
+            self.assertEqual(wsbapp.host.get_permission('', 'pass'), '')
+            mock_encrypt.assert_not_called()
+
+            self.assertEqual(wsbapp.host.get_permission('userx', ''), '')
+            mock_encrypt.assert_not_called()
+
+            self.assertEqual(wsbapp.host.get_permission('userx', 'pass'), '')
+            mock_encrypt.assert_not_called()
+
+    @mock.patch('webscrapbook.app.check_password_hash', wraps=wsbapp.check_password_hash)
+    def test_get_permission2(self, mock_encrypt):
+        """Use empty user and password if not provided."""
+        root = self.setup_test('get_permission2')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            self.assertEqual(wsbapp.host.get_permission('', ''), 'view')
+            mock_encrypt.assert_called_with('pbkdf2:sha1:1$W$88164ca364990f201a63c36ad572ee70df4d7810', '')
+
+    @mock.patch('webscrapbook.app.check_password_hash', wraps=wsbapp.check_password_hash)
+    def test_get_permission3(self, mock_encrypt):
+        """Use permission for the first matched user and password."""
+        root = self.setup_test('get_permission3')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('', ''), 'view')
+            mock_encrypt.assert_not_called()
+
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), 'read')
+            self.assertEqual(mock_encrypt.call_args_list[0][0], ('pbkdf2:sha1:1$B$ad86239f72026404244ba6de19d4270ad2ecf397', 'pass1'))
+            self.assertEqual(mock_encrypt.call_args_list[1][0], ('pbkdf2:sha1:1$1$1cb0b20ced97f764a8ae152b282fc622b7d22303', 'pass1'))
+
+    def test_check_permission(self):
+        for action in {'view', 'info', 'source', 'download', 'static', 'unknown'}:
+            with self.subTest(action=action):
+                self.assertFalse(wsbapp.WebHost.check_permission('', action))
+                self.assertTrue(wsbapp.WebHost.check_permission('view', action))
+                self.assertTrue(wsbapp.WebHost.check_permission('read', action))
+                self.assertTrue(wsbapp.WebHost.check_permission('all', action))
+
+        for action in {'list', 'edit', 'editx', 'exec', 'browse', 'config', 'search'}:
+            with self.subTest(action=action):
+                self.assertFalse(wsbapp.WebHost.check_permission('', action))
+                self.assertFalse(wsbapp.WebHost.check_permission('view', action))
+                self.assertTrue(wsbapp.WebHost.check_permission('read', action))
+                self.assertTrue(wsbapp.WebHost.check_permission('all', action))
+
+        for action in {
+            'token', 'lock', 'unlock',
+            'mkdir', 'mkzip', 'save', 'delete', 'move', 'copy',
+            'backup', 'unbackup', 'cache', 'check', 'export', 'import', 'query',
+        }:
+            with self.subTest(action=action):
+                self.assertFalse(wsbapp.WebHost.check_permission('', action))
+                self.assertFalse(wsbapp.WebHost.check_permission('view', action))
+                self.assertFalse(wsbapp.WebHost.check_permission('read', action))
+                self.assertTrue(wsbapp.WebHost.check_permission('all', action))
 
 
 class TestFilesystemHelpers(unittest.TestCase):
