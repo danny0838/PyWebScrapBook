@@ -1,6 +1,7 @@
 """The WGSI application.
 """
 import functools
+import hashlib
 import json
 import os
 import time
@@ -1540,6 +1541,9 @@ class WebHost(wsb_host.Host):
         self.tokens = os.path.join(self.root, WSB_DIR, 'server', 'tokens')
         self.token_last_purge = 0
 
+        # cache
+        self._get_permission_cache = {}
+
     def token_acquire(self, now=None):
         if now is None:
             now = int(time.time())
@@ -1628,7 +1632,20 @@ class WebHost(wsb_host.Host):
             abort(401, 'You are not authorized.', www_authenticate=auth)
 
     def get_permission(self, username, password):
-        """Calculate effective permission from provided auth info."""
+        """Calculate effective permission from provided auth info.
+
+        - A valid username-password combinations will be cached (in hashed
+          form) in the memory to prevent a slow down due to repeated slow
+          hash checking.
+        """
+        # return cached value if exists
+        try:
+            return self._get_permission_cache[
+                self._get_permission_hash(username, password)
+            ]
+        except KeyError:
+            pass
+
         for _, entry in self.config['auth'].items():
             entry_user = entry.get('user', '')
             if username != entry_user:
@@ -1643,9 +1660,18 @@ class WebHost(wsb_host.Host):
                     continue
 
             entry_permission = entry.get('permission', 'all')
+
+            # cach a successful match
+            self._get_permission_cache[
+                self._get_permission_hash(username, password)
+            ] = entry_permission
+
             return entry_permission
 
         return ''
+
+    def _get_permission_hash(self, username, password):
+        return hashlib.sha512(f'{username}\0{password}'.encode('UTF-8')).digest()
 
     @staticmethod
     def check_permission(perm, action):
