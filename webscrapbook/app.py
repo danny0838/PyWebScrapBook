@@ -55,6 +55,13 @@ from .util.fs import (
 quote_path = functools.partial(quote, safe=":/[]@!$&'()*+,;=")
 quote_path.__doc__ = 'Escape reserved chars for the path part of a URL.'
 
+jsonify = functools.partial(
+    json.dumps,
+    ensure_ascii=False,
+    check_circular=False,
+    separators=(',', ':'),
+)
+
 bp = flask.Blueprint('default', __name__)
 host = LocalProxy(lambda: current_app.config['WEBSCRAPBOOK_HOST'])
 
@@ -137,7 +144,7 @@ def generate_server_sent_events(gen):
     except Exception:
         traceback.print_exc()
         err = {'type': 'critical', 'msg': 'Internal Server Error'}
-        yield 'data: ' + json.dumps(err, ensure_ascii=False) + '\n\n'
+        yield 'data: ' + jsonify(err) + '\n\n'
 
     yield 'event: complete' + '\n'
     yield 'data: ' + '\n\n'
@@ -161,9 +168,7 @@ def http_response(body=None, status=None, headers=None, format=None):
             status = None
             body = None
 
-        body = json.dumps({
-            'data': body,
-        }, ensure_ascii=False)
+        body = jsonify({'data': body})
 
     # expect body to be a generator of text (mostly JSON) data
     elif format == 'sse':
@@ -332,7 +337,7 @@ def handle_directory_listing(localpaths, zh=None, redirect_slash=True, format=No
         def gen():
             for entry in subentries:
                 data = entry._asdict()
-                yield json.dumps(data, ensure_ascii=False)
+                yield jsonify(data)
 
         return http_response(gen(), headers=headers, format=format)
 
@@ -1247,10 +1252,10 @@ def action_cache():
     if format == 'sse':
         def wrapper():
             for info in gen:
-                yield json.dumps({
+                yield jsonify({
                     'type': info.type,
                     'msg': info.msg,
-                }, ensure_ascii=False)
+                })
 
         return http_response(wrapper(), format=format)
 
@@ -1296,10 +1301,10 @@ def action_check():
     if format == 'sse':
         def wrapper():
             for info in gen:
-                yield json.dumps({
+                yield jsonify({
                     'type': info.type,
                     'msg': info.msg,
-                }, ensure_ascii=False)
+                })
 
         return http_response(wrapper(), format=format)
 
@@ -1394,10 +1399,10 @@ def action_import():
     if format == 'sse':
         def wrapper():
             for info in gen():
-                yield json.dumps({
+                yield jsonify({
                     'type': info.type,
                     'msg': info.msg,
-                }, ensure_ascii=False)
+                })
 
         return http_response(wrapper(), format=format)
 
@@ -1472,7 +1477,7 @@ def action_search():
         def wrapper():
             try:
                 for item in gen:
-                    yield json.dumps({
+                    yield jsonify({
                         'type': 'info',
                         'msg': '',
                         'data': {
@@ -1481,12 +1486,12 @@ def action_search():
                             'file': item.file,
                             'context': item.context,
                         },
-                    }, ensure_ascii=False)
+                    })
             except wsb_search.QueryError as exc:
-                yield json.dumps({
+                yield jsonify({
                     'type': 'critical',
                     'msg': str(exc),
-                }, ensure_ascii=False)
+                })
 
         return http_response(wrapper(), format=format)
 
@@ -1541,12 +1546,12 @@ def handle_error(exc):
     """
     if request.format == 'json':
         response = exc.get_response()
-        response.data = json.dumps({
+        response.data = jsonify({
             'error': {
                 'status': exc.code,
                 'message': exc.description,
             },
-        }, ensure_ascii=False)
+        })
         response.content_type = 'application/json'
         return response
 
@@ -1559,11 +1564,11 @@ def handle_error(exc):
 
         response = exc.get_response()
         response.data = ''.join(generate_server_sent_events((
-            json.dumps({
+            jsonify({
                 'type': 'critical',
                 'msg': exc.description,
                 'data': {'status': _code},
-            }, ensure_ascii=False),
+            }),
         )))
         response.content_type = 'text/event-stream'
         return response
