@@ -217,7 +217,7 @@ const scrapbook = {
           await this.loadScript(url, true);
         } catch (ex) {
           if (i === 0) { throw ex; }
-          console.log(`Unable to load '${url}'`);
+          console.debug(`Unable to load '${url}'`);
           break;
         }
         i++;
@@ -232,7 +232,7 @@ const scrapbook = {
           await this.loadScript(url, true);
         } catch (ex) {
           if (i === 0) { throw ex; }
-          console.log(`Unable to load '${url}'`);
+          console.debug(`Unable to load '${url}'`);
           break;
         }
         i++;
@@ -246,7 +246,11 @@ const scrapbook = {
         try {
           await this.loadScript(url, true);
         } catch (ex) {
-          console.log(`Unable to load '${url}'`);
+          if (i === 0) {
+            console.log(`Unable to load '${url}'`);
+          } else {
+            console.debug(`Unable to load '${url}'`);
+          }
           break;
         }
         i++;
