@@ -651,14 +651,14 @@ class TestQuery(unittest.TestCase):
         query = search.Query('limit:5')
         self.assertEqual(query.limit, 5)
 
-        query = search.Query('limit:-1')
-        self.assertEqual(query.limit, -1)
-
         query = search.Query('limit:0')
         self.assertEqual(query.limit, 0)
 
         with self.assertRaises(ValueError):
             query = search.Query('limit:')
+
+        with self.assertRaises(ValueError):
+            query = search.Query('limit:-1')
 
         with self.assertRaises(ValueError):
             query = search.Query('limit:abc')
@@ -667,13 +667,13 @@ class TestQuery(unittest.TestCase):
             query = search.Query('limit:3e6')
 
         query = search.Query('-limit:')
-        self.assertEqual(query.limit, 0)
+        self.assertEqual(query.limit, -1)
 
         query = search.Query('-limit:5')
-        self.assertEqual(query.limit, 0)
+        self.assertEqual(query.limit, -1)
 
         query = search.Query('limit:5 -limit:')
-        self.assertEqual(query.limit, 0)
+        self.assertEqual(query.limit, -1)
 
     def test_match_item(self):
         item = search.Item(
@@ -1615,36 +1615,8 @@ no_tree = true
             ),
         ])
 
-        # negative: omit last n results
-        self.assertListEqual(self.get_search_results('limit:-1'), [
-            search.Item(
-                book_id='',
-                id='20200101000000000',
-                file='',
-                meta={},
-                fulltext={},
-                context={},
-            ),
-            search.Item(
-                book_id='',
-                id='20200102000000000',
-                file='',
-                meta={},
-                fulltext={},
-                context={},
-            ),
-            search.Item(
-                book_id='',
-                id='20200103000000000',
-                file='',
-                meta={},
-                fulltext={},
-                context={},
-            ),
-        ])
-
-        # 0: all results
-        self.assertListEqual(self.get_search_results('limit:0'), [
+        # negative: all results
+        self.assertListEqual(self.get_search_results('limit:3 -limit:'), [
             search.Item(
                 book_id='',
                 id='20200101000000000',

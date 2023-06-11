@@ -54,7 +54,7 @@ class Query:
         self.roots = {}
         self.rules = {}
         self.sorts = []
-        self.limit = 0
+        self.limit = -1
 
         self.PARSE_TEXT_REGEX.sub(self._parse_query, query_text)
         self.roots.setdefault('include', ['root'])
@@ -129,8 +129,13 @@ class Query:
                 raise ValueError(f'Invalid sort: {term}')
         elif cmd == 'limit':
             try:
-                self.limit = int(term, 10) if pos else 0
-            except ValueError:
+                if pos:
+                    limit = int(term, 10)
+                    assert limit >= 0
+                    self.limit = limit
+                else:
+                    self.limit = -1
+            except (ValueError, AssertionError):
                 raise ValueError(f'Invalid limit: {term}') from None
         elif cmd in ('id', 'type'):
             inclusion = 'include' if pos else 'exclude'
@@ -450,19 +455,14 @@ class SearchEngine:
 
     def search(self):
         results = self.search_books()
-        if self.query.limit:
-            limit = self.query.limit
-            if limit > 0:
-                i = 0
-                for item in results:
-                    i += 1
-                    if i > limit:
-                        break
-                    yield item
-            else:
-                results = tuple(results)
-                for i in range(0, len(results) + limit):
-                    yield results[i]
+        limit = self.query.limit
+        if limit >= 0:
+            i = 0
+            for item in results:
+                i += 1
+                if i > limit:
+                    break
+                yield item
             return
         yield from results
 
