@@ -494,7 +494,7 @@ const searchEngine = {
       error: [],
       rules: {},
       sorts: [],
-      limit: 0,
+      limit: -1,
       books: {
         include: [],
         exclude: [],
@@ -535,12 +535,12 @@ const searchEngine = {
 
     const setLimit = (value, positive) => {
       if (!positive) {
-        query.limit = 0;
+        query.limit = -1;
         return; 
       }
 
       const newValue = parseInt(value, 10);
-      if (Number.isInteger(newValue)) {
+      if (newValue >= 0) {
         query.limit = newValue;
       } else {
         addError(`Invalid limit: ${value}`);
@@ -756,8 +756,9 @@ const searchEngine = {
     }
 
     // limit results
-    if (query.limit) {
+    if (query.limit >= 0) {
       results.splice(query.limit);
+      query.limit -= results.length;
     }
 
     return results;
