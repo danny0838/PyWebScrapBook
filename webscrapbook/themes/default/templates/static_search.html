@@ -195,10 +195,10 @@ const scrapbook = {
     document.getElementById('search').disabled = false;
   },
 
-  async loadBooks() {
+  async loadBooks(noCache) {
     for (const book of this.books) {
       try {
-        await this.loadBook(book);
+        await this.loadBook(book, noCache);
       } catch (ex) {
         console.error(ex);
         this.addMsg(`Error: ${ex.message}`);
@@ -206,7 +206,7 @@ const scrapbook = {
     }
   },
 
-  async loadBook(book) {
+  async loadBook(book, noCache) {
     const base = this.resolveUrl(book.path, location.href);
 
     const loadMeta = async () => {
@@ -214,7 +214,7 @@ const scrapbook = {
       while (true) {
         const url = this.resolveUrl(`${book.treeDir}meta${i || ''}.js`, base);
         try {
-          await this.loadScript(url, true);
+          await this.loadScript(url, noCache);
         } catch (ex) {
           if (i === 0) { throw ex; }
           console.debug(`Unable to load '${url}'`);
@@ -229,7 +229,7 @@ const scrapbook = {
       while (true) {
         const url = this.resolveUrl(`${book.treeDir}toc${i || ''}.js`, base);
         try {
-          await this.loadScript(url, true);
+          await this.loadScript(url, noCache);
         } catch (ex) {
           if (i === 0) { throw ex; }
           console.debug(`Unable to load '${url}'`);
@@ -244,7 +244,7 @@ const scrapbook = {
       while (true) {
         const url = this.resolveUrl(`${book.treeDir}fulltext${i || ''}.js`, base);
         try {
-          await this.loadScript(url, true);
+          await this.loadScript(url, noCache);
         } catch (ex) {
           if (i === 0) {
             console.log(`Unable to load '${url}'`);
@@ -275,6 +275,10 @@ const scrapbook = {
 
   async loadScript(url, noCache) {
     return new Promise((resolve, reject) => {
+      url = new URL(url);
+      if (noCache) {
+        url.searchParams.append('ts', Date.now());
+      }
       const elem = document.createElement("script");
       document.getElementsByTagName("head")[0].appendChild(elem);
       elem.onload = (event) => {
@@ -285,7 +289,7 @@ const scrapbook = {
         elem.remove();
         reject(new Error(`Failed to load '${url}'`));
       };
-      elem.src = url + (noCache ? "?ts=" + Date.now() : "");
+      elem.src = url;
     });
   },
 
