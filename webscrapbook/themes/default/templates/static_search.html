@@ -171,7 +171,7 @@ const scrapbook = {
     this.data.fulltext = Object.assign(this.data.fulltext, data);
   },
 
-  init() {
+  async init() {
     document.getElementById('searchForm').addEventListener('submit', (event) => {
       event.preventDefault();
       this.search();
@@ -191,103 +191,95 @@ const scrapbook = {
       })
     );
 
-    return this.loadBooks().then(() => {
-      document.getElementById('search').disabled = false;
-    });
+    await this.loadBooks();
+    document.getElementById('search').disabled = false;
   },
 
-  loadBooks() {
-    let p = Promise.resolve();
+  async loadBooks() {
     for (const book of this.books) {
-      p = p.then(() => {
-        return this.loadBook(book);
-      }).catch((ex) => {
+      try {
+        await this.loadBook(book);
+      } catch (ex) {
         console.error(ex);
-        this.addMsg("Error: " + ex.message);
-      });
-    }
-    return p;
-  },
-
-  loadBook(book) {
-    return Promise.resolve().then(() => {
-      let base = this.resolveUrl(book.path, location.href);
-
-      const loadMeta = () => {
-        const loop = () => {
-          const url = this.resolveUrl(book.treeDir + "meta" + (i || "") + ".js", base);
-          return this.loadScript(url, true).then(() => {
-            i += 1;
-            return loop();
-          }).catch((ex) => {
-            if (i === 0) { throw ex; }
-            console.log("Unable to load '" + url + "'");
-          });
-        };
-
-        let i = 0;
-        return loop();
-      };
-
-      const loadToc = () => {
-        const loop = () => {
-          const url = this.resolveUrl(book.treeDir + "toc" + (i || "") + ".js", base);
-          return this.loadScript(url, true).then(() => {
-            i += 1;
-            return loop();
-          }).catch((ex) => {
-            if (i === 0) { throw ex; }
-            console.log("Unable to load '" + url + "'");
-          });
-        };
-
-        let i = 0;
-        return loop();
-      };
-
-      const loadFulltext = () => {
-        const loop = () => {
-          const url = this.resolveUrl(book.treeDir + "fulltext" + (i || "") + ".js", base);
-          return this.loadScript(url, true).then(() => {
-            i += 1;
-            return loop();
-          }).catch((ex) => {
-            console.log("Unable to load '" + url + "'");
-          });
-        };
-
-        let i = 0;
-        return loop();
-      };
-
-      scrapbook.data = book;
-      if (!this.checkHttp(base)) {
-        this.addMsg("Rejected to load remote fulltext cache: " + base);
-        return Promise.all([
-          loadMeta(),
-          loadToc(),
-        ]);
-      } else {
-        return Promise.all([
-          loadMeta(),
-          loadToc(),
-          loadFulltext(),
-        ]);
+        this.addMsg(`Error: ${ex.message}`);
       }
-    });
+    }
   },
 
-  loadScript(url, noCache) {
+  async loadBook(book) {
+    const base = this.resolveUrl(book.path, location.href);
+
+    const loadMeta = async () => {
+      let i = 0;
+      while (true) {
+        const url = this.resolveUrl(`${book.treeDir}meta${i || ''}.js`, base);
+        try {
+          await this.loadScript(url, true);
+        } catch (ex) {
+          if (i === 0) { throw ex; }
+          console.log(`Unable to load '${url}'`);
+          break;
+        }
+        i++;
+      }
+    };
+
+    const loadToc = async () => {
+      let i = 0;
+      while (true) {
+        const url = this.resolveUrl(`${book.treeDir}toc${i || ''}.js`, base);
+        try {
+          await this.loadScript(url, true);
+        } catch (ex) {
+          if (i === 0) { throw ex; }
+          console.log(`Unable to load '${url}'`);
+          break;
+        }
+        i++;
+      }
+    };
+
+    const loadFulltext = async () => {
+      let i = 0;
+      while (true) {
+        const url = this.resolveUrl(`${book.treeDir}fulltext${i || ''}.js`, base);
+        try {
+          await this.loadScript(url, true);
+        } catch (ex) {
+          console.log(`Unable to load '${url}'`);
+          break;
+        }
+        i++;
+      }
+    };
+
+    scrapbook.data = book;
+    if (!this.checkHttp(base)) {
+      this.addMsg(`Rejected to load remote fulltext cache: ${base}`);
+      return Promise.all([
+        loadMeta(),
+        loadToc(),
+      ]);
+    } else {
+      return Promise.all([
+        loadMeta(),
+        loadToc(),
+        loadFulltext(),
+      ]);
+    }
+  },
+
+  async loadScript(url, noCache) {
     return new Promise((resolve, reject) => {
       const elem = document.createElement("script");
       document.getElementsByTagName("head")[0].appendChild(elem);
       elem.onload = (event) => {
-        console.log("Loaded '" + url + "'");
+        console.log(`Loaded '${url}'`);
         resolve();
       };
       elem.onerror = (event) => {
         elem.remove();
-        reject(new Error("Failed to load '" + url + "'"));
+        reject(new Error(`Failed to load '${url}'`));
       };
       elem.src = url + (noCache ? "?ts=" + Date.now() : "");
     });
@@ -311,8 +303,8 @@ const scrapbook = {
     return true;
   },
 
-  search() {
-    return Promise.resolve().then(() => {
+  async search() {
+    try {
       this.clearResult();
 
       // set query string
@@ -325,18 +317,18 @@ const scrapbook = {
       const query = searchEngine.parseQuery(queryStr);
       if (query.error.length) {
         for (const err of query.error) {
-          this.addMsg("Error: " + err);
+          this.addMsg(`Error: ${err}`);
         }
         return;
       }
-      console.log("Search:", query);
 
-      // search and get result
-      return searchEngine.search(query);
-    }).catch((ex) => {
+      // search and show results
+      console.log("Search:", query);
+      await searchEngine.search(query, this.showResults.bind(this));
+    } catch (ex) {
       console.error(ex);
-      this.addMsg("Error: " + ex.message);
-    });
+      this.addMsg(`Error: ${ex.message}`);
+    }
   },
 
   showResults(results, book) {
@@ -528,7 +520,7 @@ const searchEngine = {
           query.sorts.push({key: "meta", subkey: key, order});
           break;
         default:
-          addError("Invalid sort: " + key);
+          addError(`Invalid sort: ${key}`);
           break;
       }
     };
@@ -543,7 +535,7 @@ const searchEngine = {
       if (Number.isInteger(newValue)) {
         query.limit = newValue;
       } else {
-        addError("Invalid limit: " + value);
+        addError(`Invalid limit: ${value}`);
       }
     };
 
@@ -559,7 +551,7 @@ const searchEngine = {
         try {
           regex = new RegExp(term, flags);
         } catch(ex) {
-          addError("Invalid RegExp: " + term);
+          addError(`Invalid RegExp: ${term}`);
           return null;
         }
       } else {
@@ -573,7 +565,7 @@ const searchEngine = {
     const parseDate = (term) => {
       const match = term.match(/^(\d{0,17})(?:-(\d{0,17}))?$/);
       if (!match) {
-        addError("Invalid date format: " + term);
+        addError(`Invalid date format: ${term}`);
         return null;
       }
       const since = match[1] ? this.idLocalToUtc(pad(match[1], 17)) : pad("", 17);
@@ -684,7 +676,7 @@ const searchEngine = {
     return query;
   },
 
-  search(query) {
+  async search(query, callback) {
   	let books = new Set(scrapbook.books);
   	if (query.books.include.length) {
   	  books = new Set(
@@ -699,75 +691,68 @@ const searchEngine = {
       }
     }
 
-    let p = Promise.resolve();
-    books.forEach((book) => {
-      p = p.then(() => {
-        return this.searchBook(query, book).then((results) => {
-          scrapbook.showResults(results, book);
-        });
-      });
-    });
-    return p;
+    for (const book of books) {
+      const results = this.searchBook(query, book);
+      callback(results, book);
+    }
   },
 
   searchBook(query, book) {
-    return Promise.resolve().then(() => {
-      const results = [];
+    const results = [];
 
-      const idPool = new Set();
-      {
-        if (!query.roots.include.length) {
-          query.roots.include.push('root');
-        }
+    const idPool = new Set();
+    {
+      if (!query.roots.include.length) {
+        query.roots.include.push('root');
+      }
 
-        for (const root of query.roots.include) {
-          for (const id of this.getReachableItems(book, root)) {
-            idPool.add(id);
-          }
-        }
-
-        for (const root of query.roots.exclude) {
-          for (const id of this.getReachableItems(book, root)) {
-            idPool.delete(id);
-          }
+      for (const root of query.roots.include) {
+        for (const id of this.getReachableItems(book, root)) {
+          idPool.add(id);
         }
       }
 
-      for (const id of idPool) {
-        let subfiles = book.fulltext[id] || {};
-        if (!Object.keys(subfiles).length) { subfiles[""] = {}; }
-
-        for (const file in subfiles) {
-          const item = {
-            id,
-            file,
-            meta: book.meta[id],
-            fulltext: subfiles[file],
-          };
-          if (this.matchItem(item, query)) {
-            results.push(item);
-          }
+      for (const root of query.roots.exclude) {
+        for (const id of this.getReachableItems(book, root)) {
+          idPool.delete(id);
         }
       }
+    }
 
-      // sort results
-      for (const {key, subkey, order} of query.sorts) {
-        results.sort((a, b) => {
-          a = a[key]; if (subkey) { a = a[subkey]; } a = a || "";
-          b = b[key]; if (subkey) { b = b[subkey]; } b = b || "";
-          if (a > b) { return order; }
-          if (a < b) { return -order; }
-          return 0;
-        });
+    for (const id of idPool) {
+      let subfiles = book.fulltext[id] || {};
+      if (!Object.keys(subfiles).length) { subfiles[""] = {}; }
+
+      for (const file in subfiles) {
+        const item = {
+          id,
+          file,
+          meta: book.meta[id],
+          fulltext: subfiles[file],
+        };
+        if (this.matchItem(item, query)) {
+          results.push(item);
+        }
       }
+    }
 
-      // limit results
-      if (query.limit) {
-        results.splice(query.limit);
-      }
+    // sort results
+    for (const {key, subkey, order} of query.sorts) {
+      results.sort((a, b) => {
+        a = a[key]; if (subkey) { a = a[subkey]; } a = a || "";
+        b = b[key]; if (subkey) { b = b[subkey]; } b = b || "";
+        if (a > b) { return order; }
+        if (a < b) { return -order; }
+        return 0;
+      });
+    }
 
-      return results;
-    });
+    // limit results
+    if (query.limit) {
+      results.splice(query.limit);
+    }
+
+    return results;
   },
 
   getReachableItems(book, root, set = new Set()) {
