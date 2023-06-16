@@ -1218,7 +1218,7 @@ onToolsChange.commands = {
   },
 
   'filter': function filter() {
-    const kw = prompt('Filter with the keyword (string or "/pattern/flags" for regex):');
+    const kw = prompt(utils.lang('tools_filter_prompt'));
     if (kw === null) { return; }
     let regex;
     if (/^\/(.*)\/([a-z]*)$/i.test(kw)) {
@@ -1475,7 +1475,7 @@ onCommandRun.commands = {
   },
 
   async mkdir(selectedEntries) {
-    let newPath = prompt('Input a name:', 'new-folder');
+    let newPath = prompt(utils.lang('command_mkdir_prompt'), utils.lang('command_mkdir_default'));
     if (!newPath) {
       return;
     }
@@ -1503,7 +1503,7 @@ onCommandRun.commands = {
   },
 
   async mkzip(selectedEntries) {
-    let newPath = prompt('Input a name:', 'new-archive.zip');
+    let newPath = prompt(utils.lang('command_mkzip_prompt'), utils.lang('command_mkzip_default'));
     if (!newPath) {
       return;
     }
@@ -1541,7 +1541,7 @@ onCommandRun.commands = {
   },
 
   async mkfile(selectedEntries) {
-    let newPath = prompt('Input a name:', 'new-file.txt');
+    let newPath = prompt(utils.lang('command_mkfile_prompt'), utils.lang('command_mkfile_default'));
     if (!newPath) {
       return;
     }
