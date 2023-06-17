@@ -3,6 +3,17 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.0.1] - 2023-06-17
+* Bumped client requirement to >= 2.0.1.
+* Added CLI and web API for scrapbook querying and searching.
+* Added support of `book.*.new_at_top` config.
+* Reworked `cache` API: added `book.*.inclusive_frames`, `book.*.static_index`, `book.*.rss_root`, and `book.*.rss_item_count` configs and `--rss` option in place of the `--inclusive-frames`, `--rss-root`, and `--rss-item-count` options.
+* Reworked `cache` and `convert items` CLI utilities to support specifying items for each book.
+* Reworked `export` and `import` with new version 2 archive file format, which supports better tree reconstruction for multi-referenced items, and fixed many issues.
+* Reworked `encrypt` and authorization related configs to support stronger password protection.
+* Reworked internal API for several modules.
+* Miscellaneous bug fixes, documentation improvement, and optimization and refactoring of the source code and the unittest suite.
+
 ## [1.16.0] - 2023-06-04
 * Fixed some potential errors for the unittest suite.
 * Fixed inconsistent MIME type for `*.swf` files on some platforms.
