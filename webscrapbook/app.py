@@ -1368,9 +1368,19 @@ def handle_error(exc):
         return response
 
     if request.format == 'sse':
+        _code = exc.code
+
+        # use 200 for common errors for the client API to parse the content
+        if exc.code in (400, 403, 404, 500):
+            exc.code = 200
+
         response = exc.get_response()
         response.data = ''.join(generate_server_sent_events((
-            json.dumps({'type': 'critical', 'msg': exc.description}, ensure_ascii=False),
+            json.dumps({
+                'type': 'critical',
+                'msg': exc.description,
+                'data': {'status': _code},
+            }, ensure_ascii=False),
         )))
         response.content_type = 'text/event-stream'
         return response
