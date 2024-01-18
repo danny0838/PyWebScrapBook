@@ -24,7 +24,7 @@ Run below command from CLI to install (or upgrade to) the latest version:
 
     python -m pip install -U webscrapbook
 
-After installation, `wsb`, `webscrapbook`, and `wsbview` will be available from the CLI.
+After installation, `wsb` will be available from the CLI.
 
 ### Usage overview
 
@@ -82,11 +82,11 @@ Run the generated `.wsb/serve.py` to start the server, or run below command from
 
 > Alternatively, a backend server can be run with a specialized WSGI server, such as mod_wsgi, uWSGI, or Gunicorn, by providing the generated application script `.wsb/app.py` to it.
 
-### Open archive file directly
+### Open an archive file directly (optional)
 
-The `wsbview` executable supports opening an archive page (HTZ or MAFF) to view in the browser.
+The `wsb` executable also supports opening an archive page (HTZ or MAFF) to view in the browser.
 
-Run `which wsbview` (or `where wsbview` in Windows) from CLI to get the path of `wsbview` executable, and set default application of MAFF/HTZ file to that executable to open them directly in the browser with double-click.
+Run `which wsb` (or `where wsb` in Windows) from CLI to get the path of the executable, and set default application of MAFF/HTZ file to that executable to open them directly in the browser with double-click.
 
 ### Configuration
 

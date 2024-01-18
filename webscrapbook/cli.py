@@ -504,6 +504,9 @@ def view_archive_files(files):
 
 def view():
     """CLI entry point for viewing archive files.
+
+    Deprecated:
+        2.1.0
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1160,6 +1163,15 @@ Available TOPICs:
 
 
 def main(argv=None):
+    # detect and handle DnD
+    try:
+        assert os.sep in sys.argv[1]
+    except (IndexError, AssertionError):
+        pass
+    else:
+        view_archive_files(sys.argv[1:])
+        return
+
     args = vars(parse_args(argv))
     try:
         func = args.pop('func')
