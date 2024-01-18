@@ -439,7 +439,7 @@ def view_archive_files(files):
     temp_dir = tempfile.gettempdir()
     urls = []
 
-    for file in dict.fromkeys(os.path.normcase(os.path.abspath(file)) for file in files):
+    for file in {os.path.normcase(os.path.abspath(f)):os.path.abspath(f) for f in files}.values():
         mime, _ = mimetypes.guess_type(file)
         if mime not in ('application/html+zip', 'application/x-maff'):
             continue

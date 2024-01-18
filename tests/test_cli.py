@@ -1562,13 +1562,13 @@ class TestHelpers(Test):
 
             self.assertEqual(len(mock_browser.mock_calls), 5)
             self.assertEqual(mock_browser.mock_calls[1][1][0],
-                             fr'jar:file:{pathname2url(os.path.normcase(testfile1))}!/index.html')
+                             fr'jar:file:{pathname2url(testfile1)}!/index.html')
             self.assertEqual(mock_browser.mock_calls[2][1][0],
-                             fr'jar:file:{pathname2url(os.path.normcase(testfile2))}!/123456/index.html')
+                             fr'jar:file:{pathname2url(testfile2)}!/123456/index.html')
             self.assertEqual(mock_browser.mock_calls[3][1][0],
-                             fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/abc/index.html')
+                             fr'jar:file:{pathname2url(testfile3)}!/abc/index.html')
             self.assertEqual(mock_browser.mock_calls[4][1][0],
-                             fr'jar:file:{pathname2url(os.path.normcase(testfile3))}!/def/index.html')
+                             fr'jar:file:{pathname2url(testfile3)}!/def/index.html')
             self.assertEqual(len(os.listdir(testtemp)), 0)
 
             # test simple view
