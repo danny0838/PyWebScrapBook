@@ -1,7 +1,7 @@
 :: Publish this package to PyPI.
 ::
 @echo off
-set "dir=%~dp0."
+set "dir=%~dp0.."
 set "build=%dir%\build"
 set "dist=%dir%\dist"
 
