@@ -800,21 +800,55 @@ ul  >  li  :not([hidden])  {
 
     def test_get_html_charset(self):
         root = os.path.join(test_root, 'get_html_charset')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset1.html'), default='Big5'), 'big5hkscs')
 
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset2.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset3.html')), 'big5hkscs')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset4.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset5.html')), 'big5hkscs')
+        # no definition => use default charset
+        with open(os.path.join(root, 'no_charset.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'UTF-8')
 
-        self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset6.html')))
-        self.assertIsNone(util.get_html_charset(os.path.join(root, 'charset6.html'), none_from_bom=True))
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset6.html'), none_from_bom=False), 'UTF-16-BE')
+        with open(os.path.join(root, 'no_charset.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh, default='Big5'), 'big5hkscs')
 
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html')), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=True), 'UTF-8')
-        self.assertEqual(util.get_html_charset(os.path.join(root, 'charset7.html'), quickly=False), 'big5hkscs')
+        # detect by BOM
+        with open(os.path.join(root, 'bom_utf16be.html'), 'rb') as fh:
+            self.assertIsNone(util.get_html_charset(fh))
+
+        with open(os.path.join(root, 'bom_utf16be.html'), 'rb') as fh:
+            self.assertIsNone(util.get_html_charset(fh, none_from_bom=True))
+
+        with open(os.path.join(root, 'bom_utf16be.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh, none_from_bom=False), 'UTF-16-BE')
+
+        with open(os.path.join(root, 'bom_utf8.html'), 'rb') as fh:
+            self.assertIsNone(util.get_html_charset(fh))
+
+        with open(os.path.join(root, 'bom_utf8.html'), 'rb') as fh:
+            self.assertIsNone(util.get_html_charset(fh, none_from_bom=True))
+
+        with open(os.path.join(root, 'bom_utf8.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh, none_from_bom=False), 'UTF-8-SIG')
+
+        # detect by meta charset
+        with open(os.path.join(root, 'meta_charset_utf8.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'UTF-8')
+
+        with open(os.path.join(root, 'meta_charset_utf8_upper.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'UTF-8')
+
+        with open(os.path.join(root, 'meta_content_charset_big5.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'big5hkscs')
+
+        with open(os.path.join(root, 'meta_content_charset_big5_upper.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'big5hkscs')
+
+        # skip checking meta in body for quickly mode
+        with open(os.path.join(root, 'meta_charset_big5_body.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'UTF-8')
+
+        with open(os.path.join(root, 'meta_charset_big5_body.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh, quickly=True), 'UTF-8')
+
+        with open(os.path.join(root, 'meta_charset_big5_body.html'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh, quickly=False), 'big5hkscs')
 
     def test_load_html_tree(self):
         # HTML5
