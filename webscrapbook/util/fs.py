@@ -677,7 +677,7 @@ def move(csrc, cdst):
                 raise FSMoveAcrossZipError(cdst)
 
             else:
-                with open_archive_path(csrc) as zh,\
+                with open_archive_path(csrc) as zh, \
                      open_archive_path(cdst, 'a') as zh2:
                     copied = zip_copy(zh, csrc[-1], zh2, cdst[-1])
 
@@ -740,7 +740,7 @@ def copy(csrc, cdst):
                     zip_extract(zh, cdst.file, csrc[-1])
 
             else:
-                with open_archive_path(csrc) as zh,\
+                with open_archive_path(csrc) as zh, \
                      open_archive_path(cdst, 'a') as zh2:
                     zip_copy(zh, csrc[-1], zh2, cdst[-1])
 
@@ -1113,7 +1113,7 @@ def zip_copy(zsrc, base, zdst, subpath, filter=None, *,
 def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
                   stream=None, buffer_size=io.DEFAULT_BUFFER_SIZE):
     copied = set()
-    with nullcontext(zsrc) if isinstance(zsrc, zipfile.ZipFile) else zipfile.ZipFile(zsrc) as zi,\
+    with nullcontext(zsrc) if isinstance(zsrc, zipfile.ZipFile) else zipfile.ZipFile(zsrc) as zi, \
          zdst as zh:
         for zinfo, dst in _zip_copy_iter(zi, base, subpath, filter):
             copied.add(zinfo.filename)

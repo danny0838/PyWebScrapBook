@@ -3107,7 +3107,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('deep/subdir/explicit_dir/', b'')
             zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             copied = util.fs.zip_copy(zi, 'deep/subdir', zh, 'deep/subdir2')
 
@@ -3121,7 +3121,7 @@ class TestHelpers(unittest.TestCase):
             },
         )
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2) as zh:
             self.assertEqual(
                 set(zh.namelist()),
@@ -3159,7 +3159,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('deep/subdir/explicit_dir/', b'')
             zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             copied = util.fs.zip_copy(zi, 'deep/subdir', zh, '')
 
@@ -3172,7 +3172,7 @@ class TestHelpers(unittest.TestCase):
             },
         )
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2) as zh:
             self.assertEqual(
                 set(zh.namelist()),
@@ -3205,7 +3205,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('deep/subdir/explicit_dir/', b'')
             zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             copied = util.fs.zip_copy(zi, '', zh, 'newdir')
 
@@ -3219,7 +3219,7 @@ class TestHelpers(unittest.TestCase):
             },
         )
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2) as zh:
             self.assertEqual(
                 set(zh.namelist()),
@@ -3257,7 +3257,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('deep/subdir/explicit_dir/', b'')
             zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             copied = util.fs.zip_copy(zi, '', zh, '')
 
@@ -3271,7 +3271,7 @@ class TestHelpers(unittest.TestCase):
             },
         )
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2) as zh:
             self.assertEqual(
                 set(zh.namelist()),
@@ -3310,7 +3310,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('deep/subdir/explicit_dir/', b'')
             zh.writestr('deep/subdir/implicit_dir/subfile.txt', b'xyz')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             copied = util.fs.zip_copy(zi, 'deep', zh, 'newdir', filter={'subdir'})
 
@@ -3324,7 +3324,7 @@ class TestHelpers(unittest.TestCase):
             },
         )
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2) as zh:
             self.assertEqual(
                 set(zh.namelist()),
@@ -3346,7 +3346,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('subdir/', b'')
             zh.writestr('subdir/subfile.txt', b'abc')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             copied = util.fs.zip_copy(zi, 'file.txt', zh, 'newdir/file2.txt')
 
@@ -3357,7 +3357,7 @@ class TestHelpers(unittest.TestCase):
             },
         )
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2) as zh:
             self.assertEqual(
                 set(zh.namelist()),
@@ -3380,7 +3380,7 @@ class TestHelpers(unittest.TestCase):
             zh.writestr('subdir/', b'')
             zh.writestr('subdir/subfile.txt', b'abc')
 
-        with zipfile.ZipFile(zfile) as zi,\
+        with zipfile.ZipFile(zfile) as zi, \
              zipfile.ZipFile(zfile2, 'a') as zh:
             with self.assertRaises(ValueError):
                 util.fs.zip_copy(zi, 'file.txt', zh, '')

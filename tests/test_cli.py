@@ -101,7 +101,7 @@ class TestConfig(Test):
             name=None,
         ))
 
-        with open(os.path.join(self.root, WSB_DIR, 'config.ini')) as f1,\
+        with open(os.path.join(self.root, WSB_DIR, 'config.ini')) as f1, \
              open(os.path.join(RESOURCE_DIR, 'config.ini')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
@@ -155,7 +155,7 @@ class TestConfig(Test):
             name=None,
         ))
 
-        with open(os.path.join(self.root, WSB_DIR, 'config.ini')) as f1,\
+        with open(os.path.join(self.root, WSB_DIR, 'config.ini')) as f1, \
              open(os.path.join(RESOURCE_DIR, 'config.ini')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
@@ -213,15 +213,15 @@ class TestConfig(Test):
             name=None,
         ))
 
-        with open(os.path.join(self.root, WSB_DIR, 'config.ini')) as f1,\
+        with open(os.path.join(self.root, WSB_DIR, 'config.ini')) as f1, \
              open(os.path.join(RESOURCE_DIR, 'config.ini')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
-        with open(os.path.join(self.root, WSB_DIR, 'serve.py')) as f1,\
+        with open(os.path.join(self.root, WSB_DIR, 'serve.py')) as f1, \
              open(os.path.join(RESOURCE_DIR, 'serve.py')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
-        with open(os.path.join(self.root, WSB_DIR, 'app.py')) as f1,\
+        with open(os.path.join(self.root, WSB_DIR, 'app.py')) as f1, \
              open(os.path.join(RESOURCE_DIR, 'app.py')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
@@ -284,7 +284,7 @@ class TestConfig(Test):
             name=None,
         ))
 
-        with open(self.user_config_file) as f1,\
+        with open(self.user_config_file) as f1, \
              open(os.path.join(RESOURCE_DIR, 'config.ini')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
@@ -337,7 +337,7 @@ class TestConfig(Test):
             name=None,
         ))
 
-        with open(self.user_config_file) as f1,\
+        with open(self.user_config_file) as f1, \
              open(os.path.join(RESOURCE_DIR, 'config.ini')) as f2:
             self.assertTrue(f1.read(), f2.read())
 
@@ -1489,8 +1489,8 @@ class TestHelp(Test):
         }
 
         for topic, file in topics.items():
-            with self.subTest(topic=topic),\
-                 mock.patch('webscrapbook.cli.cmd_help', wraps=cli.cmd_help) as mock_handler,\
+            with self.subTest(topic=topic), \
+                 mock.patch('webscrapbook.cli.cmd_help', wraps=cli.cmd_help) as mock_handler, \
                  mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
                 cli.main([
                     '--root', self.root,
