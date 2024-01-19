@@ -812,7 +812,7 @@ ul  >  li  :not([hidden])  {
 
         # detect by BOM
         with open(os.path.join(root, 'bom_utf16be.html'), 'rb') as fh:
-            self.assertIsNone(util.get_html_charset(fh))
+            self.assertEqual(util.get_html_charset(fh), 'UTF-16-BE')
             self.assertEqual(fh.tell(), 2)
 
         with open(os.path.join(root, 'bom_utf16be.html'), 'rb') as fh:
@@ -824,7 +824,7 @@ ul  >  li  :not([hidden])  {
             self.assertEqual(fh.tell(), 2)
 
         with open(os.path.join(root, 'bom_utf8.html'), 'rb') as fh:
-            self.assertIsNone(util.get_html_charset(fh))
+            self.assertEqual(util.get_html_charset(fh), 'UTF-8-SIG')
             self.assertEqual(fh.tell(), 3)
 
         with open(os.path.join(root, 'bom_utf8.html'), 'rb') as fh:

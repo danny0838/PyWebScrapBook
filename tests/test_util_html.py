@@ -1,3 +1,5 @@
+import codecs
+import io
 import unittest
 
 from webscrapbook.util.html import HtmlRewriter, MarkupTag
@@ -57,6 +59,41 @@ class TestMarkupTag(Test):
 
 
 class TestHtmlRewriter(Test):
+    def test_load_html01(self):
+        input = """中文abc"""
+        fh = io.BytesIO(input.encode('UTF-8'))
+
+        markups = HtmlRewriter().load(fh)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+
+    def test_load_html02(self):
+        input = """<meta charset="UTF-8">中文abc"""
+        fh = io.BytesIO(input.encode('UTF-8'))
+
+        markups = HtmlRewriter().load(fh)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+
+    def test_load_html03(self):
+        input = """<meta charset="big5">中文abc"""
+        fh = io.BytesIO(input.encode('Big5'))
+
+        markups = HtmlRewriter().load(fh)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+
+    def test_load_html04(self):
+        input = """中文abc"""
+        fh = io.BytesIO(input.encode('UTF-8-SIG'))
+
+        markups = HtmlRewriter().load(fh)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+
+    def test_load_html05(self):
+        input = """中文abc"""
+        fh = io.BytesIO(codecs.BOM_UTF16_BE + input.encode('UTF-16-BE'))
+
+        markups = HtmlRewriter().load(fh)
+        self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
+
     def test_loads_html01(self):
         input = """<!DOCTYPE html>"""
         parsed = input

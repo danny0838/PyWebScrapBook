@@ -459,7 +459,6 @@ class HtmlRewriter:
         try:
             if not self.encoding:
                 self.encoding = util.get_html_charset(fh)
-                fh.seek(0)
 
             p = self.parser(is_xhtml=self.is_xhtml)
             for s in codecs.iterdecode(fh, self.encoding):

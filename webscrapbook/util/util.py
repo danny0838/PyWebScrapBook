@@ -515,6 +515,24 @@ def sniff_bom(fh):
     return None
 
 
+LXML_CODECS_MAPPING = {
+    'utf-8-sig': 'UTF-8',
+    'utf-16-le': 'UTF-16LE',
+    'utf-16-be': 'UTF-16BE',
+    'utf-32-le': 'UTF-32LE',
+    'utf-32-be': 'UTF-32BE',
+}
+
+
+def lxml_fix_codec(name):
+    """Fix codec name to be compatible for lxml.
+    """
+    try:
+        return LXML_CODECS_MAPPING[name.lower()]
+    except KeyError:
+        return name
+
+
 #########################################################################
 # URL and string
 #########################################################################
@@ -866,8 +884,26 @@ def _get_html_charset(fh, quickly=True):
     return None
 
 
-def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
+def get_html_charset(file, default='UTF-8', none_from_bom=False, quickly=True):
     """Search for the correct charset to read an HTML file.
+
+    lxml auto-detects the document charset (encoding) when parsing a document
+    without specifying the encoding.  However, it may select a wrong encoding
+    if there is text before the first meta charset element.  Additionally, lxml
+    sometimes fails to detect encoding by BOM (e.g. lxml 5.0 / Python 3.10 on
+    Linux Ubuntu).
+
+    As a result, it's safer to detect the document charset with this utility in
+    prior and pass it to the lxml parser.  Note that the file pointer should be
+    set after the BOM (if there is one), and the encoding name needs a fix as
+    lxml supported names are slightly different from the Python ones.
+
+    Example:
+
+        with open(my_file, 'rb') as fh:
+            charset = get_html_charset(fh)
+            encoding = lxml_fix_codec(charset)
+            for event, elem in etree.iterparse(fh, encoding=encoding, ...)
 
     Args:
         file: str, path-like, or file-like bytes object
@@ -886,14 +922,9 @@ def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
     if fh:
         with fh as fh:
             # Seek for the correct charset (encoding).
-            # If a charset is not specified, lxml may select a wrong encoding for
-            # the entire document if there is text before first meta charset.
             charset = sniff_bom(fh)
             if charset:
                 if none_from_bom:
-                    # lxml does not accept "UTF-16-LE" or so, but can auto-detect
-                    # encoding from BOM if encoding is None
-                    # ref: https://bugs.launchpad.net/lxml/+bug/1463610
                     return None
 
                 return charset
@@ -931,10 +962,10 @@ def load_html_tree(file, options=None):
 
     with fh as fh:
         charset = get_html_charset(fh)
-        fh.seek(0)
+        encoding = lxml_fix_codec(charset)
 
         try:
-            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=charset, **(options or {})))
+            return lxml.html.parse(fh, lxml.html.HTMLParser(encoding=encoding, **(options or {})))
         except etree.Error:
             return None
 
@@ -1041,7 +1072,7 @@ def iter_meta_refresh(file, encoding=None):
     with fh as fh:
         if not encoding:
             encoding = get_html_charset(fh, default='ISO-8859-1')
-            fh.seek(0)
+            encoding = lxml_fix_codec(encoding)
 
         contexts = []
         for event, elem in etree.iterparse(fh, encoding=encoding, html=True, events=('start', 'end')):

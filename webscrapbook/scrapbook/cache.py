@@ -747,11 +747,11 @@ class FulltextCacheGenerator():
         fh.seek(0)
 
         charset = util.get_html_charset(fh, default=item.meta.get('charset') or 'UTF-8')
-        fh.seek(0)
+        encoding = util.lxml_fix_codec(charset)
 
         results = []
         has_instant_redirect = False
-        for time_, url, context in util.iter_meta_refresh(fh, encoding=charset):
+        for time_, url, context in util.iter_meta_refresh(fh, encoding=encoding):
             if time_ == 0 and not context:
                 has_instant_redirect = True
 
@@ -781,10 +781,11 @@ class FulltextCacheGenerator():
         # @TODO: better handle content
         # (no space between inline nodes, line break between block nodes, etc.)
         fh.seek(0)
+        util.sniff_bom(fh)
         exclusion_stack = []
         for event, elem in etree.iterparse(
                 fh, html=True, events=('start', 'end'),
-                remove_comments=True, encoding=charset):
+                remove_comments=True, encoding=encoding):
             if event == 'start':
                 # skip if we are in an excluded element
                 if exclusion_stack:
