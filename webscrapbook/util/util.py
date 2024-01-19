@@ -906,6 +906,7 @@ def get_html_charset(file, default='UTF-8', none_from_bom=True, quickly=True):
             if charset is not None:
                 charset = fix_codec(charset)
 
+            fh.seek(0)
             return charset
 
     return default
