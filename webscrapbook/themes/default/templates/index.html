@@ -57,7 +57,11 @@ const LANG = {
   {%- set size = info.size %}
   {%- set size_text = format_filesize(size) if size else '' %}
   {%- set lm = info.last_modified %}
-  {%- set lm_text = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(lm)) %}
+  {%- if lm is not none %}
+    {#- calculate with timedelta() to prevent fromtimestamp() error for a negative timestamp #}
+    {%- set dt = datetime.datetime.fromtimestamp(0) + datetime.timedelta(seconds=lm) %}
+    {%- set lm_text = dt.strftime("%Y/%m/%d %H:%M:%S") %}
+  {%- endif %}
   <tr data-entry data-type="{{ filetype }}" data-path="{{ filename }}"><td data-sort="{{ filename }}"><span class="icon" data-type="{{ filetype }}" title="{{ filename }}"></span><td data-sort="{{ filename }}"><a href="{{ url }}">{{ filename }}</a></td><td class="detail" data-sort="{{ lm or '' }}">{{ lm_text }}</td><td class="detail" data-sort="{{ size or '' }}">{{ size_text }}</td></tr>
 {%- endfor %}
 </tbody>

@@ -1,5 +1,6 @@
 """The WGSI application.
 """
+import datetime
 import functools
 import hashlib
 import json
@@ -1716,6 +1717,7 @@ def make_app(root='.', config=None):
     app.jinja_env.globals.update({
         'os': os,
         'time': time,
+        'datetime': datetime,
         'get_breadcrumbs': get_breadcrumbs,
         'format_filesize': functools.partial(util.format_filesize, space='\xA0'),
         'quote_path': quote_path,
