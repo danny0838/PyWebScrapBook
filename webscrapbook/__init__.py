@@ -8,7 +8,7 @@ from copy import deepcopy
 
 __all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
 
-__version__ = '2.0.1'
+__version__ = '2.1.0'
 
 WSB_EXTENSION_MIN_VERSION = '2.0.1'
 WSB_USER_DIR = os.path.join(os.path.expanduser('~'), '.config', 'wsb')  # affected by $HOME

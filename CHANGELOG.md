@@ -3,6 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.1.0] - 2024-01-19
+* Added support of opening an archive file using the `wsb` executable.
+* When viewing archive files, no more deduplicate the provided paths and use the original case for them.
+* Deprecated the `webscrapbook` and `wsbview` executables: use `wsb` instead.
+* Fixed bad encoding for the indexer and some CLI utilities in some cases.
+* Fixed timestamp handling issues, which may crash the server, for the default theme.
+
 ## [2.0.1] - 2023-06-17
 * Bumped client requirement to >= 2.0.1.
 * Added CLI and web API for scrapbook querying and searching.
