@@ -54,20 +54,20 @@ REGEX_ID_TO_DATETIME = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(
 REGEX_ID_TO_DATETIME_LEGACY = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{0,9})$')
 
 
-def datetime_to_id(t=None):
+def datetime_to_id(dt=None):
     """Convert a datetime to webscrapbook ID.
 
     Args:
-        t: datetime. Create an ID for now if None.
+        dt: datetime. Create an ID for now if None.
     """
-    if t is None:
-        t = datetime.now(timezone.utc)
+    if dt is None:
+        dt = datetime.now(timezone.utc)
     else:
         # convert to UTC datetime
-        t = t.astimezone(timezone.utc)
+        dt = dt.astimezone(timezone.utc)
 
-    return (f'{t.year}{t.month:02}{t.day:02}{t.hour:02}{t.minute:02}'
-            f'{t.second:02}{int(t.microsecond * 0.001):03}')
+    return (f'{dt.year}{dt.month:02}{dt.day:02}{dt.hour:02}{dt.minute:02}'
+            f'{dt.second:02}{int(dt.microsecond * 0.001):03}')
 
 
 def id_to_datetime(id):
@@ -91,19 +91,19 @@ def id_to_datetime(id):
     return None
 
 
-def datetime_to_id_legacy(t=None):
+def datetime_to_id_legacy(dt=None):
     """Convert a datetime to legacy ScrapBook ID.
 
     Args:
-        t: datetime. Create an ID for now if None.
+        dt: datetime. Create an ID for now if None.
     """
-    if t is None:
-        t = datetime.now()
+    if dt is None:
+        dt = datetime.now()
     else:
         # convert to local datetime
-        t = t.astimezone()
+        dt = dt.astimezone()
 
-    return f'{t.year}{t.month:02}{t.day:02}{t.hour:02}{t.minute:02}{t.second:02}'
+    return f'{dt.year}{dt.month:02}{dt.day:02}{dt.hour:02}{dt.minute:02}{dt.second:02}'
 
 
 def id_to_datetime_legacy(id):

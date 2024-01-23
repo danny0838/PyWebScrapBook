@@ -1662,7 +1662,7 @@ class WebHost(wsb_host.Host):
 
             entry_permission = entry.get('permission', 'all')
 
-            # cach a successful match
+            # cache a successful match
             self._get_permission_cache[
                 self._get_permission_hash(username, password)
             ] = entry_permission
