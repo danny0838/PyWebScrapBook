@@ -10,7 +10,7 @@ import traceback
 import types
 from collections import defaultdict, namedtuple
 from contextlib import nullcontext
-from secrets import token_urlsafe
+from secrets import token_bytes, token_urlsafe
 from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
 from zlib import adler32
 
@@ -1544,6 +1544,7 @@ class WebHost(wsb_host.Host):
 
         # cache
         self._get_permission_cache = {}
+        self._get_permission_cache_salt = token_bytes(32)
 
     def token_acquire(self, now=None):
         if now is None:
@@ -1672,7 +1673,9 @@ class WebHost(wsb_host.Host):
         return ''
 
     def _get_permission_hash(self, username, password):
-        return hashlib.sha512(f'{username}\0{password}'.encode('UTF-8')).digest()
+        return hashlib.sha512(
+            self._get_permission_cache_salt
+            + f'\0{username}\0{password}'.encode('UTF-8')).digest()
 
     @staticmethod
     def check_permission(perm, action):

@@ -490,6 +490,9 @@ class TestWebHost(Test):
                 'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
                 'pass1',
             )
+            self.assertEqual(1, len(wsbapp.host._get_permission_cache))
+            self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), '')
+            self.assertEqual(1, len(wsbapp.host._get_permission_cache))
 
             self.assertEqual(wsbapp.host.get_permission('user2', 'pass2'), 'view')
             mock_encrypt.assert_called_with(
