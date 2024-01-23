@@ -564,40 +564,63 @@ class TestQuery(unittest.TestCase):
         )
 
     def test_parse_date_num(self):
+        # normal case
         ts = self._dt_to_ts(datetime(2020, 12, 31, 0, 0, 0).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201231000000000'),
             ts,
         )
+
+        # treat month 0 as 1
+        ts = self._dt_to_ts(datetime(2020, 1, 31, 0, 0, 0).astimezone(timezone.utc))
+        self.assertEqual(
+            search.Query._parse_date_num('20200031000000000'),
+            ts,
+        )
+
+        # fix excess month
+        ts = self._dt_to_ts(datetime(2020, 12, 31, 0, 0, 0).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201531000000000'),
             ts,
         )
 
+        # treat day 0 as 1
+        ts = self._dt_to_ts(datetime(2020, 12, 1, 0, 0, 0).astimezone(timezone.utc))
+        self.assertEqual(
+            search.Query._parse_date_num('20201200000000000'),
+            ts,
+        )
+
+        # fix excess day
         ts = self._dt_to_ts(datetime(2021, 1, 1, 0, 0, 0).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201232000000000'),
             ts,
         )
 
+        # fix excess hours
         ts = self._dt_to_ts(datetime(2021, 1, 1, 1, 0, 0).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201231250000000'),
             ts,
         )
 
+        # fix excess minutes
         ts = self._dt_to_ts(datetime(2020, 12, 31, 1, 39, 0).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201231009900000'),
             ts,
         )
 
+        # fix excess seconds
         ts = self._dt_to_ts(datetime(2020, 12, 31, 0, 1, 39).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201231000099000'),
             ts,
         )
 
+        # check milliseconds handling
         ts = self._dt_to_ts(datetime(2020, 12, 31, 0, 0, 0, 999000).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201231000000999'),
