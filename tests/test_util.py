@@ -72,6 +72,22 @@ class TestUtils(unittest.TestCase):
                 util.datetime_to_id(None),
                 '19800101000000000')
 
+        # round to nearest if datetime is too large after timezone conversion
+        self.assertEqual(
+            util.datetime_to_id(
+                datetime(9999, 12, 31, 23, 59, 59, 999999, timezone(timedelta(hours=-1))),
+            ),
+            '99991231235959999',
+        )
+
+        # round to nearest if datetime is too small after timezone conversion
+        self.assertEqual(
+            util.datetime_to_id(
+                datetime(1, 1, 1, 0, 0, 0, 0, timezone(timedelta(hours=1))),
+            ),
+            '00010101000000000',
+        )
+
     def test_datetime_to_id_legacy(self):
         # create an ID from local datetime
         self.assertEqual(
@@ -84,6 +100,15 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             util.datetime_to_id_legacy(dt.replace(tzinfo=timezone.utc)),
             util.datetime_to_id_legacy(dt + dt.astimezone().utcoffset()),
+        )
+
+        # create an ID from the specified tzinfo
+        self.assertEqual(
+            util.datetime_to_id_legacy(
+                datetime(2020, 1, 2, 3, 4, 5, 67000, timezone.utc),
+                timezone(timedelta(hours=-20)),
+            ),
+            '20200101070405',
         )
 
         # create an ID from now if datetime is not provided
@@ -101,6 +126,24 @@ class TestUtils(unittest.TestCase):
                 util.datetime_to_id_legacy(None),
                 '19800101000000',
             )
+
+        # round to nearest if datetime is too large after timezone conversion
+        self.assertEqual(
+            util.datetime_to_id_legacy(
+                datetime(9999, 12, 31, 23, 59, 59, 999999, timezone.utc),
+                timezone(timedelta(hours=8)),
+            ),
+            '99991231235959',
+        )
+
+        # round to nearest if datetime is too small after timezone conversion
+        self.assertEqual(
+            util.datetime_to_id_legacy(
+                datetime(1, 1, 1, 0, 0, 0, 0, timezone.utc),
+                timezone(timedelta(hours=-8)),
+            ),
+            '00010101000000',
+        )
 
     def test_id_to_datetime(self):
         self.assertEqual(

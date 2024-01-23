@@ -36,8 +36,8 @@ class Query:
     PARSE_CMD_REGEX = re.compile(r'^(-*)(.*)$')
 
     PARSE_DATE_REGEX = re.compile(r'^(\d{0,17})(?:-(\d{0,17}))?$')
-
-    TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+    PARSE_DATE_MAX = '99991231235959999'
+    PARSE_DATE_MIN = '00010101000000000'
 
     ELLIPSIS = '…'
 
@@ -180,25 +180,65 @@ class Query:
 
     @classmethod
     def _parse_date_num(cls, text):
-        # Set a slightly narrower upper and lower limit for year to prevent
-        # an out-of-range error after applying timedelta and timezone
-        # conversion as datetime only supports a year between (1, 9999).
-        dt = datetime(
-            year=min(max(int(text[0:4], 10), 2), 9998),
-            month=min(max(int(text[4:6], 10), 1), 12),
-            day=1,
-            tzinfo=cls.TIMEZONE,
-        )
-        # Use a timedelta to prevent an out-of-range error as datetime does not
-        # support something like (month=11, day=31).
+        # Treat zero month or day as minimal so that
+        # "20240000" means 2024/01/01 rather than 2023/12/31.
+        year = int(text[0:4], 10)
+        month = max(int(text[4:6], 10), 1)
+        day = max(int(text[6:8], 10), 1)
+        hours = int(text[8:10], 10)
+        minutes = int(text[10:12], 10)
+        seconds = int(text[12:14], 10)
+        milliseconds = int(text[14:17], 10)
+
+        if month > 12:
+            year = year + month // 12
+            month = month % 12
+
+        # Use a datetime plus timedelta to prevent an out-of-range error as
+        # datetime does not support something like (month=11, day=31).
+        # @TODO: handle a datetime like 00001250.........
+        try:
+            dt = datetime(
+                year=year,
+                month=month,
+                day=1,
+            )
+        except ValueError:
+            if year > 9999:
+                return cls.PARSE_DATE_MAX
+            elif year < 1:
+                return cls.PARSE_DATE_MIN
+            else:
+                # this should not happen
+                raise
+
         delta = timedelta(
-            days=max(int(text[6:8], 10), 1) - 1,  # minus starting day 1
-            hours=int(text[8:10], 10),
-            minutes=int(text[10:12], 10),
-            seconds=int(text[12:14], 10),
-            milliseconds=int(text[14:17], 10),
+            days=day - 1,  # minus starting day 1
+            hours=hours,
+            minutes=minutes,
+            seconds=seconds,
+            milliseconds=milliseconds,
         )
-        dt = (dt + delta).astimezone(timezone.utc)
+
+        try:
+            dt = dt + delta
+            try:
+                dt = dt.astimezone(timezone.utc)
+            except OSError:
+                # OS cannot determine tzinfo if datetime too small or large
+                # for a convertion between an unawarre and aware datetime.
+                # Fallback to the tzinfo of now to approximate.
+                dt = dt.replace(tzinfo=datetime.now(timezone.utc).astimezone().tzinfo)
+                dt = dt.astimezone(timezone.utc)
+        except OverflowError:
+            if year >= 9999:
+                return cls.PARSE_DATE_MAX
+            elif year <= 1:
+                return cls.PARSE_DATE_MIN
+            else:
+                # this should not happen
+                raise
+
         return (f'{dt.year:0>4}{dt.month:0>2}{dt.day:0>2}'
                 f'{dt.hour:0>2}{dt.minute:0>2}{dt.second:0>2}'
                 f'{(dt.microsecond // 1000):0>3}')

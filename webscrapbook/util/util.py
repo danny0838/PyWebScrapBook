@@ -53,6 +53,9 @@ def import_module_file(ns, file):
 REGEX_ID_TO_DATETIME = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$')
 REGEX_ID_TO_DATETIME_LEGACY = re.compile(r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{0,9})$')
 
+ID_TO_DATETIME_MAX = datetime(9999, 12, 31, 23, 59, 59, 999999, timezone.utc)
+ID_TO_DATETIME_MIN = datetime(1, 1, 1, 0, 0, 0, 0, timezone.utc)
+
 
 def datetime_to_id(dt=None):
     """Convert a datetime to webscrapbook ID.
@@ -64,14 +67,33 @@ def datetime_to_id(dt=None):
         dt = datetime.now(timezone.utc)
     else:
         # convert to UTC datetime
-        dt = dt.astimezone(timezone.utc)
+        try:
+            try:
+                dt = dt.astimezone(timezone.utc)
+            except OSError:
+                # OS cannot determine tzinfo if datetime too small or large
+                # for a convertion between an unawarre and aware datetime.
+                # Fallback to the tzinfo of now to approximate.
+                dt = dt.replace(tzinfo=datetime.now(timezone.utc).astimezone().tzinfo)
+                dt = dt.astimezone(timezone.utc)
+        except OverflowError:
+            if dt.year >= 9999:
+                dt = ID_TO_DATETIME_MAX
+            elif dt.year <= 1:
+                dt = ID_TO_DATETIME_MIN
+            else:
+                # this should not happen
+                raise
 
-    return (f'{dt.year}{dt.month:02}{dt.day:02}{dt.hour:02}{dt.minute:02}'
+    return (f'{dt.year:04}{dt.month:02}{dt.day:02}{dt.hour:02}{dt.minute:02}'
             f'{dt.second:02}{int(dt.microsecond * 0.001):03}')
 
 
 def id_to_datetime(id):
     """Convert a webscrapbook ID to datetime.
+
+    Args:
+        id: the webscrapbook ID to convert.
     """
     m = REGEX_ID_TO_DATETIME.search(id)
     if m:
@@ -91,23 +113,43 @@ def id_to_datetime(id):
     return None
 
 
-def datetime_to_id_legacy(dt=None):
+def datetime_to_id_legacy(dt=None, tz=None):
     """Convert a datetime to legacy ScrapBook ID.
 
     Args:
         dt: datetime. Create an ID for now if None.
+        tz: the local tzinfo for output.
     """
     if dt is None:
         dt = datetime.now()
     else:
         # convert to local datetime
-        dt = dt.astimezone()
+        try:
+            try:
+                dt = dt.astimezone(tz)
+            except OSError:
+                # OS cannot determine tzinfo if datetime too small or large
+                # for a convertion between an unawarre and aware datetime.
+                # Fallback to the tzinfo of now to approximate.
+                dt = dt.astimezone(datetime.now(timezone.utc).astimezone().tzinfo)
+        except OverflowError:
+            if dt.year >= 9999:
+                dt = ID_TO_DATETIME_MAX.replace(tzinfo=None)
+            elif dt.year <= 1:
+                dt = ID_TO_DATETIME_MIN.replace(tzinfo=None)
+            else:
+                # this should not happen
+                raise
 
-    return f'{dt.year}{dt.month:02}{dt.day:02}{dt.hour:02}{dt.minute:02}{dt.second:02}'
+    return f'{dt.year:04}{dt.month:02}{dt.day:02}{dt.hour:02}{dt.minute:02}{dt.second:02}'
 
 
-def id_to_datetime_legacy(id):
+def id_to_datetime_legacy(id, tz=None):
     """Convert a legacy ScrapBook ID to datetime.
+
+    Args:
+        id: the legacy ScrapBook ID to convert.
+        tz: the local tzinfo for output.
     """
     m = REGEX_ID_TO_DATETIME_LEGACY.search(id)
     if m:
@@ -126,6 +168,7 @@ def id_to_datetime_legacy(id):
                 int(m.group(5)),
                 int(m.group(6)),
                 int(ms),
+                tz,
             )
         except ValueError:
             pass

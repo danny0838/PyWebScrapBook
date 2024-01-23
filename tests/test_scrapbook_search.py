@@ -579,7 +579,7 @@ class TestQuery(unittest.TestCase):
         )
 
         # fix excess month
-        ts = self._dt_to_ts(datetime(2020, 12, 31, 0, 0, 0).astimezone(timezone.utc))
+        ts = self._dt_to_ts(datetime(2021, 3, 31, 0, 0, 0).astimezone(timezone.utc))
         self.assertEqual(
             search.Query._parse_date_num('20201531000000000'),
             ts,
@@ -625,6 +625,24 @@ class TestQuery(unittest.TestCase):
         self.assertEqual(
             search.Query._parse_date_num('20201231000000999'),
             ts,
+        )
+
+        # round to nearest if too large
+        self.assertEqual(
+            search.Query._parse_date_num('99999999999999999'),
+            '99991231235959999',
+        )
+
+        # round to nearest if too large (after adding days)
+        self.assertEqual(
+            search.Query._parse_date_num('99991299000000000'),
+            '99991231235959999',
+        )
+
+        # round to nearest if too small
+        self.assertEqual(
+            search.Query._parse_date_num('00000000000000000'),
+            '00010101000000000',
         )
 
     def test_syntax_cmd_sort(self):
