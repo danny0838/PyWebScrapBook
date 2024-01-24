@@ -34,6 +34,11 @@ pyinstaller "%res%\wsb.py" %onefile% --noconfirm ^
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 if "%onefile%" == "" (
-  python -m zipfile -c "%dist%\wsb.zip" "%dist%\wsb"
-  rmdir "%dist%\wsb" /s /q
+  setlocal EnableDelayedExpansion
+  set "args="
+  for %%f in ("!dist!"\wsb\*) do set args=!args! "%%f"
+  for /d %%f in ("!dist!"\wsb\*) do set args=!args! "%%f"
+  python -m zipfile -c "!dist!\wsb.zip" !args!
+  rmdir "!dist!\wsb" /s /q
+  endlocal
 )
