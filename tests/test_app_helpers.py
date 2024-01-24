@@ -490,9 +490,6 @@ class TestWebHost(Test):
                 'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
                 'pass1',
             )
-            self.assertEqual(1, len(wsbapp.host._get_permission_cache))
-            self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), '')
-            self.assertEqual(1, len(wsbapp.host._get_permission_cache))
 
             self.assertEqual(wsbapp.host.get_permission('user2', 'pass2'), 'view')
             mock_encrypt.assert_called_with(
@@ -582,7 +579,8 @@ class TestWebHost(Test):
         """Read from cache for repeated user-password input."""
         root = self.setup_test('get_permission4')
         app = wsbapp.make_app(root)
-        with app.app_context():
+        with app.app_context(), \
+             mock.patch('webscrapbook.app.host._get_permission_cache_salt', new_callable=lambda: 'salt'):
             # invalid user
             mock_encrypt.reset_mock()
             self.assertEqual(wsbapp.host.get_permission('unknown', ''), '')
@@ -605,7 +603,7 @@ class TestWebHost(Test):
             self.assertEqual(wsbapp.host._get_permission_cache, {})
 
             # anonymous
-            cache_key1 = hashlib.sha512('\0'.encode('UTF-8')).digest()
+            cache_key1 = hashlib.sha512('\0\0salt'.encode('UTF-8')).digest()
 
             mock_encrypt.reset_mock()
             self.assertEqual(wsbapp.host.get_permission('', ''), 'view')
@@ -622,7 +620,7 @@ class TestWebHost(Test):
             })
 
             # user1
-            cache_key2 = hashlib.sha512('user1\0pass1'.encode('UTF-8')).digest()
+            cache_key2 = hashlib.sha512('user1\0pass1\0salt'.encode('UTF-8')).digest()
 
             mock_encrypt.reset_mock()
             self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), 'all')
