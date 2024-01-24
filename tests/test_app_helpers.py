@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import tempfile
@@ -546,12 +547,17 @@ class TestWebHost(Test):
 
     @mock.patch('webscrapbook.app.check_password_hash', wraps=wsbapp.check_password_hash)
     def test_get_permission2(self, mock_encrypt):
-        """Use empty user and password if not provided."""
+        """Check against empty password without hashing if pw is empty."""
         root = self.setup_test('get_permission2')
         app = wsbapp.make_app(root)
         with app.app_context():
-            self.assertEqual(wsbapp.host.get_permission('', ''), 'view')
-            mock_encrypt.assert_called_with('pbkdf2:sha1:1$W$88164ca364990f201a63c36ad572ee70df4d7810', '')
+            # allow empty password
+            self.assertEqual(wsbapp.host.get_permission('user1', ''), 'view')
+            mock_encrypt.assert_not_called()
+
+            # disallow non-empty password
+            self.assertEqual(wsbapp.host.get_permission('user1', 'abc'), '')
+            mock_encrypt.assert_not_called()
 
     @mock.patch('webscrapbook.app.check_password_hash', wraps=wsbapp.check_password_hash)
     def test_get_permission3(self, mock_encrypt):
@@ -567,6 +573,72 @@ class TestWebHost(Test):
             self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), 'read')
             self.assertEqual(mock_encrypt.call_args_list[0][0], ('pbkdf2:sha1:1$B$ad86239f72026404244ba6de19d4270ad2ecf397', 'pass1'))
             self.assertEqual(mock_encrypt.call_args_list[1][0], ('pbkdf2:sha1:1$1$1cb0b20ced97f764a8ae152b282fc622b7d22303', 'pass1'))
+
+    @mock.patch('webscrapbook.app.check_password_hash', wraps=wsbapp.check_password_hash)
+    def test_get_permission4(self, mock_encrypt):
+        """Read from cache for repeated user-password input."""
+        root = self.setup_test('get_permission4')
+        app = wsbapp.make_app(root)
+        with app.app_context():
+            # invalid user
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('unknown', ''), '')
+            mock_encrypt.assert_not_called()
+            self.assertEqual(wsbapp.host._get_permission_cache, {})
+
+            # invalid password
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('user1', 'unknown'), '')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
+                'unknown',
+            )
+            self.assertEqual(wsbapp.host._get_permission_cache, {})
+
+            # invalid empty password
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('', 'unknown'), '')
+            mock_encrypt.assert_not_called()
+            self.assertEqual(wsbapp.host._get_permission_cache, {})
+
+            # anonymous
+            cache_key1 = hashlib.sha512('\0'.encode('UTF-8')).digest()
+
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('', ''), 'view')
+            mock_encrypt.assert_not_called()
+            self.assertEqual(wsbapp.host._get_permission_cache, {
+                cache_key1: 'view',
+            })
+
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('', ''), 'view')
+            mock_encrypt.assert_not_called()
+            self.assertEqual(wsbapp.host._get_permission_cache, {
+                cache_key1: 'view',
+            })
+
+            # user1
+            cache_key2 = hashlib.sha512('user1\0pass1'.encode('UTF-8')).digest()
+
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), 'all')
+            mock_encrypt.assert_called_with(
+                'pbkdf2:sha1:1$z$ab55d4e716ba0d6cc1a7259f346c42280e09a1e3',
+                'pass1',
+            )
+            self.assertEqual(wsbapp.host._get_permission_cache, {
+                cache_key1: 'view',
+                cache_key2: 'all',
+            })
+
+            mock_encrypt.reset_mock()
+            self.assertEqual(wsbapp.host.get_permission('user1', 'pass1'), 'all')
+            mock_encrypt.assert_not_called()
+            self.assertEqual(wsbapp.host._get_permission_cache, {
+                cache_key1: 'view',
+                cache_key2: 'all',
+            })
 
     def test_check_permission(self):
         for action in {'view', 'info', 'source', 'download', 'static', 'unknown'}:
