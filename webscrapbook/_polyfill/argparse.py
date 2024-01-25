@@ -1,10 +1,11 @@
-import argparse
+import argparse as _argparse
+from argparse import *
 
-try:
-    # since Python 3.9
-    BooleanOptionalAction = argparse.BooleanOptionalAction
-except AttributeError:
-    class BooleanOptionalAction(argparse.Action):
+__all__ = _argparse.__all__
+
+# Python < 3.9
+if 'BooleanOptionalAction' not in __all__:
+    class BooleanOptionalAction(_argparse.Action):
         def __init__(self,
                      option_strings,
                      dest,
@@ -40,3 +41,5 @@ except AttributeError:
 
         def format_usage(self):
             return ' | '.join(self.option_strings)
+
+    __all__.append('BooleanOptionalAction')

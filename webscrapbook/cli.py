@@ -1,6 +1,5 @@
 """Command line interface of WebScrapBook toolkit.
 """
-import argparse
 import os
 import shutil
 import sys
@@ -10,7 +9,7 @@ from getpass import getpass
 from inspect import getdoc
 
 from . import WSB_CONFIG, WSB_DIR, WSB_USER_CONFIG, __version__, config, util
-from ._polyfill.argparse import BooleanOptionalAction
+from ._polyfill import argparse
 
 
 def log(*args):
@@ -544,7 +543,7 @@ def parse_args(argv=None):
         description=getdoc(cmd_serve),
         help="""serve the root directory""")
     parser_serve.add_argument(
-        '--browse', default=None, action=BooleanOptionalAction,
+        '--browse', default=None, action=argparse.BooleanOptionalAction,
         help="""launch the browser to visit the served directory (default:
 as `server.browse` config)""")
     parser_serve.set_defaults(func=cmd_serve)
@@ -606,25 +605,25 @@ etc. (default: %(default)r)""")
         help="""the items ID(s) to generate cache (specify repeatedly for each
 corresponding book) (default/empty: all items)""")
     parser_cache.add_argument(
-        '--fulltext', default=True, action=BooleanOptionalAction,
+        '--fulltext', default=True, action=argparse.BooleanOptionalAction,
         help="""generate fulltext cache (default: %(default)s)""")
     parser_cache.add_argument(
-        '--recreate', dest='recreate', default=False, action=BooleanOptionalAction,
+        '--recreate', dest='recreate', default=False, action=argparse.BooleanOptionalAction,
         help="""ignore current fulltext cache and generate again
 (default: %(default)s)""")
     parser_cache.add_argument(
-        '--static-site', default=False, action=BooleanOptionalAction,
+        '--static-site', default=False, action=argparse.BooleanOptionalAction,
         help="""generate static site pages (default: %(default)s)""")
     parser_cache.add_argument(
-        '--static-index', default=None, action=BooleanOptionalAction,
+        '--static-index', default=None, action=argparse.BooleanOptionalAction,
         help="""generate static index.html page  (default: as
 `book.*.static_index` config)""")
     parser_cache.add_argument(
-        '--rss', default=None, action=BooleanOptionalAction,
+        '--rss', default=None, action=argparse.BooleanOptionalAction,
         help="""generate an RSS feed file for the book (default: True if
 `--static-site` and `book.*.rss_root` config are set)""")
     parser_cache.add_argument(
-        '--backup', default=False, action=BooleanOptionalAction,
+        '--backup', default=False, action=argparse.BooleanOptionalAction,
         help="""backup changed files (default: %(default)s)""")
     parser_cache.add_argument(
         '--debug', default=False, action='store_true',
@@ -679,7 +678,7 @@ corresponding book) (default/empty: all items)""")
         help="""remove unused favicon caches""")
 
     parser_check.add_argument(
-        '--backup', default=True, action=BooleanOptionalAction,
+        '--backup', default=True, action=argparse.BooleanOptionalAction,
         help="""backup changed files (default: %(default)s)""")
     parser_check.add_argument(
         '--debug', default=False, action='store_true',
@@ -827,13 +826,13 @@ Also fix an incomplete conversion from legacy ScrapBook:
         nargs='+', action='store',
         help="""ID of the book(s) to convert (default: all books)""")
     parser_convert_migrate.add_argument(
-        '--convert-legacy', default=True, action=BooleanOptionalAction,
+        '--convert-legacy', default=True, action=argparse.BooleanOptionalAction,
         help="""convert data files from legacy ScrapBook (default: %(default)s)""")
     parser_convert_migrate.add_argument(
-        '--convert-v1', default=True, action=BooleanOptionalAction,
+        '--convert-v1', default=True, action=argparse.BooleanOptionalAction,
         help="""convert data to latest WebScrapBook 1.* (default: %(default)s)""")
     parser_convert_migrate.add_argument(
-        '--use-native-tags', default=False, action=BooleanOptionalAction,
+        '--use-native-tags', default=False, action=argparse.BooleanOptionalAction,
         help="""use native HTML tags for converted legacy ScrapBook annotations for better
 compatibility with very old browsers (e.g. IE < 9), with the cost of increased possibility
 to conflict with the web page stylesheets (default: %(default)s)""")
@@ -928,12 +927,12 @@ Known supported legacy scrapbook implementations:
         'output', action='store',
         help="""the output directory""")
     parser_convert_sb2wsb.add_argument(
-        '--data-files', default=True, action=BooleanOptionalAction,
+        '--data-files', default=True, action=argparse.BooleanOptionalAction,
         help="""convert data files (set this if there's something wrong with
 the conversion, and run "wsb convert migrate" afterwards for advanced options)
 (default: %(default)s)""")
     parser_convert_sb2wsb.add_argument(
-        '--backup', default=True, action=BooleanOptionalAction,
+        '--backup', default=True, action=argparse.BooleanOptionalAction,
         help="""copy legacy ScrapBook files not needed by WebScrapBook
 (default: %(default)s)""")
     parser_convert_sb2wsb.add_argument(
@@ -975,7 +974,7 @@ such as:
         default='', action='store',
         help="""ID of the book to convert (default: "")""")
     parser_convert_wsb2sb.add_argument(
-        '--data-files', default=True, action=BooleanOptionalAction,
+        '--data-files', default=True, action=argparse.BooleanOptionalAction,
         help="""convert data files (set this if there's something wrong for the
 conversion) (default: %(default)s)""")
     parser_convert_wsb2sb.add_argument(
@@ -1010,23 +1009,23 @@ conversion—the folder structure are changed and interlinkings may be broken.
         metavar='SUFFIX', default=None, action='store', nargs='*',
         help="""suffixes of the associated support folder (default: .files _files)""")
     parser_convert_file2wsb.add_argument(
-        '--preserve-filename', default=True, action=BooleanOptionalAction,
+        '--preserve-filename', default=True, action=argparse.BooleanOptionalAction,
         help="""keep the original filename and generate a wrapping subfolder
 and redirecting index file for non-HTML files (default: %(default)s)""")
     parser_convert_file2wsb.add_argument(
-        '--handle-ie-meta', default=True, action=BooleanOptionalAction,
+        '--handle-ie-meta', default=True, action=argparse.BooleanOptionalAction,
         help="""handle metadata generated by built-in save of Internet
 Explorer or a Chromium-based browser (default: %(default)s)""")
     parser_convert_file2wsb.add_argument(
-        '--handle-singlefile-meta', default=True, action=BooleanOptionalAction,
+        '--handle-singlefile-meta', default=True, action=argparse.BooleanOptionalAction,
         help="""handle metadata generated by SingleFile browser extension
 (default: %(default)s)""")
     parser_convert_file2wsb.add_argument(
-        '--handle-savepagewe-meta', default=True, action=BooleanOptionalAction,
+        '--handle-savepagewe-meta', default=True, action=argparse.BooleanOptionalAction,
         help="""handle metadata generated by Save Page WE browser extension
 (default: %(default)s)""")
     parser_convert_file2wsb.add_argument(
-        '--handle-maoxian-meta', default=True, action=BooleanOptionalAction,
+        '--handle-maoxian-meta', default=True, action=argparse.BooleanOptionalAction,
         help="""handle metadata generated by MaoXian web clipper browser
 extension (default: %(default)s)""")
     parser_convert_file2wsb.add_argument(
@@ -1065,7 +1064,7 @@ conversion—item metadata are not preserved and interlinkings may be broken.
         default='', action='store',
         help="""ID of the book to convert (default: "")""")
     parser_convert_wsb2file.add_argument(
-        '--prefix', default=True, action=BooleanOptionalAction,
+        '--prefix', default=True, action=argparse.BooleanOptionalAction,
         help="""prefix the output files with digits to keep the original tree
 order (default: %(default)s)""")
     parser_convert_wsb2file.add_argument(
