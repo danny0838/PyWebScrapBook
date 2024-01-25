@@ -4,12 +4,16 @@ MIME type mappings for WebScrapBook are defined by:
 
 1. the default mappings of the native Python code
 2. the system-wide registry
-3. the user config file for WebScrapBook
-4. the internal mappings of WebScrapBook
+3. the internal mappings of WebScrapBook
+4. the user config file for WebScrapBook
 
 For conflicting definitions, a conversion of file extension to MIME type is
 handled in a last-win manner, while a conversion of MIME type to file 
 extension(s) is handled in a first-win manner.
+
+As an exception, the internal mappings of WebScrapBook overwrites any
+conflicting mappings of the prior ones, to fix known mapping issues in native
+Python and platforms.
 
 
 ## System registry
