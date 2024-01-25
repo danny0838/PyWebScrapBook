@@ -1,20 +1,23 @@
 ## Customize MIME types
 
-There are two ways to define custom MIME types mapping for WebScrapBook:
+MIME type mappings for WebScrapBook are defined by:
 
-1. using system-wide registry
-2. using user config file
+1. the default mappings of the native Python code
+2. the system-wide registry
+3. the user config file for WebScrapBook
+4. the internal mappings of WebScrapBook
+
+For conflicting definitions, a conversion of file extension to MIME type is
+handled in a last-win manner, while a conversion of MIME type to file 
+extension(s) is handled in a first-win manner.
 
 
 ## System registry
 
-Custom MIME types mapping can be added to the filesystem registry for
-WebScrapBook to use it.
-
 ### Windows
 
-Custom MIME types mapping can be defined in Windows registry. For example,
-to add `font/woff` as a MIME type of `.woff`:
+MIME type mappings can be defined in Windows registry. For example, to add
+`font/woff` as a MIME type of `.woff`:
 
 * Visit the Windows registry editor (`regedit.exe`)
 * Go to `HKEY_LOCAL_MACHINE\Software\Classes`
@@ -23,9 +26,11 @@ to add `font/woff` as a MIME type of `.woff`:
   `Content Type`.
 * Right click on `Content Type`, and modify its value to `font/woff`.
 
-### Linux
+### Linux/POSIX
 
-Custom MIME types mapping can be defined in one of the following files:
+MIME type mappings can be defined in one of the following config files (defined
+by the `mimetypes.knownfiles` of Python and may be slightly different across
+versions):
 
 * `/etc/mime.types`
 * `/etc/httpd/mime.types`
@@ -37,11 +42,7 @@ Custom MIME types mapping can be defined in one of the following files:
 * `/usr/local/etc/httpd/conf/mime.types`
 * `/usr/local/etc/mime.types`
 
-
-## User config
-
-Custom MIME types mapping can be defined in `~/.config/wsb/mime.types`,
-which looks like:
+These files look like:
 
     # A "#" at line beginning starts a comment, causing the whole line ignored
     # when run. A comment can also be used to temporarily disable a setting for
@@ -49,3 +50,9 @@ which looks like:
     text/plain   txt text
     font/woff    woff
     #...
+
+
+## User config
+
+Custom MIME type mappings can be defined in `~/.config/wsb/mime.types`, with
+the same syntax of the Linux/POSIX config files.

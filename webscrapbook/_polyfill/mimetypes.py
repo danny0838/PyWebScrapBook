@@ -41,16 +41,20 @@ _mimetypes.add_type('application/epub+zip', '.epub')
 _mimetypes.add_type('application/x-7z-compressed', '.7z')
 _mimetypes.add_type('application/vnd.rar', '.rar')
 
-# .js is mapped to application/x-javascript in some mime types sources
+# .js is mapped to application/javascript or application/x-javascript in some OS
 # ref: https://www.ietf.org/rfc/rfc9239.txt
+# text/javascript is mapped to .es in Debian 12
 _mimetypes.add_type('text/javascript', '.js')
 
-# .bmp is mapped to image/x-ms-bmp on POSIX
-# ref: https://bugs.python.org/issue42028
+# .bmp is mapped to image/x-ms-bmp in Python < 3.11
+# ref: https://github.com/python/cpython/issues/86194
 _mimetypes.add_type('image/bmp', '.bmp')
 
-# .ico is mapped to image/vnd.microsoft.icon on POSIX
+# .ico is mapped to image/vnd.microsoft.icon in Python,
+# which is not actually used by Microsoft softwares and causes
+# a compatibility issue in IE9.
+# ref: https://en.wikipedia.org/wiki/ICO_%28file_format%29#MIME_type
 _mimetypes.add_type('image/x-icon', '.ico')
 
-# .zip is mapped to application/x-zip-compressed on Windows
+# .zip is mapped to application/x-zip-compressed in Windows
 _mimetypes.add_type('application/zip', '.zip')
