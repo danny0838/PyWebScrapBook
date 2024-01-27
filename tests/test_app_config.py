@@ -31,13 +31,12 @@ def setUpModule():
     server_root = tmpdir
 
     # mock out user config
-    global WSB_USER_DIR
-    WSB_USER_DIR = os.path.join(server_root, 'wsb')
+    global USER_CONFIG_DIR
+    USER_CONFIG_DIR = os.path.join(server_root, 'wsb')
     global mockings
     mockings = (
-        mock.patch('webscrapbook.scrapbook.host.WSB_USER_DIR', WSB_USER_DIR),
-        mock.patch('webscrapbook.WSB_USER_DIR', WSB_USER_DIR),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', os.devnull),
+        mock.patch('webscrapbook.Config.user_config_dir', return_value=USER_CONFIG_DIR),
+        mock.patch('webscrapbook.Config.user_config', return_value=os.devnull),
     )
     for mocking in mockings:
         mocking.start()
@@ -107,7 +106,7 @@ theme = default
         make_app(server_root)
         self.assertListEqual([os.path.normcase(i) for i in mock_loader.call_args[0][0]], [
             os.path.normcase(os.path.join(server_root, WSB_DIR, 'themes', 'default', 'templates')),
-            os.path.normcase(os.path.abspath(os.path.join(WSB_USER_DIR, 'themes', 'default', 'templates'))),
+            os.path.normcase(os.path.abspath(os.path.join(USER_CONFIG_DIR, 'themes', 'default', 'templates'))),
             os.path.normcase(os.path.abspath(os.path.join(THEMES_DIR, 'default', 'templates'))),
         ])
 

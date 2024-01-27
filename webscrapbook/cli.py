@@ -8,7 +8,7 @@ import traceback
 from getpass import getpass
 from inspect import getdoc
 
-from . import WSB_CONFIG, WSB_DIR, WSB_USER_CONFIG, __version__, config, util
+from . import WSB_CONFIG, WSB_DIR, __version__, config, util
 from ._polyfill import argparse
 
 
@@ -100,7 +100,7 @@ def cmd_config(args):
                     die(f'Unable to generate {fdst}.')
 
     elif args['user']:
-        fdst = WSB_USER_CONFIG
+        fdst = config.user_config()
         fsrc = os.path.normpath(os.path.join(__file__, '..', 'resources', 'config.ini'))
         if not os.path.isfile(fdst):
             log(f'Generating {fdst!r}...')

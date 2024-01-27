@@ -9,7 +9,7 @@ from collections import UserDict
 from secrets import token_urlsafe
 from threading import Thread
 
-from .. import WSB_DIR, WSB_USER_DIR, Config, util
+from .. import WSB_DIR, Config, util
 from ..locales import I18N
 from . import book
 
@@ -369,7 +369,7 @@ class Host:
         theme = util.validate_filename(config['app']['theme'])
         self.themes = [
             os.path.join(root, WSB_DIR, 'themes', theme),
-            os.path.join(WSB_USER_DIR, 'themes', theme),
+            os.path.join(Config.user_config_dir(), 'themes', theme),
             os.path.normpath(os.path.join(__file__, '..', '..', 'themes', theme)),
         ]
         self.statics = [os.path.join(t, 'static') for t in self.themes]

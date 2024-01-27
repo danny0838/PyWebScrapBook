@@ -11,8 +11,8 @@ __all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_
 __version__ = '2.2.0'
 
 WSB_EXTENSION_MIN_VERSION = '2.0.1'
-WSB_USER_DIR = os.path.join(os.path.expanduser('~'), '.config', 'wsb')  # affected by $HOME
-WSB_USER_CONFIG = os.path.join(os.path.expanduser('~'), '.wsbconfig')  # affected by $HOME
+WSB_USER_DIR = os.environ.get('WSB_USER_DIR') or '.config/wsb'
+WSB_USER_CONFIG = os.environ.get('WSB_USER_CONFIG') or '.wsbconfig'
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
 WSB_CONFIG = os.environ.get('WSB_CONFIG') or 'config.ini'
 
@@ -108,6 +108,14 @@ class Config():
         if self._conf is None: self.load()  # lazy load  # noqa: E701
         return iter(self._data)
 
+    @staticmethod
+    def user_config_dir():
+        return os.path.normpath(os.path.join(os.path.expanduser('~'), WSB_USER_DIR))
+
+    @staticmethod
+    def user_config():
+        return os.path.normpath(os.path.join(os.path.expanduser('~'), WSB_USER_CONFIG))
+
     def getname(self, name):
         if self._conf is None: self.load()  # lazy load  # noqa: E701
         parts = name.split('.')
@@ -147,8 +155,8 @@ class Config():
         conf.read_dict(self.DEFAULT)
 
         # user config
-        self._load_config(os.path.join(WSB_USER_DIR, WSB_CONFIG), conf)
-        self._load_config(WSB_USER_CONFIG, conf)
+        self._load_config(os.path.join(self.user_config_dir(), WSB_CONFIG), conf)
+        self._load_config(self.user_config(), conf)
 
         # book config
         self._load_config(os.path.join(root, WSB_DIR, WSB_CONFIG), conf)

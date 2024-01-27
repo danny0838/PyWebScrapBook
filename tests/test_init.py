@@ -13,8 +13,8 @@ def setUpModule():
     # mock out user config
     global mockings
     mockings = [
-        mock.patch('webscrapbook.WSB_USER_DIR', os.devnull),
-        mock.patch('webscrapbook.WSB_USER_CONFIG', os.devnull),
+        mock.patch('webscrapbook.Config.user_config_dir', return_value=os.devnull),
+        mock.patch('webscrapbook.Config.user_config', return_value=os.devnull),
     ]
     for mocking in mockings:
         mocking.start()
@@ -136,25 +136,39 @@ class TestClassConfig(unittest.TestCase):
         with self.assertRaises(KeyError):
             conf['auth']
 
-    @mock.patch('webscrapbook.WSB_CONFIG', 'localconfig.ini')
+    @mock.patch('webscrapbook.WSB_CONFIG', 'bookconfig.ini')
     @mock.patch('webscrapbook.WSB_DIR', '.wsbdir')
-    @mock.patch('webscrapbook.WSB_USER_CONFIG', os.path.join(ROOT_DIR, 'test_config_load_constants', 'userconfig.ini'))
-    @mock.patch('webscrapbook.WSB_USER_DIR', os.path.join(ROOT_DIR, 'test_config_load_constants', '.config', 'wsb'))
+    @mock.patch('webscrapbook.WSB_USER_CONFIG', 'userconfig.ini')
+    @mock.patch('webscrapbook.WSB_USER_DIR', '.config/wsbdir')
     def test_load_constants(self):
-        # check if WSB_USER_DIR, WSB_USER_CONFIG, WSB_DIR, and WSB_CONFIG are honored
-        conf = webscrapbook.Config()
-        conf.load(os.path.join(ROOT_DIR, 'test_config_load_constants'))
-        self.assertEqual(conf['app']['name'], 'myuserwsbx')
-        self.assertEqual(conf['app']['theme'], 'mytheme')
-        self.assertEqual(conf['server']['port'], 7777)
-        self.assertEqual(conf['book']['']['name'], 'myuserbookx')
-        self.assertFalse(conf['book']['']['no_tree'])
-        self.assertEqual(conf['book']['book1']['name'], 'mybook1')
-        self.assertEqual(conf['book']['book1']['top_dir'], '')
-        self.assertTrue(conf['book']['book1']['no_tree'])
-        self.assertEqual(conf['book']['book2']['name'], 'mybook2')
-        self.assertEqual(conf['book']['book2']['top_dir'], '')
-        self.assertFalse(conf['book']['book2']['no_tree'])
+        """Test if WSB_USER_DIR, WSB_USER_CONFIG, WSB_DIR, and WSB_CONFIG are honored."""
+        # stop user config mocking to test if it works
+        for mocking in mockings:
+            mocking.stop()
+
+        try:
+            test_dir = os.path.join(ROOT_DIR, 'test_config_load_constants')
+            with mock.patch('webscrapbook.os.path.expanduser', return_value=test_dir):
+                conf = webscrapbook.Config()
+                conf.load(test_dir)
+                self.assertEqual(conf['app']['name'], 'myuserwsbx')
+                self.assertEqual(conf['app']['theme'], 'mytheme')
+                self.assertEqual(conf['server']['port'], 7777)
+                self.assertEqual(conf['book']['']['name'], 'myuserbookx')
+                self.assertFalse(conf['book']['']['no_tree'])
+                self.assertEqual(conf['book']['book1']['name'], 'mybook1')
+                self.assertEqual(conf['book']['book1']['top_dir'], '')
+                self.assertTrue(conf['book']['book1']['no_tree'])
+                self.assertEqual(conf['book']['book2']['name'], 'mybook2')
+                self.assertEqual(conf['book']['book2']['top_dir'], '')
+                self.assertTrue(conf['book']['book2']['no_tree'])
+                self.assertEqual(conf['book']['book3']['name'], 'mybook3')
+                self.assertEqual(conf['book']['book3']['top_dir'], '')
+                self.assertFalse(conf['book']['book3']['no_tree'])
+        finally:
+            # recover user config mocking
+            for mocking in mockings:
+                mocking.start()
 
     def test_getitem(self):
         # test lazy loading

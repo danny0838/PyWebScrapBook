@@ -1,6 +1,24 @@
+import os
 import unittest
+from unittest import mock
 
 from webscrapbook._polyfill import mimetypes
+
+
+def setUpModule():
+    # mock out user config
+    global mockings
+    mockings = (
+        mock.patch('webscrapbook.Config.user_config_dir', return_value=os.devnull),
+    )
+    for mocking in mockings:
+        mocking.start()
+
+
+def tearDownModule():
+    # stop mock
+    for mocking in mockings:
+        mocking.stop()
 
 
 class TestMimetypes(unittest.TestCase):

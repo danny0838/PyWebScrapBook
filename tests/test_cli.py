@@ -77,7 +77,7 @@ class TestConfig(Test):
     def setUp(self):
         super().setUp()
         self.user_config_file = os.path.join(self.root, WSB_DIR, 'userconfig.ini')
-        self.mock_user_config = mock.patch('webscrapbook.cli.WSB_USER_CONFIG', self.user_config_file)
+        self.mock_user_config = mock.patch('webscrapbook.Config.user_config', return_value=self.user_config_file)
         self.mock_user_config.start()
 
     def tearDown(self):

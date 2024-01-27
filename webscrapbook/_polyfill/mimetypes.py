@@ -2,13 +2,13 @@ import mimetypes as _mimetypes
 import os
 from mimetypes import *
 
-from .. import WSB_USER_DIR
+from .. import Config
 
 __all__ = _mimetypes.__all__
 
 
 # add custom user MIME types mapping
-_mimetypes.knownfiles += [os.path.join(WSB_USER_DIR, 'mime.types')]
+_mimetypes.knownfiles += [os.path.join(Config.user_config_dir(), 'mime.types')]
 
 # WebScrapBook related
 _mimetypes.add_type('application/html+zip', '.htz')

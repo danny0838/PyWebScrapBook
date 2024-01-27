@@ -43,10 +43,22 @@ def setUpModule():
     _tmpdir = tempfile.TemporaryDirectory(prefix='util.fs-', dir=TEMP_DIR)
     tmpdir = os.path.realpath(_tmpdir.name)
 
+    # mock out user config
+    global mockings
+    mockings = (
+        mock.patch('webscrapbook.Config.user_config_dir', return_value=os.devnull),
+    )
+    for mocking in mockings:
+        mocking.start()
+
 
 def tearDownModule():
     # cleanup the temp directory
     _tmpdir.cleanup()
+
+    # stop mock
+    for mocking in mockings:
+        mocking.stop()
 
 
 class TestCPath(unittest.TestCase):
