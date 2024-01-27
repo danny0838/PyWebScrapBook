@@ -22,6 +22,8 @@ tools_expand_all = 'Expandir todo'
 tools_filter = 'Filtrar'
 tools_filter_clear = 'Borrar filtro'
 
+tools_filter_prompt = 'Filtrar con la palabra clave (cadena o "/patrón/banderas" para expresiones regulares):'
+
 command_tooltip = 'Comandos [{}]'
 command_mkdir = 'Nueva carpeta'
 command_mkzip = 'Nuevo zip'
@@ -39,12 +41,18 @@ command_copy = 'Copiar'
 command_link = 'Crear enlace'
 command_delete = 'Borrar'
 
+command_mkdir_prompt = 'Crear una nueva carpeta con el nombre:'
+command_mkdir_default = 'nueva-carpeta'
+command_mkzip_prompt = 'Crear un archivo ZIP con el nombre:'
+command_mkzip_default = 'nuevo-archivo.zip'
+command_mkfile_prompt = 'Crear un archivo con el nombre:'
+command_mkfile_default = 'nuevo-archivo.txt'
 command_move_prompt = 'Mover a la ruta o carpeta:'
 command_move_prompt_multi = 'Mover a la carpeta:'
 command_copy_prompt = 'Copiar a la ruta o carpeta:'
 command_copy_prompt_multi = 'Copiar a la carpeta:'
-command_link_prompt = 'Create a link at the path or under the folder:****'
-command_link_prompt_multi = 'Create links under the folder:*******'
+command_link_prompt = 'Crear un enlace en la ruta o dentro de la carpeta:'
+command_link_prompt_multi = 'Crear enlaces en la carpeta:'
 
 label_selected = '%count% seleccionado'
 
@@ -126,13 +134,14 @@ cache_search_help_desc = """\
    • root: elementos bajo el elemento de ID. Múltiples valores están conectados “or”.
    • book: artículos en el álbum de recortes específico (por ID). Múltiples valores están conectados “or”.
    • sort: ordenar los resultados de la búsqueda usando la condición específica, que puede ser id, title, comment, file, content, source, type, create o modify. Por ejemplo, “sort:id -sort:modify” significa ordenar por ID en orden ascendente y luego ordenar por tiempo de modificación en orden descendente.
-   • limit: establece un límite en el número de resultados de búsqueda. Por ejemplo, “limit:10” significa mostrar los primeros 10 resultados, “limit:-20” significa eliminar los últimos 20 resultados y “limit:0” o “-limit:” significa anular el límite."""
+   • limit: establece un límite en el número de resultados de búsqueda. Por ejemplo, “limit:10” significa mostrar los primeros 10 resultados. “-limit:” significa anular el límite."""
 cache_search_result = 'Encontrado %length% resultados:'
 cache_search_result_named = '(%name%) Encontrado %length% resultados:'
 cache_search_sort_last_created = 'Última creación'
 cache_search_sort_last_modified = 'Última modificación'
 cache_search_sort_title = 'Ordenar por título'
 cache_search_sort_id = 'Ordenar por ID'
+cache_search_confirm_remote = 'Cargar la caché completa de texto remoto puede requerir un gran flujo de red. ¿Continuar?'
 
 
 #########################################################################
