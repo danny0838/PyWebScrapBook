@@ -7,14 +7,14 @@ A custom theme can be defined at `<root>/.wsb/themes/<name>`, which contains:
 
 The `<name>` should match the `app.theme` config.
 
-If the custom theme has a same name as the built-in one, the application
+If the custom theme has the same name as the built-in one, the application
 will look up for a resource first from the custom one and fallback to the
 default one when not found.
 
 
 ## `templates`
 
-Used to format the HTML output. It should follows HTML5 standard and can use
+Used to format the HTML output. It should follow HTML5 standard and can use
 Jinja2 syntax for templating.
 
 
