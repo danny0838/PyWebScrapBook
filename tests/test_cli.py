@@ -24,13 +24,13 @@ def setUpModule():
 
 
 def tearDownModule():
-    """Cleanup the temp directory."""
+    # cleanup the temp directory
     _tmpdir.cleanup()
 
 
 class Test(unittest.TestCase):
     def setUp(self):
-        """Set up a temp directory for testing."""
+        # set up a temp directory for testing
         self.root = tempfile.mkdtemp(dir=tmpdir)
 
 

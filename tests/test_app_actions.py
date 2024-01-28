@@ -64,7 +64,7 @@ def setUpModule():
 
 
 def tearDownModule():
-    """Cleanup the temp directory."""
+    # cleanup the temp directory
     _tmpdir.cleanup()
 
     # stop mock
