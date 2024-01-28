@@ -9,3 +9,4 @@ dist/
 
 # Testing
 .tox/
+.wsb/
