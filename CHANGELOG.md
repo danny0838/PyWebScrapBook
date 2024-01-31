@@ -3,6 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.3.0] - 2024-01-31
+* Improved MIME types handling:
+  * Fixed bad MIME to file extention conversion in some platforms.
+  * The user config is now allowed to overwrite the patch rules of WebScrapBook.
+* Reworked internal constants `WSB_USER_DIR` and `WSB_USER_CONFIG` to be the subpath under the user home directory and can be overwritten by the environment variables.
+* Miscellaneous code optimization.
+
 ## [2.2.0] - 2024-01-24
 * Fixed bad handling of ID-datetime conversion for some rare cases.
 * Added support for salted hash when caching authorization information for better security.
