@@ -8,23 +8,23 @@ from . import util
 class CssRewriter:
     """The base class that handles CSS rewriting for a reference path.
     """  # noqa: N815, F541
-    pCm = f"""(?:/\\*[\\s\\S]*?(?:\\*/|$))"""  # comment  # noqa: N815, F541  # noqa: N815, F541
-    pSp = f"""(?:[ \\t\\r\\n\\v\\f]*)"""  # space equivalents  # noqa: N815, F541
-    pCmSp = f"""(?:(?:{pCm}|{pSp})*)"""  # comment or space  # noqa: N815, F541
-    pCmSp2 = f"""(?:(?:{pCm}|{pSp})+)"""  # comment or space, at least one  # noqa: N815, F541
-    pChar = f"""(?:\\\\.|[^\\\\"'])"""  # a non-quote char or an escaped char sequence  # noqa: N815, F541
-    pStr = f"""(?:{pChar}*?)"""  # string  # noqa: N815, F541
-    pSStr = f"""(?:{pCmSp}{pStr}{pCmSp})"""  # comment-or-space enclosed string  # noqa: N815, F541
-    pDQStr = f"""(?:"[^\\\\"]*(?:\\\\.[^\\\\"]*)*")"""  # double quoted string  # noqa: N815, F541
-    pSQStr = f"""(?:'[^\\\\']*(?:\\\\.[^\\\\']*)*')"""  # single quoted string  # noqa: N815, F541
-    pES = f"""(?:(?:{pCm}|{pDQStr}|{pSQStr}|{pChar})*?)"""  # embeded string  # noqa: N815, F541
-    pUrl = f"""(?:\\burl\\({pSp}(?:{pDQStr}|{pSQStr}|{pStr}){pSp}\\))"""  # URL  # noqa: N815, F541
-    pUrl2 = f"""(\\burl\\({pSp})({pDQStr}|{pSQStr}|{pStr})({pSp}\\))"""  # URL; catch 3  # noqa: N815, F541
-    pRImport = f"""(@import{pCmSp})({pUrl}|{pDQStr}|{pSQStr})"""  # @import; catch 2  # noqa: N815, F541
-    pRFontFace = f"""(@font-face{pCmSp}{{{pES}}})"""  # @font-face; catch 1  # noqa: N815, F541
-    pRNamespace = f"""(@namespace{pCmSp}(?:{pStr}{pCmSp2})?{pUrl})"""  # @namespace; catch 1  # noqa: N815, F541
+    pCm = fr"""(?:/\*[\s\S]*?(?:\*/|$))"""  # comment  # noqa: N815, F541  # noqa: N815, F541
+    pSp = fr"""(?:[ \t\r\n\v\f]*)"""  # space equivalents  # noqa: N815, F541
+    pCmSp = fr"""(?:(?:{pCm}|{pSp})*)"""  # comment or space  # noqa: N815, F541
+    pCmSp2 = fr"""(?:(?:{pCm}|{pSp})+)"""  # comment or space, at least one  # noqa: N815, F541
+    pChar = fr"""(?:\\.|[^\\"'])"""  # a non-quote char or an escaped char sequence  # noqa: N815, F541
+    pStr = fr"""(?:{pChar}*?)"""  # string  # noqa: N815, F541
+    pSStr = fr"""(?:{pCmSp}{pStr}{pCmSp})"""  # comment-or-space enclosed string  # noqa: N815, F541
+    pDQStr = fr"""(?:"[^\\"]*(?:\\.[^\\"]*)*")"""  # double quoted string  # noqa: N815, F541
+    pSQStr = fr"""(?:'[^\\']*(?:\\.[^\\']*)*')"""  # single quoted string  # noqa: N815, F541
+    pES = fr"""(?:(?:{pCm}|{pDQStr}|{pSQStr}|{pChar})*?)"""  # embeded string  # noqa: N815, F541
+    pUrl = fr"""(?:\burl\({pSp}(?:{pDQStr}|{pSQStr}|{pStr}){pSp}\))"""  # URL  # noqa: N815, F541
+    pUrl2 = fr"""(\burl\({pSp})({pDQStr}|{pSQStr}|{pStr})({pSp}\))"""  # URL; catch 3  # noqa: N815, F541
+    pRImport = fr"""(@import{pCmSp})({pUrl}|{pDQStr}|{pSQStr})"""  # @import; catch 2  # noqa: N815, F541
+    pRFontFace = fr"""(@font-face{pCmSp}{{{pES}}})"""  # @font-face; catch 1  # noqa: N815, F541
+    pRNamespace = fr"""(@namespace{pCmSp}(?:{pStr}{pCmSp2})?{pUrl})"""  # @namespace; catch 1  # noqa: N815, F541
 
-    REGEX_REWRITE_CSS = re.compile(f"""{pCm}|{pRImport}|{pRFontFace}|{pRNamespace}|({pUrl})""", re.I)
+    REGEX_REWRITE_CSS = re.compile(fr"""{pCm}|{pRImport}|{pRFontFace}|{pRNamespace}|({pUrl})""", re.I)
     REGEX_PARSE_URL = re.compile(pUrl2, re.I)
     REGEX_UNESCAPE_CSS = re.compile(r"""\\(?:([0-9A-Fa-f]{1,6}) ?|(.))""")
 
