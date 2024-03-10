@@ -92,6 +92,9 @@ class CssRewriter:
                 rewrite_font_face_url=lambda url: url,
                 rewrite_background_url=lambda url: url,
                 ):
+        def escape_quotes(str):
+            return str.replace('\\', r'\\').replace(r'"', r'\"')
+
         def unescape_css(str):
             return self.REGEX_UNESCAPE_CSS.sub(unescape_css_sub, str)
 
@@ -111,7 +114,7 @@ class CssRewriter:
                     rewritten = callback(unescape_css(url[1:-1]))
                 else:
                     rewritten = callback(url.strip())
-                return f'{pre}"{rewritten}"{post}'
+                return f'{pre}"{escape_quotes(rewritten)}"{post}'
 
             if not callback:
                 return text
@@ -123,11 +126,13 @@ class CssRewriter:
             if im2:
                 if im2.startswith('"') and im2.endswith('"'):
                     rewritten = rewrite_import_url(unescape_css(im2[1:-1]))
+                    rewritten = f'"{escape_quotes(rewritten)}"'
                 elif im2.startswith("'") and im2.endswith("'"):
                     rewritten = rewrite_import_url(unescape_css(im2[1:-1]))
+                    rewritten = f'"{escape_quotes(rewritten)}"'
                 else:
                     rewritten = parse_url(im2, rewrite_import_url)
-                return f'{im1}"{rewritten}"'
+                return f'{im1}{rewritten}'
             elif ff:
                 return parse_url(ff, rewrite_font_face_url)
             elif ns:
