@@ -177,7 +177,7 @@ my page content
         with open(index_file, 'w', encoding='UTF-8') as fh:
             fh.write("""my page content""")
 
-    def test_param_format_folder01(self):
+    def test_param_format_folder_basic(self):
         """Test format "folder"
 
         - Folder converted from MAFF should not contain index.rdf
@@ -263,7 +263,7 @@ my page content
             },
         })
 
-    def test_param_format_folder02(self):
+    def test_param_format_folder_icon_from_htz(self):
         """Check if icon path is correctly handled for htz => folder.
         """
         self.init_book(self.test_input, meta={
@@ -307,7 +307,7 @@ my page content
             },
         })
 
-    def test_param_format_folder03(self):
+    def test_param_format_folder_icon_from_maff(self):
         """Check if icon path is correctly handled for maff => folder.
         """
         self.init_book(self.test_input, meta={
@@ -352,7 +352,7 @@ my page content
             },
         })
 
-    def test_param_format_folder04(self):
+    def test_param_format_folder_icon_from_sf(self):
         """Check if icon path is correctly handled for single_file => folder.
         """
         self.init_book(self.test_input, meta={
@@ -396,7 +396,7 @@ my page content
             },
         })
 
-    def test_param_format_htz01(self):
+    def test_param_format_htz_basic(self):
         """Test format "htz"
 
         - HTZ converted from MAFF should not contain index.rdf
@@ -483,7 +483,7 @@ my page content
             },
         })
 
-    def test_param_format_htz02(self):
+    def test_param_format_htz_icon_from_folder(self):
         """Check if icon path is correctly handled for folder => htz.
         """
         self.init_book(self.test_input, meta={
@@ -524,7 +524,7 @@ my page content
             },
         })
 
-    def test_param_format_htz03(self):
+    def test_param_format_htz_icon_from_maff(self):
         """Check if icon path is correctly handled for maff => htz.
         """
         self.init_book(self.test_input, meta={
@@ -568,7 +568,7 @@ my page content
             },
         })
 
-    def test_param_format_htz04(self):
+    def test_param_format_htz_icon_from_sf(self):
         """Check if icon path is correctly handled for single_file => htz.
         """
         self.init_book(self.test_input, meta={
@@ -611,7 +611,7 @@ my page content
             },
         })
 
-    def test_param_format_maff01(self):
+    def test_param_format_maff_basic(self):
         """Test format "maff"
 
         - MAFF converted from other format should contain a valid index.rdf
@@ -742,7 +742,7 @@ my page content
             },
         })
 
-    def test_param_format_maff02(self):
+    def test_param_format_maff_fail_existing_index_rdf(self):
         """Fail if index.rdf already exists
         """
         self.init_book(self.test_input, meta={
@@ -811,7 +811,7 @@ my page content
             },
         })
 
-    def test_param_format_maff03(self):
+    def test_param_format_maff_icon_from_folder(self):
         """Check if icon path is correctly handled for folder => maff.
         """
         self.init_book(self.test_input, meta={
@@ -852,7 +852,7 @@ my page content
             },
         })
 
-    def test_param_format_maff04(self):
+    def test_param_format_maff_icon_from_htz(self):
         """Check if icon path is correctly handled for htz => maff.
         """
         self.init_book(self.test_input, meta={
@@ -895,7 +895,7 @@ my page content
             },
         })
 
-    def test_param_format_maff05(self):
+    def test_param_format_maff_icon_from_sf(self):
         """Check if icon path is correctly handled for single_file => maff.
         """
         self.init_book(self.test_input, meta={
@@ -938,7 +938,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file01(self):
+    def test_param_format_single_file_basic(self):
         """Test format "single_file"
         """
         self._test_param_format_sample()
@@ -1030,7 +1030,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file02(self):
+    def test_param_format_single_file_icon_from_folder(self):
         """Check if icon path is correctly handled for folder => single_file.
         """
         self.init_book(self.test_input, meta={
@@ -1071,7 +1071,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file03(self):
+    def test_param_format_single_file_icon_from_htz(self):
         """Check if icon path is correctly handled for htz => single_file.
         """
         self.init_book(self.test_input, meta={
@@ -1114,7 +1114,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file04(self):
+    def test_param_format_single_file_icon_from_maff(self):
         """Check if icon path is correctly handled for maff => single_file.
         """
         self.init_book(self.test_input, meta={
@@ -1158,7 +1158,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file05(self):
+    def test_param_format_single_file_meta_refresh(self):
         """Check if meta refresh is resolved recursively.
         """
         self.init_book(self.test_input, meta={
@@ -1200,7 +1200,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file06(self):
+    def test_param_format_single_file_meta_refresh_svg(self):
         """Check if meta refresh target is non-HTML, and SVG rewriting.
         """
         self.init_book(self.test_input, meta={
@@ -1254,7 +1254,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file07(self):
+    def test_param_format_single_file_meta_refresh_delayed(self):
         """Check that a deleyed meta refresh should not be resolved.
         """
         self.init_book(self.test_input, meta={
@@ -1290,7 +1290,7 @@ my page content
             },
         })
 
-    def test_param_format_single_file08(self):
+    def test_param_format_single_file_meta_refresh_absolute(self):
         """Check that a meta refresh to an absolute URL should not be resolved.
         """
         self.init_book(self.test_input, meta={
