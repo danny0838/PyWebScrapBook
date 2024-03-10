@@ -93,29 +93,16 @@ class CssRewriter:
                 rewrite_font_face_url=lambda url: url,
                 rewrite_background_url=lambda url: url,
                 ):
-        def escape_quotes(str):
-            return str.replace('\\', r'\\').replace(r'"', r'\"')
-
-        def unescape_css(str):
-            return self.REGEX_UNESCAPE_CSS.sub(unescape_css_sub, str)
-
-        def unescape_css_sub(m):
-            u, c = m.groups()
-            if c:
-                return c
-            if u:
-                return chr(int(u, 16))
-
         def parse_url(text, callback):
             def parse_url_sub(m):
                 pre, url, post = m.groups()
                 if url.startswith('"') and url.endswith('"'):
-                    rewritten = callback(unescape_css(url[1:-1]))
+                    rewritten = callback(self.unescape_css(url[1:-1]))
                 elif url.startswith("'") and url.endswith("'"):
-                    rewritten = callback(unescape_css(url[1:-1]))
+                    rewritten = callback(self.unescape_css(url[1:-1]))
                 else:
                     rewritten = callback(url.strip())
-                return f'{pre}"{escape_quotes(rewritten)}"{post}'
+                return f'{pre}"{self.escape_quotes(rewritten)}"{post}'
 
             if not callback:
                 return text
@@ -126,11 +113,11 @@ class CssRewriter:
             im1, im2, ff, ns, u = m.groups()
             if im2:
                 if im2.startswith('"') and im2.endswith('"'):
-                    rewritten = rewrite_import_url(unescape_css(im2[1:-1]))
-                    rewritten = f'"{escape_quotes(rewritten)}"'
+                    rewritten = rewrite_import_url(self.unescape_css(im2[1:-1]))
+                    rewritten = f'"{self.escape_quotes(rewritten)}"'
                 elif im2.startswith("'") and im2.endswith("'"):
-                    rewritten = rewrite_import_url(unescape_css(im2[1:-1]))
-                    rewritten = f'"{escape_quotes(rewritten)}"'
+                    rewritten = rewrite_import_url(self.unescape_css(im2[1:-1]))
+                    rewritten = f'"{self.escape_quotes(rewritten)}"'
                 else:
                     rewritten = parse_url(im2, rewrite_import_url)
                 return f'{im1}{rewritten}'
@@ -144,3 +131,16 @@ class CssRewriter:
             return m.group(0)
 
         return self.REGEX_REWRITE_CSS.sub(rewrite_sub, text)
+
+    def escape_quotes(self, str):
+        return str.replace('\\', r'\\').replace(r'"', r'\"')
+
+    def unescape_css(self, str):
+        return self.REGEX_UNESCAPE_CSS.sub(self.unescape_css_sub, str)
+
+    def unescape_css_sub(self, m):
+        u, c = m.groups()
+        if c:
+            return c
+        if u:
+            return chr(int(u, 16))
