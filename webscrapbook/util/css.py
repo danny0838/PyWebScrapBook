@@ -12,7 +12,8 @@ class CssRewriter:
     pSp = fr"""(?:[ \t\r\n\v\f]*)"""  # space equivalents  # noqa: N815, F541
     pCmSp = fr"""(?:(?:{pCm}|{pSp})*)"""  # comment or space  # noqa: N815, F541
     pCmSp2 = fr"""(?:(?:{pCm}|{pSp})+)"""  # comment or space, at least one  # noqa: N815, F541
-    pChar = fr"""(?:\\.|[^\\"'])"""  # a non-quote char or an escaped char sequence  # noqa: N815, F541
+    pEscaped = r"""\\(?:[0-9A-Fa-f]{1,6} ?|.)"""  # an escaped char sequence  # noqa: N815, F541
+    pChar = fr"""(?:{pEscaped}|[^\\"'])"""  # a non-quote char or an escaped char sequence  # noqa: N815, F541
     pStr = fr"""(?:{pChar}*?)"""  # string  # noqa: N815, F541
     pSStr = fr"""(?:{pCmSp}{pStr}{pCmSp})"""  # comment-or-space enclosed string  # noqa: N815, F541
     pDQStr = fr"""(?:"[^\\"]*(?:\\.[^\\"]*)*")"""  # double quoted string  # noqa: N815, F541
@@ -24,7 +25,7 @@ class CssRewriter:
     pRFontFace = fr"""(@font-face{pCmSp}{{{pES}}})"""  # @font-face; catch 1  # noqa: N815, F541
     pRNamespace = fr"""(@namespace{pCmSp}(?:{pStr}{pCmSp2})?{pUrl})"""  # @namespace; catch 1  # noqa: N815, F541
 
-    REGEX_REWRITE_CSS = re.compile(fr"""{pCm}|{pRImport}|{pRFontFace}|{pRNamespace}|({pUrl})""", re.I)
+    REGEX_REWRITE_CSS = re.compile(fr"""{pEscaped}|{pDQStr}|{pSQStr}|{pCm}|{pRImport}|{pRFontFace}|{pRNamespace}|({pUrl})""", re.I)
     REGEX_PARSE_URL = re.compile(pUrl2, re.I)
     REGEX_UNESCAPE_CSS = re.compile(r"""\\(?:([0-9A-Fa-f]{1,6}) ?|(.))""")
 
