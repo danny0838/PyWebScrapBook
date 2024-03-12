@@ -138,7 +138,6 @@ to { background-image: url("http://example.com/image.bmp"); }
         input = """@font-face { font-family: myfont; src: url("file.woff"); }"""
         self.assertEqual(rewrite(input), input)
 
-    @unittest.expectedFailure
     def test_image_char_escape_or_replace(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
 

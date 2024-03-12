@@ -29,6 +29,8 @@ class CssRewriter:
     REGEX_PARSE_URL = re.compile(pUrl2, re.I)
     REGEX_UNESCAPE_CSS = re.compile(r"""\\(?:([0-9A-Fa-f]{1,6}) ?|(.))""")
 
+    REGEX_ESCAPE_CSS_STRING = re.compile(r"""([\\"])|[\x00-\x1F\x7F]""")
+
     def __init__(self, file=None, *,
                  encoding=None,
                  ref_url=None, url_chain=set()):  # noqa: B006
@@ -102,7 +104,7 @@ class CssRewriter:
                     rewritten = callback(self.unescape_css(url[1:-1]))
                 else:
                     rewritten = callback(url.strip())
-                return f'{pre}"{self.escape_quotes(rewritten)}"{post}'
+                return f'{pre}"{self.escape_css_string(rewritten)}"{post}'
 
             if not callback:
                 return text
@@ -114,10 +116,10 @@ class CssRewriter:
             if im2:
                 if im2.startswith('"') and im2.endswith('"'):
                     rewritten = rewrite_import_url(self.unescape_css(im2[1:-1]))
-                    rewritten = f'"{self.escape_quotes(rewritten)}"'
+                    rewritten = f'"{self.escape_css_string(rewritten)}"'
                 elif im2.startswith("'") and im2.endswith("'"):
                     rewritten = rewrite_import_url(self.unescape_css(im2[1:-1]))
-                    rewritten = f'"{self.escape_quotes(rewritten)}"'
+                    rewritten = f'"{self.escape_css_string(rewritten)}"'
                 else:
                     rewritten = parse_url(im2, rewrite_import_url)
                 return f'{im1}{rewritten}'
@@ -132,15 +134,25 @@ class CssRewriter:
 
         return self.REGEX_REWRITE_CSS.sub(rewrite_sub, text)
 
-    def escape_quotes(self, str):
-        return str.replace('\\', r'\\').replace(r'"', r'\"')
+    def escape_css_string(self, str):
+        return self.REGEX_ESCAPE_CSS_STRING.sub(self.escape_css_string_sub, str)
+
+    @staticmethod
+    def escape_css_string_sub(m):
+        c = m.group(1)
+        if c:
+            return '\\' + c
+        return f'\\{ord(m.group(0)):x} '
 
     def unescape_css(self, str):
         return self.REGEX_UNESCAPE_CSS.sub(self.unescape_css_sub, str)
 
-    def unescape_css_sub(self, m):
+    @staticmethod
+    def unescape_css_sub(m):
         u, c = m.groups()
-        if c:
-            return c
         if u:
-            return chr(int(u, 16))
+            code = int(u, 16)
+            if code == 0 or 0xD800 <= code <= 0xDFFF or code > 0x10FFFF:
+                return '\uFFFD'
+            return chr(code)
+        return c
