@@ -1576,6 +1576,146 @@ class TestSingleHtmlConverter(Test):
         rewritten = conv.run()
         self.assertEqual(rewritten, expected)
 
+    def test_rewrite_css_link(self):
+        """Check CSS rewriting for <link>.
+        """
+        input = """\
+<link rel="stylesheet" href="css_link.css">
+"""
+        expected = """\
+<link rel="stylesheet" href="data:text/css,%3Cstyle%3E%40import%20%22data%3Atext/css%2C%2540import%2520url%2528%2522data%253Atext/css%252C.bg-link-import-import%252520%25257B%252520background-image%25253A%252520url%252528%252522data%25253Aimage/bmp%25253Bbase64%25252CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAA/wAAAAAA%252522%252529%25253B%252520%25257D%25250D%25250A%2522%2529%253B%250D%250A%2540font-face%2520%257B%2520font-family%253A%2520font-link-import%253B%2520src%253A%2520url%2528%2522data%253Afont/woff%253Bbase64%252CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA%2522%2529%253B%2520%257D%250D%250A.bg-link-import%2520%257B%2520background-image%253A%2520url%2528%2522data%253Aimage/bmp%253Bbase64%252CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA%2522%2529%253B%2520%257D%250D%250A%22%3B%3C/style%3E%0D%0A%3Cstyle%3E%40font-face%20%7B%20font-family%3A%20font-link%3B%20src%3A%20url%28%22data%3Afont/woff%3Bbase64%2CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA%22%29%3B%20%7D%3C/style%3E%0D%0A%3Cstyle%3E.bg-link%20%7B%20background-image%3A%20url%28%22data%3Aimage/bmp%3Bbase64%2CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA%22%29%3B%20%7D%3C/style%3E%0D%0A">
+"""  # noqa: E501
+
+        test_index = os.path.join(self.test_root, 'index.html')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write(input)
+
+        with open(os.path.join(self.test_root, 'css_link.css'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<style>@import "css_link_import.css";</style>
+<style>@font-face { font-family: font-link; src: url(./font_link.woff); }</style>
+<style>.bg-link { background-image: url(./img_link.bmp); }</style>
+""")
+
+        with open(os.path.join(self.test_root, 'css_link_import.css'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+@import url(./css_link_import_import.css);
+@font-face { font-family: font-link-import; src: url(./font_link_import.woff); }
+.bg-link-import { background-image: url(./img_link_import.bmp); }
+""")
+
+        with open(os.path.join(self.test_root, 'css_link_import_import.css'), 'w', encoding='UTF-8') as fh:
+            fh.write(""".bg-link-import-import { background-image: url(./img_link_import_import.bmp); }
+""")
+
+        with open(os.path.join(self.test_root, 'font_link.woff'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA'))
+        with open(os.path.join(self.test_root, 'font_link_import.woff'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        with open(os.path.join(self.test_root, 'img_link.bmp'), 'wb') as fh:
+            # red
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA'))
+        with open(os.path.join(self.test_root, 'img_link_import.bmp'), 'wb') as fh:
+            # green
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+        with open(os.path.join(self.test_root, 'img_link_import_import.bmp'), 'wb') as fh:
+            # blue
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAA/wAAAAAA'))
+
+        conv = SingleHtmlConverter(test_index)
+        rewritten = conv.run()
+        self.assertEqual(rewritten, expected)
+
+    def test_rewrite_css_style(self):
+        """Check CSS rewriting for <style>.
+        """
+        input = """\
+<style>@import "css_style_import.css";</style>
+<style>@font-face { font-family: font-style; src: url(./font_style.woff); }</style>
+<style>.bg-style { background-image: url(./img_style.bmp); }</style>
+"""
+        expected = """\
+<style>@import "data:text/css,%40import%20url%28%22data%3Atext/css%2C.bg-style-import-import%2520%257B%2520background-image%253A%2520url%2528%2522data%253Aimage/bmp%253Bbase64%252CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAA/wAAAAAA%2522%2529%253B%2520%257D%250D%250A%22%29%3B%0D%0A%40font-face%20%7B%20font-family%3A%20font-style-import%3B%20src%3A%20url%28%22data%3Afont/woff%3Bbase64%2CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA%22%29%3B%20%7D%0D%0A.bg-style-import%20%7B%20background-image%3A%20url%28%22data%3Aimage/bmp%3Bbase64%2CQk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA%22%29%3B%20%7D%0D%0A";</style>
+<style>@font-face { font-family: font-style; src: url("data:font/woff;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA"); }</style>
+<style>.bg-style { background-image: url("data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA"); }</style>
+"""  # noqa: E501
+
+        test_index = os.path.join(self.test_root, 'index.html')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write(input)
+
+        with open(os.path.join(self.test_root, 'css_style_import.css'), 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+@import url(./css_style_import_import.css);
+@font-face { font-family: font-style-import; src: url(./font_style_import.woff); }
+.bg-style-import { background-image: url(./img_style_import.bmp); }
+""")
+
+        with open(os.path.join(self.test_root, 'css_style_import_import.css'), 'w', encoding='UTF-8') as fh:
+            fh.write(""".bg-style-import-import { background-image: url(./img_style_import_import.bmp); }
+""")
+
+        with open(os.path.join(self.test_root, 'font_style.woff'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA'))
+        with open(os.path.join(self.test_root, 'font_style_import.woff'), 'wb') as fh:
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+
+        with open(os.path.join(self.test_root, 'img_style.bmp'), 'wb') as fh:
+            # red
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA'))
+        with open(os.path.join(self.test_root, 'img_style_import.bmp'), 'wb') as fh:
+            # green
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
+        with open(os.path.join(self.test_root, 'img_style_import_import.bmp'), 'wb') as fh:
+            # blue
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAA/wAAAAAA'))
+
+        conv = SingleHtmlConverter(test_index)
+        rewritten = conv.run()
+        self.assertEqual(rewritten, expected)
+
+    def test_rewrite_css_inline(self):
+        """Check CSS rewriting for inline.
+        """
+        input = """<div style="background-image: url(./img_internal.bmp);"></div>"""
+        expected = """<div style="background-image: url(&quot;data:image/bmp;base64,Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA&quot;);"></div>"""  # noqa: E501
+
+        test_index = os.path.join(self.test_root, 'index.html')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write(input)
+
+        with open(os.path.join(self.test_root, 'img_internal.bmp'), 'wb') as fh:
+            # red
+            fh.write(b64decode(b'Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAAD/AAAA'))
+
+        conv = SingleHtmlConverter(test_index)
+        rewritten = conv.run()
+        self.assertEqual(rewritten, expected)
+
+    def test_rewrite_css_circular(self):
+        """Check CSS rewriting with circular reference.
+        """
+        input = """<style>@import "import1.css";</style>"""
+        expected = """<style>@import "data:text/css,%40import%20%22data%3Atext/css%2C%2540import%2520%2522data%253Atext/css%252C%252540import%252520%252522urn%25253Ascrapbook%25253Aconvert%25253Acircular%25253Aurl%25253Aimport1.css%252522%25253B%2522%253B%22%3B";</style>"""  # noqa: E501
+
+        test_index = os.path.join(self.test_root, 'index.html')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write(input)
+
+        with open(os.path.join(self.test_root, 'import1.css'), 'w', encoding='UTF-8') as fh:
+            fh.write("""@import "import2.css";""")
+
+        with open(os.path.join(self.test_root, 'import2.css'), 'w', encoding='UTF-8') as fh:
+            fh.write("""@import "import3.css";""")
+
+        with open(os.path.join(self.test_root, 'import3.css'), 'w', encoding='UTF-8') as fh:
+            fh.write("""@import "import1.css";""")
+
+        conv = SingleHtmlConverter(test_index)
+        rewritten = conv.run()
+        self.assertEqual(rewritten, expected)
+
     def test_rewrite_frame(self):
         """Test recursive rewriting for frame
         """
