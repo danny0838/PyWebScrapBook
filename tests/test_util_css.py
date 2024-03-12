@@ -51,12 +51,28 @@ to { background-image: url("http://example.com/image.bmp"); }
         expected = """body\t{\timage-background\t:\turl(\t"http://example.com/image.jpg"\t)\t;\t}"""
         self.assertEqual(rewrite(input), expected)
 
+        input = """body { image-background: url(  "image.jpg"  ) ; }"""
+        expected = """body { image-background: url(  "http://example.com/image.jpg"  ) ; }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = """body { image-background: url(\t"image.jpg"\t) ; }"""
+        expected = """body { image-background: url(\t"http://example.com/image.jpg"\t) ; }"""
+        self.assertEqual(rewrite(input), expected)
+
         # keep original case
         input = """body { image-background: URL(image.jpg); }"""
         expected = """body { image-background: URL("http://example.com/image.jpg"); }"""
         self.assertEqual(rewrite(input), expected)
 
         input = """body { image-background: uRl(image.jpg); }"""
+        expected = """body { image-background: uRl("http://example.com/image.jpg"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = """body { image-background: URL("image.jpg"); }"""
+        expected = """body { image-background: URL("http://example.com/image.jpg"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = """body { image-background: uRl("image.jpg"); }"""
         expected = """body { image-background: uRl("http://example.com/image.jpg"); }"""
         self.assertEqual(rewrite(input), expected)
 
@@ -102,6 +118,11 @@ to { background-image: url("http://example.com/image.bmp"); }
         input = """[myattr="url(image.jpg)"] { }"""
         self.assertEqual(rewrite(input), input)
 
+        # don't break normal rewriting
+        input = r""".my\"class\" { background-image: url("image.jpg"); }"""
+        expected = r""".my\"class\" { background-image: url("http://example.com/image.jpg"); }"""
+        self.assertEqual(rewrite(input), expected)
+
     def test_image_ignore_unrelated_rules(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
 
@@ -117,12 +138,197 @@ to { background-image: url("http://example.com/image.bmp"); }
         input = """@font-face { font-family: myfont; src: url("file.woff"); }"""
         self.assertEqual(rewrite(input), input)
 
-    def test_image_complicated_cases(self):
+    @unittest.expectedFailure
+    def test_image_char_escape_or_replace(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
 
-        input = r""".my\"class\" { background-image: url("image.jpg"); }"""
-        expected = r""".my\"class\" { background-image: url("http://example.com/image.jpg"); }"""
+        # 0x01~0x1F and 0x7F (except for newlines) should be escaped
+        input = """.mycls { background-image: url("\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0B\x0E\x0F"); }"""
+        expected = r""".mycls { background-image: url("http://example.com/\1 \2 \3 \4 \5 \6 \7 \8 \9 \b \e \f "); }"""
         self.assertEqual(rewrite(input), expected)
+
+        input = """.mycls { background-image: url("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F"); }"""
+        expected = r""".mycls { background-image: url("http://example.com/\10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        # escaped sequence of 0x01~0x1F and 0x7F should keep escaped
+        input = r""".mycls { background-image: url("\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f "); }"""
+        expected = r""".mycls { background-image: url("http://example.com/\1 \2 \3 \4 \5 \6 \7 \8 \9 \a \b \c \d \e \f "); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r""".mycls { background-image: url("\10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "); }"""
+        expected = r""".mycls { background-image: url("http://example.com/\10 \11 \12 \13 \14 \15 \16 \17 \18 \19 \1a \1b \1c \1d \1e \1f \7f "); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        # null, surrogate, and char code > 0x10FFFF should be replaced with \uFFFD
+        input = r""".mycls { background-image: url("\0 \D800 \DFFF \110000"); }"""
+        expected = """.mycls { background-image: url("http://example.com/\uFFFD\uFFFD\uFFFD\uFFFD"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        # other chars should be unescaped
+        input = r""".mycls { background-image: url("\80 \4E00 \20000 \10FFFF "); }"""
+        expected = """.mycls { background-image: url("http://example.com/\u0080\u4E00\U00020000\U0010FFFF"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+    @unittest.expectedFailure
+    def test_image_quoted_string_extra_comps(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad URL, should be skipped
+        input = r""".mycls { background-image: url("image.jpg"foo); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg" foo); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg""foo"); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg" "foo"); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg"'foo'); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg" 'foo'); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg" url(foo)); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("image.jpg" url("foo")); }"""
+        self.assertEqual(rewrite(input), input)
+
+    def test_image_quoted_string_newline(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad string, should be skipped
+        input = r""".mycls { background-image: url("image.jpg
+); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url('image.jpg
+); }"""
+        self.assertEqual(rewrite(input), input)
+
+    @unittest.expectedFailure
+    def test_image_quoted_string_escaped_newline(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # escaped newlines should be stripped
+        input = r""".mycls { background-image: url("my\
+image\
+.jpg"); }"""
+        expected = r""".mycls { background-image: url("http://example.com/myimage.jpg"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r""".mycls { background-image: url('my\
+image\
+.jpg'); }"""
+        expected = r""".mycls { background-image: url("http://example.com/myimage.jpg"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+    @unittest.expectedFailure
+    def test_image_quoted_string_eof(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad string, should be skipped to the end
+        input = r""".mycls { background-image: url("img.jpg"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url("url(img.jpg)"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url('img.jpg"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url('url(img.jpg)"""
+        self.assertEqual(rewrite(input), input)
+
+    @unittest.expectedFailure
+    def test_image_quoted_string_escaped_eof(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad string, should be skipped to the end
+        input = """.mycls { background-image: url("img.jpg\\"""
+        self.assertEqual(rewrite(input), input)
+
+        input = """.mycls { background-image: url("url(img.jpg)\\"""
+        self.assertEqual(rewrite(input), input)
+
+        input = """.mycls { background-image: url('img.jpg\\"""
+        self.assertEqual(rewrite(input), input)
+
+        input = """.mycls { background-image: url('url(img.jpg)\\"""
+        self.assertEqual(rewrite(input), input)
+
+    @unittest.expectedFailure
+    def test_image_unquoted_string_bad_chars(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad URL, should be skipped
+        input = r""".mycls { background-image: url(image"foo.jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url(image"foo".jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url(image'foo.jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url(image'foo'.jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url(image(foo.jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url(url(foo).jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+    def test_image_unquoted_string_newline_last(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # last whitespaces, should be stripped
+        input = r""".mycls { background-image: url(image.jpg
+); }"""
+        expected = r""".mycls { background-image: url("http://example.com/image.jpg"
+); }"""
+        self.assertEqual(rewrite(input), expected)
+
+    @unittest.expectedFailure
+    def test_image_unquoted_string_newline_intermediate(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad url, should be skipped
+        input = r""".mycls { background-image: url(image.jpg
+foo); }"""
+        self.assertEqual(rewrite(input), input)
+
+    def test_image_unquoted_string_escaped_newline(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad escape, should be skipped
+        input = r""".mycls { background-image: url(image\
+.jpg); }"""
+        self.assertEqual(rewrite(input), input)
+
+        input = r""".mycls { background-image: url(image.jpg\
+); }"""
+        self.assertEqual(rewrite(input), input)
+
+    def test_image_unquoted_string_eof(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad url, should be skipped to the end
+        input = """.mycls { background-image: url(img.jpg"""
+        self.assertEqual(rewrite(input), input)
+
+    def test_image_unquoted_string_escaped_eof(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
+
+        # bad escape, should be skipped to the end
+        input = """.mycls { background-image: url(img.jpg\\"""
+        self.assertEqual(rewrite(input), input)
 
     def test_font_face(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_font_face_url=self.rewrite_func)
@@ -201,13 +407,28 @@ to { background-image: url("http://example.com/image.bmp"); }
         input = """[myattr="@font-face{src:url(file.woff)}"] { }"""
         self.assertEqual(rewrite(input), input)
 
-    def test_font_face_complicated_cases(self):
-        rewrite = partial(CssRewriter().rewrite, rewrite_font_face_url=self.rewrite_func)
-
+        # don't break normal rewriting
         input = r""".my\"class\" { }
 @font-face { src: url("file.woff"); }"""
         expected = r""".my\"class\" { }
 @font-face { src: url("http://example.com/file.woff"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+    @unittest.expectedFailure
+    def test_font_face_quoted_string_escaped_newline(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_font_face_url=self.rewrite_func)
+
+        # escaped newlines should be stripped
+        input = r"""@font-face { font-family: myfont; src: url("my\
+font\
+.woff"); }"""
+        expected = """@font-face { font-family: myfont; src: url("http://example.com/myfont.woff"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r"""@font-face { font-family: myfont; src: url('my\
+font\
+.woff'); }"""
+        expected = """@font-face { font-family: myfont; src: url("http://example.com/myfont.woff"); }"""
         self.assertEqual(rewrite(input), expected)
 
     def test_import(self):
@@ -303,13 +524,40 @@ to { background-image: url("http://example.com/image.bmp"); }
         input = """[myattr="@import url(file.css);"] { }"""
         self.assertEqual(rewrite(input), input)
 
-    def test_import_complicated_cases(self):
-        rewrite = partial(CssRewriter().rewrite, rewrite_import_url=self.rewrite_func)
-
+        # don't break normal rewriting
         input = r""".my\"class\" { }
 @import "file.css";"""
         expected = r""".my\"class\" { }
 @import "http://example.com/file.css";"""
+        self.assertEqual(rewrite(input), expected)
+
+    @unittest.expectedFailure
+    def test_import_quoted_string_escaped_newline(self):
+        rewrite = partial(CssRewriter().rewrite, rewrite_import_url=self.rewrite_func)
+
+        # escaped newlines should be stripped
+        input = r"""@import "my\
+file\
+.css";"""
+        expected = """@import "http://example.com/myfile.css";"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r"""@import 'my\
+file\
+.css';"""
+        expected = """@import "http://example.com/myfile.css";"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r"""@import url("my\
+file\
+.css");"""
+        expected = """@import url("http://example.com/myfile.css");"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r"""@import url('my\
+file\
+.css');"""
+        expected = """@import url("http://example.com/myfile.css");"""
         self.assertEqual(rewrite(input), expected)
 
 
