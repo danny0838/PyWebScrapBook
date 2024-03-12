@@ -21,6 +21,8 @@ from lxml import etree
 
 from .._polyfill import mimetypes, zipfile
 
+ASCII_WHITESPACE = r' \t\n\r\f'
+
 #########################################################################
 # Common classes and objects handling
 #########################################################################

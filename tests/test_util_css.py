@@ -210,7 +210,6 @@ to { background-image: url("http://example.com/image.bmp"); }
 ); }"""
         self.assertEqual(rewrite(input), input)
 
-    @unittest.expectedFailure
     def test_image_quoted_string_escaped_newline(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
 
@@ -261,7 +260,6 @@ image\
         input = """.mycls { background-image: url('url(img.jpg)\\"""
         self.assertEqual(rewrite(input), input)
 
-    @unittest.expectedFailure
     def test_image_unquoted_string_bad_chars(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
 
@@ -294,7 +292,6 @@ image\
 ); }"""
         self.assertEqual(rewrite(input), expected)
 
-    @unittest.expectedFailure
     def test_image_unquoted_string_newline_intermediate(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)
 
@@ -413,7 +410,6 @@ foo); }"""
 @font-face { src: url("http://example.com/file.woff"); }"""
         self.assertEqual(rewrite(input), expected)
 
-    @unittest.expectedFailure
     def test_font_face_quoted_string_escaped_newline(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_font_face_url=self.rewrite_func)
 
@@ -530,7 +526,6 @@ font\
 @import "http://example.com/file.css";"""
         self.assertEqual(rewrite(input), expected)
 
-    @unittest.expectedFailure
     def test_import_quoted_string_escaped_newline(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_import_url=self.rewrite_func)
 
