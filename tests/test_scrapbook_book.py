@@ -3585,7 +3585,7 @@ new_at_top = true
         book.move_items([
             ('folder1', 0),
             ('folder1', 1),
-        ], 'folder2'),
+        ], 'folder2')
         self.assertEqual(book.toc, {
             'root': [
                 'folder1',
@@ -4303,7 +4303,7 @@ new_at_top = true
         book.link_items([
             ('folder1', 0),
             ('folder1', 1),
-        ], 'folder2'),
+        ], 'folder2')
         self.assertEqual(book.toc, {
             'root': [
                 'folder1',
@@ -5712,7 +5712,7 @@ new_at_top = true
         book.copy_items([
             ('root', 1),
             ('root', 2),
-        ], 'folder'),
+        ], 'folder')
         self.assertEqual(book.toc, {
             'root': [
                 'folder',
@@ -5800,7 +5800,7 @@ new_at_top = true
         book.copy_items([
             ('root', 0),
             ('root', 1),
-        ], 'folder', None, target_book_id='book2'),
+        ], 'folder', None, target_book_id='book2')
         self.assertEqual(book2.toc, {
             'root': [
                 'folder',
@@ -6159,7 +6159,7 @@ new_at_top = true
         book.recycle_items([
             ('root', 0),
             ('root', 1),
-        ]),
+        ])
         self.assertEqual(book.toc, {
             'recycle': [
                 'item3',
@@ -6527,7 +6527,7 @@ new_at_top = true
             ('recycle', 1),
             ('recycle', 2),
             ('recycle', 3),
-        ]),
+        ])
         self.assertEqual(book.toc, {
             'root': [
                 'item3',
