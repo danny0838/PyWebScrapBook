@@ -3532,16 +3532,13 @@ class TestHelpers(unittest.TestCase):
 
         util.fs.zip_extract(zfile, dst, 'file.txt')
 
-        self.assertEqual(
-            glob_files(dst),
-            set(),
-        )
+        self.assertTrue(os.path.isfile(dst))
         self.assertEqual(
             os.stat(dst).st_mtime,
             DUMMY_TS,
         )
 
-    def test_zip_extract_file_to_file(self):
+    def test_zip_extract_to_exist(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'subdir')
