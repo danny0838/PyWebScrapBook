@@ -2654,7 +2654,6 @@ new_at_top = true
             ],
         })
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
             os.path.join(self.test_output, '20200101000000001', 'favicon.bmp'),
@@ -2740,11 +2739,9 @@ new_at_top = true
             ],
         })
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.htz'),
         })
         self.assertCountEqual(glob_files(os.path.join(self.test_output, '.wsb', 'tree', 'favicon')), {
-            os.path.join(self.test_output, '.wsb', 'tree', 'favicon', ''),
             os.path.join(self.test_output, '.wsb', 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp'),
         })
         with open(os.path.join(self.test_output, '20200101000000001.htz'), 'rb') as fh:
@@ -2820,7 +2817,6 @@ new_at_top = true
             ],
         })
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
         })
@@ -2895,7 +2891,6 @@ new_at_top = true
             ],
         })
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
         })
@@ -3003,7 +2998,6 @@ new_at_top = true
             ],
         })
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
             os.path.join(self.test_output, '20230101000000000'),
@@ -3088,7 +3082,6 @@ new_at_top = true
             ],
         })
         self.assertCountEqual(glob_files(self.test_input), {
-            os.path.join(self.test_input, ''),
             wsba_file,
         })
 
@@ -3653,9 +3646,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
     def test_bad_version02(self):
         """Unsupported version should be rejected."""
@@ -3691,9 +3682,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
     def test_bad_export_info01(self):
         """Missing export.json"""
@@ -3719,9 +3708,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
     def test_bad_export_info02(self):
         """Malformed JSON for export.json"""
@@ -3756,9 +3743,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
     def test_bad_export_info03(self):
         """Malformed JSON scheme for export.json"""
@@ -3793,9 +3778,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
     def test_bad_meta01(self):
         """Missing meta.json"""
@@ -3821,9 +3804,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
     def test_bad_meta02(self):
         """Malformed JSON for meta.json"""
@@ -3858,9 +3839,7 @@ new_at_top = true
 
         self.assertEqual(book.meta, {})
         self.assertEqual(book.toc, {})
-        self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
-        })
+        self.assertCountEqual(glob_files(self.test_output), set())
 
 
 if __name__ == '__main__':

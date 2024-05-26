@@ -751,7 +751,6 @@ tree_dir = tree
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
             os.path.join(self.test_output, 'data', oid),
@@ -778,7 +777,6 @@ tree_dir = tree
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
             os.path.join(self.test_output, 'data', oid),
@@ -804,7 +802,6 @@ tree_dir = tree
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
             os.path.join(self.test_output, 'data', oid),
@@ -834,7 +831,6 @@ tree_dir = tree
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
             os.path.join(self.test_output, 'data', oid),
@@ -860,7 +856,6 @@ tree_dir = tree
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
         })
 
@@ -891,7 +886,6 @@ some content
 
         oid = util.datetime_to_id_legacy(util.id_to_datetime('20200101000000000'))
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'scrapbook.rdf'),
             os.path.join(self.test_output, 'data'),
             os.path.join(self.test_output, 'data', oid),

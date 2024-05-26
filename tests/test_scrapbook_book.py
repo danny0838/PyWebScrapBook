@@ -4490,7 +4490,6 @@ class TestCopyItem(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -4502,7 +4501,6 @@ class TestCopyItem(TestCopyItemBase):
             os.path.join(book.data_dir, '20200101000000000', 'favicon.ico'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -4628,7 +4626,6 @@ class TestCopyItem(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -4643,7 +4640,6 @@ class TestCopyItem(TestCopyItemBase):
             os.path.join(book.data_dir, '20200101000000004.html'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -4722,7 +4718,6 @@ class TestCopyItem(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -4731,7 +4726,6 @@ class TestCopyItem(TestCopyItemBase):
             os.path.join(book.data_dir, 'item1-3.html'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -4751,14 +4745,11 @@ class TestCopyItem(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book2.data_dir), {
-            os.path.join(book2.data_dir, ''),
             os.path.join(book2.data_dir, 'item1'),
             os.path.join(book2.data_dir, 'item1', 'index.html'),
             os.path.join(book2.data_dir, 'item1', 'favicon.ico'),
         })
-        self.assertEqual(glob_files(book2.tree_dir), {
-            os.path.join(book2.tree_dir, ''),
-        })
+        self.assertEqual(glob_files(book2.tree_dir), set())
         with open(os.path.join(book2.data_dir, 'item1', 'index.html'), 'rb') as fh:
             self.assertEqual(fh.read(), b'dummy')
         with open(os.path.join(book2.data_dir, 'item1', 'favicon.ico'), 'rb') as fh:
@@ -4833,7 +4824,6 @@ class TestCopyItem(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -4842,7 +4832,6 @@ class TestCopyItem(TestCopyItemBase):
             os.path.join(book.data_dir, 'item1-3.html'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -4900,7 +4889,6 @@ class TestCopyItem(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book2.data_dir), {
-            os.path.join(book2.data_dir, ''),
             os.path.join(book2.data_dir, 'item1'),
             os.path.join(book2.data_dir, 'item1', 'index.html'),
             os.path.join(book2.data_dir, 'item1', 'favicon.ico'),
@@ -4909,7 +4897,6 @@ class TestCopyItem(TestCopyItemBase):
             os.path.join(book2.data_dir, 'item1-3.html'),
         })
         self.assertEqual(glob_files(book2.tree_dir), {
-            os.path.join(book2.tree_dir, ''),
             os.path.join(book2.tree_dir, 'favicon'),
             os.path.join(book2.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book2.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -5221,7 +5208,6 @@ class TestCopyItems(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -5233,7 +5219,6 @@ class TestCopyItems(TestCopyItemBase):
             os.path.join(book.data_dir, '20200101000000002.html'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -5367,7 +5352,6 @@ class TestCopyItems(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -5382,7 +5366,6 @@ class TestCopyItems(TestCopyItemBase):
             os.path.join(book.data_dir, '20200101000000004.html'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -5520,7 +5503,6 @@ class TestCopyItems(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -5535,7 +5517,6 @@ class TestCopyItems(TestCopyItemBase):
             os.path.join(book.data_dir, '20200101000000004.html'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),
@@ -5648,7 +5629,6 @@ class TestCopyItems(TestCopyItemBase):
             },
         })
         self.assertEqual(glob_files(book.data_dir), {
-            os.path.join(book.data_dir, ''),
             os.path.join(book.data_dir, 'item1'),
             os.path.join(book.data_dir, 'item1', 'index.html'),
             os.path.join(book.data_dir, 'item1', 'favicon.ico'),
@@ -5662,7 +5642,6 @@ class TestCopyItems(TestCopyItemBase):
             os.path.join(book.data_dir, '20200101000000002.htz'),
         })
         self.assertEqual(glob_files(book.tree_dir), {
-            os.path.join(book.tree_dir, ''),
             os.path.join(book.tree_dir, 'favicon'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon#1.ico'),
             os.path.join(book.tree_dir, 'favicon', 'b64favicon%11.ico'),

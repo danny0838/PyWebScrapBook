@@ -614,7 +614,6 @@ Page3 content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
             os.path.join(self.test_output, '20200101000000000', 'treeitem.png'),

@@ -1592,7 +1592,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         # verify no unexpected content change
         self.assertEqual(
             glob_files(src),
-            {os.path.join(src, ''), src2},
+            {src2},
         )
 
     def test_dir_to_child_self(self):
@@ -1614,7 +1614,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         # verify no unexpected content change
         self.assertEqual(
             glob_files(src),
-            {os.path.join(src, ''), src2},
+            {src2},
         )
 
     @require_case_insensitive()
@@ -1631,7 +1631,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         # verify no unexpected content change
         self.assertEqual(
             glob_files(src),
-            {os.path.join(src, ''), src2},
+            {src2},
         )
 
     @require_case_insensitive()
@@ -1648,7 +1648,7 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         # verify no unexpected content change
         self.assertEqual(
             glob_files(src),
-            {os.path.join(src, ''), src2},
+            {src2},
         )
 
     @require_junction()
@@ -3446,7 +3446,6 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(
             glob_files(dst),
             {
-                os.path.join(dst, ''),
                 os.path.join(dst, 'file.txt'),
                 os.path.join(dst, 'folder'),
                 os.path.join(dst, 'folder', 'subfile.txt'),
@@ -3486,7 +3485,6 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(
             glob_files(dst),
             {
-                os.path.join(dst, ''),
                 os.path.join(dst, 'subfile.txt'),
             },
         )
@@ -3514,7 +3512,6 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(
             glob_files(dst),
             {
-                os.path.join(dst, ''),
                 os.path.join(dst, 'subfile.txt'),
             },
         )
@@ -3537,9 +3534,7 @@ class TestHelpers(unittest.TestCase):
 
         self.assertEqual(
             glob_files(dst),
-            {
-                os.path.join(dst, ''),
-            },
+            set(),
         )
         self.assertEqual(
             os.stat(dst).st_mtime,
@@ -3562,9 +3557,7 @@ class TestHelpers(unittest.TestCase):
 
         self.assertEqual(
             glob_files(dst),
-            {
-                os.path.join(dst, ''),
-            },
+            set(),
         )
 
     def test_zip_extract_timezone(self):
@@ -3582,7 +3575,6 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(
             glob_files(dst),
             {
-                os.path.join(dst, ''),
                 os.path.join(dst, 'file.txt'),
             },
         )

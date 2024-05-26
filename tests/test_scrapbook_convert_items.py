@@ -77,7 +77,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
                         pass
 
                     self.assertEqual(glob_files(self.test_output), {
-                        os.path.join(self.test_output, ''),
                         os.path.join(self.test_output, '20200101000000000.htz'),
                     })
                 finally:
@@ -101,7 +100,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
                         pass
 
                     self.assertEqual(glob_files(self.test_output), {
-                        os.path.join(self.test_output, ''),
                         os.path.join(self.test_output, '20200101000000000'),
                         os.path.join(self.test_output, '20200101000000000', 'index.html'),
                     })
@@ -188,7 +186,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
             os.path.join(self.test_output, '20200101000000001', 'resource.bmp'),
@@ -287,13 +284,11 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -332,13 +327,11 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -376,13 +369,11 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000'),
             os.path.join(self.test_output, '20200101000000000', 'index.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -407,7 +398,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.htz'),
             os.path.join(self.test_output, '20200101000000002.htz'),
             os.path.join(self.test_output, '20200101000000003.htz'),
@@ -505,12 +495,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.htz'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
         })
 
@@ -549,12 +537,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.htz'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -592,12 +578,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -622,7 +606,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.maff'),
             os.path.join(self.test_output, '20200101000000002.maff'),
             os.path.join(self.test_output, '20200101000000003.maff'),
@@ -785,7 +768,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001'),
             os.path.join(self.test_output, '20200101000000001', 'index.html'),
             os.path.join(self.test_output, '20200101000000001', 'index.rdf'),
@@ -833,12 +815,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
         })
 
@@ -876,12 +856,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -919,12 +897,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.maff'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -947,7 +923,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000001.html'),
             os.path.join(self.test_output, '20200101000000002.html'),
             os.path.join(self.test_output, '20200101000000003.html'),
@@ -1052,12 +1027,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'dbc82be549e49d6db9a5719086722a4f1c5079cd.ico'),
         })
 
@@ -1095,12 +1068,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -1139,12 +1110,10 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
         self.assertEqual(glob_files(os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon')), {
-            os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', ''),
             os.path.join(self.test_output, WSB_DIR, 'tree', 'favicon', 'favicon.ico'),
         })
 
@@ -1184,7 +1153,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
@@ -1232,7 +1200,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.svg'),
         })
 
@@ -1274,7 +1241,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 
@@ -1310,7 +1276,6 @@ my page content
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20200101000000000.html'),
         })
 

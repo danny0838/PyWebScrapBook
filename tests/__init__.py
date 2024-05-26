@@ -137,7 +137,16 @@ def glob_files(path):
     Returns:
         set: files and directories under the path (inclusive)
     """
-    return {*glob.iglob(os.path.join(glob.escape(path), '**'), recursive=True)}
+    rv = {*glob.iglob(os.path.join(glob.escape(path), '**'), recursive=True)}
+
+    # In Python < 3.12.3 etc., glob.iglob('<path>/**') includes '<path>/'.
+    # Remove it for consistency.
+    try:
+        rv.remove(os.path.join(path, ''))
+    except KeyError:
+        pass
+
+    return rv
 
 
 class TestFileMixin:

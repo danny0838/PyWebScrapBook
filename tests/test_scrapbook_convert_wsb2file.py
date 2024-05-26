@@ -126,7 +126,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-Page item - folder.htd'),
             os.path.join(self.test_output, '1-Page item - folder.htd', 'index.html'),
             os.path.join(self.test_output, '2-Page item - htz.htz'),
@@ -235,7 +234,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'Page item - folder.htd'),
             os.path.join(self.test_output, 'Page item - folder.htd', 'index.html'),
             os.path.join(self.test_output, 'Page item - htz.htz'),
@@ -322,7 +320,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-Folder1'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder1 sub.htd'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder1 sub.htd', 'index.html'),
@@ -394,7 +391,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'Folder1'),
             os.path.join(self.test_output, 'Folder1', 'Folder1 sub.htd'),
             os.path.join(self.test_output, 'Folder1', 'Folder1 sub.htd', 'index.html'),
@@ -443,7 +439,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-File1'),
             os.path.join(self.test_output, '1-File1', '1-Bookmark1.htm'),
             os.path.join(self.test_output, '1-File1._'),
@@ -515,7 +510,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '01-Folder1'),
             os.path.join(self.test_output, '02-Folder2'),
             os.path.join(self.test_output, '03-Folder3'),
@@ -604,7 +598,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, 'myitem.htd'),
             os.path.join(self.test_output, 'myitem.htd', 'index.html'),
             os.path.join(self.test_output, 'myitem(1).htz'),
@@ -645,7 +638,6 @@ class TestRun(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '1-Folder1'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder2'),
             os.path.join(self.test_output, '1-Folder1', '1-Folder2', '1-Folder1'),

@@ -2142,7 +2142,6 @@ class TestUnSingleHtmlConverter(Test):
         self.assertEqual(rewritten, expected)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '8d02fbc24fb22ff07cb5aace1337e45688a66f8f.bmp'),
             os.path.join(self.test_root, 'b35de104c054d48359faf058507011a6cf356533.bmp'),
@@ -2211,7 +2210,6 @@ class TestUnSingleHtmlConverter(Test):
             self.assertEqual(fh.read(), expected_css2)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'b7830ea17e3dbf1162c30f2f6339cf4f2c8a6f35.css'),
             os.path.join(self.test_root, 'aaf5db17e4f43f40d52f22b4deae8e7d8c17c381.bmp'),
@@ -2244,7 +2242,6 @@ class TestUnSingleHtmlConverter(Test):
             self.assertEqual(fh.read(), expected_html1)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '46f5e95733b31bc905de15e6bd80c903e6b2096f.html'),
             os.path.join(self.test_root, '3e751297f65228db45665d2589b00482a7c5a8b9.bmp'),
@@ -2268,7 +2265,6 @@ class TestUnSingleHtmlConverter(Test):
             self.assertEqual(fh.read(), expected_html1)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '7db93a89332a48e75c089d989ae159643507e322.html'),
             os.path.join(self.test_root, '3e751297f65228db45665d2589b00482a7c5a8b9.bmp'),
@@ -2302,7 +2298,6 @@ class TestUnSingleHtmlConverter(Test):
             self.assertEqual(fh.read(), expected_html1)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '924243d4c3b4637e7e2e5c06c23821f57b3b8d18.html'),
             os.path.join(self.test_root, 'd9d80b91e142919d0d38021d1d6d1fe99e312937.bmp'),
@@ -2331,7 +2326,6 @@ class TestUnSingleHtmlConverter(Test):
             self.assertEqual(fh.read(), expected_html1)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '5ef62168ce3226f71e06187764b98e93827b7a1b.html'),
             os.path.join(self.test_root, '95d08126f2ba74a8ad580df901dbe6960b4d0e37.bmp'),
@@ -2366,7 +2360,6 @@ class TestUnSingleHtmlConverter(Test):
         self.assertEqual(rewritten, expected)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'e41c1a658ec99284dce1fa1231c473860e8534a4.bmp'),
             os.path.join(self.test_root, 'a498468482a6c5bed10bfa03020e42fe4f9bd2f3.bmp'),
@@ -2396,7 +2389,6 @@ class TestUnSingleHtmlConverter(Test):
             self.assertEqual(fh.read(), expected_html1)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, 'fdd362b3a207d77938171f188e32aeb39d04aa26.html'),
         })
@@ -2444,7 +2436,6 @@ class TestUnSingleHtmlConverter(Test):
         self.assertEqual(rewritten, expected)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.html'),
             os.path.join(self.test_root, '313d6864fa48b411d082f7692efd0c0892788fc4.js'),
             os.path.join(self.test_root, 'e80aab679ecb628f86e4f35e3d40328e201f0461.js'),
@@ -2495,7 +2486,6 @@ class TestUnSingleHtmlConverter(Test):
         self.assertEqual(rewritten, expected)
 
         self.assertEqual(glob_files(self.test_root), {
-            os.path.join(self.test_root, ''),
             os.path.join(self.test_root, 'index.svg'),
             os.path.join(self.test_root, '313d6864fa48b411d082f7692efd0c0892788fc4.js'),
             os.path.join(self.test_root, 'e80aab679ecb628f86e4f35e3d40328e201f0461.js'),

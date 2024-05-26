@@ -117,7 +117,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000003'),
             os.path.join(self.test_output, '20220101000000003', 'index.html'),
         })
@@ -186,7 +185,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000003'),
             os.path.join(self.test_output, '20220101000000003', 'index.html'),
             os.path.join(self.test_output, '20220101000000003', 'mypage.html'),
@@ -256,7 +254,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000003.html'),
         })
 
@@ -305,7 +302,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001'),
             os.path.join(self.test_output, '20220101000000001', 'index.html'),
         })
@@ -355,7 +351,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001.html'),
         })
 
@@ -409,7 +404,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001'),
             os.path.join(self.test_output, '20220101000000001', 'index.html'),
             os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
@@ -467,7 +461,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001'),
             os.path.join(self.test_output, '20220101000000001', 'index.html'),
             os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
@@ -526,7 +519,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001'),
             os.path.join(self.test_output, '20220101000000001', 'index.html'),
             os.path.join(self.test_output, '20220101000000001', 'index.files'),
@@ -585,7 +577,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001'),
             os.path.join(self.test_output, '20220101000000001', 'index.html'),
             os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
@@ -662,7 +653,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000001'),
             os.path.join(self.test_output, '20220101000000001', 'index.html'),
             os.path.join(self.test_output, '20220101000000001', 'mypage.html'),
@@ -726,7 +716,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000002.htz'),
         })
 
@@ -785,7 +774,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000002.maff'),
         })
 
@@ -831,7 +819,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000002'),
             os.path.join(self.test_output, '20220101000000002', 'index.html'),
             os.path.join(self.test_output, '20220101000000002', 'mypage.txt'),
@@ -879,7 +866,6 @@ page content
             ],
         })
         self.assertEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20220101000000002.txt'),
         })
 

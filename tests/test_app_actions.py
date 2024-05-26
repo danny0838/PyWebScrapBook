@@ -4426,7 +4426,6 @@ class TestCopy(TestActions):
             self.assertEqual(
                 glob_files(os.path.join(self.test_dir, 'clone')),
                 {
-                    os.path.join(self.test_dir, 'clone', ''),
                     os.path.join(self.test_dir, 'clone', 'junction'),
                     os.path.join(self.test_dir, 'clone', 'junction', 'test.txt'),
                 },
@@ -4526,7 +4525,6 @@ class TestCopy(TestActions):
             self.assertEqual(
                 glob_files(os.path.join(self.test_dir, 'clone')),
                 {
-                    os.path.join(self.test_dir, 'clone', ''),
                     os.path.join(self.test_dir, 'clone', 'symlink'),
                     os.path.join(self.test_dir, 'clone', 'symlink', 'test.txt'),
                 },

@@ -119,7 +119,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
         })
 
@@ -179,7 +178,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
         })
 
@@ -264,7 +262,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item2.wsba'),
             os.path.join(self.test_output, '20230101000000002-item1.wsba'),
@@ -426,7 +423,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item3.wsba'),
             os.path.join(self.test_output, '20230101000000002-item6.wsba'),
@@ -533,7 +529,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item2.wsba'),
             os.path.join(self.test_output, '20230101000000002-item3.wsba'),
@@ -648,7 +643,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item0.wsba'),
             os.path.join(self.test_output, '20230101000000002-item1.wsba'),
@@ -841,7 +835,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item1.wsba'),
             os.path.join(self.test_output, '20230101000000002-item2.wsba'),
@@ -957,7 +950,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item1.wsba'),
             os.path.join(self.test_output, '20230101000000002-item0.wsba'),
@@ -1066,7 +1058,6 @@ class TestExporter(TestBookMixin, unittest.TestCase):
             pass
 
         self.assertCountEqual(glob_files(self.test_output), {
-            os.path.join(self.test_output, ''),
             os.path.join(self.test_output, '20230101000000000-item0.wsba'),
             os.path.join(self.test_output, '20230101000000001-item1.wsba'),
             os.path.join(self.test_output, '20230101000000002-item2.wsba'),
