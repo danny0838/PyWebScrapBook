@@ -3,10 +3,9 @@ import os
 import tempfile
 import unittest
 from base64 import b64decode
-from datetime import datetime
 from unittest import mock
 
-from webscrapbook import WSB_DIR
+from webscrapbook import WSB_DIR, util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import exporter1 as wsb_exporter
 
@@ -127,7 +126,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                 'version': 1,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
-                'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+                'timezone': util.id_to_datetime('20230101000000000').astimezone().utcoffset().total_seconds(),
                 'path': [{'id': 'root', 'title': ''}],
             },
             'meta': {
@@ -186,7 +185,7 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                 'version': 1,
                 'id': '20230101000000000',
                 'timestamp': '20230101000000000',
-                'timezone': datetime.now().astimezone().utcoffset().total_seconds(),
+                'timezone': util.id_to_datetime('20230101000000000').astimezone().utcoffset().total_seconds(),
                 'path': [{'id': 'root', 'title': ''}],
             },
             'meta': {

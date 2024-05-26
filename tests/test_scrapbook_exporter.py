@@ -4,10 +4,9 @@ import os
 import tempfile
 import unittest
 from base64 import b64decode
-from datetime import datetime
 from unittest import mock
 
-from webscrapbook import WSB_DIR
+from webscrapbook import WSB_DIR, util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import exporter as wsb_exporter
 
@@ -182,7 +181,7 @@ class TestExporterSchemeItemIds(TestExporterBase):
                     'version': 2,
                     'id': '20230101000000000',
                     'timestamp': '20230101000000000',
-                    'timezone': int(datetime.now().astimezone().utcoffset().total_seconds()),
+                    'timezone': int(util.id_to_datetime('20230101000000000').astimezone().utcoffset().total_seconds()),
                     'path': [{'id': 'root', 'title': ''}],
                     'index': 0,
                 },
@@ -240,7 +239,7 @@ class TestExporterSchemeItemIds(TestExporterBase):
                     'version': 2,
                     'id': '20230101000000000',
                     'timestamp': '20230101000000000',
-                    'timezone': int(datetime.now().astimezone().utcoffset().total_seconds()),
+                    'timezone': int(util.id_to_datetime('20230101000000000').astimezone().utcoffset().total_seconds()),
                     'path': [{'id': 'root', 'title': ''}],
                     'index': 0,
                 },
