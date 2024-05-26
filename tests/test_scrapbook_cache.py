@@ -4303,7 +4303,7 @@ rss_root = http://example.com
             tree = etree.parse(fh)
 
         NS = '{http://www.w3.org/2005/Atom}'  # noqa: N806
-        updated = tree.find(f'/{NS}updated').text
+        updated = tree.find(f'./{NS}updated').text
         ts = datetime.strptime(updated, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         self.assertAlmostEqual(
             ts.timestamp(),
