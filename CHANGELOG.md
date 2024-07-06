@@ -3,6 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.3.4] - 2024-07-06
+* Fixed unexpected error on an empty HTML file for some utilities.
+
+## [2.3.3] - 2024-05-26
+* Miscellaneous code style improvements.
+* Fixed several issues for the dev tool and test suite.
+
 ## [2.3.2] - 2024-03-13
 * Fixed bad CSS rewriting for a bad URL token or a URL with escaped newlines or certain escaped control chars when converting an item to single_file format.
 
