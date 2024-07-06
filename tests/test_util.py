@@ -924,6 +924,11 @@ ul  >  li  :not([hidden])  {
             self.assertEqual(util.get_html_charset(fh, quickly=False), 'big5hkscs')
             self.assertEqual(fh.tell(), 0)
 
+        # gracefully handle an empty fh
+        fh = io.BytesIO(b'')
+        self.assertEqual(util.get_html_charset(fh), 'UTF-8')
+        self.assertEqual(fh.tell(), 0)
+
     def test_load_html_tree(self):
         # HTML5
         # @FIXME: &nbsp; becomes unescaped \u00A0
@@ -1268,11 +1273,18 @@ foo   中文<br/>
                 (0, '%E4%B8%AD%E6%96%87.html', None),
             ],
         )
+
+        # gracefully handle an empty or nonexist file
+        self.assertEqual(
+            list(util.iter_meta_refresh(os.path.join(root, 'empty.html'), encoding='UTF-8')),
+            [],
+        )
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'nonexist.html'))),
             [],
         )
 
+        # support fh
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:

@@ -2212,6 +2212,34 @@ Iframe page content. 中文
             },
         })
 
+    def test_html_iframe03(self):
+        """Handle empty iframe gracefully"""
+        book = self.init_book(self.test_root, meta=self.general_meta())
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
+<html>
+<body>
+pre-text
+<iframe src="iframe.html"></iframe>
+post-text
+</body>
+</html>
+""")
+        with open(os.path.join(self.test_dir, 'iframe.html'), 'w', encoding='UTF-8'):
+            pass
+
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'pre-text post-text',
+                },
+            },
+        })
+
     def test_html_iframe_datauri01(self):
         """Include data URL content"""
         book = self.init_book(self.test_root, meta=self.general_meta())
@@ -2292,6 +2320,32 @@ Linked page content.
                 },
                 'linked.html': {
                     'content': 'Linked page content.',
+                },
+            },
+        })
+
+    def test_html_iframe_srcdoc02(self):
+        """Handle empty srcdoc gracefully"""
+        book = self.init_book(self.test_root, meta=self.general_meta())
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
+<html>
+<body>
+pre-text
+<iframe srcdoc=""></iframe>
+post-text
+</body>
+</html>
+""")
+
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'pre-text post-text',
                 },
             },
         })

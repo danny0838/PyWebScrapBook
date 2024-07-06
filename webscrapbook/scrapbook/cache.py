@@ -740,12 +740,6 @@ class FulltextCacheGenerator():
         else:
             yield Info('debug', f'Retrieving HTML content for {path!r} of {item.id!r}')
 
-        # return '' for an empty file to prevent a parsing error
-        fh.seek(0, 2)
-        if fh.tell() == 0:
-            return ''
-        fh.seek(0)
-
         charset = util.get_html_charset(fh, default=item.meta.get('charset') or 'UTF-8')
         encoding = util.lxml_fix_codec(charset)
 
@@ -783,9 +777,16 @@ class FulltextCacheGenerator():
         fh.seek(0)
         util.sniff_bom(fh)
         exclusion_stack = []
-        for event, elem in etree.iterparse(
-                fh, html=True, events=('start', 'end'),
-                remove_comments=True, encoding=encoding):
+
+        def gen():
+            try:
+                yield from etree.iterparse(
+                    fh, html=True, events=('start', 'end'),
+                    remove_comments=True, encoding=encoding)
+            except etree.Error:
+                pass
+
+        for event, elem in gen():
             if event == 'start':
                 # skip if we are in an excluded element
                 if exclusion_stack:

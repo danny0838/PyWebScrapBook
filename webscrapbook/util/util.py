@@ -896,35 +896,38 @@ def parse_datauri(datauri):
 def _get_html_charset(fh, quickly=True):
     """Internal method to read a charset from meta charset.
     """
-    try:
-        for _event, elem in etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body')):
-            if elem.tag == 'meta':
-                charset = elem.attrib.get('charset')
+    def gen():
+        try:
+            yield from etree.iterparse(fh, encoding='ISO-8859-1', html=True, events=('start',), tag=('meta', 'body'))
+        except etree.Error:
+            pass
+
+    for _event, elem in gen():
+        if elem.tag == 'meta':
+            charset = elem.attrib.get('charset')
+            if charset:
+                return charset.strip()
+
+            if elem.attrib.get('http-equiv', '').lower() == 'content-type':
+                _, params = parse_content_type(elem.attrib.get('content', ''))
+                charset = params.get('charset')
                 if charset:
-                    return charset.strip()
+                    return charset
 
-                if elem.attrib.get('http-equiv', '').lower() == 'content-type':
-                    _, params = parse_content_type(elem.attrib.get('content', ''))
-                    charset = params.get('charset')
-                    if charset:
-                        return charset
+        elif elem.tag == 'body':
+            # presume that no <meta> will appear after <body> start
+            # for a normal HTML to exit early
+            if quickly:
+                return None
 
-            elif elem.tag == 'body':
-                # presume that no <meta> will appear after <body> start
-                # for a normal HTML to exit early
-                if quickly:
-                    return None
-
-            # clean up to save memory
-            elem.clear()
-            while elem.getprevious() is not None:
-                try:
-                    del elem.getparent()[0]
-                except TypeError:
-                    # broken html may generate extra root elem
-                    break
-    except etree.Error:
-        pass
+        # clean up to save memory
+        elem.clear()
+        while elem.getprevious() is not None:
+            try:
+                del elem.getparent()[0]
+            except TypeError:
+                # broken html may generate extra root elem
+                break
 
     return None
 
@@ -1120,7 +1123,14 @@ def iter_meta_refresh(file, encoding=None):
             encoding = lxml_fix_codec(encoding)
 
         contexts = []
-        for event, elem in etree.iterparse(fh, encoding=encoding, html=True, events=('start', 'end')):
+
+        def gen():
+            try:
+                yield from etree.iterparse(fh, encoding=encoding, html=True, events=('start', 'end'))
+            except etree.Error:
+                pass
+
+        for event, elem in gen():
             if event == 'start':
                 if elem.tag in META_REFRESH_CONTEXT_TAGS:
                     contexts.append(elem.tag)
