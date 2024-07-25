@@ -5,7 +5,7 @@ from base64 import b64decode
 from datetime import datetime, timezone
 from unittest import mock
 
-from webscrapbook import WSB_DIR
+from webscrapbook import WSB_DIR, util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook.indexer import (
     FavIconCacher,
@@ -56,16 +56,19 @@ class Test(TestBookMixin, unittest.TestCase):
 
 
 class TestIndexer(Test):
-    def test_normal(self):
-        """A simple normal check case. No error should raise."""
+    def test_normal_html(self):
+        """type='' if index file is HTML."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
-        with open(test_index, 'w', encoding='UTF-8') as fh:
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
             fh.write("""\
 <!DOCTYPE html>
 <html
-    data-scrapbook-create="20200101000000000"
-    data-scrapbook-source="http://example.com">
+    data-scrapbook-create="20200102000000000"
+    data-scrapbook-modify="20200103000000000"
+    data-scrapbook-source="http://example.com"
+    data-scrapbook-comment="My comment
+中文">
 <head>
 <meta charset="UTF-8">
 <title>MyTitle 中文</title>
@@ -76,8 +79,6 @@ page content
 </body>
 </html>
 """)
-        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
-        os.utime(test_index, (ts, ts))
 
         book = self.init_book(self.test_root)
         generator = Indexer(book)
@@ -89,10 +90,11 @@ page content
                 'index': '20200101000000000/index.html',
                 'title': 'MyTitle 中文',
                 'type': '',
-                'create': '20200101000000000',
-                'modify': '20200102030405067',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
                 'icon': 'favicon.png',
                 'source': 'http://example.com',
+                'comment': 'My comment\n中文',
             },
         })
 
@@ -102,6 +104,63 @@ page content
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8'):
             pass
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {})
+
+    def test_normal_htz(self):
+        """type='' if index file is HTZ."""
+        test_index = os.path.join(self.test_root, '20200101000000000.htz')
+        with zipfile.ZipFile(test_index, 'w') as zh:
+            zh.writestr('index.html', """\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200102000000000"
+    data-scrapbook-modify="20200103000000000"
+    data-scrapbook-source="http://example.com"
+    data-scrapbook-comment="My comment 中文">
+<head>
+<meta charset="UTF-8">
+<title>MyTitle 中文</title>
+<link rel="shortcut icon" href="favicon.png">
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+            zh.writestr(
+                'favicon.bmp',
+                b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'),
+            )
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.htz',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'icon': 'favicon.png',
+                'source': 'http://example.com',
+                'comment': 'My comment 中文',
+            },
+        })
+
+    def test_normal_file(self):
+        """type='file' if index file is not HTML."""
+        test_index = os.path.join(self.test_root, '20200102000000000.txt')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""text content""")
         ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
         os.utime(test_index, (ts, ts))
 
@@ -110,7 +169,15 @@ page content
         for _info in generator.run([test_index]):
             pass
 
-        self.assertDictEqual(book.meta, {})
+        self.assertDictEqual(book.meta, {
+            '20200102000000000': {
+                'index': '20200102000000000.txt',
+                'title': '',
+                'type': 'file',
+                'create': '20200102000000000',
+                'modify': '20200102030405067',
+            },
+        })
 
     def test_item_id(self):
         """Test if id is provided."""
@@ -122,6 +189,7 @@ page content
 <html
     data-scrapbook-id="myid"
     data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
     data-scrapbook-source="http://example.com">
 <head>
 <meta charset="UTF-8">
@@ -133,8 +201,6 @@ page content
 </body>
 </html>
 """)
-        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
-        os.utime(test_index, (ts, ts))
 
         book = self.init_book(self.test_root)
         generator = Indexer(book)
@@ -147,7 +213,7 @@ page content
                 'title': 'MyTitle 中文',
                 'type': '',
                 'create': '20200101000000000',
-                'modify': '20200102030405067',
+                'modify': '20200101000000000',
                 'icon': 'favicon.png',
                 'source': 'http://example.com',
             },
@@ -172,6 +238,7 @@ page content
 <html
     data-scrapbook-id="myid"
     data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
     data-scrapbook-source="http://example.com">
 <head>
 <meta charset="UTF-8">
@@ -561,7 +628,7 @@ page content
         })
 
     def test_item_title02(self):
-        """Infer from source URL."""
+        """Infer from source URL if title not exist."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -693,7 +760,7 @@ page content
         })
 
     def test_item_title06(self):
-        """Keep empty for separator."""
+        """Keep title empty for separator."""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(test_index))
         with open(test_index, 'w', encoding='UTF-8') as fh:
@@ -703,8 +770,7 @@ page content
     data-scrapbook-type="separator"
     data-scrapbook-create="20200101000000000"
     data-scrapbook-modify="20200101000000000"
-    data-scrapbook-source="http://example.com"
-    >
+    data-scrapbook-source="http://example.com">
 <head>
 <meta charset="UTF-8">
 </head>
@@ -724,6 +790,170 @@ page content
                 'create': '20200101000000000',
                 'modify': '20200101000000000',
                 'source': 'http://example.com',
+            },
+        })
+
+    def test_item_type_site(self):
+        """Overwrite type as defined."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-type="site">
+<head>
+<meta charset="UTF-8">
+</head>
+</html>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': '',
+                'type': 'site',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+            },
+        })
+
+    def test_item_type_bookmark(self):
+        """Overwrite type as defined."""
+        test_index = os.path.join(self.test_root, '20200101000000000.htm')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-source="https://example.com/"
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-type="bookmark">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="0; url=https://example.com/">
+<title>Example Domain</title>
+</head>
+<body>
+Bookmark for <a href="https://example.com/">https://example.com/</a>
+</body>
+</html>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.htm',
+                'title': 'Example Domain',
+                'type': 'bookmark',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+                'source': 'https://example.com/',
+            },
+        })
+
+    def test_item_create01(self):
+        """Infer from ID if timestamp-like."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-id="20200102000000000"
+    data-scrapbook-modify="20200103000000000">
+<head>
+<meta charset="UTF-8">
+</head>
+</html>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200102000000000': {
+                'index': '20200101000000000/index.html',
+                'title': '',
+                'type': '',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+            },
+        })
+
+    def test_item_create02(self):
+        """Infer from ctime if index file exists."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-id="item1"
+    data-scrapbook-modify="20200103000000000">
+<head>
+<meta charset="UTF-8">
+</head>
+</html>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        ctime = util.datetime_to_id(datetime.fromtimestamp(os.path.getctime(test_index)))
+        self.assertDictEqual(book.meta, {
+            'item1': {
+                'index': '20200101000000000/index.html',
+                'title': '',
+                'type': '',
+                'create': ctime,
+                'modify': '20200103000000000',
+            },
+        })
+
+    def test_item_modify01(self):
+        """Infer from mtime if index file exists."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html data-scrapbook-create="20200102000000000">
+<head>
+<meta charset="UTF-8">
+</head>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(test_index, (ts, ts))
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': '',
+                'type': '',
+                'create': '20200102000000000',
+                'modify': '20200102030405067',
             },
         })
 
@@ -1100,31 +1330,6 @@ page content
                 'title': 'mytitle',
                 'type': '',
                 'create': '20200101000000000',
-                'modify': '20200102030405067',
-            },
-        })
-
-    def test_other_file(self):
-        """Test for a normal file."""
-        test_index = os.path.join(self.test_root, '20200101000000000', 'index.txt')
-        os.makedirs(os.path.dirname(test_index))
-        with open(test_index, 'w', encoding='UTF-8') as fh:
-            fh.write('ABC 中文')
-        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
-        os.utime(test_index, (ts, ts))
-
-        book = self.init_book(self.test_root)
-        generator = Indexer(book)
-        for _info in generator.run([test_index]):
-            pass
-
-        item_id, = book.meta.keys()
-        self.assertDictEqual(book.meta, {
-            item_id: {
-                'index': '20200101000000000/index.txt',
-                'title': '',
-                'type': 'file',
-                'create': mock.ANY,
                 'modify': '20200102030405067',
             },
         })
