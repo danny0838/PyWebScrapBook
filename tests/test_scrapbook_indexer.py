@@ -1036,6 +1036,40 @@ page content
             },
         })
 
+    def test_item_other_attrs(self):
+        """Ignore unallowed attrs."""
+        test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')
+        os.makedirs(os.path.dirname(test_index))
+        with open(test_index, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-modify="20200101000000000"
+    data-scrapbook-adoptedstylesheets="0,1"
+    data-scrapbook-adoptedstylesheet-0=""
+    data-scrapbook-adoptedstylesheet-1="">
+<head>
+<meta charset="UTF-8">
+</head>
+</html>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000/index.html',
+                'title': '',
+                'type': '',
+                'create': '20200101000000000',
+                'modify': '20200101000000000',
+            },
+        })
+
     def test_param_handle_ie_meta01(self):
         """handle_ie_meta=True"""
         test_index = os.path.join(self.test_root, '20200101000000000', 'index.html')

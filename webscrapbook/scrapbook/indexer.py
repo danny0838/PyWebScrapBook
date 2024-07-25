@@ -26,6 +26,18 @@ HTML_TITLE_EXCLUDE_PARENTS = {
     'template',
 }
 
+ALLOWED_ROOT_META_ATTRS = {
+    'data-scrapbook-id',
+    'data-scrapbook-title',
+    'data-scrapbook-type',
+    'data-scrapbook-create',
+    'data-scrapbook-modify',
+    'data-scrapbook-source',
+    'data-scrapbook-icon',
+    'data-scrapbook-comment',
+    'data-scrapbook-charset',
+}
+
 REGEX_IE_DOC_COMMENT = re.compile(r'^\s*saved from url=\((\d+)\)(\S+)\s*')
 
 REGEX_SF_DOC_COMMENT = re.compile(r'^\s+Page saved with SingleFile\s+url: (\S+)\s+saved date: ([^()]+)')
@@ -215,7 +227,7 @@ class Indexer:
 
             # merge properties from html[data-scrapbook-*] attributes
             for key, value in html_elem.attrib.items():
-                if key.startswith('data-scrapbook-'):
+                if key in ALLOWED_ROOT_META_ATTRS:
                     meta[key[15:]] = value
 
         # id
