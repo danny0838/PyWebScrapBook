@@ -557,7 +557,7 @@ Page3 content
 <head>
 <meta charset="UTF-8">
 <title>Sample combine page</title>
-<style data-scrapbook-elem="custom-css">body { margin: 0px; background-color: #FFFFFF; } cite.scrapbook-header { clear: both; display: block; padding: 3px 6px; font-family: "MS UI Gothic","Tahoma","Verdana","Arial","Sans-Serif","Helvetica"; font-style: normal; font-size: 12px; background-color: InfoBackground; border: 1px solid ThreeDShadow; } cite.scrapbook-header img { vertical-align: middle; } cite.scrapbook-header a { color: InfoText; text-decoration: none; } cite.scrapbook-header a[href]:hover { color: #3388FF; } cite.scrapbook-header a.marked { font-weight: bold; } cite.scrapbook-header a.combine { color: blue; } cite.scrapbook-header a.bookmark { color: limegreen; } cite.scrapbook-header a.notex { color: rgb(80,0,32); } </style>
+<style data-scrapbook-elem="custom-css">body { margin: 0px; background-color: #FFFFFF; } cite.scrapbook-header { clear: both; display: block; padding: 3px 6px; font-family: "MS UI Gothic","Tahoma","Verdana","Arial","Sans-Serif","Helvetica"; font-style: normal; font-size: 12px; background-color: InfoBackground; border: 1px solid ThreeDShadow; } cite.scrapbook-header img { vertical-align: middle; } cite.scrapbook-header a { color: InfoText; text-decoration: none; } cite.scrapbook-header a[href]:hover { color: #3388FF; } cite.scrapbook-header a.marked { font-weight: bold; } cite.scrapbook-header a.combine { color: blue; } cite.scrapbook-header a.bookmark { color: limegreen; } cite.scrapbook-header a.notex { color: rgb(80,0,32); }</style>
 
 </head>
 <body>

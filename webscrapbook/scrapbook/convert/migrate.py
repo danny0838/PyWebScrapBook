@@ -17,7 +17,7 @@ HTML_FILE_FILTER = re.compile(r'^.+\.x?html$', re.I)
 
 
 # @TODO: better way to sync with WebScrapBook browser extension
-ANNOTATION_CSS = """\
+ANNOTATION_CSS = r"""
 [data-scrapbook-elem="linemarker"][title] {
   cursor: help;
 }
@@ -57,7 +57,7 @@ ANNOTATION_CSS = """\
 }
 """
 
-ANNOTATION_JS = """\
+ANNOTATION_JS = r"""
 function () {
   var w = window, d = document, r = d.documentElement, e;
   d.addEventListener('click', function (E) {
@@ -82,7 +82,7 @@ function () {
 }
 """
 
-BASIC_LOADER_JS = """\
+BASIC_LOADER_JS = r"""
 function () {
   var k1 = "data-scrapbook-shadowdom",
       k2 = "data-scrapbook-canvas",

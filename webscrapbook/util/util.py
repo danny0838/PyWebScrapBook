@@ -258,7 +258,7 @@ REGEX_COMPRESS_CODE = re.compile(r'[^\S　]+')
 
 
 def compress_code(code):
-    return REGEX_COMPRESS_CODE.sub(' ', code)
+    return REGEX_COMPRESS_CODE.sub(' ', code.strip())
 
 
 #########################################################################

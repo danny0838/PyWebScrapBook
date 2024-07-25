@@ -385,7 +385,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(util.format_string('format 15%, 30%.\nformat 45%.', {}), 'format 15%, 30%.\nformat 45%.')
 
     def test_compress_code(self):
-        input = """\
+        input = r"""
 function () {
   d.addEventListener('click', function (e) {
     e.preventDefault();
@@ -393,15 +393,15 @@ function () {
   }, true);
 }
 """
-        expected = """function () { d.addEventListener('click', function (e) { e.preventDefault(); console.log(e.target); }, true); } """
+        expected = """function () { d.addEventListener('click', function (e) { e.preventDefault(); console.log(e.target); }, true); }"""
         self.assertEqual(util.compress_code(input), expected)
 
-        input = """\
+        input = r"""
 ul  >  li  :not([hidden])  {
   color:  red;
 }
 """
-        expected = """ul > li :not([hidden]) { color: red; } """
+        expected = """ul > li :not([hidden]) { color: red; }"""
         self.assertEqual(util.compress_code(input), expected)
 
     def test_fix_codec(self):
