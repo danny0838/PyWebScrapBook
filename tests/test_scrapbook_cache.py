@@ -2719,6 +2719,30 @@ Linked page content 2. 中文
             },
         })
 
+    def test_html_link_non_internal(self):
+        """Don't cache linked pages for non-internal links."""
+        book = self.init_book(self.test_root, meta=self.general_meta())
+        with open(self.test_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""<!DOCTYPE html>
+<a href="http://[example.com]">invalid</a>
+<a href="http://example.com">absolute</a>
+<a href="//example.com">protocol-relative</a>
+<a href="/example.com">root-relative</a>
+<a href="../linked.html">out-of-item</a>
+""")
+
+        generator = wsb_cache.FulltextCacheGenerator(book)
+        for _info in generator.run():
+            pass
+
+        self.assertEqual(book.fulltext, {
+            '20200101000000000': {
+                'index.html': {
+                    'content': 'invalid absolute protocol-relative root-relative out-of-item',
+                },
+            },
+        })
+
     def test_html_link_datauri(self):
         """Include linked data URL pages"""
         book = self.init_book(self.test_root, meta=self.general_meta())

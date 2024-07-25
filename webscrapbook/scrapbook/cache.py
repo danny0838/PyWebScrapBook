@@ -668,7 +668,6 @@ class FulltextCacheGenerator():
             mime, _ = mimetypes.guess_type(path)
             return (yield from self._get_fulltext_cache_for_fh(item, path, fh, mime))
         except Exception as exc:
-            traceback.print_exc()
             yield Info('error', f'Failed to generate cache for {item.id!r} ({path!r}): {exc}', exc=exc)
             return ''
         finally:
@@ -694,7 +693,10 @@ class FulltextCacheGenerator():
             if path is None:
                 return None
 
-            urlparts = urlsplit(url)
+            try:
+                urlparts = urlsplit(url)
+            except ValueError:
+                return None
 
             # skip absolute URLs
             if urlparts.scheme != '':
