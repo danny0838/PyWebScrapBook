@@ -91,14 +91,69 @@ function () {
       k5 = "data-scrapbook-option-selected",
       k6 = "data-scrapbook-input-value",
       k7 = "data-scrapbook-textarea-value",
+      k8 = "data-scrapbook-adoptedstylesheets",
+      k9 = /^data-scrapbook-adoptedstylesheet-(\d+)$/,
+      k10 = "data-scrapbook-shadowdom-mode",
+      k11 = "data-scrapbook-shadowdom-clonable",
+      k12 = "data-scrapbook-shadowdom-delegates-focus",
+      k13 = "data-scrapbook-shadowdom-serializable",
+      k14 = "data-scrapbook-shadowdom-slot-assignment",
+      d = document,
+      r = d.documentElement,
+      asl = (function (r) {
+        var l = [], d, E, i, e, m, c, j;
+        if (typeof document.adoptedStyleSheets !== 'undefined') {
+          E = r.attributes;
+          i = E.length;
+          while (i--) {
+            e = E[i];
+            if (!(m = e.nodeName.match(k9))) { continue; }
+            c = l[m[1]] = new CSSStyleSheet();
+            r.removeAttribute(m[0]);
+            m = e.nodeValue.split('\n\n');
+            j = m.length;
+            while (j--) {
+              try {
+                m[j] && c.insertRule(m[j]);
+              } catch (ex) {
+                console.error(ex);
+              }
+            }
+          }
+        }
+        return l;
+      })(r),
+      as = function (d, h) {
+        var l, i, I;
+        if ((l = h.getAttribute(k8)) !== null && asl.length) {
+          l = l.split(',');
+          for (i = 0, I = l.length; i < I; i++) {
+            d.adoptedStyleSheets.push(asl[l[i]]);
+          }
+          h.removeAttribute(k8);
+        }
+      },
       fn = function (r) {
-        var E = r.querySelectorAll ? r.querySelectorAll("*") : r.getElementsByTagName("*"), i = E.length, e, d, s;
+        var E = r.querySelectorAll ? r.querySelectorAll("*") : r.getElementsByTagName("*"), i = E.length, e, d, s, m;
         while (i--) {
           e = E[i];
-          if ((d = e.getAttribute(k1)) !== null && !e.shadowRoot && e.attachShadow) {
-            s = e.attachShadow({mode: 'open'});
+          s = e.shadowRoot;
+          if (!s && e.attachShadow && (d = e.getAttribute(k1))) {
+            s = e.attachShadow({
+              mode: (m = e.getAttribute(k10)) !== null ? m : 'open',
+              clonable: e.hasAttribute(k11),
+              delegatesFocus: e.hasAttribute(k12),
+              serializable: e.hasAttribute(k13),
+              slotAssignment: (m = e.getAttribute(k14)) !== null ? m : void(0),
+            });
             s.innerHTML = d;
             e.removeAttribute(k1);
+            e.removeAttribute(k10);
+            e.removeAttribute(k11);
+            e.removeAttribute(k12);
+            e.removeAttribute(k13);
+            e.removeAttribute(k14);
+            as(s, e);
           }
           if ((d = e.getAttribute(k2)) !== null) {
             (function () {
@@ -128,12 +183,13 @@ function () {
             e.value = d;
             e.removeAttribute(k7);
           }
-          if (e.shadowRoot) {
-            fn(e.shadowRoot);
+          if (s) {
+            fn(s);
           }
         }
       };
-  fn(document);
+  as(d, r);
+  fn(d);
 }
 """
 
@@ -942,15 +998,21 @@ class ConvertHtmlFileV1(HtmlRewriter):
 
                 # handle old WebScrapBook attributes
                 else:
+                    inserts = []
                     for j, attr_value in enumerate(markup.attrs):
                         attr, value = attr_value
                         if attr == 'data-scrapbook-shadowroot':  # WebScrapBook < 0.115
-                            value_new = self._convert_shadowroot_attribute(value)
-                            markup.attrs[j] = ('data-scrapbook-shadowdom', value_new)
-                            markup.src = None
-                            self.changed = True
-                            self.require_basic_loader = True
-                            continue
+                            data = self._convert_shadowroot_attribute(value)
+                            inserts.append((j, data))
+                    if inserts:
+                        for j, data in reversed(inserts):
+                            html, mode = data
+                            markup.attrs[j] = ('data-scrapbook-shadowdom', html)
+                            if mode != 'open':
+                                markup.attrs.insert(j + 1, ('data-scrapbook-shadowdom-mode', mode))
+                        markup.src = None
+                        self.changed = True
+                        self.require_basic_loader = True
 
             rv.append(markup)
             i += 1
@@ -1086,9 +1148,12 @@ class ConvertHtmlFileV1(HtmlRewriter):
         return rv
 
     def _convert_shadowroot_attribute(self, data):
-        markups = self.loads(json.loads(data)['data'])
+        data = json.loads(data)
+        markups = self.loads(data['data'])
         markups = self.rewrite_doc(markups)
-        return ''.join(str(m) for m in markups if not m.hidden)
+        html = ''.join(str(m) for m in markups if not m.hidden)
+        mode = data['mode']
+        return html, mode
 
 
 def run(input, output, book_ids=None, *,
