@@ -8,6 +8,7 @@ from urllib.parse import quote
 from lxml import etree
 
 from ... import WSB_DIR, util
+from ..._polyfill import zipfile
 from ...util import Info
 from ..host import Host
 from ..indexer import ALLOWED_ROOT_META_ATTRS, SUPPORT_FOLDER_SUFFIXES, Indexer
@@ -136,13 +137,24 @@ class Converter:
         if ext == '.htd':
             ext = ''
 
+        # Special handling for self-extracting html/zip of SingleFile.
+        # Treat as HTZ as an HTML file with binary data cannot be correctly
+        # read with lxml.
+        is_singlefilez = (
+            self.handle_singlefile_meta
+            and util.is_html(entry)
+            and zipfile.is_zipfile(entry)
+        )
+        if is_singlefilez:
+            ext = '.htz'
+
         # generate a unique ID
         id = self.book.get_unique_id()
 
         # copy data files
         supporting_folder = self._get_supporting_folder(entry)
         if (supporting_folder or (
-            self.preserve_filename and os.path.isfile(entry) and not util.is_archive(entry)
+            self.preserve_filename and os.path.isfile(entry) and not (util.is_archive(entry) or is_singlefilez)
         )):
             dst_dir = os.path.join(self.book.data_dir, id)
             os.makedirs(dst_dir, exist_ok=True)
