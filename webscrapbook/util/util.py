@@ -932,7 +932,7 @@ def _get_html_charset(fh, quickly=True):
     return None
 
 
-def get_html_charset(file, default='UTF-8', none_from_bom=False, quickly=True):
+def get_html_charset(file, default='UTF-8', quickly=True):
     """Search for the correct charset to read an HTML file.
 
     lxml auto-detects the document charset (encoding) when parsing a document
@@ -956,8 +956,6 @@ def get_html_charset(file, default='UTF-8', none_from_bom=False, quickly=True):
     Args:
         file: str, path-like, or file-like bytes object
         default: fallback encoding if not found
-        none_from_bom: True to return None if charset is determined from BOM
-            (to prevent error for lxml)
         quickly: True to exit early for normal HTML files
     """
     try:
@@ -972,9 +970,6 @@ def get_html_charset(file, default='UTF-8', none_from_bom=False, quickly=True):
             # Seek for the correct charset (encoding).
             charset = sniff_bom(fh)
             if charset:
-                if none_from_bom:
-                    return None
-
                 return charset
 
             charset = _get_html_charset(fh, quickly=quickly)
