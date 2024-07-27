@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote, urlsplit
 from urllib.request import pathname2url
 
+from lxml import etree
+
 from .. import util
 from .._polyfill import zipfile
 
@@ -100,6 +102,9 @@ class Book:
         '.htz',
         '.maff',
         '.htm',
+        '.xhtml',
+        '.xht',
+        '.svg',
     }
     ITEM_POSTIT_FORMATTER = """\
 <!DOCTYPE html><html><head>\
@@ -425,6 +430,10 @@ class Book:
             with zipfile.ZipFile(file) as zh:
                 with zh.open(info.indexfilename) as fh:
                     return util.load_html_tree(fh)
+
+        if util.is_svg(file):
+            with open(file, 'rb') as fh:
+                return etree.parse(fh)
 
         raise ValueError('unsupported index file type')
 

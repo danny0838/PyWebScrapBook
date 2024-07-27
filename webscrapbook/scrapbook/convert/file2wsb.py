@@ -1,13 +1,16 @@
+import html
 import os
 import shutil
 import time
 import traceback
 from urllib.parse import quote
 
+from lxml import etree
+
 from ... import WSB_DIR, util
 from ...util import Info
 from ..host import Host
-from ..indexer import SUPPORT_FOLDER_SUFFIXES, Indexer
+from ..indexer import ALLOWED_ROOT_META_ATTRS, SUPPORT_FOLDER_SUFFIXES, Indexer
 
 
 class Converter:
@@ -157,9 +160,12 @@ class Converter:
                 # copy entry to index.html for the indexer to retrieve original metadata
                 yield Info('debug', f'Generating index.html from {src!r}')
                 try:
-                    shutil.copy2(src, index_file)
+                    if util.is_svg(src):
+                        self._copy_svg_to_index(src, index_file)
+                    else:
+                        shutil.copy2(src, index_file)
                 except OSError as exc:
-                    yield Info('error', f'Failed to copy data file {entry!r}: {exc.strerror}', exc=exc)
+                    yield Info('error', f'Failed to generate index.html for {entry!r}: {exc.strerror}', exc=exc)
 
                 if supporting_folder:
                     src = supporting_folder
@@ -251,6 +257,26 @@ class Converter:
                     return supporting_folder
 
         return None
+
+    def _copy_svg_to_index(self, src, dst):
+        with open(src, 'rb') as fh:
+            try:
+                tree = etree.parse(fh)
+            except etree.Error:
+                # generate an empty (invalid) file if SVG is malformed
+                attrs = None
+            else:
+                attrs = ''.join(
+                    f' {k}="{html.escape(v)}"'
+                    for k, v in tree.getroot().attrib.items()
+                    if k in ALLOWED_ROOT_META_ATTRS
+                )
+
+        with open(dst, 'w', encoding='UTF-8') as fh:
+            if attrs is not None:
+                fh.write(f"""<!DOCTYPE html><html{attrs}></html>""")
+
+        shutil.copystat(src, dst)
 
 
 def run(input, output, *,

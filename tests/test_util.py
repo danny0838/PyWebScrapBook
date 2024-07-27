@@ -925,6 +925,36 @@ ul  >  li  :not([hidden])  {
         self.assertEqual(util.get_html_charset(fh), 'UTF-8')
         self.assertEqual(fh.tell(), 0)
 
+        # handle file
+        file = os.path.join(root, 'meta_content_charset_big5.html')
+        self.assertEqual(util.get_html_charset(file), 'big5hkscs')
+
+    def test_get_html_charset_xhtml(self):
+        root = os.path.join(test_root, 'get_html_charset')
+
+        # no definition => use default charset
+        with open(os.path.join(root, 'no_charset.xhtml'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'UTF-8')
+            self.assertEqual(fh.tell(), 0)
+
+        with open(os.path.join(root, 'no_charset.xhtml'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh, default='Big5'), 'big5hkscs')
+            self.assertEqual(fh.tell(), 0)
+
+        # detect by meta charset
+        with open(os.path.join(root, 'meta_charset_big5.xhtml'), 'rb') as fh:
+            self.assertEqual(util.get_html_charset(fh), 'big5hkscs')
+            self.assertEqual(fh.tell(), 0)
+
+        # gracefully handle an empty fh
+        fh = io.BytesIO(b'')
+        self.assertEqual(util.get_html_charset(fh), 'UTF-8')
+        self.assertEqual(fh.tell(), 0)
+
+        # handle file
+        file = os.path.join(root, 'meta_charset_big5.xhtml')
+        self.assertEqual(util.get_html_charset(file), 'big5hkscs')
+
     def test_load_html_tree(self):
         # HTML5
         # @FIXME: &nbsp; becomes unescaped \u00A0

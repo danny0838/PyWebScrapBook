@@ -156,6 +156,107 @@ page content
             },
         })
 
+    def test_normal_xhtml(self):
+        """type='' if index file is XHTML."""
+        test_index = os.path.join(self.test_root, '20200101000000000.xhtml')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+    data-scrapbook-create="20200102000000000"
+    data-scrapbook-modify="20200103000000000"
+    data-scrapbook-source="http://example.com"
+    data-scrapbook-comment="My comment
+中文">
+<head>
+<meta charset="UTF-8" />
+<title>MyTitle 中文</title>
+<link rel="shortcut icon" href="favicon.png"/>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.xhtml',
+                'title': 'MyTitle 中文',
+                'type': '',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'icon': 'favicon.png',
+                'source': 'http://example.com',
+                'comment': 'My comment\n中文',
+            },
+        })
+
+    def test_bad_xhtml(self):
+        """No item should be indexed if the XHTML file is bad."""
+        test_index = os.path.join(self.test_root, '20200101000000000.xhtml')
+        with open(test_index, 'w', encoding='UTF-8'):
+            pass
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {})
+
+    def test_normal_svg(self):
+        """type='' if index file is SVG."""
+        test_index = os.path.join(self.test_root, '20200101000000000.svg')
+        with open(test_index, 'w', encoding='UTF-8', newline='\n') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg"
+    data-scrapbook-title="My title 中文"
+    data-scrapbook-create="20200102000000000"
+    data-scrapbook-modify="20200103000000000"
+    data-scrapbook-source="http://example.com"
+    data-scrapbook-comment="My comment 中文">
+  <circle cx="50" cy="40" r="35" />
+</svg>
+""")
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {
+            '20200101000000000': {
+                'index': '20200101000000000.svg',
+                'title': 'My title 中文',
+                'type': '',
+                'create': '20200102000000000',
+                'modify': '20200103000000000',
+                'source': 'http://example.com',
+                'comment': 'My comment 中文',
+            },
+        })
+
+    def test_bad_svg(self):
+        """No item should be indexed if the SVG file is bad."""
+        test_index = os.path.join(self.test_root, '20200101000000000.svg')
+        with open(test_index, 'w', encoding='UTF-8'):
+            pass
+
+        book = self.init_book(self.test_root)
+        generator = Indexer(book)
+        for _info in generator.run([test_index]):
+            pass
+
+        self.assertDictEqual(book.meta, {})
+
     def test_normal_file(self):
         """type='file' if index file is not HTML."""
         test_index = os.path.join(self.test_root, '20200102000000000.txt')

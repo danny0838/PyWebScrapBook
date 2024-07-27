@@ -933,7 +933,7 @@ def _get_html_charset(fh, quickly=True):
 
 
 def get_html_charset(file, default='UTF-8', quickly=True):
-    """Search for the correct charset to read an HTML file.
+    """Search for the correct charset to read an (X)HTML file.
 
     lxml auto-detects the document charset (encoding) when parsing a document
     without specifying the encoding.  However, it may select a wrong encoding
@@ -987,7 +987,7 @@ def get_html_charset(file, default='UTF-8', quickly=True):
 
 
 def load_html_tree(file, options=None):
-    """Load HTML document tree.
+    """Load (X)HTML document tree.
 
     Args:
         file: str, path-like, or file-like bytes object

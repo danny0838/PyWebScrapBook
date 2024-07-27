@@ -778,6 +778,236 @@ page content
         })
 
     @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
+    def test_xhtml01(self):
+        """Test hierarchical folders for *.xhtml
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.xhtml')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8" />
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(index_file, (ts, ts))
+
+        for _info in file2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertDictEqual(book.meta, {
+            '20220101000000001': {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
+            },
+            '20220101000000002': {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': '20220101000000002/index.html',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20220101000000001',
+            ],
+            '20220101000000001': [
+                '20220101000000002',
+            ],
+        })
+        self.assertEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, '20220101000000002'),
+            os.path.join(self.test_output, '20220101000000002', 'index.html'),
+            os.path.join(self.test_output, '20220101000000002', 'mypage.xhtml'),
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
+    def test_xhtml02(self):
+        """Test hierarchical folders for *.xhtml (preserve_filename=False)
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'mypage.xhtml')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+    data-scrapbook-create="20200101000000000"
+    data-scrapbook-source="http://example.com">
+<head>
+<meta charset="UTF-8" />
+<title>MyTitle 中文</title>
+</head>
+<body>
+page content
+</body>
+</html>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(index_file, (ts, ts))
+
+        for _info in file2wsb.run(self.test_input, self.test_output, preserve_filename=False):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertDictEqual(book.meta, {
+            '20220101000000001': {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
+            },
+            '20220101000000002': {
+                'title': 'MyTitle 中文',
+                'type': '',
+                'index': '20220101000000002.xhtml',
+                'create': '20200101000000000',
+                'modify': '20200102030405067',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20220101000000001',
+            ],
+            '20220101000000001': [
+                '20220101000000002',
+            ],
+        })
+        self.assertEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, '20220101000000002.xhtml'),
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
+    def test_svg01(self):
+        """Test hierarchical folders for *.svg
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'myimage.svg')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg"
+    data-scrapbook-create="20200102000000000"
+    data-scrapbook-source="http://example.com">
+  <circle cx="50" cy="40" r="35" />
+</svg>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(index_file, (ts, ts))
+
+        for _info in file2wsb.run(self.test_input, self.test_output):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertDictEqual(book.meta, {
+            '20220101000000001': {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
+            },
+            '20220101000000002': {
+                'title': 'myimage.svg',
+                'type': '',
+                'index': '20220101000000002/index.html',
+                'create': '20200102000000000',
+                'modify': '20200102030405067',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20220101000000001',
+            ],
+            '20220101000000001': [
+                '20220101000000002',
+            ],
+        })
+        self.assertEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, '20220101000000002'),
+            os.path.join(self.test_output, '20220101000000002', 'index.html'),
+            os.path.join(self.test_output, '20220101000000002', 'myimage.svg'),
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
+    def test_svg02(self):
+        """Test hierarchical folders for *.svg (preserve_filename=False)
+        """
+        index_file = os.path.join(self.test_input, 'folder1#中文', 'myimage.svg')
+        os.makedirs(os.path.dirname(index_file), exist_ok=True)
+        with open(index_file, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg"
+    data-scrapbook-create="20200102000000000"
+    data-scrapbook-source="http://example.com">
+  <circle cx="50" cy="40" r="35" />
+</svg>
+""")
+        ts = datetime(2020, 1, 2, 3, 4, 5, 67000, tzinfo=timezone.utc).timestamp()
+        os.utime(index_file, (ts, ts))
+
+        for _info in file2wsb.run(self.test_input, self.test_output, preserve_filename=False):
+            pass
+
+        book = Host(self.test_output).books['']
+        book.load_meta_files()
+        book.load_toc_files()
+
+        self.assertDictEqual(book.meta, {
+            '20220101000000001': {
+                'title': 'folder1#中文',
+                'type': 'folder',
+                'create': '20220101000000001',
+                'modify': '20220101000000001',
+            },
+            '20220101000000002': {
+                'title': 'myimage.svg',
+                'type': '',
+                'index': '20220101000000002.svg',
+                'create': '20200102000000000',
+                'modify': '20200102030405067',
+                'source': 'http://example.com',
+            },
+        })
+        self.assertDictEqual(book.toc, {
+            'root': [
+                '20220101000000001',
+            ],
+            '20220101000000001': [
+                '20220101000000002',
+            ],
+        })
+        self.assertEqual(glob_files(self.test_output), {
+            os.path.join(self.test_output, '20220101000000002.svg'),
+        })
+
+    @mock.patch('webscrapbook.scrapbook.book._id_now', lambda: '20220101000000001')
     def test_other01(self):
         """Test hierarchical folders for normal file
         """

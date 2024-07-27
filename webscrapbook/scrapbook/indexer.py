@@ -200,7 +200,7 @@ class Indexer:
                 tree_root = tree.getroot()
                 if tree_root is None:
                     raise ValueError('no root element')
-                if tree_root.tag != 'html':
+                if tree_root.tag not in ('html', '{http://www.w3.org/2000/svg}svg'):
                     raise ValueError('invalid root element')
             except Exception as exc:
                 yield Info('error', f'Failed to read file {subpath!r}: {exc}', exc=exc)
