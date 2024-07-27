@@ -699,6 +699,7 @@ ul  >  li  :not([hidden])  {
     def test_is_html(self):
         self.assertTrue(util.is_html('index.html'))
         self.assertTrue(util.is_html('index.xhtml'))
+        self.assertTrue(util.is_html('index.xht'))
         self.assertFalse(util.is_html('20200101000000000.htz'))
         self.assertFalse(util.is_html('20200101000000000.maff'))
         self.assertFalse(util.is_html('20200101000000000/index.md'))
@@ -710,6 +711,7 @@ ul  >  li  :not([hidden])  {
     def test_is_xhtml(self):
         self.assertFalse(util.is_xhtml('index.html'))
         self.assertTrue(util.is_xhtml('index.xhtml'))
+        self.assertTrue(util.is_xhtml('index.xht'))
         self.assertFalse(util.is_xhtml('20200101000000000.htz'))
         self.assertFalse(util.is_xhtml('20200101000000000.maff'))
         self.assertFalse(util.is_xhtml('20200101000000000/index.md'))
@@ -721,6 +723,7 @@ ul  >  li  :not([hidden])  {
     def test_is_svg(self):
         self.assertFalse(util.is_svg('index.html'))
         self.assertFalse(util.is_svg('index.xhtml'))
+        self.assertFalse(util.is_svg('index.xht'))
         self.assertFalse(util.is_svg('20200101000000000.htz'))
         self.assertFalse(util.is_svg('20200101000000000.maff'))
         self.assertFalse(util.is_svg('20200101000000000/index.md'))
@@ -732,6 +735,7 @@ ul  >  li  :not([hidden])  {
     def test_is_archive(self):
         self.assertFalse(util.is_archive('index.html'))
         self.assertFalse(util.is_archive('index.xhtml'))
+        self.assertFalse(util.is_archive('index.xht'))
         self.assertTrue(util.is_archive('20200101000000000.htz'))
         self.assertTrue(util.is_archive('20200101000000000.maff'))
         self.assertFalse(util.is_archive('20200101000000000/index.md'))
@@ -743,6 +747,7 @@ ul  >  li  :not([hidden])  {
     def test_is_htz(self):
         self.assertFalse(util.is_htz('index.html'))
         self.assertFalse(util.is_htz('index.xhtml'))
+        self.assertFalse(util.is_htz('index.xht'))
         self.assertTrue(util.is_htz('20200101000000000.htz'))
         self.assertFalse(util.is_htz('20200101000000000.maff'))
         self.assertFalse(util.is_htz('20200101000000000/index.md'))
@@ -754,6 +759,7 @@ ul  >  li  :not([hidden])  {
     def test_is_maff(self):
         self.assertFalse(util.is_maff('index.html'))
         self.assertFalse(util.is_maff('index.xhtml'))
+        self.assertFalse(util.is_maff('index.xht'))
         self.assertFalse(util.is_maff('20200101000000000.htz'))
         self.assertTrue(util.is_maff('20200101000000000.maff'))
         self.assertFalse(util.is_maff('20200101000000000/index.md'))
@@ -765,6 +771,7 @@ ul  >  li  :not([hidden])  {
     def test_is_markdown(self):
         self.assertFalse(util.is_markdown('index.html'))
         self.assertFalse(util.is_markdown('index.xhtml'))
+        self.assertFalse(util.is_markdown('index.xht'))
         self.assertFalse(util.is_markdown('20200101000000000.htz'))
         self.assertFalse(util.is_markdown('20200101000000000.maff'))
         self.assertTrue(util.is_markdown('20200101000000000/index.md'))
@@ -776,6 +783,7 @@ ul  >  li  :not([hidden])  {
     def test_is_wsba(self):
         self.assertFalse(util.is_wsba('index.html'))
         self.assertFalse(util.is_wsba('index.xhtml'))
+        self.assertFalse(util.is_wsba('index.xht'))
         self.assertFalse(util.is_wsba('20200101000000000.htz'))
         self.assertFalse(util.is_wsba('20200101000000000.maff'))
         self.assertFalse(util.is_wsba('20200101000000000/index.md'))
