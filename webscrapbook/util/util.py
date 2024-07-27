@@ -1275,7 +1275,7 @@ def parse_maff_index_rdf(fh):
     """
     def load_attr(attr):
         try:
-            node = root.find('./RDF:Description/MAF:' + attr, ns)
+            node = tree.find('./RDF:Description/MAF:' + attr, ns)
             return node.attrib['{' + ns['RDF'] + '}' + 'resource']
         except Exception:
             return None
@@ -1286,8 +1286,7 @@ def parse_maff_index_rdf(fh):
         'RDF': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
     }
 
-    text = fh.read().decode('UTF-8')
-    root = etree.XML(text)
+    tree = etree.parse(fh)
 
     return MaffPageInfo(
         load_attr('title'),
