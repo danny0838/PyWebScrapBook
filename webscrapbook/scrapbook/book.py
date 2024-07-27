@@ -408,28 +408,25 @@ class Book:
         return [os.path.basename(index)]
 
     def get_tree_from_index_file(self, file):
-        try:
-            if util.is_html(file):
-                with open(file, 'rb') as fh:
+        if util.is_html(file):
+            return util.load_html_tree(file)
+
+        if util.is_htz(file):
+            with zipfile.ZipFile(file) as zh:
+                with zh.open('index.html') as fh:
                     return util.load_html_tree(fh)
 
-            if util.is_htz(file):
-                with zipfile.ZipFile(file) as zh:
-                    with zh.open('index.html') as fh:
-                        return util.load_html_tree(fh)
+        if util.is_maff(file):
+            try:
+                info = next(iter(util.get_maff_pages(file)))
+            except StopIteration:
+                raise ValueError('no page in MAFF archive')
 
-            if util.is_maff(file):
-                info = next(iter(util.get_maff_pages(file)), None)
-                if not info:
-                    return None
+            with zipfile.ZipFile(file) as zh:
+                with zh.open(info.indexfilename) as fh:
+                    return util.load_html_tree(fh)
 
-                with zipfile.ZipFile(file) as zh:
-                    with zh.open(info.indexfilename) as fh:
-                        return util.load_html_tree(fh)
-        except (OSError, zipfile.BadZipFile, KeyError):
-            return None
-
-        return None
+        raise ValueError('unsupported index file type')
 
     def get_icon_file(self, item):
         """Get favicon file path of an item.
