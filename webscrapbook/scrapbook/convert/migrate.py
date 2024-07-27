@@ -1002,7 +1002,10 @@ class ConvertHtmlFileV1(HtmlRewriter):
                     for j, attr_value in enumerate(markup.attrs):
                         attr, value = attr_value
                         if attr == 'data-scrapbook-shadowroot':  # WebScrapBook < 0.115
-                            data = self._convert_shadowroot_attribute(value)
+                            try:
+                                data = self._convert_shadowroot_attribute(value)
+                            except (json.decoder.JSONDecodeError, KeyError):
+                                raise ValueError(f'Invalid value of {attr!r} attribute: {value!r}') from None
                             inserts.append((j, data))
                     if inserts:
                         for j, data in reversed(inserts):
