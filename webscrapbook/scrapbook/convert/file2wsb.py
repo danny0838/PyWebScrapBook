@@ -128,6 +128,8 @@ class Converter:
         basename = os.path.basename(entry)
         _, ext = os.path.splitext(entry)
         ext = ext.lower()
+
+        # special handling for *.htd folders
         if ext == '.htd':
             ext = ''
 
@@ -153,6 +155,7 @@ class Converter:
             index_file = os.path.join(dst_dir, 'index.html')
             if ext in self.book.ITEM_INDEX_ALLOWED_EXT:
                 # copy entry to index.html for the indexer to retrieve original metadata
+                yield Info('debug', f'Generating index.html from {src!r}')
                 try:
                     shutil.copy2(src, index_file)
                 except OSError as exc:
