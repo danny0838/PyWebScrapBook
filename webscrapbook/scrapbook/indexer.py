@@ -329,7 +329,7 @@ class Indexer:
     def _handle_singlefile_meta(self, meta, root):
         try:
             doc_comment = root[0]
-        except KeyError:
+        except IndexError:
             return
 
         if doc_comment.tag != etree.Comment:
@@ -365,7 +365,7 @@ class Indexer:
     def _handle_maoxian_meta(self, meta, root):
         try:
             doc_comment = root[0]
-        except KeyError:
+        except IndexError:
             return
 
         if doc_comment.tag != etree.Comment:
