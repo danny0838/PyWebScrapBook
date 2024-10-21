@@ -537,16 +537,12 @@ class SearchEngine:
         book.load_toc_files()
         book.load_fulltext_files()
 
-        id_pool = {}
-        for root in self.query.roots['include']:
-            for id in book.get_reachable_items(root):
-                id_pool[id] = True
-        for root in self.query.roots.setdefault('exclude', []):
-            for id in book.get_reachable_items(root):
-                try:
-                    del id_pool[id]
-                except KeyError:
-                    pass
+        id_pool = book.get_reachable_items(self.query.roots['include'])
+        for id in book.get_reachable_items(self.query.roots.setdefault('exclude', [])):
+            try:
+                del id_pool[id]
+            except KeyError:
+                pass
 
         for id in id_pool:
             meta = book.meta.get(id)

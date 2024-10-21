@@ -479,17 +479,25 @@ class Book:
         with open(file, 'w', encoding='UTF-8', newline='\n') as fh:
             fh.write(data)
 
-    def get_reachable_items(self, item_id, dict=None):
+    def get_reachable_items(self, item_ids=None, dict=None):
         """Get a flattened set of reachable items, including self.
 
         Args:
-            item_id: the item id to search from
+            item_ids: a str or an iterable of str of item IDs to search from,
+                or None for common special items
             dict: a dict to store the final result, or None to generate one
         """
+        if item_ids is None:
+            item_ids = self.SPECIAL_ITEM_ID
+        elif isinstance(item_ids, str):
+            item_ids = (item_ids,)
+
         if dict is None:
             dict = {}
 
-        self._get_reachable_items(item_id, dict)
+        for item_id in item_ids:
+            self._get_reachable_items(item_id, dict)
+
         return dict
 
     def _get_reachable_items(self, item_id, dict):
@@ -1129,9 +1137,7 @@ class Book:
                 del self.toc[current_parent_id]
 
         # handle unreachable items
-        reachable_items = {}
-        for root_id in self.SPECIAL_ITEM_ID:
-            self.get_reachable_items(root_id, reachable_items)
+        reachable_items = self.get_reachable_items()
 
         recycled = {}
         for item_id, current_parent_id, _ in tasks:
@@ -1275,9 +1281,7 @@ class Book:
             tasks[item] = True
 
         # perform the tasks
-        old_reachable_items = {}
-        for root_id in self.SPECIAL_ITEM_ID:
-            self.get_reachable_items(root_id, old_reachable_items)
+        old_reachable_items = self.get_reachable_items()
 
         try:
             it = reversed(tasks)
@@ -1291,9 +1295,7 @@ class Book:
             if not self.toc[current_parent_id]:
                 del self.toc[current_parent_id]
 
-        reachable_items = {}
-        for root_id in self.SPECIAL_ITEM_ID:
-            self.get_reachable_items(root_id, reachable_items)
+        reachable_items = self.get_reachable_items()
 
         deleted = {item_id: True for item_id in old_reachable_items if item_id not in reachable_items}
         for item_id in deleted:
@@ -1336,10 +1338,7 @@ class Book:
             ValueError: if the item does not exist
         """
         if recursively:
-            item_ids = {}
-            for item_id in items:
-                for desc_item_id in self.get_reachable_items(item_id, item_ids):
-                    item_ids[desc_item_id] = True
+            item_ids = self.get_reachable_items(items)
         else:
             item_ids = items
 

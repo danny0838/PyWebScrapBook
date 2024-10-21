@@ -1395,6 +1395,63 @@ scrapbook.fulltext({
             ['item3', 'item4', 'item1', 'item2'],
         )
 
+        # item_ids as iterable
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+                'item3',
+                'item4',
+            ],
+            'item1': [
+                'item1-1',
+                'item1-2',
+            ],
+            'item2': [
+                'item2-1',
+                'item2-2',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items(['item1', 'item2', 'item3'])),
+            ['item1', 'item1-1', 'item1-2', 'item2', 'item2-1', 'item2-2', 'item3'],
+        )
+        self.assertEqual(
+            list(book.get_reachable_items(dict.fromkeys(('item1', 'item2', 'item3')))),
+            ['item1', 'item1-1', 'item1-2', 'item2', 'item2-1', 'item2-2', 'item3'],
+        )
+
+        # item_ids as None for common special items
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+            ],
+            'hidden': [
+                'item3',
+            ],
+            'recycle': [
+                'item4',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items()),
+            ['root', 'item1', 'item2', 'hidden', 'item3', 'recycle', 'item4'],
+        )
+
+        # store to the specified dict
+        mydict = {'item0': True}
+        book.toc = {
+            'root': [
+                'item1',
+                'item2',
+            ],
+        }
+        self.assertEqual(
+            list(book.get_reachable_items('root', mydict)),
+            ['item0', 'root', 'item1', 'item2'],
+        )
+
     def test_get_unique_id(self):
         self.create_general_config()
         host = Host(self.test_root)

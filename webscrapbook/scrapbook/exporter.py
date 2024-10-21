@@ -55,10 +55,7 @@ class Exporter():
         if items:
             # add descendant id if recursive mode
             if recursive:
-                dict_ = {}
-                for id in items:
-                    self.book.get_reachable_items(id, dict_)
-                items = dict_
+                items = self.book.get_reachable_items(items)
 
             id_pool.intersection_update(items)
         else:
