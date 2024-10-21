@@ -971,7 +971,7 @@ postit page content
 
 &lt;p data-scrapbook-shadowdom=&quot;
 &amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
-&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -997,7 +997,7 @@ postit page content
 
         input = r"""<html><body>foo<div data-scrapbook-shadowroot="{&quot;data&quot;:&quot;<div>Sub-content.</div>&quot;,&quot;mode&quot;:&quot;closed&quot;}" data-scrapbook-shadowroot="{&quot;data&quot;:&quot;<div>Sub-content2.</div>&quot;,&quot;mode&quot;:&quot;closed&quot;}">Hidden content.</div></body><script data-scrapbook-elem="basic-loader">dummy</script></html>"""  # noqa: E501
 
-        expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="&lt;div&gt;Sub-content.&lt;/div&gt;" data-scrapbook-shadowdom-mode="closed" data-scrapbook-shadowdom="&lt;div&gt;Sub-content2.&lt;/div&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+        expected_regex = """<html><body>foo<div data-scrapbook-shadowdom="&lt;div&gt;Sub-content.&lt;/div&gt;" data-scrapbook-shadowdom-mode="closed" data-scrapbook-shadowdom="&lt;div&gt;Sub-content2.&lt;/div&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000', 'index.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -1122,7 +1122,7 @@ postit page content
 
 &lt;p data-scrapbook-shadowdom=&quot;
 &amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
-&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000.htz')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -1218,7 +1218,7 @@ postit page content
 
 &lt;p data-scrapbook-shadowdom=&quot;
 &amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
-&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000.maff')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
@@ -1314,7 +1314,7 @@ postit page content
 
 &lt;p data-scrapbook-shadowdom=&quot;
 &amp;lt;div&amp;gt;Deep sub-content.&amp;lt;/div&amp;gt;
-&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""
+&quot; data-scrapbook-shadowdom-mode=&quot;closed&quot;&gt;Hidden content.&lt;/p&gt;" data-scrapbook-shadowdom-mode="closed">Hidden content.</div><script data-scrapbook-elem="basic-loader">(?:[^<]*(?:<(?!/script>)[^<]*)*)</script></body></html>"""  # noqa: E501
 
         index_file = os.path.join(self.test_input, '20200101000000000.html')
         os.makedirs(os.path.dirname(index_file), exist_ok=True)
