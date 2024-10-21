@@ -76,6 +76,23 @@ to { background-image: url("http://example.com/image.bmp"); }
         expected = """body { image-background: uRl("http://example.com/image.jpg"); }"""
         self.assertEqual(rewrite(input), expected)
 
+        # spaces only
+        input = """body { image-background: url(); }"""
+        expected = """body { image-background: url("http://example.com/"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = """body { image-background: url( ); }"""
+        expected = """body { image-background: url( "http://example.com/"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = """body { image-background: url(  ); }"""
+        expected = """body { image-background: url(  "http://example.com/"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = """body { image-background: url(   ); }"""
+        expected = """body { image-background: url(   "http://example.com/"); }"""
+        self.assertEqual(rewrite(input), expected)
+
         # escape quotes
         input = """body { image-background: url('i "like" it.jpg'); }"""
         expected = r"""body { image-background: url("http://example.com/i \"like\" it.jpg"); }"""
@@ -108,6 +125,19 @@ to { background-image: url("http://example.com/image.bmp"); }
 
         input = """body { color: red; }/*url(image.jpg)*/"""
         self.assertEqual(rewrite(input), input)
+
+        # misc
+        input = """body { image-background: url(''); }"""
+        expected = """body { image-background: url("http://example.com/"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r"""body { image-background: url(\)); }"""
+        expected = r"""body { image-background: url("http://example.com/\\)"); }"""
+        self.assertEqual(rewrite(input), expected)
+
+        input = r"""body { image-background: var(--my-var,url()); }"""
+        expected = r"""body { image-background: var(--my-var,url("http://example.com/")); }"""
+        self.assertEqual(rewrite(input), expected)
 
     def test_image_ignore_unrelated_pattern(self):
         rewrite = partial(CssRewriter().rewrite, rewrite_background_url=self.rewrite_func)

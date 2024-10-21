@@ -23,8 +23,8 @@ class CssRewriter:
     pDQStr = fr"""(?:"[^\\"]*(?:\\[\s\S][^\\"]*)*")"""  # double quoted string  # noqa: N815, F541
     pSQStr = fr"""(?:'[^\\']*(?:\\[\s\S][^\\']*)*')"""  # single quoted string  # noqa: N815, F541
     pES = fr"""(?:(?:{pCm}|{pDQStr}|{pSQStr}|{pChar})*?)"""  # embeded string  # noqa: N815, F541
-    pUrl = fr"""(?:\burl\({pSp}(?:{pDQStr}|{pSQStr}|[^'"{ASCII_WHITESPACE}](?:{pEscaped}|[^)])*?){pSp}\))"""  # URL  # noqa: N815, F541
-    pUrl2 = fr"""(\burl\({pSp})({pDQStr}|{pSQStr}|[^'"{ASCII_WHITESPACE}](?:{pEscaped}|[^)])*?)({pSp}\))"""  # URL; catch 3  # noqa: N815, F541
+    pUrl = fr"""(?:\burl\({pSp}(?:{pDQStr}|{pSQStr}|(?!['"{ASCII_WHITESPACE}])(?:{pEscaped}|[^)])*?){pSp}\))"""  # URL  # noqa: N815, F541
+    pUrl2 = fr"""(\burl\({pSp})({pDQStr}|{pSQStr}|(?!['"{ASCII_WHITESPACE}])(?:{pEscaped}|[^)])*?)({pSp}\))"""  # URL; catch 3  # noqa: N815, F541
     pRImport = fr"""(@import{pCmSp})({pUrl}|{pDQStr}|{pSQStr})"""  # @import; catch 2  # noqa: N815, F541
     pRFontFace = fr"""(@font-face{pCmSp}{{{pES}}})"""  # @font-face; catch 1  # noqa: N815, F541
     pRNamespace = fr"""(@namespace{pCmSp}(?:{pStr}{pCmSp2})?{pUrl})"""  # @namespace; catch 1  # noqa: N815, F541
