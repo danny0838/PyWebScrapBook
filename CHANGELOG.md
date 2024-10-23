@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.4.1] - 2024-10-23
+* Fixed CSS handling error for certain `url()` when converting an item to single_file format.
+* Miscellaneous improvements for the unittest suite.
+
 ## [2.4.0] - 2024-07-28
 * Fixed an error on an invalid URL during generating fulltext cache.
 * Fixed an issue that inproper attributes of the root element are taken by the checker/indexer.
