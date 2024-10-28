@@ -426,15 +426,15 @@ class Host:
             backup_dir: a path-like for the directory to create a backup, or
                 None to auto-generate one.
             base: an arbitrary base directory (as an absolute path)
-                to calculate the backup file path since, or None to use book
-                root by default.
+                to calculate the backup file path since, or None to use
+                (ch)root by default.
             move: True to move file to backup; copy otherwise.
 
         Raises:
             OSError: failed to copy or move
         """
         if base is None:
-            base = self.root
+            base = self.chroot
 
         if backup_dir is None:
             ts = util.datetime_to_id()

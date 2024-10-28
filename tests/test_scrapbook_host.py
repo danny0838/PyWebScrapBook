@@ -213,7 +213,7 @@ name = mybook2
         )
 
     def test_backup01(self):
-        """A common case."""
+        """A common file case."""
         test_backup_dir = os.path.join(self.test_root, 'backup')
         os.makedirs(test_backup_dir)
         test_file = os.path.join(self.test_root, 'tree', 'meta.js')
@@ -304,7 +304,7 @@ name = mybook2
             self.assertEqual(fh.read(), 'def')
 
     def test_backup07(self):
-        """A common case."""
+        """A common case without backup_dir param."""
         test_file = os.path.join(self.test_root, 'tree', 'meta.js')
         os.makedirs(os.path.dirname(test_file))
         with open(test_file, 'w', encoding='UTF-8') as fh:
@@ -324,6 +324,27 @@ name = mybook2
         test_backup_dir = os.path.join(self.test_root, 'backup')
         os.makedirs(test_backup_dir)
         test_file = os.path.join(self.test_root, 'tree', 'meta.js').upper()
+        os.makedirs(os.path.dirname(test_file))
+        with open(test_file, 'w', encoding='UTF-8') as fh:
+            fh.write('abc')
+
+        host = Host(self.test_root)
+        host.backup(test_file, test_backup_dir)
+
+        with open(os.path.join(test_backup_dir, 'tree', 'meta.js'), encoding='UTF-8') as fh:
+            self.assertEqual(fh.read(), 'abc')
+
+    def test_backup09(self):
+        """Path of backup files should be relative to chroot."""
+        with open(self.test_config, 'w', encoding='UTF-8') as fh:
+            fh.write("""\
+[app]
+root = public
+""")
+
+        test_backup_dir = os.path.join(self.test_root, 'backup')
+        os.makedirs(test_backup_dir)
+        test_file = os.path.join(self.test_root, 'public', 'tree', 'meta.js')
         os.makedirs(os.path.dirname(test_file))
         with open(test_file, 'w', encoding='UTF-8') as fh:
             fh.write('abc')
