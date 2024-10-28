@@ -404,11 +404,11 @@ class Host:
         return FileLock(self, name, *args, **kwargs)
 
     def get_subpath(self, file):
-        """Get subpath of a file related to root.
+        """Get subpath of a file relative to (ch)root.
 
         Also canonicalize path separators to "/".
         """
-        path = os.path.relpath(file, self.root)
+        path = os.path.relpath(file, self.chroot)
 
         # Convert non-standard path separators to '/'. (Currently this only
         # happens on Windows, which uses '\', and it's safe to do so since
