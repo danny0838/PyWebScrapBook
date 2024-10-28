@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.5.0] - 2024-10-28
+* Backup file paths are now relative to the configured `app.root` rather than to the root directory.
+* Logged file paths of several utilities are now relative to the configured `app.root` rather than to the root directory.
+* Miscellaneous improvements for the internal API and the unittest suite.
+
 ## [2.4.1] - 2024-10-23
 * Fixed CSS handling error for certain `url()` when converting an item to single_file format.
 * Miscellaneous improvements for the unittest suite.
