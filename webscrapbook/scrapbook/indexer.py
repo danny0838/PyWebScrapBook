@@ -495,7 +495,16 @@ class FavIconCacher:
             if not (yield from verify_mime(mime)):
                 return None
 
-            cache_file = yield from cache_fh(r)
+            # get a seekable fh
+            # r is not seekable for a general absolute URL
+            # r is seekable for a data URL
+            if r.seekable():
+                fh = r.fp
+            else:
+                fh = io.BytesIO()
+                shutil.copyfileobj(r, fh)
+
+            cache_file = yield from cache_fh(fh)
 
         self.book.meta[id]['icon'] = util.get_relative_url(
             cache_file,
