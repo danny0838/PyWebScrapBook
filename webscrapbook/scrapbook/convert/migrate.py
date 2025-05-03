@@ -98,11 +98,60 @@ function () {
       k12 = "data-scrapbook-shadowdom-delegates-focus",
       k13 = "data-scrapbook-shadowdom-serializable",
       k14 = "data-scrapbook-shadowdom-slot-assignment",
+      k15 = "data-scrapbook-slot-assigned",
+      k16 = "data-scrapbook-slot-index",
+      k17 = /^scrapbook-slot-index=(\d+)$/,
+      k18 = '/scrapbook-slot-index',
       d = document,
       r = d.documentElement,
+      $s = !!r.attachShadow,
+      $as = !!d.adoptedStyleSheets,
+      $c = !!window.HTMLCanvasElement,
+      $sa = !!d.createElement('slot').assign,
+      sle = [],
+      sls = [],
+      slt = function (r) {
+        if ($sa) {
+          var E = r.childNodes, i, e, s, m;
+          for (i = 0; i < E.length; i++) {
+            e = E[i];
+            if (e.nodeType === 8) {
+              s = e.nodeValue;
+              if (m = s.match(k17)) {
+                s = e.nextSibling;
+                if (s.nodeType === 3) {
+                  sls[m[1]] = s;
+                }
+                r.removeChild(e);
+                i--;
+              } else if (s === k18) {
+                r.removeChild(e);
+                i--;
+              }
+            }
+          }
+        }
+      },
+      sl = function () {
+        var i = sle.length, j, d, e;
+        while (i--) {
+          d = sle[i];
+          e = d.elem;
+          d = d.value.split(',');
+          j = d.length;
+          while (j--) {
+            d[j] = sls[parseInt(d[j], 10)];
+          }
+          try {
+            e.assign.apply(e, d);
+          } catch (ex) {
+            console.error(ex);
+          }
+        }
+      },
       asl = (function (r) {
-        var l = [], d, E, i, e, m, c, j;
-        if (typeof document.adoptedStyleSheets !== 'undefined') {
+        var l = [], E, i, e, m, c, j;
+        if ($as) {
           E = r.attributes;
           i = E.length;
           while (i--) {
@@ -123,14 +172,14 @@ function () {
         }
         return l;
       })(r),
-      as = function (d, h) {
+      as = function (d, e) {
         var l, i, I;
-        if ((l = h.getAttribute(k8)) !== null && asl.length) {
+        if ($as && (l = e.getAttribute(k8)) !== null) {
           l = l.split(',');
           for (i = 0, I = l.length; i < I; i++) {
             d.adoptedStyleSheets.push(asl[l[i]]);
           }
-          h.removeAttribute(k8);
+          e.removeAttribute(k8);
         }
       },
       fn = function (r) {
@@ -138,24 +187,29 @@ function () {
         while (i--) {
           e = E[i];
           s = e.shadowRoot;
-          if (!s && e.attachShadow && (d = e.getAttribute(k1))) {
-            s = e.attachShadow({
-              mode: (m = e.getAttribute(k10)) !== null ? m : 'open',
-              clonable: e.hasAttribute(k11),
-              delegatesFocus: e.hasAttribute(k12),
-              serializable: e.hasAttribute(k13),
-              slotAssignment: (m = e.getAttribute(k14)) !== null ? m : void(0),
-            });
-            s.innerHTML = d;
+          if ($s && (d = e.getAttribute(k1))) {
+            if (!s) {
+              try {
+                s = e.attachShadow({
+                  mode: (m = e.getAttribute(k10)) !== null ? m : 'open',
+                  clonable: e.hasAttribute(k11),
+                  delegatesFocus: e.hasAttribute(k12),
+                  serializable: e.hasAttribute(k13),
+                  slotAssignment: (m = e.getAttribute(k14)) !== null ? m : void 0,
+                });
+                s.innerHTML = d;
+              } catch (ex) {
+                console.error(ex);
+              }
+            }
             e.removeAttribute(k1);
             e.removeAttribute(k10);
             e.removeAttribute(k11);
             e.removeAttribute(k12);
             e.removeAttribute(k13);
             e.removeAttribute(k14);
-            as(s, e);
           }
-          if ((d = e.getAttribute(k2)) !== null) {
+          if ($c && (d = e.getAttribute(k2)) !== null) {
             (function () {
               var c = e, g = new Image();
               g.onload = function () { c.getContext('2d').drawImage(g, 0, 0); };
@@ -183,13 +237,24 @@ function () {
             e.value = d;
             e.removeAttribute(k7);
           }
+          if ($sa && (d = e.getAttribute(k15)) !== null) {
+            sle.push({elem: e, value: d});
+            e.removeAttribute(k15);
+          }
+          if ($sa && (d = e.getAttribute(k16)) !== null) {
+            sls[d] = e;
+            e.removeAttribute(k16);
+          }
           if (s) {
+            slt(e);
+            as(s, e);
             fn(s);
           }
         }
       };
   as(d, r);
   fn(d);
+  sl();
 }
 """
 
