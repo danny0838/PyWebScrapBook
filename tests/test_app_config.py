@@ -291,8 +291,6 @@ allowed_x_port = 1
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers['Location'], 'https://example.com:8000/subdir/')
 
-    # emulate that the app is run behind a reverse proxy server at "example.com"
-    @mock.patch('werkzeug.wrappers.request.Request.host', 'example.com')
     def test_x_for(self):
         # allowed_x_for = 0
         self.init_host(server_root, config="""[app]
@@ -304,6 +302,7 @@ allowed_x_for = 0
         with app.test_client() as c:
             # single value
             get = partial(c.get, headers={
+                'Host': 'reverse-proxy.example.com',
                 'X-Forwarded-For': '192.168.0.100',
             })
 
@@ -314,6 +313,7 @@ allowed_x_for = 0
 
             # multiple values
             get = partial(c.get, headers={
+                'Host': 'reverse-proxy.example.com',
                 'X-Forwarded-For': '203.0.113.195, 70.41.3.18, 150.172.238.178',
             })
 
@@ -332,6 +332,7 @@ allowed_x_for = 1
         with app.test_client() as c:
             # single value
             get = partial(c.get, headers={
+                'Host': 'reverse-proxy.example.com',
                 'X-Forwarded-For': '192.168.0.100',
             })
 
@@ -342,6 +343,7 @@ allowed_x_for = 1
 
             # multiple values
             get = partial(c.get, headers={
+                'Host': 'reverse-proxy.example.com',
                 'X-Forwarded-For': '203.0.113.195, 70.41.3.18, 150.172.238.178',
             })
 
@@ -360,6 +362,7 @@ allowed_x_for = 2
         with app.test_client() as c:
             # single value
             get = partial(c.get, headers={
+                'Host': 'reverse-proxy.example.com',
                 'X-Forwarded-For': '192.168.0.100',
             })
 
@@ -370,6 +373,7 @@ allowed_x_for = 2
 
             # multiple values
             get = partial(c.get, headers={
+                'Host': 'reverse-proxy.example.com',
                 'X-Forwarded-For': '203.0.113.195, 70.41.3.18, 150.172.238.178',
             })
 
