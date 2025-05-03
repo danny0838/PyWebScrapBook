@@ -1,6 +1,5 @@
 """Generator of fulltext cache and/or static site pages.
 """
-import functools
 import html
 import io
 import itertools
@@ -12,6 +11,7 @@ import traceback
 from collections import UserDict, namedtuple
 from contextlib import nullcontext
 from datetime import datetime, timezone
+from functools import partial
 from urllib.parse import quote, unquote, urljoin, urlsplit
 
 import jinja2
@@ -401,7 +401,7 @@ FulltextCacheItem = namedtuple('FulltextCacheItem', ('id', 'meta', 'index', 'ind
 class FulltextCacheGenerator():
     """Main class for fulltext cache generation.
     """
-    FULLTEXT_SPACE_REPLACER = functools.partial(re.compile(r'\s+').sub, ' ')
+    FULLTEXT_SPACE_REPLACER = staticmethod(partial(re.compile(r'\s+').sub, ' '))
     FULLTEXT_EXCLUDE_TAGS = {
         'title',
         'style', 'script', 'template',
