@@ -3,6 +3,11 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.5.2] - 2025-05-03
+* Updated the generated loader script for the migrate tool.
+* Fixed several issues for the test suite.
+* Implemented automatic release workflow.
+
 ## [2.5.1] - 2025-01-18
 * Fixed an error when caching a favicon from an absolute URL.
 
