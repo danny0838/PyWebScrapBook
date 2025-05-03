@@ -259,6 +259,16 @@ allowed_x_port = 1
         app = make_app(server_root)
         app.testing = True
         with app.test_client() as c:
+            # host
+            get = partial(c.get, headers={
+                'X-Forwarded-Proto': 'https',
+                'X-Forwarded-Host': 'example.com',
+            })
+
+            r = get('/subdir')
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.headers['Location'], 'https://example.com/subdir/')
+
             # host + port
             get = partial(c.get, headers={
                 'X-Forwarded-Proto': 'https',
