@@ -30,5 +30,6 @@ pyinstaller "%res%\wsb.py" %onefile% --noconfirm ^
   --workpath "%build%" --specpath "%build%" --distpath "%dist%" -n wsb ^
   --hidden-import webscrapbook.cli ^
   --add-data "%dir%\webscrapbook\resources:webscrapbook\resources" ^
-  --add-data "%dir%\webscrapbook\themes:webscrapbook\themes"
+  --add-data "%dir%\webscrapbook\themes:webscrapbook\themes" ^
+  --icon "%res%\scrapbook_32.ico"
 if %errorlevel% neq 0 exit /b %errorlevel%
