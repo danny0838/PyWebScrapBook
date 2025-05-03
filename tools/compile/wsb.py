@@ -1,3 +1,4 @@
-#!/usr/bin/env python3
 import webscrapbook.cli
-webscrapbook.cli.main()
+
+if __name__ == '__main__':
+    webscrapbook.cli.main()
