@@ -12,19 +12,27 @@ PyWebScrapBook is a command line toolkit and backend server for
 
 ## Usage
 
-### Install Python
+### Installation
 
-Install Python >= 3.7 from the [official site](https://www.python.org).
+#### Install from the package manager
 
-Add python to `PATH` environment variable so that it can be run from the command line interface (CLI).
+1. Install Python >= 3.7 from the [official site](https://www.python.org).
 
-### Install this package
+   Add python to `PATH` environment variable so that it can be run from the command line interface (CLI).
 
-Run below command from CLI to install (or upgrade to) the latest version:
+2. Install this package
 
-    python -m pip install -U webscrapbook
+   Run below command from CLI to install (or upgrade to) the latest version:
 
-After installation, `wsb` will be available from the CLI.
+       python -m pip install -U webscrapbook
+
+   After installation, `wsb` will be available from the CLI.
+
+#### Install from compiled binary
+
+1. Download the binary package compatible with your system from [the latest release](https://github.com/danny0838/PyWebScrapBook/releases/latest), and unzip to anywhere on your device.
+
+2. Optionally add the parent directory of the executable file to `PATH` environment variable so that it can be run from the CLI more easily.
 
 ### Usage overview
 
