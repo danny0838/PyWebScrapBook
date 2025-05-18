@@ -107,11 +107,12 @@ cache_search_view_in_map = 'View in map'
 cache_search_start = 'go'
 cache_search_help_label = 'Search syntax help'
 cache_search_help_desc = """\
-• Input keywords search from title, content, or comment.
+• By default the input keywords are searched from title, comment, or fulltext.
 • Use space to separate multiple keywords. For example, “w3c organization” means items containing “w3c” and “organization”.
 • Use double quotes to demark a complete phrase, a literal double quote can be escaped by doubling. For example, “"Tom ""loves"" Mary."” means items containing “Tom "loves" Mary.”
 • Use minus sign to exclude a keyword. For example, “-virus” means items without “virus”.
 • Use “<command>:<keyword>” to specify a special search condition. A minus sign can be prefixed for exclusion or reversion. Available commands include:
+  • default: Reset the fields to search for any keyword without a commmand. The fields are separated with “,” and matching any of the fields is considered a hit. For example, “default:id,title,source,comment,content 2020” means items whose ID, title, source URL, comment, or fulltext contains “2020”. “-default:” remove fields from the current default fields, i.e., “default:title,comment -default:comment” works like “default:title”.
   • mc: each subsequent keyword matches case-sensitively. For example, “mc: CIA FBI -mc: president” means items containing “CIA” and “FBI” case-sensitively, and “president” case-insensitively.
   • re: each subsequent keyword is treated as a regular expression. For example, “re: \\bcolou?r\\b -re: 1+1=2” means items that match regular expression “\\bcolou?r\\b” and contain keyword “1+1=2”.
   • id: item whose ID equal to the keyword (or match the regular expression). Multiple values are “or”-connected. For example, “id:2020 id:2021” means items of ID “2020” or “2021”; “-id:2020” means items whose ID is not “2020”.

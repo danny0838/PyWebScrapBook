@@ -39,7 +39,7 @@ class TestQuery(unittest.TestCase):
     def test_syntax_space(self):
         query = search.Query('foo bar baz')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('foo', re.I | re.M),
                     re.compile('bar', re.I | re.M),
@@ -50,7 +50,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('中文　字串')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('中文', re.I | re.M),
                     re.compile('字串', re.I | re.M),
@@ -60,7 +60,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('tab\tseparated\twords')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('tab', re.I | re.M),
                     re.compile('separated', re.I | re.M),
@@ -72,7 +72,7 @@ class TestQuery(unittest.TestCase):
     def test_syntax_negative(self):
         query = search.Query('-one --two ---three ----four')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('two', re.I | re.M),
                     re.compile('four', re.I | re.M),
@@ -86,7 +86,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('hypen-sep-words -neg-hyper-sep-words')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile(re.escape('hypen-sep-words'), re.I | re.M),
                 ],
@@ -99,7 +99,7 @@ class TestQuery(unittest.TestCase):
     def test_syntax_quote(self):
         query = search.Query('" foo bar "')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile(re.escape(' foo bar '), re.I | re.M),
                 ],
@@ -108,7 +108,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('"　中文　字串　"')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('　中文　字串　', re.I | re.M),
                 ],
@@ -117,7 +117,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('"double ""double quotes"" escape"')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile(re.escape('double "double quotes" escape'), re.I | re.M),
                 ],
@@ -126,7 +126,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('hyphen-sep1"foo bar"hyphen-sep2')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile(re.escape('hyphen-sep1'), re.I | re.M),
                     re.compile(re.escape('foo bar'), re.I | re.M),
@@ -137,7 +137,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('-hyphen-sep1"foo bar"-hyphen-sep2')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile(re.escape('foo bar'), re.I | re.M),
                 ],
@@ -150,7 +150,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('foo""bar')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('foo', re.I | re.M),
                     re.compile('', re.I | re.M),
@@ -161,7 +161,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('foo"')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('foo', re.I | re.M),
                 ],
@@ -176,25 +176,94 @@ class TestQuery(unittest.TestCase):
         self.assertEqual(query.rules, {})
 
     def test_syntax_cmd_default(self):
-        query = search.Query('default:tc')
-        self.assertEqual(query.default, 'tc')
+        # separat with any non-alphanumeric char
+        query = search.Query('default:title,comment')
+        self.assertEqual(query.default, ['title', 'comment'])
+        self.assertEqual(query.rules, {})
 
-        query = search.Query('-default:tc')
-        self.assertEqual(query.default, 'tc')
+        query = search.Query('default:"title comment"')
+        self.assertEqual(query.default, ['title', 'comment'])
+        self.assertEqual(query.rules, {})
 
-        query = search.Query('default:tc foo default:tcc bar')
+        query = search.Query('default:"title, comment"')
+        self.assertEqual(query.default, ['title', 'comment'])
+        self.assertEqual(query.rules, {})
+
+        # last default wins
+        # non-commands keywords are grouped together
+        query = search.Query('default:title foo default:comment,content bar')
+        self.assertEqual(query.default, ['comment', 'content'])
         self.assertEqual(query.rules, {
-            'tc': {
+            None: {
                 'include': [
                     re.compile('foo', re.I | re.M),
-                ],
-            },
-            'tcc': {
-                'include': [
                     re.compile('bar', re.I | re.M),
                 ],
             },
         })
+
+        # accept these fields
+        fields = [
+            'id', 'type', 'file',
+            'title', 'comment', 'content',
+            'index', 'charset', 'source', 'icon',
+            'create', 'modify',
+        ]
+        query = search.Query(f'default:{",".join(fields)}')
+        self.assertEqual(query.default, fields)
+
+        # raise for bad fields
+        with self.assertRaises(ValueError):
+            search.Query('default:default')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:mc')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:re')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:book')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:root')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:sort')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:limit')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:marked')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:locked')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:location')
+
+        with self.assertRaises(ValueError):
+            search.Query('default:undefined')
+
+        # negative means to remove from current
+        query = search.Query('-default:content')
+        self.assertEqual(query.default, ['title', 'comment'])
+        self.assertEqual(query.rules, {})
+
+        query = search.Query('default:id,title,source -default:source')
+        self.assertEqual(query.default, ['id', 'title'])
+        self.assertEqual(query.rules, {})
+
+        # ignore nonexistent or bad fields
+        query = search.Query('-default:nonexist')
+        self.assertEqual(query.default, ['title', 'comment', 'content'])
+        self.assertEqual(query.rules, {})
+
+        # remove once for each negative field
+        query = search.Query('default:title,title,comment,title -default:title,title')
+        self.assertEqual(query.default, ['comment', 'title'])
+        self.assertEqual(query.rules, {})
 
     def test_syntax_cmd_mc(self):
         query = search.Query('mc:')
@@ -205,7 +274,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('mc: abc "def" -mc: ghi "jkl"')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile('abc', re.M),
                     re.compile('def', re.M),
@@ -227,7 +296,7 @@ class TestQuery(unittest.TestCase):
 
         query = search.Query('re: (?:a|b) "^.*.+?$" -re: (?:a|b) "^.*.+?$"')
         self.assertEqual(query.rules, {
-            'tcc': {
+            None: {
                 'include': [
                     re.compile(r'(?:a|b)', re.I | re.M),
                     re.compile(r'^.*.+?$', re.I | re.M),
@@ -428,7 +497,7 @@ class TestQuery(unittest.TestCase):
                             re.compile('jkl', re.I | re.M),
                         ],
                     },
-                    'tcc': {
+                    None: {
                         'include': [
                             re.compile('other1', re.I | re.M),
                             re.compile('other2', re.I | re.M),
@@ -725,6 +794,13 @@ class TestQuery(unittest.TestCase):
             context={},
         )
 
+        cmd = None
+        with self.subTest(cmd=cmd):
+            query = search.Query('foo bar baz')
+            with mock.patch('webscrapbook.scrapbook.search.Query._match_default') as mocked:
+                query.match_item(item)
+            mocked.assert_called_once_with(query.rules[cmd], item)
+
         for cmd in ('tcc', 'tc', 'title', 'comment', 'content', 'id', 'type', 'source'):
             with self.subTest(cmd=cmd):
                 query = search.Query(f'{cmd}:foo {cmd}:bar -{cmd}:baz')
@@ -738,6 +814,59 @@ class TestQuery(unittest.TestCase):
                 with mock.patch(f'webscrapbook.scrapbook.search.Query._match_{cmd}') as mocked:
                     query.match_item(item)
                 mocked.assert_called_once_with(query.rules[cmd], item)
+
+    def test_match_item_default(self):
+        rule = {}
+
+        item = search.Item(
+            book_id='',
+            id='20200101000000000',
+            file='index.html',
+            meta={
+                'title': 'mytitle',
+                'comment': 'mycomment',
+                'source': 'http://example.com',
+            },
+            fulltext={
+                'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+            },
+            context={},
+        )
+
+        with mock.patch('webscrapbook.scrapbook.search.Query.match_text', return_value=False) as mocked:
+            search.Query('dummy_keyword')._match_default(rule, item)
+        mocked.assert_has_calls([
+            mock.call(rule, item.meta.get('title')),
+            mock.call(rule, item.meta.get('comment')),
+            mock.call(rule, item.fulltext.get('content')),
+        ])
+
+        with mock.patch('webscrapbook.scrapbook.search.Query.match_text', return_value=False) as mocked:
+            search.Query('default:title,comment')._match_default(rule, item)
+        mocked.assert_has_calls([
+            mock.call(rule, item.meta.get('title')),
+            mock.call(rule, item.meta.get('comment')),
+        ])
+
+        with mock.patch('webscrapbook.scrapbook.search.Query.match_text', return_value=False) as mocked:
+            search.Query('default:id,source,title,comment')._match_default(rule, item)
+        mocked.assert_has_calls([
+            mock.call(rule, item.id),
+            mock.call(rule, item.meta.get('source')),
+            mock.call(rule, item.meta.get('title')),
+            mock.call(rule, item.meta.get('comment')),
+        ])
+
+        del item.meta['title']
+        del item.meta['comment']
+        del item.fulltext['content']
+        with mock.patch('webscrapbook.scrapbook.search.Query.match_text', return_value=False) as mocked:
+            search.Query('')._match_default(rule, item)
+        mocked.assert_has_calls([
+            mock.call(rule, item.meta.get('title')),
+            mock.call(rule, item.meta.get('comment')),
+            mock.call(rule, item.fulltext.get('content')),
+        ])
 
     def test_match_item_tcc(self):
         rule = {}

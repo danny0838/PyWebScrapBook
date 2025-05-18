@@ -23,6 +23,15 @@ class Query:
     """Represents a search query."""
     REPR_FIELDS = ('books', 'roots', 'rules', 'sorts', 'limit', 'mc', 're', 'default')
 
+    ALLOWED_DEFAULT_FIELDS = {
+        'id', 'type', 'file',
+        'title', 'comment', 'content',
+        'index', 'charset', 'source', 'icon',
+        'create', 'modify',
+    }
+
+    PARSE_DEFAULT_REGEX = re.compile(r'\w+')
+
     PARSE_TEXT_REGEX = re.compile(
         r"""
             (?P<cmd>-*[A-Za-z]+:|-+)
@@ -47,7 +56,7 @@ class Query:
         Raises:
             ValueError: if any input field cannot be parsed correctly
         """
-        self.default = 'tcc'
+        self.default = ['title', 'comment', 'content']
         self.mc = False
         self.re = False
         self.books = {}
@@ -61,23 +70,28 @@ class Query:
 
         self.markers = {
             'title': [
+                *(self.rules.get(None, {}).get('include', []) if 'title' in self.default else []),
                 *self.rules.get('tcc', {}).get('include', []),
                 *self.rules.get('tc', {}).get('include', []),
                 *self.rules.get('title', {}).get('include', []),
             ],
             'file': [
+                *(self.rules.get(None, {}).get('include', []) if 'file' in self.default else []),
                 *self.rules.get('file', {}).get('include', []),
             ],
             'comment': [
+                *(self.rules.get(None, {}).get('include', []) if 'comment' in self.default else []),
                 *self.rules.get('tcc', {}).get('include', []),
                 *self.rules.get('tc', {}).get('include', []),
                 *self.rules.get('comment', {}).get('include', []),
             ],
             'content': [
+                *(self.rules.get(None, {}).get('include', []) if 'content' in self.default else []),
                 *self.rules.get('tcc', {}).get('include', []),
                 *self.rules.get('content', {}).get('include', []),
             ],
             'source': [
+                *(self.rules.get(None, {}).get('include', []) if 'source' in self.default else []),
                 *self.rules.get('source', {}).get('include', []),
             ],
         }
@@ -103,10 +117,10 @@ class Query:
         if cmd:
             cmd = cmd[:-1]
         else:
-            cmd = self.default
+            cmd = None
 
         if cmd == 'default':
-            self.default = term
+            self.default = self._parse_default(term, pos)
         elif cmd == 'mc':
             self.mc = pos
         elif cmd == 're':
@@ -141,7 +155,7 @@ class Query:
             inclusion = 'include' if pos else 'exclude'
             value = self._parse_str(term, True)
             self.rules.setdefault(cmd, {}).setdefault(inclusion, []).append(value)
-        elif cmd in ('file', 'tc', 'tcc', 'title', 'comment', 'content',
+        elif cmd in (None, 'file', 'tc', 'tcc', 'title', 'comment', 'content',
                      'index', 'charset', 'source', 'icon'):
             inclusion = 'include' if pos else 'exclude'
             value = self._parse_str(term)
@@ -153,6 +167,24 @@ class Query:
         elif cmd in ('marked', 'locked', 'location'):
             inclusion = 'include' if pos else 'exclude'
             self.rules.setdefault(cmd, {}).setdefault(inclusion, True)
+
+    def _parse_default(self, term, pos):
+        fields = []
+
+        if pos:
+            for field in self.PARSE_DEFAULT_REGEX.findall(term):
+                if field not in self.ALLOWED_DEFAULT_FIELDS:
+                    raise ValueError(f'Invalid default field: {field}')
+                fields.append(field)
+        else:
+            fields[:] = self.default
+            for field in self.PARSE_DEFAULT_REGEX.findall(term):
+                try:
+                    fields.remove(field)
+                except ValueError:
+                    pass
+
+        return fields
 
     def _parse_str(self, term, exact_match=False):
         flags = (0 if self.mc else re.I) | re.M
@@ -245,9 +277,25 @@ class Query:
 
     def match_item(self, item):
         for key, rule in self.rules.items():
-            if not getattr(self, f'_match_{key}')(rule, item):
+            if not getattr(self, f'_match_{key or "default"}')(rule, item):
                 return False
         return True
+
+    def _match_default(self, rule, item):
+        for field in self.default:
+            if field == 'id':
+                value = item.id
+            elif field == 'file':
+                value = item.file
+            elif field == 'content':
+                value = item.fulltext.get('content')
+            else:
+                value = item.meta.get(field)
+
+            if self.match_text(rule, value):
+                return True
+
+        return False
 
     @classmethod
     def _match_tc(cls, rule, item):

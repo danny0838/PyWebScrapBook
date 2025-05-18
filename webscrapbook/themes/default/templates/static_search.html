@@ -490,6 +490,13 @@ const searchEngine = {
   },
 
   parseQuery(queryStr) {
+    const ALLOWED_DEFAULT_FIELDS = new Set([
+      'id', 'type', 'file',
+      'title', 'comment', 'content',
+      'index', 'charset', 'source', 'icon',
+      'create', 'modify',
+    ]);
+
     const query = {
       error: [],
       rules: {},
@@ -505,7 +512,7 @@ const searchEngine = {
       },
       mc: false,
       re: false,
-      default: "tcc",
+      default: ['title', 'comment', 'content'],
     };
 
     const addRule = (name, type, value) => {
@@ -549,6 +556,35 @@ const searchEngine = {
 
     const addError = (msg) => {
       query.error.push(msg);
+    };
+
+    const parseDefault = (term, pos, defaultFields) => {
+      const regex = /\w+/g;
+      let fields;
+      if (pos) {
+        fields = [];
+        let m;
+        while ((m = regex.exec(term))) {
+          const field = m[0];
+          if (!ALLOWED_DEFAULT_FIELDS.has(field)) {
+            addError(`Invalid default field: ${field}`);
+            continue;
+          }
+          fields.push(field);
+        }
+      } else {
+        fields = defaultFields;
+        let m;
+        while ((m = regex.exec(term))) {
+          const field = m[0];
+          const idx = fields.findIndex(f => f === field);
+          if (idx >= 0) {
+            delete fields[idx];
+          }
+        }
+        fields = fields.filter(x => typeof x === 'string');
+      }
+      return fields;
     };
 
     const parseStr = (term, exactMatch = false) => {
@@ -601,12 +637,12 @@ const searchEngine = {
       if (cmd) {
         cmd = cmd.slice(0, -1);
       } else {
-        cmd = query.default;
+        cmd = "";
       }
 
       switch (cmd) {
         case "default":
-          query.default = String(term);
+          query.default = parseDefault(term, pos, query.default);
           break;
         case "mc":
           query.mc = pos;
@@ -630,6 +666,7 @@ const searchEngine = {
         case "id":
           addRule(cmd, pos ? "include" : "exclude", parseStr(term, true));
           break;
+        case "":
         case "file":
         case "source":
         case "icon":
@@ -764,10 +801,41 @@ const searchEngine = {
     }
 
     for (const i in query.rules) {
-      if (!this["_match_" + i](query.rules[i], item)) { return false; }
+      if (!(
+        i ?
+        this["_match_" + i](query.rules[i], item) :
+        this._match_default(query.default, query.rules[i], item)
+      )) {
+        return false;
+      }
     }
 
     return true;
+  },
+
+  _match_default(fields, rule, item) {
+    let value;
+    for (const field of fields) {
+      switch (field) {
+        case 'id':
+          value = item.id;
+          break;
+        case 'file':
+          value = item.file;
+          break;
+        case 'content':
+          value = item.fulltext.content;
+          break;
+        default:
+          value = item.meta[field];
+          break;
+      }
+
+      if (this.matchText(rule, value)) {
+        return true;
+      }
+    }
+    return false;
   },
 
   _match_tc(rule, item) {

@@ -107,11 +107,12 @@ cache_search_view_in_map = '在索引页中检视'
 cache_search_start = '查'
 cache_search_help_label = '搜索语法说明'
 cache_search_help_desc = """\
-• 输入的关键词会在标题、内文、评注中查找。
+• 默认输入的关键词会在标题、评注、全文中查找。
 • 可用半形空白分隔要检索的多个关键词。例如“w3c organization”表示搜索含有“w3c”及“organization”的项目 。
 • 可用半形双引号检索完整关键词，若关键词包含半形双引号，可用连续两个半形双引号表示。例如“"Tom ""loves"" Mary."”表示搜索含有“Tom "loves" Mary.”的项目。
 • 可用负号排除关键词。例如“-virus”表示搜索不含“virus”的项目。
 • 可用“<命令>:<关键词>”指定特殊的检索条件，命令前可加负号表示排除或反向。可用命令如下：
+  • default：重设所有未指定命令的关键词要查找的栏位，栏位名称以「,」分隔，匹配任一栏位皆视为找到。例如「default:id,title,source,comment,content 2020」表示搜索 ID、标题、原始网址、评注、或全文含有「2020」的项目。加负号表示移除已设置的栏位，例如「default:title,comment -default:comment」相当于「default:title」。
   • mc：之后的关键词皆比对大小写。加负号则反之。例如“mc: CIA FBI -mc: president”表示搜索含有区分大小写的“CIA”、“FBI”及不分大小写的“president”的项目。
   • re：之后的关键词皆视为正则表达式。加负号则反之。例如“re: \\bcolou?r\\b -re: 1+1=2”表示搜索匹配正则表达式“\\bcolou?r\\b”且含有关键词“1+1=2”的项目。
   • id：搜索 ID 等同关键词（或与正则表达式匹配）的项目。多次指定时以“或”连接。例如“id:2020 id:2021”表示搜索 ID 为“2020”或“2021”的项目；“-id:2020”表示搜索 ID 不为“2020”的项目。
