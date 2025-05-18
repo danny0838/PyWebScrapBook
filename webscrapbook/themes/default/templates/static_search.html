@@ -627,55 +627,29 @@ const searchEngine = {
           setLimit(term, pos);
           break;
         case "type":
-          addRule("type", pos ? "include" : "exclude", parseStr(term, true));
-          break;
         case "id":
-          addRule("id", pos ? "include" : "exclude", parseStr(term, true));
+          addRule(cmd, pos ? "include" : "exclude", parseStr(term, true));
           break;
         case "file":
-          addRule("file", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "source":
-          addRule("source", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "icon":
-          addRule("icon", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "tc":
-          addRule("tc", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "tcc":
-          addRule("tcc", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "title":
-          addRule("title", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "comment":
-          addRule("comment", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "content":
-          addRule("content", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "index":
-          addRule("index", pos ? "include" : "exclude", parseStr(term));
-          break;
         case "charset":
-          addRule("charset", pos ? "include" : "exclude", parseStr(term));
+          addRule(cmd, pos ? "include" : "exclude", parseStr(term));
           break;
         case "create":
-          addRule("create", pos ? "include" : "exclude", parseDate(term));
-          break;
         case "modify":
-          addRule("modify", pos ? "include" : "exclude", parseDate(term));
+          addRule(cmd, pos ? "include" : "exclude", parseDate(term));
           break;
         case "marked":
-          addRule("marked", pos ? "include" : "exclude", true);
-          break;
         case "locked":
-          addRule("locked", pos ? "include" : "exclude", true);
-          break;
         case "location":
-          addRule("location", pos ? "include" : "exclude", true);
+          addRule(cmd, pos ? "include" : "exclude", true);
           break;
       }
 
