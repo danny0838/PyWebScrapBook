@@ -462,26 +462,8 @@ class TestQuery(unittest.TestCase):
             },
         })
 
-    def test_syntax_cmd_tcc(self):
-        query = search.Query('tcc:abc tcc:"def" -tcc:ghi -tcc:"jkl"')
-        self.assertEqual(query.rules, {
-            'tcc': {
-                'include': [
-                    re.compile('abc', re.I | re.M),
-                    re.compile('def', re.I | re.M),
-                ],
-                'exclude': [
-                    re.compile('ghi', re.I | re.M),
-                    re.compile('jkl', re.I | re.M),
-                ],
-            },
-        })
-
-        with self.assertRaises(ValueError):
-            query = search.Query('re: tcc:???')
-
     def test_syntax_cmd_text(self):
-        fields = ('file', 'tc', 'title', 'comment', 'content',
+        fields = ('file', 'title', 'comment', 'content',
                   'index', 'charset', 'source', 'icon')
         for field in fields:
             with self.subTest(field=field):
@@ -801,7 +783,7 @@ class TestQuery(unittest.TestCase):
                 query.match_item(item)
             mocked.assert_called_once_with(query.rules[cmd], item)
 
-        for cmd in ('tcc', 'tc', 'title', 'comment', 'content', 'id', 'type', 'source'):
+        for cmd in ('title', 'comment', 'content', 'id', 'type', 'source'):
             with self.subTest(cmd=cmd):
                 query = search.Query(f'{cmd}:foo {cmd}:bar -{cmd}:baz')
                 with mock.patch(f'webscrapbook.scrapbook.search.Query._match_{cmd}') as mocked:
@@ -867,61 +849,6 @@ class TestQuery(unittest.TestCase):
             mock.call(rule, item.meta.get('comment')),
             mock.call(rule, item.fulltext.get('content')),
         ])
-
-    def test_match_item_tcc(self):
-        rule = {}
-
-        item = search.Item(
-            book_id='',
-            id='20200101000000000',
-            file='index.html',
-            meta={
-                'title': 'mytitle',
-                'comment': 'mycomment',
-            },
-            fulltext={
-                'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            },
-            context={},
-        )
-        text = '\n'.join((item.meta.get('title', ''), item.meta.get('comment', ''), item.fulltext.get('content', '')))
-        with mock.patch('webscrapbook.scrapbook.search.Query.match_text') as mocked:
-            search.Query._match_tcc(rule, item)
-        mocked.assert_called_once_with(rule, text)
-
-        del item.meta['title']
-        del item.meta['comment']
-        del item.fulltext['content']
-        text = '\n'.join((item.meta.get('title', ''), item.meta.get('comment', ''), item.fulltext.get('content', '')))
-        with mock.patch('webscrapbook.scrapbook.search.Query.match_text') as mocked:
-            search.Query._match_tcc(rule, item)
-        mocked.assert_called_once_with(rule, text)
-
-    def test_match_item_tc(self):
-        rule = {}
-
-        item = search.Item(
-            book_id='',
-            id='20200101000000000',
-            file='',
-            meta={
-                'title': 'mytitle',
-                'comment': 'mycomment',
-            },
-            fulltext={},
-            context={},
-        )
-        text = '\n'.join((item.meta.get('title', ''), item.meta.get('comment', '')))
-        with mock.patch('webscrapbook.scrapbook.search.Query.match_text') as mocked:
-            search.Query._match_tc(rule, item)
-        mocked.assert_called_once_with(rule, text)
-
-        del item.meta['title']
-        del item.meta['comment']
-        text = '\n'.join((item.meta.get('title', ''), item.meta.get('comment', '')))
-        with mock.patch('webscrapbook.scrapbook.search.Query.match_text') as mocked:
-            search.Query._match_tc(rule, item)
-        mocked.assert_called_once_with(rule, text)
 
     def test_match_item_content(self):
         rule = {}
@@ -1193,146 +1120,138 @@ class TestQuery(unittest.TestCase):
         self.assertFalse(search.Query.match_date_or(rule, '20200310000000000'))
         self.assertFalse(search.Query.match_date_or(rule, '20200610000000000'))
 
-    _test_get_snippet_field_cmds = {
-        'title': ['title', 'tcc', 'tc'],
-        'file': ['file'],
-        'comment': ['comment', 'tcc', 'tc'],
-        'content': ['content', 'tcc'],
-        'source': ['source'],
-    }
+    _test_get_snippet_fields = ('title', 'file', 'comment', 'content', 'source')
 
     def test_get_snippet_mark(self):
-        for field, cmds in self._test_get_snippet_field_cmds.items():
-            for cmd in cmds:
-                with self.subTest(field=field, cmd=cmd):
-                    # single regex
-                    input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
-                    expected = """<mark class="kw0">Sed</mark> ac volutpat leo. <mark class="kw0">Sed</mark> sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
-                    query = search.Query(f'{cmd}:sed')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+        for field in self._test_get_snippet_fields:
+            with self.subTest(field=field):
+                # single regex
+                input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
+                expected = """<mark class="kw0">Sed</mark> ac volutpat leo. <mark class="kw0">Sed</mark> sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
+                query = search.Query(f'{field}:sed')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    # multiple regexes
-                    input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
-                    expected = """<mark class="kw0">Sed</mark> ac <mark class="kw1">volutpat</mark> leo. <mark class="kw0">Sed</mark> sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
-                    query = search.Query(f'{cmd}:sed {cmd}:volutpat')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                # multiple regexes
+                input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
+                expected = """<mark class="kw0">Sed</mark> ac <mark class="kw1">volutpat</mark> leo. <mark class="kw0">Sed</mark> sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
+                query = search.Query(f'{field}:sed {field}:volutpat')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    # first win if overlap
-                    input = """Donec nec varius sem, vel commodo erat. Sed arcu dui, placerat ut pulvinar nec, tempus et urna. Sed semper eleifend eros sed tempor."""  # noqa: E501
-                    expected = """Donec nec varius <mark class="kw1">se</mark>m, vel commodo erat. <mark class="kw0">Sed</mark> arcu dui, placerat ut pulvinar nec, tempus et urna. <mark class="kw0">Sed</mark> <mark class="kw1">se</mark>mper eleifend eros <mark class="kw0">sed</mark> tempor."""  # noqa: E501
-                    query = search.Query(f'{cmd}:sed {cmd}:se')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                # first win if overlap
+                input = """Donec nec varius sem, vel commodo erat. Sed arcu dui, placerat ut pulvinar nec, tempus et urna. Sed semper eleifend eros sed tempor."""  # noqa: E501
+                expected = """Donec nec varius <mark class="kw1">se</mark>m, vel commodo erat. <mark class="kw0">Sed</mark> arcu dui, placerat ut pulvinar nec, tempus et urna. <mark class="kw0">Sed</mark> <mark class="kw1">se</mark>mper eleifend eros <mark class="kw0">sed</mark> tempor."""  # noqa: E501
+                query = search.Query(f'{field}:sed {field}:se')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    input = """Donec nec varius sem, vel commodo erat. Sed arcu dui, placerat ut pulvinar nec, tempus et urna. Sed semper eleifend eros sed tempor."""  # noqa: E501
-                    expected = """Donec nec varius <mark class="kw0">se</mark>m, vel commodo erat. <mark class="kw0">Se</mark>d arcu dui, placerat ut pulvinar nec, tempus et urna. <mark class="kw0">Se</mark>d <mark class="kw0">se</mark>mper eleifend eros <mark class="kw0">se</mark>d tempor."""  # noqa: E501
-                    query = search.Query(f'{cmd}:se {cmd}:sed')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                input = """Donec nec varius sem, vel commodo erat. Sed arcu dui, placerat ut pulvinar nec, tempus et urna. Sed semper eleifend eros sed tempor."""  # noqa: E501
+                expected = """Donec nec varius <mark class="kw0">se</mark>m, vel commodo erat. <mark class="kw0">Se</mark>d arcu dui, placerat ut pulvinar nec, tempus et urna. <mark class="kw0">Se</mark>d <mark class="kw0">se</mark>mper eleifend eros <mark class="kw0">se</mark>d tempor."""  # noqa: E501
+                query = search.Query(f'{field}:se {field}:sed')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    # do not mark an empty match
-                    input = """Donec nec varius sem, vel commodo erat."""
-                    expected = """Donec nec varius sem, vel commodo erat."""
-                    query = search.Query(f'{cmd}:""')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                # do not mark an empty match
+                input = """Donec nec varius sem, vel commodo erat."""
+                expected = """Donec nec varius sem, vel commodo erat."""
+                query = search.Query(f'{field}:""')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    # do not mark an excluded keyword
-                    input = """Donec nec varius sem, vel commodo erat."""
-                    expected = """Donec nec varius sem, vel commodo erat."""
-                    query = search.Query(f'-{cmd}:vel')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                # do not mark an excluded keyword
+                input = """Donec nec varius sem, vel commodo erat."""
+                expected = """Donec nec varius sem, vel commodo erat."""
+                query = search.Query(f'-{field}:vel')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    # escape HTML
-                    input = """Curabitur <b>suscipit</b> ultrices pharetra.<br>Nullam <em>maximus</em> tellus sem, ac <u>tempus</u> massa eleifend & vitae."""
-                    expected = """Curabitur &lt;b&gt;suscipit&lt;/b&gt; ultrices pharetra.&lt;br&gt;<mark class="kw0">Nullam</mark> &lt;em&gt;maximus&lt;/em&gt; tellus sem, ac &lt;u&gt;tempus&lt;/u&gt; massa eleifend &amp; vitae."""  # noqa: E501
-                    query = search.Query(f'{field}:nullam')
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                # escape HTML
+                input = """Curabitur <b>suscipit</b> ultrices pharetra.<br>Nullam <em>maximus</em> tellus sem, ac <u>tempus</u> massa eleifend & vitae."""
+                expected = """Curabitur &lt;b&gt;suscipit&lt;/b&gt; ultrices pharetra.&lt;br&gt;<mark class="kw0">Nullam</mark> &lt;em&gt;maximus&lt;/em&gt; tellus sem, ac &lt;u&gt;tempus&lt;/u&gt; massa eleifend &amp; vitae."""  # noqa: E501
+                query = search.Query(f'{field}:nullam')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
     def test_get_snippet_crop(self):
-        for field, cmds in self._test_get_snippet_field_cmds.items():
-            for cmd in cmds:
-                with self.subTest(field=field, cmd=cmd):
-                    # basic crop
-                    input = """Praesent sagittis vitae enim sed luctus."""
-                    expected = """Praesent sagittis vitae enim sed luctus."""
-                    query = search.Query('')
-                    self.assertEqual(
-                        query.get_snippet(input, field, 40),
-                        expected,
-                    )
+        for field in self._test_get_snippet_fields:
+            with self.subTest(field=field):
+                # basic crop
+                input = """Praesent sagittis vitae enim sed luctus."""
+                expected = """Praesent sagittis vitae enim sed luctus."""
+                query = search.Query('')
+                self.assertEqual(
+                    query.get_snippet(input, field, 40),
+                    expected,
+                )
 
-                    input = """Praesent sagittis vitae enim sed luctus."""
-                    expected = """Praesent sagittis vitae enim sed luctu…"""
-                    query = search.Query('')
-                    self.assertEqual(
-                        query.get_snippet(input, field, 39),
-                        expected,
-                    )
+                input = """Praesent sagittis vitae enim sed luctus."""
+                expected = """Praesent sagittis vitae enim sed luctu…"""
+                query = search.Query('')
+                self.assertEqual(
+                    query.get_snippet(input, field, 39),
+                    expected,
+                )
 
-                    input = """Praesent sagittis vitae enim sed luctus."""
-                    expected = """…"""
-                    query = search.Query('')
-                    self.assertEqual(
-                        query.get_snippet(input, field, 0),
-                        expected,
-                    )
+                input = """Praesent sagittis vitae enim sed luctus."""
+                expected = """…"""
+                query = search.Query('')
+                self.assertEqual(
+                    query.get_snippet(input, field, 0),
+                    expected,
+                )
 
-                    # no crop if length is negative or undefined
-                    input = """Praesent sagittis vitae enim sed luctus."""
-                    expected = """Praesent sagittis vitae enim sed luctus."""
-                    query = search.Query('')
-                    self.assertEqual(
-                        query.get_snippet(input, field, -1),
-                        expected,
-                    )
-                    self.assertEqual(
-                        query.get_snippet(input, field),
-                        expected,
-                    )
+                # no crop if length is negative or undefined
+                input = """Praesent sagittis vitae enim sed luctus."""
+                expected = """Praesent sagittis vitae enim sed luctus."""
+                query = search.Query('')
+                self.assertEqual(
+                    query.get_snippet(input, field, -1),
+                    expected,
+                )
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
 
-                    # crop near the keyword
-                    # "source" always crop from start
-                    input = """Praesent sagittis vitae enim sed luctus. Duis egestas molestie leo, a hendrerit nulla ultrices eget."""
-                    if field == 'source':
-                        expected = """Praesent sagittis vitae enim …"""
-                    else:
-                        expected = """egestas <mark class="kw0">molestie</mark> leo, a hendr…"""
-                    query = search.Query(f'{field}:molestie')
-                    self.assertEqual(
-                        query.get_snippet(input, field, 30),
-                        expected,
-                    )
+                # crop near the keyword
+                # "source" always crop from start
+                input = """Praesent sagittis vitae enim sed luctus. Duis egestas molestie leo, a hendrerit nulla ultrices eget."""
+                if field == 'source':
+                    expected = """Praesent sagittis vitae enim …"""
+                else:
+                    expected = """egestas <mark class="kw0">molestie</mark> leo, a hendr…"""
+                query = search.Query(f'{field}:molestie')
+                self.assertEqual(
+                    query.get_snippet(input, field, 30),
+                    expected,
+                )
 
-                    # tail ellipsis shouln't be marked
-                    input = """Praesent sagittis vitae enim sed luctus. … Duis egestas molestie leo, a hendrerit nulla ultrices eget."""
-                    if field == 'source':
-                        expected = """Praesent sagittis vitae enim …"""
-                    else:
-                        expected = """luctus. <mark class="kw0">…</mark> Duis egestas molest…"""
-                    query = search.Query(f'{field}:…')
-                    self.assertEqual(
-                        query.get_snippet(input, field, 30),
-                        expected,
-                    )
+                # tail ellipsis shouln't be marked
+                input = """Praesent sagittis vitae enim sed luctus. … Duis egestas molestie leo, a hendrerit nulla ultrices eget."""
+                if field == 'source':
+                    expected = """Praesent sagittis vitae enim …"""
+                else:
+                    expected = """luctus. <mark class="kw0">…</mark> Duis egestas molest…"""
+                query = search.Query(f'{field}:…')
+                self.assertEqual(
+                    query.get_snippet(input, field, 30),
+                    expected,
+                )
 
 
 class TestSearch(TestBookMixin, unittest.TestCase):

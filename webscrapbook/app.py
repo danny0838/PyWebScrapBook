@@ -919,8 +919,6 @@ def action_config():
                 {'text': 'title:', 'value': 'title:'},
                 {'text': 'comment:', 'value': 'comment:'},
                 {'text': 'content:', 'value': 'content:'},
-                {'text': 'tc:', 'value': 'tc:'},
-                {'text': 'tcc:', 'value': 'tcc:'},
                 {'text': 'source:', 'value': 'source:'},
                 {'text': 'icon:', 'value': 'icon:'},
                 {'text': 'type:', 'value': 'type:'},

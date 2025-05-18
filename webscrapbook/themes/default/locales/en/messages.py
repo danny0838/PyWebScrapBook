@@ -120,8 +120,6 @@ cache_search_help_desc = """\
   • title: items whose title contains the keyword.
   • content: items whose fulltext contains the keyword.
   • comment: items whose comment contains the keyword.
-  • tc: items whose title or comment contains the keyword.
-  • tcc: items whose title, fulltext, or comment contains the keyword.
   • index: items whose index file path contains the keyword.
   • source: items whose source URL contains the keyword.
   • icon: items whose icon URL contains the keyword.

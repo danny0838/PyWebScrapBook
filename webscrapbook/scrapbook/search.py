@@ -71,8 +71,6 @@ class Query:
         self.markers = {
             'title': [
                 *(self.rules.get(None, {}).get('include', []) if 'title' in self.default else []),
-                *self.rules.get('tcc', {}).get('include', []),
-                *self.rules.get('tc', {}).get('include', []),
                 *self.rules.get('title', {}).get('include', []),
             ],
             'file': [
@@ -81,13 +79,10 @@ class Query:
             ],
             'comment': [
                 *(self.rules.get(None, {}).get('include', []) if 'comment' in self.default else []),
-                *self.rules.get('tcc', {}).get('include', []),
-                *self.rules.get('tc', {}).get('include', []),
                 *self.rules.get('comment', {}).get('include', []),
             ],
             'content': [
                 *(self.rules.get(None, {}).get('include', []) if 'content' in self.default else []),
-                *self.rules.get('tcc', {}).get('include', []),
                 *self.rules.get('content', {}).get('include', []),
             ],
             'source': [
@@ -155,7 +150,7 @@ class Query:
             inclusion = 'include' if pos else 'exclude'
             value = self._parse_str(term, True)
             self.rules.setdefault(cmd, {}).setdefault(inclusion, []).append(value)
-        elif cmd in (None, 'file', 'tc', 'tcc', 'title', 'comment', 'content',
+        elif cmd in (None, 'file', 'title', 'comment', 'content',
                      'index', 'charset', 'source', 'icon'):
             inclusion = 'include' if pos else 'exclude'
             value = self._parse_str(term)
@@ -296,23 +291,6 @@ class Query:
                 return True
 
         return False
-
-    @classmethod
-    def _match_tc(cls, rule, item):
-        value = '\n'.join([
-            item.meta.get('title', ''),
-            item.meta.get('comment', ''),
-        ])
-        return cls.match_text(rule, value)
-
-    @classmethod
-    def _match_tcc(cls, rule, item):
-        value = '\n'.join([
-            item.meta.get('title', ''),
-            item.meta.get('comment', ''),
-            item.fulltext.get('content', ''),
-        ])
-        return cls.match_text(rule, value)
 
     @classmethod
     def _match_content(cls, rule, item):

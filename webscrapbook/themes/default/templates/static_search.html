@@ -670,8 +670,6 @@ const searchEngine = {
         case "file":
         case "source":
         case "icon":
-        case "tc":
-        case "tcc":
         case "title":
         case "comment":
         case "content":
@@ -836,14 +834,6 @@ const searchEngine = {
       }
     }
     return false;
-  },
-
-  _match_tc(rule, item) {
-    return this.matchText(rule, [item.meta.title, item.meta.comment].join("\n"));
-  },
-
-  _match_tcc(rule, item) {
-    return this.matchText(rule, [item.meta.title, item.meta.comment, item.fulltext.content].join("\n"));
   },
 
   _match_content(rule, item) {
@@ -1012,8 +1002,6 @@ const searchEngine = {
     <option value="title:">title:</option>
     <option value="comment:">comment:</option>
     <option value="content:">content:</option>
-    <option value="tc:">tc:</option>
-    <option value="tcc:">tcc:</option>
     <option value="source:">source:</option>
     <option value="icon:">icon:</option>
     <option value="type:">type:</option>
