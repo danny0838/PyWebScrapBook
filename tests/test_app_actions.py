@@ -1846,6 +1846,51 @@ class TestConfig(TestActions):
                 },
             })
 
+    def test_key_search_help(self):
+        def i18n_call(name, *args, **kwargs):
+            return ['_i18n', name, args, kwargs]
+
+        with self.app.test_client() as c, \
+             mock.patch('webscrapbook.locales.I18N.__call__', side_effect=i18n_call):
+            r = c.get('/', query_string={'a': 'config', 'f': 'json', 'k': 'search_help'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers['Content-Type'], 'application/json')
+            self.assertEqual(r.json, {
+                'data': {
+                    'help': {
+                        'label': ['_i18n', 'cache_search_help_label', [], {}],
+                        'desc': ['_i18n', 'cache_search_help_desc', [], {}],
+                    },
+                    'helpers': [
+                        {'text': 'id:', 'value': 'id:'},
+                        {'text': 'title:', 'value': 'title:'},
+                        {'text': 'comment:', 'value': 'comment:'},
+                        {'text': 'content:', 'value': 'content:'},
+                        {'text': 'tc:', 'value': 'tc:'},
+                        {'text': 'tcc:', 'value': 'tcc:'},
+                        {'text': 'source:', 'value': 'source:'},
+                        {'text': 'icon:', 'value': 'icon:'},
+                        {'text': 'type:', 'value': 'type:'},
+                        {'text': 'create:', 'value': 'create:'},
+                        {'text': 'modify:', 'value': 'modify:'},
+                        {'text': 'charset:', 'value': 'charset:'},
+                        {'text': 'marked:', 'value': 'marked:'},
+                        {'text': 'locked:', 'value': 'locked:'},
+                        {'text': 'location:', 'value': 'location:'},
+                        {'text': 're:', 'value': 're:'},
+                        {'text': 'mc:', 'value': 'mc:'},
+                        {'text': 'file:', 'value': 'file:'},
+                        {'text': 'root:', 'value': 'root:'},
+                        {'text': 'limit:', 'value': 'limit:'},
+                        {'text': 'sort:', 'value': 'sort:'},
+                        {'text': ['_i18n', 'cache_search_sort_last_modified', [], {}], 'value': '-sort:modify'},
+                        {'text': ['_i18n', 'cache_search_sort_last_created', [], {}], 'value': '-sort:create'},
+                        {'text': ['_i18n', 'cache_search_sort_title', [], {}], 'value': 'sort:title'},
+                        {'text': ['_i18n', 'cache_search_sort_id', [], {}], 'value': 'sort:id'},
+                    ],
+                }
+            })
+
 
 class TestEdit(TestActions):
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)

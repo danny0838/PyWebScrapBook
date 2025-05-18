@@ -907,6 +907,43 @@ def action_config():
     if format != 'json':
         abort(400, 'Action not supported.')
 
+    key = request.values.get('k', default='')
+    if key == 'search_help':
+        data = {
+            'help': {
+                'label': host.i18n('cache_search_help_label'),
+                'desc': host.i18n('cache_search_help_desc'),
+            },
+            'helpers': [
+                {'text': 'id:', 'value': 'id:'},
+                {'text': 'title:', 'value': 'title:'},
+                {'text': 'comment:', 'value': 'comment:'},
+                {'text': 'content:', 'value': 'content:'},
+                {'text': 'tc:', 'value': 'tc:'},
+                {'text': 'tcc:', 'value': 'tcc:'},
+                {'text': 'source:', 'value': 'source:'},
+                {'text': 'icon:', 'value': 'icon:'},
+                {'text': 'type:', 'value': 'type:'},
+                {'text': 'create:', 'value': 'create:'},
+                {'text': 'modify:', 'value': 'modify:'},
+                {'text': 'charset:', 'value': 'charset:'},
+                {'text': 'marked:', 'value': 'marked:'},
+                {'text': 'locked:', 'value': 'locked:'},
+                {'text': 'location:', 'value': 'location:'},
+                {'text': 're:', 'value': 're:'},
+                {'text': 'mc:', 'value': 'mc:'},
+                {'text': 'file:', 'value': 'file:'},
+                {'text': 'root:', 'value': 'root:'},
+                {'text': 'limit:', 'value': 'limit:'},
+                {'text': 'sort:', 'value': 'sort:'},
+                {'text': host.i18n('cache_search_sort_last_modified'), 'value': '-sort:modify'},
+                {'text': host.i18n('cache_search_sort_last_created'), 'value': '-sort:create'},
+                {'text': host.i18n('cache_search_sort_title'), 'value': 'sort:title'},
+                {'text': host.i18n('cache_search_sort_id'), 'value': 'sort:id'},
+            ],
+        }
+        return http_response(data, format=format)
+
     data = host.config.dump_object()
 
     # filter values for better security
@@ -1546,6 +1583,10 @@ class WebHost(wsb_host.Host):
         self._get_permission_cache = {}
         self._get_permission_cache_salt = token_urlsafe()
 
+    @cached_property
+    def i18n(self):
+        return self.get_i18n(self.config['app']['locale'])
+
     def token_acquire(self, now=None):
         if now is None:
             now = int(time.time())
@@ -1724,7 +1765,7 @@ def make_app(root='.', config=None):
         'format_filesize': functools.partial(util.format_filesize, space='\xA0'),
         'quote_path': quote_path,
         'static_url': static_url,
-        'i18n': _host.get_i18n(_host.config['app']['locale']),
+        'i18n': _host.i18n,
     })
 
     return app
