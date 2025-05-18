@@ -1187,6 +1187,33 @@ class TestQuery(unittest.TestCase):
                     expected,
                 )
 
+                # include non-command keywords when default fields match
+                input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
+                expected = """<mark class="kw0">Sed</mark> ac <mark class="kw1">volutpat</mark> leo. <mark class="kw0">Sed</mark> sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
+                query = search.Query(f'default:{field} sed {field}:volutpat')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
+
+                # non-command keywords has higher priority
+                input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
+                expected = """<mark class="kw1">Sed</mark> ac <mark class="kw0">volutpat</mark> leo. <mark class="kw1">Sed</mark> sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
+                query = search.Query(f'default:{field} {field}:sed volutpat')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
+
+                # ignoree non-command keywords when default fields not match
+                input = """Sed ac volutpat leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""
+                expected = """Sed ac <mark class="kw0">volutpat</mark> leo. Sed sapien diam, finibus vel leo a, lacinia laoreet turpis."""  # noqa: E501
+                query = search.Query(f'default:id sed {field}:volutpat')
+                self.assertEqual(
+                    query.get_snippet(input, field),
+                    expected,
+                )
+
     def test_get_snippet_crop(self):
         for field in self._test_get_snippet_fields:
             with self.subTest(field=field):
