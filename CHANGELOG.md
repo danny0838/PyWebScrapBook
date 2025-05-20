@@ -3,6 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.6.0] - 2025-05-20
+* Bumped client requirement to >= 2.20.0.
+* Reworked search commands:
+  * `default:` now takes a comma-separated list of fields to search from.
+  * No longer support `tc:` and `tcc:` commands.
+* Support passing certain server side information to the client.
+
 ## [2.5.3] - 2025-05-04
 * Improved dev tools and fixed several issues.
 * Support building binary executables on more platforms.

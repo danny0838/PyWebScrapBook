@@ -1,6 +1,6 @@
 """Shared constants and configs.
 """
-__version__ = '2.5.3'
+__version__ = '2.6.0'
 __all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
 
 import os
@@ -9,7 +9,7 @@ from collections import OrderedDict
 from configparser import ConfigParser
 from copy import deepcopy
 
-WSB_EXTENSION_MIN_VERSION = '2.0.1'
+WSB_EXTENSION_MIN_VERSION = '2.20.0'
 WSB_USER_DIR = os.environ.get('WSB_USER_DIR') or '.config/wsb'
 WSB_USER_CONFIG = os.environ.get('WSB_USER_CONFIG') or '.wsbconfig'
 WSB_DIR = os.environ.get('WSB_DIR') or '.wsb'
