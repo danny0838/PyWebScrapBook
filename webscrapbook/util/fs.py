@@ -1243,8 +1243,8 @@ def zip_remove(zip, zinfo_or_arcname):
         zip: path, file-like object, or zipfile.ZipFile
     """
     with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'a') as self:
-        if self.mode not in ('w', 'x', 'a'):
-            raise ValueError("remove() requires mode 'w', 'x', or 'a'")
+        if self.mode != 'a':
+            raise ValueError("remove() requires mode 'a'")
         if not self.fp:
             raise ValueError(
                 'Attempt to write to ZIP archive that was already closed')

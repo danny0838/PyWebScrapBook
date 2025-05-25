@@ -3735,6 +3735,23 @@ class TestZipRemove(unittest.TestCase):
                     util.fs.zip_remove(zh, file)
                 mock_fn.assert_not_called()
 
+        # mode 'w': error and do nothing
+        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
+            zh.writestr(file, data)
+            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
+                with self.assertRaises(ValueError):
+                    util.fs.zip_remove(zh, file)
+                mock_fn.assert_not_called()
+
+        # mode 'x': error and do nothing
+        os.remove(self.TESTFN)
+        with zipfile.ZipFile(self.TESTFN, 'x') as zh:
+            zh.writestr(file, data)
+            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
+                with self.assertRaises(ValueError):
+                    util.fs.zip_remove(zh, file)
+                mock_fn.assert_not_called()
+
         # mode 'a': the most general use case
         with zipfile.ZipFile(self.TESTFN, 'w') as zh:
             zh.writestr(file, data)
@@ -3766,21 +3783,6 @@ class TestZipRemove(unittest.TestCase):
                 with self.assertRaises(KeyError):
                     util.fs.zip_remove(zh, zinfo)
                 mock_fn.assert_not_called()
-
-        # mode 'w': like 'a'; allows removing a just written member
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            zh.writestr(file, data)
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                util.fs.zip_remove(zh, file)
-                mock_fn.assert_called_once_with(zh, (zh.getinfo(file),))
-
-        # mode 'x': like 'w'
-        os.remove(self.TESTFN)
-        with zipfile.ZipFile(self.TESTFN, 'x') as zh:
-            zh.writestr(file, data)
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                util.fs.zip_remove(zh, file)
-                mock_fn.assert_called_once_with(zh, (zh.getinfo(file),))
 
 
 if __name__ == '__main__':
