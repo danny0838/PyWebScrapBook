@@ -1,3 +1,9 @@
+![PyPI version](https://img.shields.io/pypi/v/webscrapbook.svg)
+![Python Versions](https://img.shields.io/pypi/pyversions/webscrapbook)
+[![Docker Image](https://img.shields.io/docker/v/vsc55/webscrapbook?label=docker&logo=docker&color=lightgrey)](https://hub.docker.com/r/vsc55/webscrapbook)
+![Status](https://img.shields.io/pypi/status/webscrapbook)
+![License](https://img.shields.io/github/license/danny0838/PyWebScrapBook)
+
 PyWebScrapBook is a command line toolkit and backend server for
 [WebScrapBook browser extension](https://github.com/danny0838/webscrapbook).
 
