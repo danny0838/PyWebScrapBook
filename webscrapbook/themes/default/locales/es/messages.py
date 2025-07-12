@@ -107,34 +107,33 @@ cache_search_view_in_map = 'Ver en mapa'
 cache_search_start = 'ir'
 cache_search_help_label = 'Ayuda de sintaxis de búsqueda'
 cache_search_help_desc = """\
-• Búsqueda de palabras clave de entrada de título, contenido o comentario.
+• By default the input keywords are searched from title, comment, or fulltext.
 • Use espacio para separar varias palabras clave. Por ejemplo, “organización w3c” significa elementos que contienen “w3c” y “organización”.
 • Use comillas dobles para marcar una frase completa, una comilla doble literal se puede escapar mediante la duplicación. Por ejemplo, “"Tom ""loves"" Mary."” significa elementos que contienen “Tom "loves" Mary.”
 • Utilice el signo menos para excluir una palabra clave. Por ejemplo, “-virus” significa elementos sin “virus”.
 • Utilice “<comando>:<palabra clave>” para especificar una condición de búsqueda especial. Se puede anteponer un signo menos para exclusión o reversión. Los comandos disponibles incluyen:
-   • mc: cada palabra clave subsiguiente coincide con distinción entre mayúsculas y minúsculas. Por ejemplo, “mc: CIA FBI -mc: presidente” significa que los elementos que contienen “CIA” y “FBI” distinguen mayúsculas de minúsculas y “presidente” distingue entre mayúsculas y minúsculas.
-   • re: cada palabra clave posterior se trata como una expresión regular. Por ejemplo, “re: \\bcolou?r\\b -re: 1+1=2” significa elementos que coinciden con la expresión regular “\\bcolou?r\\b” y contienen la palabra clave “1+1=2”.
-   • id: elemento cuyo ID es igual a la palabra clave (o coincide con la expresión regular). Múltiples valores están conectados “or". Por ejemplo, “id:2020 id:2021” significa elementos de ID “2020” o “2021”; “-id:2020” significa artículos cuyo ID no es “2020”.
-   • type: elementos cuyo tipo es igual a la palabra clave (o coincide con la expresión regular). Múltiples valores están conectados “or”. Los tipos disponibles son “” (página), “bookmark”, “file”, “note”, etc. Por ejemplo, “type: type:bookmark” significa elementos cuyo tipo es página o marcador.
-   • title: elementos cuyo título contiene la palabra clave.
-   • content: elementos cuyo texto completo contiene la palabra clave.
-   • comment: elementos cuyo comentario contiene la palabra clave.
-   • tc: artículos cuyo título o comentario contiene la palabra clave.
-   • tcc: elementos cuyo título, texto completo o comentario contiene la palabra clave.
-   • index: elementos cuya ruta de archivo de índice contiene la palabra clave.
-   • source: elementos cuya URL fuente contiene la palabra clave.
-   • icon: elementos cuyo icono URL contiene la palabra clave.
-   • charset: elementos cuyo juego de caracteres contiene la palabra clave.
-   • create: elementos cuyo tiempo de creación coincide con la condición. Múltiples valores están conectados “or”. La condición de tiempo es un intervalo con 0-17 dígitos, seguido de un signo menos opcionalmente, y luego seguido de 0-17 dígitos. Los dos números de 17 dígitos significan el año (4 dígitos), mes (01-12), día (01-31), horas (00-59), minutos (00-59), segundos (00-59) y milisegundos (000-999) en fecha y hora local. Se supone que cada dígito omitido es un "0", excepto que se asume "999..." si se omite totalmente la fecha y hora de finalización. Por ejemplo, “create:2014-2015” significa desde 2014 hasta 2015; “create:-201309” significa antes de septiembre de 2013; y “create:20110825” significa después del 25 de agosto de 2011.
-   • modify: elementos cuyo tiempo de modificación coincide con la condición. Múltiples valores están conectados “or”. El formato de hora es el mismo que crear.
-   • marked: elementos marcados.
-   • locked: elementos bloqueados.
-   • location: artículos con información de geolocalización.
-   • file: elementos cuyo nombre de archivo contiene la palabra clave.
-   • root: elementos bajo el elemento de ID. Múltiples valores están conectados “or”.
-   • book: artículos en el álbum de recortes específico (por ID). Múltiples valores están conectados “or”.
-   • sort: ordenar los resultados de la búsqueda usando la condición específica, que puede ser id, title, comment, file, content, source, type, create o modify. Por ejemplo, “sort:id -sort:modify” significa ordenar por ID en orden ascendente y luego ordenar por tiempo de modificación en orden descendente.
-   • limit: establece un límite en el número de resultados de búsqueda. Por ejemplo, “limit:10” significa mostrar los primeros 10 resultados. “-limit:” significa anular el límite."""
+  • default: Reset the fields to search for any keyword without a commmand. The fields are separated with “,” and matching any of the fields is considered a hit. For example, “default:id,title,source,comment,content 2020” means items whose ID, title, source URL, comment, or fulltext contains “2020”. “-default:” remove fields from the current default fields, i.e., “default:title,comment -default:comment” works like “default:title”.
+  • mc: cada palabra clave subsiguiente coincide con distinción entre mayúsculas y minúsculas. Por ejemplo, “mc: CIA FBI -mc: presidente” significa que los elementos que contienen “CIA” y “FBI” distinguen mayúsculas de minúsculas y “presidente” distingue entre mayúsculas y minúsculas.
+  • re: cada palabra clave posterior se trata como una expresión regular. Por ejemplo, “re: \\bcolou?r\\b -re: 1+1=2” significa elementos que coinciden con la expresión regular “\\bcolou?r\\b” y contienen la palabra clave “1+1=2”.
+  • id: elemento cuyo ID es igual a la palabra clave (o coincide con la expresión regular). Múltiples valores están conectados “or". Por ejemplo, “id:2020 id:2021” significa elementos de ID “2020” o “2021”; “-id:2020” significa artículos cuyo ID no es “2020”.
+  • type: elementos cuyo tipo es igual a la palabra clave (o coincide con la expresión regular). Múltiples valores están conectados “or”. Los tipos disponibles son “” (página), “bookmark”, “file”, “note”, etc. Por ejemplo, “type: type:bookmark” significa elementos cuyo tipo es página o marcador.
+  • title: elementos cuyo título contiene la palabra clave.
+  • content: elementos cuyo texto completo contiene la palabra clave.
+  • comment: elementos cuyo comentario contiene la palabra clave.
+  • index: elementos cuya ruta de archivo de índice contiene la palabra clave.
+  • source: elementos cuya URL fuente contiene la palabra clave.
+  • icon: elementos cuyo icono URL contiene la palabra clave.
+  • charset: elementos cuyo juego de caracteres contiene la palabra clave.
+  • create: elementos cuyo tiempo de creación coincide con la condición. Múltiples valores están conectados “or”. La condición de tiempo es un intervalo con 0-17 dígitos, seguido de un signo menos opcionalmente, y luego seguido de 0-17 dígitos. Los dos números de 17 dígitos significan el año (4 dígitos), mes (01-12), día (01-31), horas (00-59), minutos (00-59), segundos (00-59) y milisegundos (000-999) en fecha y hora local. Se supone que cada dígito omitido es un "0", excepto que se asume "999..." si se omite totalmente la fecha y hora de finalización. Por ejemplo, “create:2014-2015” significa desde 2014 hasta 2015; “create:-201309” significa antes de septiembre de 2013; y “create:20110825” significa después del 25 de agosto de 2011.
+  • modify: elementos cuyo tiempo de modificación coincide con la condición. Múltiples valores están conectados “or”. El formato de hora es el mismo que crear.
+  • marked: elementos marcados.
+  • locked: elementos bloqueados.
+  • location: artículos con información de geolocalización.
+  • file: elementos cuyo nombre de archivo contiene la palabra clave.
+  • root: elementos bajo el elemento de ID. Múltiples valores están conectados “or”.
+  • book: artículos en el álbum de recortes específico (por ID). Múltiples valores están conectados “or”.
+  • sort: ordenar los resultados de la búsqueda usando la condición específica, que puede ser id, title, comment, file, content, source, type, create o modify. Por ejemplo, “sort:id -sort:modify” significa ordenar por ID en orden ascendente y luego ordenar por tiempo de modificación en orden descendente.
+  • limit: establece un límite en el número de resultados de búsqueda. Por ejemplo, “limit:10” significa mostrar los primeros 10 resultados. “-limit:” significa anular el límite."""
 cache_search_result = 'Encontrado %length% resultados:'
 cache_search_result_named = '(%name%) Encontrado %length% resultados:'
 cache_search_sort_last_created = 'Última creación'
