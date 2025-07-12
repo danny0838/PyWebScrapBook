@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.6.1] - 2025-07-13
+* Updated localication for Spanish (es).
+* Miscellaneous improvements to the internal API.
+
 ## [2.6.0] - 2025-05-20
 * Bumped client requirement to >= 2.20.0.
 * Reworked search commands:
