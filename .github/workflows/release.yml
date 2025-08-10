@@ -1,4 +1,4 @@
-name: Publish extension
+name: Release package
 
 on:
   workflow_dispatch:
@@ -71,20 +71,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - pyver: '3.12'
+          - pyver: '3.13'
             os: windows-latest
             arch: x64
-          - pyver: '3.12'
+          - pyver: '3.13'
+            os: windows-latest
+            arch: x86
+          - pyver: '3.13'
             os: macos-latest
             arch: arm64
 
-          - pyver: '3.10'
-            os: windows-latest
-            arch: x64
-          - pyver: '3.10'
-            os: macos-latest
-            arch: arm64
-
+          # Python 3.8.* is the last version that supports Windows 7
           - pyver: '3.8'
             os: windows-latest
             arch: x64
