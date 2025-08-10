@@ -1,6 +1,6 @@
 """Shared constants and configs.
 """
-__version__ = '2.6.1'
+__version__ = '2.6.2'
 __all__ = ['WSB_EXTENSION_MIN_VERSION', 'WSB_USER_DIR', 'WSB_USER_CONFIG', 'WSB_DIR', 'WSB_CONFIG', 'config']
 
 import os
