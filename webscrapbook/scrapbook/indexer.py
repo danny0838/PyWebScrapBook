@@ -8,7 +8,6 @@ import traceback
 from base64 import b64encode
 from datetime import datetime
 from functools import partial
-from urllib.error import URLError
 from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
 from urllib.request import pathname2url, url2pathname, urlopen
 
@@ -483,11 +482,8 @@ class FavIconCacher:
 
         try:
             r = urlopen(url)
-        except URLError as exc:
-            yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: unable to fetch favicon URL.', exc=exc)
-            return None
-        except ValueError as exc:
-            yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: unsupported or malformatted URL: {exc}', exc=exc)
+        except Exception as exc:
+            yield Info('error', f'Unable to cache favicon {util.crop(source_url, 256)!r} for {id!r}: {exc}', exc=exc)
             return None
 
         with r as r:
