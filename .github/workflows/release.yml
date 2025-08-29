@@ -43,7 +43,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: pip install .[dev]
+        run: pip install .[lint]
 
       - name: Verify no code issue
         run: flake8 .
@@ -103,7 +103,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Install dependencies
-        run: pip install .[dev]
+        run: pip install .[build]
 
       - name: Build executables
         run: |
@@ -146,10 +146,11 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Install dependencies
+        run: pip install .[build]
+
       - name: Upload to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          pip install .[dev]
-          python tools/build.py --upload
+        run: python tools/build.py --upload
