@@ -2,12 +2,15 @@
 """Compile executable.
 
 NOTE: This package must be installed in non-editable mode.
+
+It's generally more recommended to run through tox with:
+
+    tox -e build [-- <args>]
 """
 import argparse
 import os
 import platform
 import shutil
-import subprocess
 import sys
 
 import PyInstaller.__main__
@@ -75,34 +78,16 @@ def build_binary(args):
         shutil.rmtree(dist)
 
 
-def upload(args):
-    build = os.path.join(root, 'build')
-    dist = os.path.join(root, 'dist')
-
-    # Purge previously built files by bdist (wheel) to prevent deleted files
-    # being included in the package.
-    if os.path.isdir(build):
-        shutil.rmtree(build)
-
-    subprocess.run([sys.executable, '-m', 'build', '--sdist', '--wheel', root])
-    subprocess.run([sys.executable, '-m', 'twine', 'upload', '--skip-existing', os.path.join(dist, '*')])
-
-
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description='Build executable with PyInstaller')
     parser.add_argument('--onefile', action='store_true', help='Bundle the app into a single executable')
     parser.add_argument('--pack', action='store_true', help='Pack into a zip file')
-    parser.add_argument('--upload', action='store_true', help='Build and upload to PyPI')
     return parser.parse_args(argv)
 
 
 def main():
     args = parse_args()
-
-    if args.upload:
-        upload(args)
-    else:
-        build_binary(args)
+    build_binary(args)
 
 
 if __name__ == '__main__':

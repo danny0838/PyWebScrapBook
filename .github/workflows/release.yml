@@ -107,8 +107,8 @@ jobs:
 
       - name: Build executables
         run: |
-          python tools/build.py --pack
-          python tools/build.py --pack --onefile
+          tox -e build -- --pack
+          tox -e build -- --pack --onefile
 
       - name: Add assets to GitHub release
         uses: softprops/action-gh-release@v2
@@ -153,4 +153,4 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python tools/build.py --upload
+        run: tox -e release
