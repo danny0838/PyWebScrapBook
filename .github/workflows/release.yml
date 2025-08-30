@@ -50,7 +50,7 @@ jobs:
           python-version: ${{ steps.config.outputs.pyver }}
 
       - name: Install dependencies
-        run: pip install -r requirements-lint.txt
+        run: pip install --group lint
 
       - name: Verify no code issue
         run: flake8 .
@@ -107,7 +107,15 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Install dependencies
-        run: pip install -r requirements-build.txt
+        if: matrix.pyver != '3.8'
+        run: pip install --group build
+
+      - name: Install dependencies (py38)
+        if: matrix.pyver == '3.8'
+        run: |
+          pip install dependency-groups
+          dependency-groups build -o requirements.txt
+          pip install -r requirements.txt
 
       - name: Build executables
         run: |
@@ -151,7 +159,7 @@ jobs:
           python-version: ${{ needs.main.outputs.pyver }}
 
       - name: Install dependencies
-        run: pip install -r requirements-build.txt
+        run: pip install --group build
 
       - name: Upload to PyPI
         env:

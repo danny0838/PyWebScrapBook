@@ -74,4 +74,12 @@ jobs:
         run: python -m unittest
 
       - name: Ensure all dependency can be installed
-        run: pip install -r requirements-dev.txt
+        if: matrix.pyver != '3.8'
+        run: pip install --group dev
+
+      - name: Ensure all dependency can be installed (py38)
+        if: matrix.pyver == '3.8'
+        run: |
+          pip install dependency-groups
+          dependency-groups dev -o requirements.txt
+          pip install -r requirements.txt
