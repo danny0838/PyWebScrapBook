@@ -110,6 +110,19 @@ def require_symlink(reason='requires symlink creation support '
     return unittest.skipUnless(support, reason)
 
 
+def require_fixed_html5(reason='requires fixed HTML5 support '
+                               '(since Python 3.13.6, 3.12.12, 3.11.14, 3.10.19, 3.9.24)'):
+    # ref: https://github.com/python/cpython/issues/102555
+    support = (
+        (3, 13, 6) <= sys.version_info < (3, 14)
+        or (3, 12, 12) <= sys.version_info < (3, 13)
+        or (3, 11, 14) <= sys.version_info < (3, 12)
+        or (3, 10, 19) <= sys.version_info < (3, 11)
+        or (3, 9, 24) <= sys.version_info < (3, 10)
+    )
+    return unittest.skipUnless(support, reason)
+
+
 @contextmanager
 def test_file_cleanup(*paths):
     """Call os.remove() afterwards for given paths.

@@ -4,6 +4,8 @@ import unittest
 
 from webscrapbook.util.html import HtmlRewriter, MarkupTag
 
+from . import require_fixed_html5
+
 
 class Test(unittest.TestCase):
     @classmethod
@@ -262,10 +264,11 @@ King's "123" < & > 456 (unescaped)<br>
             m.src = None
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), reserialized)
 
+    @require_fixed_html5()
     def test_loads_html13(self):
         input = """<![if sth]>"""
         parsed = input
-        reserialized = """<!if sth>"""
+        reserialized = """<!--[if sth]-->"""
 
         markups = HtmlRewriter().loads(input)
         self.assertEqual(''.join(str(m) for m in markups if not m.hidden), input)
