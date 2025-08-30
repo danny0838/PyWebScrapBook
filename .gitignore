@@ -1,12 +1,15 @@
+# IDE
+/.tox/
+/.venv/
+
 # Byte-compiled
 __pycache__/
 *.pyc
 
 # Distribution / packaging
-build/
-dist/
+/build/
+/dist/
 *.egg-info/
 
 # Testing
-.tox/
-.wsb/
+/.wsb/
