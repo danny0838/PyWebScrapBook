@@ -102,6 +102,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-build.txt
 
+      - name: Run tests
+        run: tox -e py
+
       - name: Build executables
         run: |
           tox -e build -- --pack
@@ -145,6 +148,9 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements-build.txt
+
+      - name: Run tests
+        run: tox -e py
 
       - name: Upload to PyPI
         env:
