@@ -22,7 +22,7 @@ PyWebScrapBook is a command line toolkit and backend server for
 
 #### Install from the package manager
 
-1. Install Python >= 3.7 from the [official site](https://www.python.org).
+1. Install Python >= 3.8 from the [official site](https://www.python.org).
 
    Add python to `PATH` environment variable so that it can be run from the command line interface (CLI).
 
