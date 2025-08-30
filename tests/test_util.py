@@ -5,6 +5,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest import mock
 
+import lxml.etree
 import lxml.html
 
 from webscrapbook import util
@@ -1011,12 +1012,9 @@ foo   中文<br>
 </html>""")
 
         # XHTML1.1
-        # @FIXME: bad order for doctype and XML declaration
-        # @FIXME: bad format for XML declaration
         # @FIXME: &nbsp; becomes unescaped \u00A0
         # @FIXME: < & > etc. escaped in <style> and <script>
-        html = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+        html = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>中文</title>
@@ -1043,7 +1041,7 @@ foo&nbsp;&nbsp;&nbsp;中文<br/>
         tree = util.load_html_tree(fh)
         html1 = lxml.html.tostring(tree, encoding='unicode', method='xml')
         self.assertEqual(html1, """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<?xml version="1.0" encoding="UTF-8"??><html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>中文</title>
 <meta charset="UTF-8"/>
@@ -1063,6 +1061,22 @@ foo   中文<br/>
 "123" &lt; &amp; &gt; 456 (escaped)<br/>
 <input type="checkbox" checked="checked"/>
 </body>
+</html>""")
+
+    @unittest.skipUnless(lxml.etree.LIBXML_VERSION >= (2, 14), 'requires libxml2 >= 2.14')
+    def test_load_html_tree_xhtml01(self):
+        # @FIXME: bad order for doctype and XML declaration
+        # @FIXME: incorrectly treated as comment for XML declaration
+        html = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+</html>
+"""
+        fh = io.BytesIO(html.encode('UTF-8'))
+        tree = util.load_html_tree(fh)
+        html1 = lxml.html.tostring(tree, encoding='unicode', method='xml')
+        self.assertEqual(html1, """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!--?xml version="1.0" encoding="UTF-8"?--><html xmlns="http://www.w3.org/1999/xhtml">
 </html>""")
 
     def test_parse_meta_refresh_content(self):
@@ -1254,23 +1268,24 @@ foo   中文<br/>
                 (None, None, None),
             ],
         )
+
+        # Some context tags are no longer visible since libxml2 >= 2.14.
+        # Here we just make sure that the context attribute exists for any
+        # visible context tag.
         self.assertEqual(
-            list(util.iter_meta_refresh(os.path.join(root, 'refresh3.html'))),
-            [
-                (0, 'target-title.html', ['title']),
-                (0, 'target-iframe.html', ['iframe']),
-                (0, 'target-noframes.html', ['noframes']),
-                (0, 'target-noscript.html', ['noscript']),
-                (0, 'target-noembed.html', ['noembed']),
-                (0, 'target-textarea.html', ['textarea']),
-                (0, 'target-template.html', ['template']),
-                (0, 'target-xmp.html', ['xmp']),
-            ],
+            list(filter(
+                lambda x: not x.context,
+                util.iter_meta_refresh(os.path.join(root, 'refresh3.html')),
+            )),
+            [],
         )
+
+        # nested context tags
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh4.html'))),
-            [(0, 'target.html', ['noscript', 'noframes'])],
+            [(0, 'target.html', ['noscript', 'template'])],
         )
+
         self.assertEqual(
             list(util.iter_meta_refresh(os.path.join(root, 'refresh5.html'))),
             [
