@@ -4,7 +4,7 @@
 
 1. Clone or download the source code from this repository.
 
-2. Enter the project root and run: `pip install -r requirements-dev.txt`
+2. Enter the project root and run: `pip install --group dev`
 
 ## Code linting
 
