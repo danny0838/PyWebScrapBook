@@ -1,0 +1,2 @@
+# Python <3.8: conflicting dependency of importlib-metadata for flake8 and tox
+tox>=4.0; python_version>='3.8'
