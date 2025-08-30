@@ -30,10 +30,8 @@ from . import (
     glob_files,
     require_case_insensitive,
     require_junction,
-    require_junction_deletion,
     require_posix_mode,
     require_symlink,
-    test_file_cleanup,
 )
 
 
@@ -1285,7 +1283,6 @@ class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
         self.assertFalse(os.path.lexists(dst))
 
     @require_junction()
-    @require_junction_deletion()
     def test_junction_deep(self):
         """Delete junction entities under a directory without altering the
         referenced directory.
@@ -1658,12 +1655,12 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         ref = os.path.join(root, 'nonexist')
         src = os.path.join(root, 'junction')
         dst = os.path.join(root, 'folder')
-        with test_file_cleanup(src, dst):
-            util.fs.junction(ref, src)
-            orig_src = self.get_file_data({'file': src})
-            util.fs.move(src, dst)
-            self.assertFalse(os.path.lexists(src))
-            self.assert_file_equal(orig_src, {'file': dst})
+
+        util.fs.junction(ref, src)
+        orig_src = self.get_file_data({'file': src})
+        util.fs.move(src, dst)
+        self.assertFalse(os.path.lexists(src))
+        self.assert_file_equal(orig_src, {'file': dst})
 
     @require_symlink()
     def test_symlink_to_nonexist(self):
@@ -2095,10 +2092,10 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         ref = os.path.join(root, 'nonexist')
         src = os.path.join(root, 'junction')
         dst = os.path.join(root, 'subdir')
-        with test_file_cleanup(src):
-            util.fs.junction(ref, src)
-            with self.assertRaises(util.fs.FSEntryNotFoundError):
-                util.fs.copy(src, dst)
+
+        util.fs.junction(ref, src)
+        with self.assertRaises(util.fs.FSEntryNotFoundError):
+            util.fs.copy(src, dst)
 
     @require_junction()
     def test_junction_to_nonexist_deep1(self):
@@ -2111,21 +2108,20 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'newdir')
         dst2 = os.path.join(root, 'newdir', 'junction')
         dst3 = os.path.join(root, 'newdir', 'junction', 'test.txt')
-        with test_file_cleanup(src2):
-            util.fs.save(ref2, DUMMY_BYTES)
-            util.fs.mkdir(src)
-            os.utime(ref, (0, DUMMY_TS))
-            os.utime(ref2, (0, DUMMY_TS2))
-            util.fs.junction(ref, src2)
-            util.fs.copy(src, dst)
-            self.assert_file_equal({'file': src}, {'file': dst})
 
-            # stat of the copy is the link target in Python 3.7 and the link
-            # itself in Python 3.8~3.11
-            # self.assert_file_equal({'file': ref}, {'file': dst2})
-            self.assertTrue(os.path.lexists(dst2))
+        util.fs.save(ref2, DUMMY_BYTES)
+        util.fs.mkdir(src)
+        os.utime(ref, (0, DUMMY_TS))
+        os.utime(ref2, (0, DUMMY_TS2))
+        util.fs.junction(ref, src2)
+        util.fs.copy(src, dst)
+        self.assert_file_equal({'file': src}, {'file': dst})
 
-            self.assert_file_equal({'file': ref2}, {'file': dst3})
+        # stat of the copy is the link itself in Python 3.8~3.11
+        # self.assert_file_equal({'file': ref}, {'file': dst2})
+        self.assertTrue(os.path.lexists(dst2))
+
+        self.assert_file_equal({'file': ref2}, {'file': dst3})
 
     @require_junction()
     def test_junction_to_nonexist_deep2(self):
@@ -2137,15 +2133,15 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = os.path.join(root, 'newdir')
         dst2 = os.path.join(root, 'newdir', 'junction')
         dst3 = os.path.join(root, 'newdir', 'file.txt')
-        with test_file_cleanup(src2):
-            util.fs.mkdir(src)
-            util.fs.junction(os.path.join(root, 'nonexist'), src2)
-            util.fs.save(src3, DUMMY_BYTES)
-            with self.assertRaises(util.fs.FSPartialError):
-                util.fs.copy(src, dst)
-            self.assert_file_equal({'file': src}, {'file': dst})
-            self.assertFalse(os.path.lexists(dst2))
-            self.assert_file_equal({'file': src3}, {'file': dst3})
+
+        util.fs.mkdir(src)
+        util.fs.junction(os.path.join(root, 'nonexist'), src2)
+        util.fs.save(src3, DUMMY_BYTES)
+        with self.assertRaises(util.fs.FSPartialError):
+            util.fs.copy(src, dst)
+        self.assert_file_equal({'file': src}, {'file': dst})
+        self.assertFalse(os.path.lexists(dst2))
+        self.assert_file_equal({'file': src3}, {'file': dst3})
 
     @require_symlink()
     def test_symlink_to_nonexist1(self):
@@ -2286,16 +2282,16 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [os.path.join(root, 'archive.zip'), 'deep/newdir']
         dst2 = [os.path.join(root, 'archive.zip'), 'deep/newdir/junction']
         dst3 = [os.path.join(root, 'archive.zip'), 'deep/newdir/junction/file.txt']
-        with test_file_cleanup(src2):
-            util.fs.mkdir(src)
-            util.fs.junction(os.path.join(root, 'nonexist'), src2)
-            util.fs.mkzip(dst[0])
-            util.fs.save(src3, DUMMY_BYTES)
-            with self.assertRaises(util.fs.FSPartialError):
-                util.fs.copy(src, dst)
-            self.assert_file_equal({'file': src}, {'file': dst})
-            self.assert_file_equal({}, {'file': dst2})
-            self.assert_file_equal({}, {'file': dst3})
+
+        util.fs.mkdir(src)
+        util.fs.junction(os.path.join(root, 'nonexist'), src2)
+        util.fs.mkzip(dst[0])
+        util.fs.save(src3, DUMMY_BYTES)
+        with self.assertRaises(util.fs.FSPartialError):
+            util.fs.copy(src, dst)
+        self.assert_file_equal({'file': src}, {'file': dst})
+        self.assert_file_equal({}, {'file': dst2})
+        self.assert_file_equal({}, {'file': dst3})
 
     @require_symlink()
     def test_disk_to_zip_symlink_to_nonexist_deep1(self):
@@ -2642,9 +2638,8 @@ class TestHelpers(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         ref = os.path.join(root, 'nonexist')
         dst = os.path.join(root, 'junction')
-        with test_file_cleanup(dst):
-            util.fs.junction(ref, dst)
-            self.assertTrue(util.fs.isjunction(dst))
+        util.fs.junction(ref, dst)
+        self.assertTrue(util.fs.isjunction(dst))
 
         # directory
         root = tempfile.mkdtemp(dir=tmpdir)

@@ -4,7 +4,6 @@ import platform
 import sys
 import tempfile
 import unittest
-from contextlib import contextmanager
 from datetime import datetime
 
 import webscrapbook
@@ -88,12 +87,6 @@ def require_junction(reason='requires junction creation support'):
     return unittest.skipUnless(support, reason)
 
 
-def require_junction_deletion(reason='requires good junction deletion support '
-                                     '(e.g. Python >= 3.8)'):
-    support = sys.version_info >= (3, 8)
-    return unittest.skipUnless(support, reason)
-
-
 def require_symlink(reason='requires symlink creation support '
                            '(Windows requires Administrator or Developer Mode)'):
     try:
@@ -121,22 +114,6 @@ def require_fixed_html5(reason='requires fixed HTML5 support '
         or (3, 9, 24) <= sys.version_info < (3, 10)
     )
     return unittest.skipUnless(support, reason)
-
-
-@contextmanager
-def test_file_cleanup(*paths):
-    """Call os.remove() afterwards for given paths.
-
-    - Mainly to prevent tree cleanup issue for junctions in Python 3.7
-    """
-    try:
-        yield
-    finally:
-        for path in paths:
-            try:
-                os.remove(path)
-            except OSError:
-                pass
 
 
 def glob_files(path):

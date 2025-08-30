@@ -28,7 +28,6 @@ from . import (
     require_junction,
     require_sep,
     require_symlink,
-    test_file_cleanup,
 )
 
 
@@ -764,11 +763,10 @@ class TestFilesystemHelpers(unittest.TestCase):
         dst = os.path.join(root, 'junction')
         os.makedirs(ref)
         util.fs.junction(ref, dst)
-        with test_file_cleanup(dst):
-            self.assertEqual(
-                wsbapp.file_info(dst),
-                ('junction', 'link', None, os.lstat(dst).st_mtime),
-            )
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('junction', 'link', None, os.lstat(dst).st_mtime),
+        )
 
         # file (invalid)
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -777,22 +775,20 @@ class TestFilesystemHelpers(unittest.TestCase):
         with open(ref, 'w') as fh:
             fh.write('123')
         util.fs.junction(ref, dst)
-        with test_file_cleanup(dst):
-            self.assertEqual(
-                wsbapp.file_info(dst),
-                ('junction', 'link', None, os.lstat(dst).st_mtime),
-            )
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('junction', 'link', None, os.lstat(dst).st_mtime),
+        )
 
         # nonexist
         root = tempfile.mkdtemp(dir=tmpdir)
         ref = os.path.join(root, 'nonexist')
         dst = os.path.join(root, 'junction')
         util.fs.junction(ref, dst)
-        with test_file_cleanup(dst):
-            self.assertEqual(
-                wsbapp.file_info(dst),
-                ('junction', 'link', None, os.lstat(dst).st_mtime),
-            )
+        self.assertEqual(
+            wsbapp.file_info(dst),
+            ('junction', 'link', None, os.lstat(dst).st_mtime),
+        )
 
     @require_symlink()
     def test_file_info_symlink(self):

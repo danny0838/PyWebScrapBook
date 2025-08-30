@@ -39,7 +39,6 @@ from . import (
     TestFileMixin,
     glob_files,
     require_junction,
-    require_junction_deletion,
     require_symlink,
 )
 
@@ -108,20 +107,9 @@ class TestActions(TestBookMixin, TestFileMixin, unittest.TestCase):
         except FileNotFoundError:
             pass
         try:
-            shutil.rmtree(self.test_dir, onerror=self.rmtree_error_handler)
+            shutil.rmtree(self.test_dir)
         except FileNotFoundError:
             pass
-
-    def rmtree_error_handler(self, func, path, ex):
-        """Error handler for shutil.rmtree.
-
-        Python < 3.8 attempts to remove all contents for a directory junction,
-        and will raises a FileNotFoundError if target not exist. Catch it to
-        prevent skipping removal of further entries.
-        """
-        type, value, trace = ex
-        if type is not FileNotFoundError:
-            raise
 
     def parse_sse(self, content):
         """Quick parser of SSE.
@@ -3284,7 +3272,6 @@ class TestDelete(TestActions):
             self.assertFalse(os.path.lexists(dst))
 
     @require_junction()
-    @require_junction_deletion()
     def test_junction_deep(self):
         """Delete junction entities without altering the referenced directory.
         """
@@ -4474,8 +4461,7 @@ class TestCopy(TestActions):
                 },
             )
 
-            # stat of the copy is the link target in Python 3.7 and the link
-            # itself in Python 3.8~3.11
+            # stat of the copy is the link itself in Python 3.8~3.11
             # self.assert_file_equal(
             #     {'file': os.path.join(self.test_dir, 'subdir')},
             #     {'file': os.path.join(self.test_dir, 'clone', 'junction')},

@@ -828,13 +828,7 @@ class Book:
 
         # perform the tasks
         if tasks:
-            try:
-                it = reversed(tasks)
-            except TypeError:
-                # Python 3.7 does not support dict reverse
-                it = reversed(tuple(tasks))
-
-            for _, current_parent_id, current_index in it:
+            for _, current_parent_id, current_index in reversed(tasks):
                 # remove from parent TOC
                 del self.toc[current_parent_id][current_index]
                 if not self.toc[current_parent_id]:
@@ -1124,13 +1118,7 @@ class Book:
         # perform the tasks
         recycle_ts = _id_now()
 
-        try:
-            it = reversed(tasks)
-        except TypeError:
-            # Python 3.7 does not support dict reverse
-            it = reversed(tuple(tasks))
-
-        for _, current_parent_id, current_index in it:
+        for _, current_parent_id, current_index in reversed(tasks):
             # remove from parent TOC
             del self.toc[current_parent_id][current_index]
             if not self.toc[current_parent_id]:
@@ -1195,13 +1183,7 @@ class Book:
             tasks[item] = True
 
         # perform the tasks
-        try:
-            it = reversed(tasks)
-        except TypeError:
-            # Python 3.7 does not support dict reverse
-            it = reversed(tuple(tasks))
-
-        for _, current_parent_id, current_index in it:
+        for _, current_parent_id, current_index in reversed(tasks):
             # remove from parent TOC
             del self.toc[current_parent_id][current_index]
             if not self.toc[current_parent_id]:
@@ -1283,13 +1265,7 @@ class Book:
         # perform the tasks
         old_reachable_items = self.get_reachable_items()
 
-        try:
-            it = reversed(tasks)
-        except TypeError:
-            # Python 3.7 does not support dict reverse
-            it = reversed(tuple(tasks))
-
-        for _, current_parent_id, current_index in it:
+        for _, current_parent_id, current_index in reversed(tasks):
             # remove from parent TOC
             del self.toc[current_parent_id][current_index]
             if not self.toc[current_parent_id]:

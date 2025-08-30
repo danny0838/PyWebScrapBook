@@ -1312,7 +1312,7 @@ no_tree = true
             self.get_search_results('')
         self.assertListEqual(mocked.mock_calls, [
             mock.call(''),
-            mock.ANY,  # mock.call().__iter__(), or <tuple_iterator> in Python 3.7
+            mock.ANY,  # mock.call().__iter__()
             mock.call('book1'),
             mock.ANY,
             mock.call('book2'),

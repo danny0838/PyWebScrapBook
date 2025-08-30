@@ -21,8 +21,6 @@ def setUpModule():
 
     # Since our mimetypes patch is one-time, we need to reload the modules to
     # reapply the patch on the reinited mimetypes database.
-    # This is also required in Python < 3.7.5, in which no default maps exist and
-    # `mimetypes.init()` cannot recover the default maps.
     importlib.reload(mimetypes._mimetypes)
     importlib.reload(mimetypes)
 
