@@ -1,3 +1,121 @@
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "webscrapbook"
+requires-python = "~=3.8"
+description = "A backend toolkit for management of WebScrapBook collection."
+readme = "README.md"
+
+# Use dynamic license (and provide it in setup.py) since the format introduced
+# by PEP 639 requires setuptools>=77.0.3, which does not support Python 3.8.
+# ref: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license
+dynamic = [
+    "license",
+    "version",
+]
+
+authors = [
+    {name = "Danny Lin", email = "danny0838@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Content Management System",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Server",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+]
+dependencies = [
+    "flask>=2.0.0",
+    "werkzeug>=2.0.1",
+    "jinja2>=2.10.1",
+    "lxml>=4.0",
+    "commonmark>=0.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/danny0838/PyWebScrapBook"
+
+[project.scripts]
+wsb = "webscrapbook.cli:main"
+
+# deprecated since 2.1.0
+webscrapbook = "webscrapbook.cli:main"
+
+# deprecated since 2.1.0
+wsbview = "webscrapbook.cli:view"
+
+[project.optional-dependencies]
+adhoc_ssl = [
+    "cryptography",
+]
+
+[tool.setuptools.packages.find]
+include = ["webscrapbook*"]
+
+[tool.setuptools.package-data]
+webscrapbook = [
+    "resources/*.*",
+    "themes/default/static/*.*",
+    "themes/default/templates/*.*",
+    "themes/default/locales/*/*.py",
+]
+
+[tool.setuptools.dynamic.version]
+attr = "webscrapbook.__version__"
+
+[tool.flake8]
+exclude = [
+    ".git",
+    ".tox",
+    ".venv",
+    "build",
+    "dist",
+    "setup.py",
+]
+max-line-length = 160
+
+# Flake8 Rules
+# https://www.flake8rules.com/
+
+# E123: closing bracket does not match indentation of opening bracket's line
+extend-select = [
+    "E123",
+]
+
+# W503: Line break occurred before a binary operator
+ignore = [
+    "W503",
+]
+
+per-file-ignores = [
+    "webscrapbook/_polyfill/**: F401, F403, F405, Q000",
+    "webscrapbook/themes/default/locales/*: P103, E501",
+    "webscrapbook/util/__init__.py: F401, F403",
+    "tests/test_cli.py: C408",
+    "tests/test_locales/*: P103",
+]
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+
+# skip directories included by default
+# ref: https://pycqa.github.io/isort/docs/configuration/options.html
+extend_skip = [
+    "setup.py",
+]
