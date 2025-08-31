@@ -1,4 +1,5 @@
 flake8>=6.1
+Flake8-pyproject>=1.2.3
 pep8-naming>=0.13.2
 flake8-comprehensions>=3.8
 flake8-string-format>=0.3
