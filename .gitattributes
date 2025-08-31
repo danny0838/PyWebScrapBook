@@ -8,6 +8,7 @@
 *.js text
 *.md text
 *.py text
+*.toml text
 *.txt text
 *.wsgi text
 *.xhtml text
