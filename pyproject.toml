@@ -77,7 +77,7 @@ lint = [
     "isort>=5.9.2",
 ]
 build = [
-    "tox>=4.3.3",
+    "tox>=4.21.2",
 ]
 dev = [
     {include-group = "lint"},
@@ -139,3 +139,57 @@ include_trailing_comma = true
 extend_skip = [
     "setup.py",
 ]
+
+[tool.tox]
+env_list = ["py314", "py313", "py312", "py311", "py310", "py39", "py38"]
+min_version = "4.22"
+
+[tool.tox.env_run_base]
+description = "run unit tests"
+package = "editable"
+extras = ["adhoc_ssl"]
+commands = [["python", "-m", "unittest", {replace = "posargs", extend = true}]]
+
+[tool.tox.env.build]
+description = "build a binary executable"
+package = "sdist"
+deps = [
+    "pyinstaller",
+]
+extras = []
+commands = [["python", "tools/build.py", {replace = "posargs", extend = true}]]
+
+[tool.tox.env.release]
+description = "build and release to PyPI"
+package = "skip"
+deps = [
+    "build",
+    "twine",
+]
+extras = []
+pass_env = [
+    "TWINE_USERNAME",
+    "TWINE_PASSWORD",
+]
+commands = [
+    # Purge previously built files by bdist (wheel) to prevent deleted files
+    # being included in the package.
+    ["python", "-c", "import shutil; shutil.rmtree('build', ignore_errors=True)"],
+
+    ["python", "-m", "build", "--sdist", "--wheel"],
+    ["python", "-m", "twine", "upload", "--skip-existing", "dist/*"],
+]
+
+[tool.tox.env.lint]
+description = "lint source code"
+package = "skip"
+dependency_groups = ["lint"]
+extras = []
+commands = [["flake8", {replace = "posargs", default = ["."], extend = true}]]
+
+[tool.tox.env.isort]
+description = "sort imports for the source code"
+package = "skip"
+dependency_groups = ["lint"]
+extras = []
+commands = [["isort", {replace = "posargs", default = ["."], extend = true}]]
