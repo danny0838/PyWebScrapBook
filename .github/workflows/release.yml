@@ -22,6 +22,7 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     outputs:
       version: ${{ steps.config.outputs.version }}
+      pyver: ${{ steps.config.outputs.pyver }}
 
     steps:
       - name: Checkout code
@@ -41,6 +42,12 @@ jobs:
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "pyver=3.13" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ steps.config.outputs.pyver }}
 
       - name: Install dependencies
         run: pip install -r requirements-lint.txt
@@ -71,13 +78,13 @@ jobs:
     strategy:
       matrix:
         include:
-          - pyver: '3.13'
+          - pyver: ${{ needs.main.outputs.pyver }}
             os: windows-latest
             arch: x64
-          - pyver: '3.13'
+          - pyver: ${{ needs.main.outputs.pyver }}
             os: windows-latest
             arch: x86
-          - pyver: '3.13'
+          - pyver: ${{ needs.main.outputs.pyver }}
             os: macos-latest
             arch: arm64
 
@@ -144,7 +151,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: ${{ needs.main.outputs.pyver }}
 
       - name: Install dependencies
         run: pip install -r requirements-build.txt
