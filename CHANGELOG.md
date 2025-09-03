@@ -3,6 +3,10 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.7.1] - 2025-09-03
+* Added automatic cross-platform test workflow.
+* Miscellaneous improvements to the dev tools and workflows.
+
 ## [2.7.0] - 2025-09-01
 * Adjusted Python runtime version used for building binary executables.
 * Fixed cross-platform compatibility issues for the dev tools and test suite.
