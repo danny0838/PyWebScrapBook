@@ -70,7 +70,7 @@ jobs:
           generate_release_notes: true
 
   build:
-    name: Build on ${{ matrix.os }} (${{ matrix.arch }}) with Python ${{ matrix.pyver }}
+    name: Build ${{ matrix.os }}-${{ matrix.pyver }}-${{ matrix.arch }}
     needs: main
     environment: ${{ github.event.inputs.environment }}
     runs-on: ${{ matrix.os }}
