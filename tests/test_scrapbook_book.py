@@ -4471,7 +4471,7 @@ no_tree = true
         book2.meta = {}
         book2.toc = {}
 
-        return SimpleNamespace(**locals())
+        return SimpleNamespace(host=host, book=book)
 
 
 class TestCopyItem(TestCopyItemBase):
