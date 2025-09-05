@@ -522,6 +522,7 @@ class SearchEngine:
     def search(self):
         results = self.search_books()
         limit = self.query.limit
+
         if limit >= 0:
             i = 0
             for item in results:
@@ -529,7 +530,15 @@ class SearchEngine:
                 if i > limit:
                     break
                 yield item
+
+            # Returning from this function doesn't close results automatically,
+            # causing the acquired lock not released, in some Python
+            # implementations (e.g. PyPy 7.3.20 (Python 3.11.13)).
+            # ref: https://github.com/pypy/pypy/issues/5329
+            results.close()
+
             return
+
         yield from results
 
     def search_books(self):
