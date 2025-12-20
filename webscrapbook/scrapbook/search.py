@@ -1,6 +1,6 @@
 """Search for items in book(s).
 """
-import functools
+import heapq
 import html
 import re
 from collections import namedtuple
@@ -493,6 +493,20 @@ class Query:
         return f'<mark class="kw{idx}">' + html.escape(text) + '</mark>'
 
 
+class SortValue:
+    __slots__ = ('val', 'reverse')
+
+    def __init__(self, val, reverse):
+        self.val = val
+        self.reverse = reverse
+
+    def __eq__(self, other):
+        return self.val == other.val
+
+    def __lt__(self, other):
+        return self.val > other.val if self.reverse else self.val < other.val
+
+
 class SearchEngine:
     def __init__(self, host, query_text, *, lock=True, context=None):
         """Inatialize a new search for the host.
@@ -520,24 +534,22 @@ class SearchEngine:
             yield item
 
     def search(self):
-        results = self.search_books()
-        try:
-            limit = self.query.limit
-            if limit >= 0:
-                i = 0
-                for item in results:
-                    i += 1
-                    if i > limit:
-                        break
-                    yield item
-                return
-            yield from results
-        finally:
-            # Returning from this function doesn't close results automatically,
-            # causing the acquired lock not released, in some Python
-            # implementations (e.g. PyPy 7.3.20 (Python 3.11.13)).
-            # ref: https://github.com/pypy/pypy/issues/5329
-            results.close()
+        gen = self.search_books()
+        limit = self.query.limit
+        if limit >= 0:
+            return heapq.nsmallest(limit, gen, key=self._search_sortkey)
+        else:
+            return sorted(gen, key=self._search_sortkey)
+
+    def _search_sortkey(self, item):
+        keys = []
+        for sort in reversed(self.query.sorts):
+            value = getattr(item, sort.key)
+            subkey = sort.subkey
+            if subkey is not None:
+                value = value.get(subkey, '')
+            keys.append(SortValue(value, sort.order == -1))
+        return keys
 
     def search_books(self):
         if self.query.books.setdefault('include', []):
@@ -551,15 +563,7 @@ class SearchEngine:
 
             lh = self.host.books[book_id].get_tree_lock(persist=self.lock).acquire() if self.lock else nullcontext()
             with lh:
-                for item in self.search_book_sorted(book_id):
-                    yield item
-
-    def search_book_sorted(self, book_id):
-        results = self.search_book(book_id)
-        for sort in self.query.sorts:
-            keyfunc = functools.partial(self._search_book_sortkey, sort)
-            results = sorted(results, key=keyfunc, reverse=sort.order == -1)
-        yield from results
+                yield from self.search_book(book_id)
 
     def search_book(self, book_id):
         book = self.host.books[book_id]
@@ -597,14 +601,6 @@ class SearchEngine:
                 )
                 if self.query.match_item(item):
                     yield item
-
-    @staticmethod
-    def _search_book_sortkey(sort, item):
-        value = getattr(item, sort.key)
-        subkey = sort.subkey
-        if subkey is not None:
-            value = value.get(sort.subkey, '')
-        return value
 
     def _generate_context(self, item):
         try:

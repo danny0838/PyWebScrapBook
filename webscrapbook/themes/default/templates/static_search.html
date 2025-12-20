@@ -708,15 +708,48 @@ const searchEngine = {
       }
     }
 
+    const results = [];
     for (const book of books) {
-      const results = this.searchBook(query, book);
-      callback(results, book);
+      for (const result of this.searchBook(query, book)) {
+        results.push(result);
+      }
+    }
+
+    // sort results
+    if (query.sorts.length) {
+      const sorts = Array.from(query.sorts).reverse();
+      results.sort((va, vb) => {
+        for (const {key, subkey, order} of sorts) {
+          let a = va[key]; if (subkey) { a = a[subkey] || ""; }
+          let b = vb[key]; if (subkey) { b = b[subkey] || ""; }
+          if (a > b) { return order; }
+          if (a < b) { return -order; }
+        }
+        return 0;
+      });
+    }
+
+    // limit results
+    if (query.limit >= 0) {
+      results.length = query.limit;
+    }
+
+    // distribute to bookResults
+    const bookResults = new Map();
+    for (const book of books) {
+      bookResults.set(book.id, []);
+    }
+
+    for (const result of results) {
+      bookResults.get(result.bookId).push(result);
+    }
+
+    for (const book of books) {
+      callback(bookResults.get(book.id), book);
     }
   },
 
-  searchBook(query, book) {
-    const results = [];
-
+  *searchBook(query, book) {
     const idPool = new Set();
     {
       if (!query.roots.include.length) {
@@ -742,35 +775,17 @@ const searchEngine = {
 
       for (const file in subfiles) {
         const item = {
+          bookId: book.id,
           id,
           file,
           meta: book.meta[id],
           fulltext: subfiles[file],
         };
         if (this.matchItem(item, query)) {
-          results.push(item);
+          yield item;
         }
       }
     }
-
-    // sort results
-    for (const {key, subkey, order} of query.sorts) {
-      results.sort((a, b) => {
-        a = a[key]; if (subkey) { a = a[subkey]; } a = a || "";
-        b = b[key]; if (subkey) { b = b[subkey]; } b = b || "";
-        if (a > b) { return order; }
-        if (a < b) { return -order; }
-        return 0;
-      });
-    }
-
-    // limit results
-    if (query.limit >= 0) {
-      results.splice(query.limit);
-      query.limit -= results.length;
-    }
-
-    return results;
   },
 
   getReachableItems(book, root, set = new Set()) {

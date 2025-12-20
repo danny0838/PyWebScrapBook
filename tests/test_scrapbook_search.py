@@ -2013,6 +2013,101 @@ no_tree = true
             ),
         ])
 
+    def test_search_limit_multi(self):
+        self.init_host(self.root, config="""\
+[book ""]
+top_dir = book0
+
+[book "book1"]
+top_dir = book1
+""")
+
+        self.init_book(
+            self.root,
+            book_id='',
+            meta={
+                '20200101000000000': {},
+                '20200103000000000': {},
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200103000000000',
+                ],
+            },
+        )
+        self.init_book(
+            self.root,
+            book_id='book1',
+            meta={
+                '20200102000000000': {},
+                '20200104000000000': {},
+            },
+            toc={
+                'root': [
+                    '20200102000000000',
+                    '20200104000000000',
+                ],
+            },
+        )
+
+        self.assertListEqual(self.get_search_results('limit:2'), [
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200103000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+        ])
+
+        self.assertListEqual(self.get_search_results('sort:id limit:2'), [
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book1',
+                id='20200102000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+        ])
+
+        self.assertListEqual(self.get_search_results('-sort:id limit:2'), [
+            search.Item(
+                book_id='book1',
+                id='20200104000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200103000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+        ])
+
 
 if __name__ == '__main__':
     unittest.main()
