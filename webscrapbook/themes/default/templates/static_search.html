@@ -184,7 +184,7 @@ const scrapbook = {
 
     this.books = Object.entries(conf.scrapbooks).map(
       ([id, book]) => Object.assign(book, {
-      	id,
+        id,
         toc: {},
         meta: {},
         fulltext: {},
@@ -694,14 +694,14 @@ const searchEngine = {
   },
 
   async search(query, callback) {
-  	let books = new Set(scrapbook.books);
-  	if (query.books.include.length) {
-  	  books = new Set(
+    let books = new Set(scrapbook.books);
+    if (query.books.include.length) {
+      books = new Set(
         query.books.include
           .map(id => conf.scrapbooks[id])
           .filter(book => books.has(book))
       );
-  	}
+    }
     for (const book of books) {
       if (query.books.exclude.includes(book.id)) {
         books.delete(book);
