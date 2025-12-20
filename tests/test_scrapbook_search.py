@@ -1295,59 +1295,236 @@ class TestSearch(TestBookMixin, unittest.TestCase):
         with self.assertRaises(search.QueryError):
             self.get_search_results('re: ???')
 
-    def test_search_book(self):
+    def test_search_books(self):
         self.init_host(self.root, config="""\
 [book ""]
+top_dir = book0
 
 [book "book1"]
+top_dir = book1
 
 [book "book2"]
+top_dir = book2
 
 [book "book3"]
+top_dir = book3
 no_tree = true
 """)
 
+        self.init_book(
+            self.root,
+            book_id='',
+            meta={
+                '20200101000000000': {},
+                '20200102000000000': {},
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200102000000000',
+                ],
+            },
+        )
+        self.init_book(
+            self.root,
+            book_id='book1',
+            meta={
+                '20200201000000000': {},
+                '20200202000000000': {},
+            },
+            toc={
+                'root': [
+                    '20200201000000000',
+                    '20200202000000000',
+                ],
+            },
+        )
+        self.init_book(
+            self.root,
+            book_id='book2',
+            meta={
+                '20200301000000000': {},
+                '20200302000000000': {},
+            },
+            toc={
+                'root': [
+                    '20200301000000000',
+                    '20200302000000000',
+                ],
+            },
+        )
+        self.init_book(
+            self.root,
+            book_id='book3',
+            meta={
+                '20200401000000000': {},
+                '20200402000000000': {},
+            },
+            toc={
+                'root': [
+                    '20200401000000000',
+                    '20200402000000000',
+                ],
+            },
+        )
+
         # search in all books if not set
-        with mock.patch('webscrapbook.scrapbook.search.SearchEngine.search_book_sorted') as mocked:
-            self.get_search_results('')
-        self.assertListEqual(mocked.mock_calls, [
-            mock.call(''),
-            mock.ANY,  # mock.call().__iter__()
-            mock.call('book1'),
-            mock.ANY,
-            mock.call('book2'),
-            mock.ANY,
-            mock.call('book3'),
-            mock.ANY,
+        self.assertListEqual(self.get_search_results(''), [
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200102000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book1',
+                id='20200201000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book1',
+                id='20200202000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200301000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200302000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
         ])
 
         # search in the provided books in order
-        with mock.patch('webscrapbook.scrapbook.search.SearchEngine.search_book_sorted') as mocked:
-            self.get_search_results('book: book:book2')
-        self.assertListEqual(mocked.mock_calls, [
-            mock.call(''),
-            mock.ANY,
-            mock.call('book2'),
-            mock.ANY,
+        self.assertListEqual(self.get_search_results('book: book:book2'), [
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200102000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200301000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200302000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
         ])
 
-        with mock.patch('webscrapbook.scrapbook.search.SearchEngine.search_book_sorted') as mocked:
-            self.get_search_results('book:book2 book:')
-        self.assertListEqual(mocked.mock_calls, [
-            mock.call('book2'),
-            mock.ANY,
-            mock.call(''),
-            mock.ANY,
+        self.assertListEqual(self.get_search_results('book:book2 book:'), [
+            search.Item(
+                book_id='book2',
+                id='20200301000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200302000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200102000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
         ])
 
         # no duplicate
-        with mock.patch('webscrapbook.scrapbook.search.SearchEngine.search_book_sorted') as mocked:
-            self.get_search_results('book: book: book: book:book2  book:book2')
-        self.assertListEqual(mocked.mock_calls, [
-            mock.call(''),
-            mock.ANY,
-            mock.call('book2'),
-            mock.ANY,
+        self.assertListEqual(self.get_search_results('book: book: book: book:book2 book:book2'), [
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200102000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200301000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='book2',
+                id='20200302000000000',
+                file='',
+                meta={},
+                fulltext={},
+                context={},
+            ),
         ])
 
     def test_search_root(self):
@@ -1686,6 +1863,76 @@ no_tree = true
                 id='20200101000000000',
                 file='',
                 meta={},
+                fulltext={},
+                context={},
+            ),
+        ])
+
+    def test_search_sort_multi_key(self):
+        self.init_book(
+            self.root,
+            meta={
+                '20200101000000000': {
+                    'create': '20200101000000000',
+                },
+                '20200102000000000': {
+                    'create': '20200101000000001',
+                },
+                '20200103000000000': {
+                    'create': '20200101000000001',
+                },
+                '20200104000000000': {
+                    'create': '20200101000000000',
+                },
+            },
+            toc={
+                'root': [
+                    '20200101000000000',
+                    '20200102000000000',
+                    '20200103000000000',
+                    '20200104000000000',
+                ],
+            },
+        )
+
+        self.assertListEqual(self.get_search_results('sort:id sort:create'), [
+            search.Item(
+                book_id='',
+                id='20200101000000000',
+                file='',
+                meta={
+                    'create': '20200101000000000',
+                },
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200104000000000',
+                file='',
+                meta={
+                    'create': '20200101000000000',
+                },
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200102000000000',
+                file='',
+                meta={
+                    'create': '20200101000000001',
+                },
+                fulltext={},
+                context={},
+            ),
+            search.Item(
+                book_id='',
+                id='20200103000000000',
+                file='',
+                meta={
+                    'create': '20200101000000001',
+                },
                 fulltext={},
                 context={},
             ),
