@@ -16,6 +16,7 @@ from . import book
 
 class LockError(Exception):
     def __init__(self, msg, name=None, file=None, id=None):
+        super().__init__(msg, name, file, id)
         self.msg = msg
         self.name = name
         self.file = file

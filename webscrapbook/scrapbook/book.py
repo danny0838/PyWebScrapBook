@@ -22,6 +22,7 @@ _id_now = functools.partial(util.datetime_to_id, None)
 
 class TreeFileError(ValueError):
     def __init__(self, msg, filename=None):
+        super().__init__(msg, filename)
         self.msg = msg
         self.filename = filename
 

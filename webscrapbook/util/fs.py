@@ -27,6 +27,7 @@ ZIP_SUBPATH_MIXED = 6
 
 class FSError(Exception):
     def __init__(self, cpath):
+        super().__init__(cpath)
         self.cpath = cpath
         self.msg = 'Unexpected error'
 
