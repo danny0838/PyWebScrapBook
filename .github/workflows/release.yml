@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure and verify
         id: config
@@ -45,7 +45,7 @@ jobs:
           echo "pyver=3.13" >> $GITHUB_OUTPUT
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ steps.config.outputs.pyver }}
 
@@ -61,7 +61,7 @@ jobs:
           git push origin ${{ steps.config.outputs.version }}
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: PyWebScrapBook ${{ steps.config.outputs.version }}
           tag_name: ${{ steps.config.outputs.version }}
@@ -98,10 +98,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.pyver }}
           architecture: ${{ matrix.arch }}
@@ -123,7 +123,7 @@ jobs:
           tox -e build -- --pack --onefile
 
       - name: Add assets to GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.main.outputs.version }}
           files: 'dist/*'
@@ -137,7 +137,7 @@ jobs:
 
     steps:
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.main.outputs.version }}
           draft: false
@@ -151,10 +151,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ needs.main.outputs.pyver }}
 

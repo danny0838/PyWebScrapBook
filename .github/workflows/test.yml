@@ -11,6 +11,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Check code syntax and styling
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: pip install --group lint
+
+      - name: Verify no code issue
+        run: flake8 .
+
   test:
     name: Test ${{ matrix.os }}-${{ matrix.pyver }}-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
@@ -47,10 +66,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.pyver }}
           architecture: ${{ matrix.arch }}
