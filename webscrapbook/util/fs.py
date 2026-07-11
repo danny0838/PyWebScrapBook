@@ -678,14 +678,23 @@ def move(csrc, cdst):
                 raise FSMoveAcrossZipError(cdst)
 
             else:
-                with open_archive_path(csrc) as zh, \
-                     open_archive_path(cdst, 'a') as zh2:
-                    copied = zip_copy(zh, csrc[-1], zh2, cdst[-1])
+                if cdst[:-1] == csrc[:-1]:
+                    # fast-path for same-zip move
+                    with open_archive_path(csrc, 'a') as zh:
+                        copied = zip_copy(zh, csrc[-1], zh, cdst[-1])
 
-                with open_archive_path(csrc, 'a') as zh:
-                    # go through infolist as zinfo may have same name
-                    zinfos = {i for i in zh.infolist() if i.filename in copied}
-                    zh.repack([zh.remove(zi) for zi in zinfos])
+                        # go through infolist as zinfo may have same name
+                        zinfos = [i for i in zh.infolist() if i.filename in copied]
+                        zh.repack([zh.remove(zi) for zi in zinfos])
+                else:
+                    with open_archive_path(csrc) as zh, \
+                         open_archive_path(cdst, 'a') as zh2:
+                        copied = zip_copy(zh, csrc[-1], zh2, cdst[-1])
+
+                    with open_archive_path(csrc, 'a') as zh:
+                        # go through infolist as zinfo may have same name
+                        zinfos = [i for i in zh.infolist() if i.filename in copied]
+                        zh.repack([zh.remove(zi) for zi in zinfos])
 
     except FSError:
         raise
@@ -741,9 +750,14 @@ def copy(csrc, cdst):
                     zip_extract(zh, cdst.file, csrc[-1])
 
             else:
-                with open_archive_path(csrc) as zh, \
-                     open_archive_path(cdst, 'a') as zh2:
-                    zip_copy(zh, csrc[-1], zh2, cdst[-1])
+                if cdst[:-1] == csrc[:-1]:
+                    # fast-path for same-zip copy
+                    with open_archive_path(csrc, 'a') as zh:
+                        zip_copy(zh, csrc[-1], zh, cdst[-1])
+                else:
+                    with open_archive_path(csrc) as zh, \
+                         open_archive_path(cdst, 'a') as zh2:
+                        zip_copy(zh, csrc[-1], zh2, cdst[-1])
 
     except FSError:
         raise
@@ -1118,6 +1132,12 @@ def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
          zdst as zh:
         for zinfo, dst in _zip_copy_iter(zi, base, subpath, filter):
             copied.add(zinfo.filename)
+
+            # fast-path for same-zip copy
+            if zi is zh:
+                zi.copy(zinfo, dst)
+                continue
+
             zinfo2 = _copy.copy(zinfo)
             zinfo2.filename = dst
             if zinfo.is_dir():

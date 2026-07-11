@@ -1726,6 +1726,17 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.move(src, dst)
         self.assert_file_equal(orig_src, {'file': dst})
 
+    def test_zip_file_to_nonexist_nested_same_zip(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/file.txt']
+        dst = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/file2.txt']
+        util.fs.mkzip(src[:1])
+        util.fs.mkzip(src[:2])
+        util.fs.save(src, DUMMY_BYTES)
+        orig_src = self.get_file_data({'file': src})
+        util.fs.move(src, dst)
+        self.assert_file_equal(orig_src, {'file': dst})
+
     def test_zip_file_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
@@ -1807,6 +1818,22 @@ class TestMove(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[:1])
         util.fs.mkzip(dst[:2])
+        orig_src = self.get_file_data({'file': src})
+        orig_src2 = self.get_file_data({'file': src2})
+        util.fs.move(src, dst)
+        self.assert_file_equal(orig_src, {'file': dst})
+        self.assert_file_equal(orig_src2, {'file': dst2})
+
+    def test_zip_dir_to_nonexist_nested_same_zip(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir']
+        src2 = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir/file.txt']
+        dst = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir2']
+        dst2 = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir2/file.txt']
+        util.fs.mkzip(src[:1])
+        util.fs.mkzip(src[:2])
+        util.fs.mkdir(src)
+        util.fs.save(src2, DUMMY_BYTES)
         orig_src = self.get_file_data({'file': src})
         orig_src2 = self.get_file_data({'file': src2})
         util.fs.move(src, dst)
@@ -2409,6 +2436,16 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
 
+    def test_zip_file_to_nonexist_nested_same_zip(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/file.txt']
+        dst = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/file2.txt']
+        util.fs.mkzip(src[:1])
+        util.fs.mkzip(src[:2])
+        util.fs.save(src, DUMMY_BYTES)
+        util.fs.copy(src, dst)
+        self.assert_file_equal({'file': src}, {'file': dst})
+
     def test_zip_file_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
@@ -2485,6 +2522,20 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.save(src2, DUMMY_BYTES)
         util.fs.mkzip(dst[:1])
         util.fs.mkzip(dst[:2])
+        util.fs.copy(src, dst)
+        self.assert_file_equal({'file': src}, {'file': dst})
+        self.assert_file_equal({'file': src2}, {'file': dst2})
+
+    def test_zip_dir_to_nonexist_nested_same_zip(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir']
+        src2 = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir/file.txt']
+        dst = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir2']
+        dst2 = [os.path.join(root, 'archive.zip'), 'deep/subarchive.zip', 'deep/subdir2/file.txt']
+        util.fs.mkzip(src[:1])
+        util.fs.mkzip(src[:2])
+        util.fs.mkdir(src)
+        util.fs.save(src2, DUMMY_BYTES)
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
         self.assert_file_equal({'file': src2}, {'file': dst2})
