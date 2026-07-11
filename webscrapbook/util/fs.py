@@ -1334,26 +1334,27 @@ def _zip_remove_members(zip, members, *, remove_physical=True, buffer_size=2**20
             fp.seek(self.start_dir)
 
 
-class ZipStream(io.RawIOBase):
+class ZipStream(io.BytesIO):
     """A class for a streaming ZIP output."""
     def __init__(self):
-        self._buffer = b''
-        self._size = 0
-
-    def writable(self):
-        return True
+        self._pos = 0
 
     def write(self, b):
-        if self.closed:
-            raise RuntimeError('ZipStream has been closed')
-        self._buffer += b
-        return len(b)
+        size = super().write(b)
+        self._pos += size
+        return size
 
     def get(self):
-        chunk = self._buffer
-        self._buffer = b''
-        self._size += len(chunk)
+        chunk = self.getvalue()
+        super().seek(0)
+        super().truncate(0)
         return chunk
 
-    def size(self):
-        return self._size
+    def tell(self):
+        return self._pos
+
+    def seek(self, *args, **kwargs):
+        raise io.UnsupportedOperation('seek')
+
+    def seekable(self):
+        return False
