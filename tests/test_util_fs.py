@@ -1,10 +1,8 @@
 import functools
 import io
-import itertools
 import os
 import tempfile
 import unittest
-import warnings
 from datetime import datetime
 from unittest import mock
 
@@ -2596,7 +2594,7 @@ class TestOpenArchivePath(unittest.TestCase):
 
         with util.fs.open_archive_path([zfile, 'entry1.zip', 'subdir/index.html'], 'a') as zh:
             # replace
-            util.fs.zip_remove(zh, 'subdir/index.html')
+            zh.repack([zh.remove('subdir/index.html')])
             zh.writestr('subdir/index.html', 'rewritten 測試')
 
             # new
@@ -3574,210 +3572,6 @@ class TestHelpers(unittest.TestCase):
             os.stat(os.path.join(dst, 'file.txt')).st_mtime,
             DUMMY_TS + utc_offset - test_offset,
         )
-
-
-class TestZipRemove(unittest.TestCase):
-    def setUp(self):
-        root = tempfile.mkdtemp(dir=tmpdir)
-        self.TESTFN = os.path.join(root, f'@test_{os.getpid()}_tmp')
-
-    def _test_removing_indexes(self, test_files, indexes):
-        """Test underlying _zip_remove_members() for removing members at given
-        indexes."""
-        # calculate the expected results
-        expected_files = []
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            for i, (file, data) in enumerate(test_files):
-                if i not in indexes:
-                    zh.writestr(file, data)
-                    expected_files.append(file)
-        expected_size = os.path.getsize(self.TESTFN)
-
-        # prepare the test zip
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            for file, data in test_files:
-                zh.writestr(file, data)
-
-        # do the removal and check the result
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            members = {zh.infolist()[i] for i in indexes}
-            util.fs._zip_remove_members(zh, members)
-
-            # make sure internal caches have reflected the change
-            # and are consistent
-            self.assertEqual(zh.namelist(), expected_files)
-            for file, _ in test_files:
-                if file in zh.namelist():
-                    self.assertEqual(zh.getinfo(file).filename, file)
-                else:
-                    with self.assertRaises(KeyError):
-                        zh.getinfo(file)
-
-            self.assertIsNone(zh.testzip())
-        self.assertEqual(os.path.getsize(self.TESTFN), expected_size)
-
-    def _test_removing_combinations(self, test_files, n=None):
-        """Test underlying _zip_remove_members() for removing random combinations
-        of members."""
-        ln = len(test_files)
-        if n is None:
-            # iterate n from 1 to all
-            for n in range(1, ln + 1):
-                for indexes in itertools.combinations(range(ln), n):
-                    with self.subTest(remove=indexes):
-                        self._test_removing_indexes(test_files, indexes)
-        else:
-            for indexes in itertools.combinations(range(ln), n):
-                with self.subTest(remove=indexes):
-                    self._test_removing_indexes(test_files, indexes)
-
-    def test_basic(self):
-        # Test underlying _remove_members() for removing random combinations of members.
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
-        self._test_removing_combinations(test_files)
-
-    def test_duplicated_arcname(self):
-        # Test underlying _remove_members() for removing any one of random duplicated members.
-
-        # suppress duplicate name warning
-        warnings.simplefilter('ignore', category=UserWarning)
-
-        dupl_file = 'file.txt'
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
-        ln = len(test_files)
-        for n in range(2, ln + 1):
-            for dups in itertools.combinations(range(ln), n):
-                files = []
-                for i, (file, data) in enumerate(test_files):
-                    file_ = dupl_file if i in dups else file
-                    files.append((file_, data))
-
-                for index in dups:
-                    indexes = [index]
-                    with self.subTest(dups=dups, indexes=indexes):
-                        self._test_removing_indexes(files, indexes)
-
-    def test_non_physical(self):
-        # Test underlying _remove_members() for non-physical removing.
-        test_files = [
-            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
-            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
-            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
-        ]
-
-        ln = len(test_files)
-        for n in range(1, ln + 1):
-            for indexes in itertools.combinations(range(ln), n):
-                with self.subTest(remove=indexes):
-                    # prepare the test zip
-                    expected = {}
-                    with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-                        for i, (file, data) in enumerate(test_files):
-                            zh.writestr(file, data)
-                            if i not in indexes:
-                                expected[file] = zh.getinfo(file).header_offset
-
-                    # do the removal and check the result
-                    with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-                        members = {zh.infolist()[i] for i in indexes}
-                        util.fs._zip_remove_members(zh, members, remove_physical=False)
-                        self.assertEqual(zh.namelist(), list(expected))
-                        for file, offset in expected.items():
-                            self.assertEqual(zh.getinfo(file).header_offset, offset)
-                        self.assertIsNone(zh.testzip())
-
-    def test_verify(self):
-        # Test if params are passed to underlying _remove_members() correctly,
-        # or never passed if conditions not met.
-        file0 = 'file0.txt'
-        file = 'datafile.txt'
-        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
-
-        # closed: error and do nothing
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            zh.writestr(file, data)
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            zh.close()
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                with self.assertRaises(ValueError):
-                    util.fs.zip_remove(zh, file)
-                mock_fn.assert_not_called()
-
-        # writing: error and do nothing
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            zh.writestr(file, data)
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                with zh.open(file0, 'w'):
-                    with self.assertRaises(ValueError):
-                        util.fs.zip_remove(zh, file)
-                mock_fn.assert_not_called()
-
-        # mode 'r': error and do nothing
-        with zipfile.ZipFile(self.TESTFN, 'r') as zh:
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                with self.assertRaises(ValueError):
-                    util.fs.zip_remove(zh, file)
-                mock_fn.assert_not_called()
-
-        # mode 'w': error and do nothing
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            zh.writestr(file, data)
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                with self.assertRaises(ValueError):
-                    util.fs.zip_remove(zh, file)
-                mock_fn.assert_not_called()
-
-        # mode 'x': error and do nothing
-        os.remove(self.TESTFN)
-        with zipfile.ZipFile(self.TESTFN, 'x') as zh:
-            zh.writestr(file, data)
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                with self.assertRaises(ValueError):
-                    util.fs.zip_remove(zh, file)
-                mock_fn.assert_not_called()
-
-        # mode 'a': the most general use case
-        with zipfile.ZipFile(self.TESTFN, 'w') as zh:
-            zh.writestr(file, data)
-
-        # -- remove with arcname
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                util.fs.zip_remove(zh, file)
-                mock_fn.assert_called_once_with(zh, (zh.getinfo(file),))
-
-        # -- remove with zinfo
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                zinfo = zh.getinfo(file)
-                util.fs.zip_remove(zh, zinfo)
-                mock_fn.assert_called_once_with(zh, (zinfo,))
-
-        # -- remove with nonexist arcname
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                with self.assertRaises(KeyError):
-                    util.fs.zip_remove(zh, 'nonexist.file')
-                mock_fn.assert_not_called()
-
-        # -- remove with nonexist zinfo (even if same name)
-        with zipfile.ZipFile(self.TESTFN, 'a') as zh:
-            with mock.patch('webscrapbook.util.fs._zip_remove_members') as mock_fn:
-                zinfo = zipfile.ZipInfo(file)
-                with self.assertRaises(KeyError):
-                    util.fs.zip_remove(zh, zinfo)
-                mock_fn.assert_not_called()
 
 
 if __name__ == '__main__':

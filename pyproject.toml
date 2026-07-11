@@ -45,6 +45,7 @@ dependencies = [
     "jinja2>=2.10.1",
     "lxml>=4.0",
     "commonmark>=0.8",
+    "zipremove>=0.9",
 ]
 
 [project.urls]

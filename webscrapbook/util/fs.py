@@ -414,7 +414,7 @@ def mkzip(cpath):
             with open_archive_path(cpath, 'a') as zh:
                 if cur == ZIP_SUBPATH_FILE:
                     zinfo = zh.getinfo(cpath[-1])
-                    zip_remove(zh, zinfo)
+                    zh.repack([zh.remove(zinfo)])
                     zinfo.date_time = time.localtime()
                 else:
                     zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
@@ -462,7 +462,7 @@ def save(cpath, src, *, buffer_size=None):
             with open_archive_path(cpath, 'a') as zh:
                 if cur == ZIP_SUBPATH_FILE:
                     zinfo = zh.getinfo(cpath[-1])
-                    zip_remove(zh, zinfo)
+                    zh.repack([zh.remove(zinfo)])
                     zinfo.date_time = time.localtime()
                 else:
                     zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
@@ -524,7 +524,7 @@ def delete(cpath):
                 if not zinfos:
                     raise FSEntryNotFoundError(cpath)
 
-                _zip_remove_members(zh, zinfos)
+                zh.repack([zh.remove(zi) for zi in zinfos])
     except FSError:
         raise
     except Exception as exc:
@@ -685,7 +685,7 @@ def move(csrc, cdst):
                 with open_archive_path(csrc, 'a') as zh:
                     # go through infolist as zinfo may have same name
                     zinfos = {i for i in zh.infolist() if i.filename in copied}
-                    _zip_remove_members(zh, zinfos)
+                    zh.repack([zh.remove(zi) for zi in zinfos])
 
     except FSError:
         raise
@@ -771,7 +771,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=None):
     e.g. deleting ['/path/to/foo.zip', 'subdir/']:
 
         with open_archive_path(cpath, 'a') as zh:
-            zip_remove(zh, cpath[-1])
+            zh.repack([zh.remove(cpath[-1])])
 
     Args:
         cpath
@@ -823,7 +823,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=None):
                 zh = stack.pop()
                 if fh:
                     zinfo = zh.getinfo(cpath[i + 1])
-                    zip_remove(zh, zinfo)
+                    zh.repack([zh.remove(zinfo)])
                     zinfo.file_size = fh.tell()
                     zinfo.date_time = time.localtime()
                     zinfo.compress_type = zipfile.ZIP_STORED
@@ -1233,105 +1233,6 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
             shutil.rmtree(tempdir)
         except OSError:
             pass
-
-
-def zip_remove(zip, zinfo_or_arcname):
-    """Remove a member from the archive.
-
-    Args:
-        zip: path, file-like object, or zipfile.ZipFile
-    """
-    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'a') as self:
-        if self.mode != 'a':
-            raise ValueError("remove() requires mode 'a'")
-        if not self.fp:
-            raise ValueError(
-                'Attempt to write to ZIP archive that was already closed')
-        if self._writing:
-            raise ValueError(
-                "Can't write to ZIP archive while an open writing handle exists"
-            )
-
-        # Make sure we have an existing info object
-        if isinstance(zinfo_or_arcname, zipfile.ZipInfo):
-            zinfo = zinfo_or_arcname
-            # make sure zinfo exists
-            if zinfo not in self.filelist:
-                raise KeyError(
-                    'There is no item %r in the archive' % zinfo.filename)
-        else:
-            # get the info object
-            zinfo = self.getinfo(zinfo_or_arcname)
-
-        return _zip_remove_members(self, (zinfo,))
-
-
-def _zip_remove_members(zip, members, *, remove_physical=True, buffer_size=2**20):
-    """Remove members in a zip file.
-
-    All members (as zinfo) should exist in the zip; otherwise the zip file
-    will erroneously end in an inconsistent state.
-    """
-    with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip, 'a') as self:
-        with self._lock:
-            fp = self.fp
-            entry_offset = 0
-            member_seen = False
-
-            # get a sorted filelist by header offset, in case the dir order
-            # doesn't match the actual entry order
-            filelist = sorted(self.filelist, key=lambda x: x.header_offset)
-            for i in range(len(filelist)):
-                info = filelist[i]
-                is_member = info in members
-
-                if not (member_seen or is_member):
-                    continue
-
-                # get the total size of the entry
-                try:
-                    offset = filelist[i + 1].header_offset
-                except IndexError:
-                    offset = self.start_dir
-                entry_size = offset - info.header_offset
-
-                if is_member:
-                    member_seen = True
-                    entry_offset += entry_size
-
-                    # update caches
-                    self.filelist.remove(info)
-                    try:
-                        del self.NameToInfo[info.filename]
-                    except KeyError:
-                        pass
-                    continue
-
-                # update the header and move entry data to the new position
-                if remove_physical:
-                    old_header_offset = info.header_offset
-                    info.header_offset -= entry_offset
-                    read_size = 0
-                    while read_size < entry_size:
-                        fp.seek(old_header_offset + read_size)
-                        data = fp.read(min(entry_size - read_size, buffer_size))
-                        fp.seek(info.header_offset + read_size)
-                        fp.write(data)
-                        fp.flush()
-                        read_size += len(data)
-
-            # Avoid missing entry if entries have a duplicated name.
-            # Reverse the order as NameToInfo normally stores the last added one.
-            for info in reversed(self.filelist):
-                self.NameToInfo.setdefault(info.filename, info)
-
-            # update state
-            if remove_physical:
-                self.start_dir -= entry_offset
-            self._didModify = True
-
-            # seek to the start of the central dir
-            fp.seek(self.start_dir)
 
 
 class ZipStream(io.BytesIO):
