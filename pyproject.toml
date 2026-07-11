@@ -31,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Content Management System",
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
@@ -141,7 +142,7 @@ extend_skip = [
 ]
 
 [tool.tox]
-env_list = ["py314", "py313", "py312", "py311", "py310", "py39", "py38"]
+env_list = ["py315", "py314", "py313", "py312", "py311", "py310", "py39", "py38"]
 min_version = "4.22"
 
 [tool.tox.env_run_base]
