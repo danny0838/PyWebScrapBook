@@ -109,7 +109,7 @@ def require_fixed_html5(reason='requires fixed HTML5 support '
     # Skip PyPy, which doesn't yet support this patch.
     # (tested in v7.3.23 (announced to be Python 3.11.15))
     support = sys.implementation.name != 'pypy' and (
-        (3, 13, 6) <= sys.version_info < (3, 14)
+        (3, 13, 6) <= sys.version_info
         or (3, 12, 12) <= sys.version_info < (3, 13)
         or (3, 11, 14) <= sys.version_info < (3, 12)
         or (3, 10, 19) <= sys.version_info < (3, 11)
