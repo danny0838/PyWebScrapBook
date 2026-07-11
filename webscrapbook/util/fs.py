@@ -1023,10 +1023,9 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
                     if stream:
                         yield stream.get()
                 else:
-                    if not stream:
-                        comp = zip_compression_params(mimetypes.guess_type(dst)[0])
-                        zinfo.compress_type = comp['compress_type']
-                        zinfo._compresslevel = comp['compresslevel']
+                    comp = zip_compression_params(mimetypes.guess_type(dst)[0])
+                    zinfo.compress_type = comp['compress_type']
+                    zinfo._compresslevel = comp['compresslevel']
                     with open(src, 'rb') as ih, zh.open(zinfo, 'w') as oh:
                         for chunk in iter(functools.partial(ih.read, buffer_size), b''):
                             oh.write(chunk)
@@ -1126,8 +1125,6 @@ def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
                 if stream:
                     yield stream.get()
             else:
-                if stream:
-                    zinfo2.compress_type = zipfile.ZIP_STORED
                 with zi.open(zinfo) as ih, zh.open(zinfo2, 'w') as oh:
                     for chunk in iter(functools.partial(ih.read, buffer_size), b''):
                         oh.write(chunk)

@@ -3097,11 +3097,11 @@ class TestHelpers(unittest.TestCase):
             )
             self.assertEqual(
                 zh.getinfo('myfolder/subfolder/subfolderfile.txt').compress_type,
-                zipfile.ZIP_STORED,
+                zipfile.ZIP_DEFLATED,
             )
             self.assertEqual(
                 zh.getinfo('myfolder/subfile.txt').compress_type,
-                zipfile.ZIP_STORED,
+                zipfile.ZIP_DEFLATED,
             )
 
     def test_zip_copy_dir_to_dir(self):
@@ -3419,11 +3419,11 @@ class TestHelpers(unittest.TestCase):
             )
             self.assertEqual(
                 zh.getinfo('deep/subdir2/file.txt').compress_type,
-                zipfile.ZIP_STORED,
+                zipfile.ZIP_BZIP2,
             )
             self.assertEqual(
                 zh.getinfo('deep/subdir2/implicit_dir/subfile.txt').compress_type,
-                zipfile.ZIP_STORED,
+                zipfile.ZIP_BZIP2,
             )
 
     def test_zip_extract_root(self):
