@@ -106,7 +106,9 @@ def require_symlink(reason='requires symlink creation support '
 def require_fixed_html5(reason='requires fixed HTML5 support '
                                '(since Python 3.13.6, 3.12.12, 3.11.14, 3.10.19, 3.9.24)'):
     # ref: https://github.com/python/cpython/issues/102555
-    support = (
+    # Skip PyPy, which doesn't yet support this patch.
+    # (tested in v7.3.23 (announced to be Python 3.11.15))
+    support = sys.implementation.name != 'pypy' and (
         (3, 13, 6) <= sys.version_info < (3, 14)
         or (3, 12, 12) <= sys.version_info < (3, 13)
         or (3, 11, 14) <= sys.version_info < (3, 12)
