@@ -824,6 +824,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=None):
                 if fh:
                     zinfo = zh.getinfo(cpath[i + 1])
                     zip_remove(zh, zinfo)
+                    zinfo.file_size = fh.tell()
                     zinfo.date_time = time.localtime()
                     zinfo.compress_type = zipfile.ZIP_STORED
                     with zh.open(zinfo, 'w') as fw:
