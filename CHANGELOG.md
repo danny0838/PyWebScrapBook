@@ -3,6 +3,12 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.9.0] - 2026-07-12
+* Fixed a potential error when writing a large file into a nested ZIP archive.
+* Introduced the `zipremove` dependency to optimize ZIP-related file operations.
+* Allowed compression when streaming out a ZIP file.
+* Miscellaneous improvements to the internal code, test suite, and dev tools.
+
 ## [2.8.0] - 2025-12-21
 * Dropped support for Python 3.7.
 * Reworked package management using `pyproject.toml`.
