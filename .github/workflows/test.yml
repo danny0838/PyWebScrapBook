@@ -67,10 +67,9 @@ jobs:
             pyver: 'pypy-3.11'
             arch: x64
 
-          # Many errors. Grossly incompatible.
-          # - os: ubuntu-latest
-            # pyver: 'graalpy-25.1.3'
-            # arch: x64
+          - os: ubuntu-latest
+            pyver: 'graalpy-25.1.3'
+            arch: x64
 
     steps:
       - name: Checkout code
