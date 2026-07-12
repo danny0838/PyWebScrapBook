@@ -509,15 +509,8 @@ class TestWebHost(Test):
 
             # Password check should be handled by check_password_hash properly.
             # Here are just some quick fail tests for certain cases:
-            # - empty input should not work
             # - inputting hashed value should not work
             mock_encrypt.reset_mock()
-
-            self.assertEqual(wsbapp.host.get_permission('user4', ''), '')
-            mock_encrypt.assert_called_with(
-                'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
-                '',
-            )
 
             self.assertEqual(wsbapp.host.get_permission(
                 'user4',
@@ -527,6 +520,12 @@ class TestWebHost(Test):
                 'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
                 'pbkdf2:sha256:1$D9tO$b62cd702008d95caf8c699ee76a00db468a5e0891f431475b9a0aeab148e43cb',
             )
+
+            # check_password_hash should NOT be called for an ampty password
+            mock_encrypt.reset_mock()
+
+            self.assertEqual(wsbapp.host.get_permission('user4', ''), '')
+            mock_encrypt.assert_not_called()
 
             # check_password_hash should NOT be called for an unmatched user
             mock_encrypt.reset_mock()
