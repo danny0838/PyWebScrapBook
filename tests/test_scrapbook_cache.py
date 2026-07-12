@@ -1766,6 +1766,7 @@ Linked page content.
         generator = wsb_cache.FulltextCacheGenerator(book)
         for info in generator.run():
             self.assertNotEqual(info.type, 'error')
+            print(info)
 
         self.assertEqual(book.fulltext, {
             '20200101000000000': {
