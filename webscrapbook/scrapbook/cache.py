@@ -743,11 +743,14 @@ class FulltextCacheGenerator():
             yield Info('debug', f'Retrieving HTML content for {path!r} of {item.id!r}')
 
         charset = util.get_html_charset(fh, default=item.meta.get('charset') or 'UTF-8')
+        print('charset:', charset)
         encoding = util.lxml_fix_codec(charset)
+        print('encoding:', encoding)
 
         results = []
         has_instant_redirect = False
         for time_, url, context in util.iter_meta_refresh(fh, encoding=encoding):
+            print('check meta refresh:', time_, url, context)
             if time_ == 0 and not context:
                 has_instant_redirect = True
 
@@ -789,6 +792,7 @@ class FulltextCacheGenerator():
                 pass
 
         for event, elem in gen():
+            print('event:', event, elem)
             if event == 'start':
                 # skip if we are in an excluded element
                 if exclusion_stack:
