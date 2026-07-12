@@ -548,8 +548,10 @@ def sniff_bom(fh):
         str: corresponding codec name for a found BOM if a BOM is found (and
             sets pointer at the position after the BOM), or None otherwise.
     """
+    print('sniff_bom:', fh)
     # will read less if the file is smaller
     raw = fh.read(4)
+    print('raw:', raw)
 
     for enc, bom in BOM_DETECTORS:
         if raw.startswith(bom):
