@@ -1694,6 +1694,9 @@ class WebHost(wsb_host.Host):
 
             entry_pw = entry.get('pw', '')
             if entry_pw:
+                # quick fail if password required but not provided
+                if not password:
+                    continue
                 if not check_password_hash(entry_pw, password):
                     continue
             else:
