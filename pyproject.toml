@@ -106,7 +106,6 @@ exclude = [
     ".venv",
     "build",
     "dist",
-    "setup.py",
 ]
 max-line-length = 160
 
@@ -137,9 +136,7 @@ include_trailing_comma = true
 
 # skip directories included by default
 # ref: https://pycqa.github.io/isort/docs/configuration/options.html
-extend_skip = [
-    "setup.py",
-]
+# extend_skip = []
 
 [tool.tox]
 env_list = ["py315", "py314", "py313", "py312", "py311", "py310", "py39", "py38"]
