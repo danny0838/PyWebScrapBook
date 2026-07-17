@@ -470,7 +470,20 @@ def save(cpath, src, *, buffer_size=None):
                     zinfo.compress_type = comp['compress_type']
                     zinfo._compresslevel = comp['compresslevel']
 
-                with zh.open(zinfo, 'w') as fh:
+                # determine file size and force_zip64
+                force_zip64 = False
+                if isinstance(src, bytes):
+                    zinfo.file_size = len(src)
+                else:
+                    try:
+                        zinfo.file_size = src.seek(0, 2)
+                    except (AttributeError, OSError):
+                        zinfo.file_size = 0
+                        force_zip64 = True
+                    else:
+                        src.seek(0)
+
+                with zh.open(zinfo, 'w', force_zip64=force_zip64) as fh:
                     _save_write(fh, src, buffer_size=buffer_size)
 
     except FSError:

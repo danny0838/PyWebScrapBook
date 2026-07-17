@@ -112,6 +112,16 @@ def require_symlink(reason='requires symlink creation support '
     return unittest.skipUnless(support, reason)
 
 
+def require_tracemalloc(reason='requires tracemalloc module'):
+    try:
+        import tracemalloc  # noqa: F401
+    except ImportError:
+        support = False
+    else:
+        support = True
+    return unittest.skipUnless(support, reason)
+
+
 def require_fixed_html5(reason='requires fixed HTML5 support '
                                '(since Python 3.13.6, 3.12.12, 3.11.14, 3.10.19, 3.9.24)'):
     # ref: https://github.com/python/cpython/issues/102555

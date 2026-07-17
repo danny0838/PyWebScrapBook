@@ -3,8 +3,14 @@ import io
 import os
 import tempfile
 import unittest
+from contextlib import contextmanager
 from datetime import datetime
 from unittest import mock
+
+try:
+    import tracemalloc
+except ImportError:
+    pass
 
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
@@ -30,6 +36,7 @@ from . import (
     require_posix_mode,
     require_resource,
     require_symlink,
+    require_tracemalloc,
 )
 
 
@@ -704,6 +711,16 @@ class TestCPath(unittest.TestCase):
 class TestFsUtilBase(TestFileMixin, unittest.TestCase):
     """Base test class for common fs utils."""
 
+    @contextmanager
+    def assert_memory_usage(self, threshold=10 * 1024 ** 2):
+        tracemalloc.start()
+        try:
+            yield
+        finally:
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+        self.assertLess(peak, threshold)
+
 
 class TestFsUtilBasicMixin:
     """Check for common bad cases for a filesystem operation.
@@ -1235,6 +1252,27 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         dst = [zfile, '']
         with self.assertRaises(util.fs.FSIsADirectoryError):
             util.fs.save(dst, DUMMY_BYTES)
+
+    def _write_large_file(self, fh, size=4.1 * 1024 ** 3):
+        chunk_size = min(size, 1024 ** 2)
+        chunk = b'a' * chunk_size
+        for _ in range(int(size // chunk_size + 1)):
+            fh.write(chunk)
+
+    @require_resource('extralargefile')
+    @require_tracemalloc()
+    def test_zip_file_zip64(self):
+        """Should save a large file without zip64 error or memory issue."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'archive.zip')
+        with zipfile.ZipFile(zfile, 'w'):
+            pass
+        dst = [zfile, 'nested/file.txt']
+        with tempfile.TemporaryFile() as fh:
+            self._write_large_file(fh)
+            fh.seek(0)
+            with self.assert_memory_usage():
+                util.fs.save(dst, fh)
 
 
 class TestDelete(TestFsUtilBasicMixin, TestFsUtilBase):
