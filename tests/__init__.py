@@ -59,6 +59,15 @@ DUMMY_ZIP_DT9 = (1999, 1, 2, 0, 0, 0)
 
 
 # common requirement checking decorators
+def require_resource(res, reason='requires resource {res!r} in envvar TEST_RESOURCES'):
+    if not hasattr(require_resource, '_resources'):
+        require_resource._resources = set(os.environ.get('TEST_RESOURCES', '').split(','))
+    return unittest.skipUnless(
+        res in require_resource._resources,
+        reason.format(res=res),
+    )
+
+
 def require_sep(reason="requires '/' as filesystem path separator "
                        '(e.g. POSIX)'):
     support = os.sep == '/'

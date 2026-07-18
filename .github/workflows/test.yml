@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      resources:
+        description: 'TEST_RESOURCES'
+        required: false
+        default: ''
 
 concurrency:
   # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
@@ -96,6 +101,8 @@ jobs:
         run: pip install . cryptography<49
 
       - name: Run tests
+        env:
+          TEST_RESOURCES: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.resources || '' }}
         run: python -m unittest -v
 
       - name: Ensure all dependency can be installed
