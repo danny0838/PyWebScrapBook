@@ -3606,29 +3606,6 @@ class TestHelpers(unittest.TestCase):
             set(),
         )
 
-    def test_zip_extract_timezone(self):
-        """Verify timezone adjustment"""
-        root = tempfile.mkdtemp(dir=tmpdir)
-        zfile = os.path.join(root, 'zipfile.zip')
-        dst = os.path.join(root, 'zipfile')
-        with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
-
-        test_offset = -12345  # use a timezone offset which is unlikely really used
-        util.fs.zip_extract(zfile, dst, tzoffset=test_offset)
-        utc_offset = datetime.fromtimestamp(DUMMY_TS).astimezone().utcoffset().total_seconds()
-
-        self.assertEqual(
-            glob_files(dst),
-            {
-                os.path.join(dst, 'file.txt'),
-            },
-        )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'file.txt')).st_mtime,
-            DUMMY_TS + utc_offset - test_offset,
-        )
-
 
 if __name__ == '__main__':
     unittest.main()

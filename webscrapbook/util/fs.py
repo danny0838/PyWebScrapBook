@@ -11,7 +11,6 @@ import sys
 import tempfile
 import time
 from contextlib import contextmanager, nullcontext
-from datetime import datetime
 
 from .._polyfill import mimetypes, zipfile
 from . import util
@@ -1208,7 +1207,7 @@ def _zip_copy_iter(zh, base, subpath, filter=None):
             yield zinfo, dst
 
 
-def zip_extract(zip, dst, subpath='', tzoffset=None):
+def zip_extract(zip, dst, subpath=''):
     """Extract zip subpath to dst and preserve metadata.
 
     Args:
@@ -1216,9 +1215,6 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
         dst: path where the extracted file or directory will be placed at.
         subpath: internal path to a file or folder (without trailing slash), or
             '' or None to extract the whole zip
-        tzoffset: known timezone offset (in seconds) the ZIP file has been
-            created at, to adjust mtime of the internal files, which are
-            recorded using local timestamp
 
     Raises:
         FileExistsError: if dst already exists
@@ -1246,12 +1242,7 @@ def zip_extract(zip, dst, subpath='', tzoffset=None):
                 file = os.path.join(tempdir, entry)
                 zinfo = zh.getinfo(entry)
 
-                # @FIXME: utcoffset may be different across timestamps when DST
-                #         is used
                 ts = zip_timestamp(zinfo)
-                if tzoffset is not None:
-                    utcoffset = datetime.fromtimestamp(ts).astimezone().utcoffset().total_seconds()
-                    ts = ts + utcoffset - tzoffset
                 os.utime(file, (ts, ts))
 
                 # @TODO: recover mode?
