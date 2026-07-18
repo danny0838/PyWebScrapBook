@@ -2484,6 +2484,35 @@ class TestCopy(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.copy(src, dst)
         self.assert_file_equal({'file': src}, {'file': dst})
 
+    def test_zip_file_to_nonexist_sanitize_filename1(self):
+        """Should sanitize filename when copying in a ZIP archive."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
+        dst = [os.path.join(root, 'archive.zip'), 'deep\\file2.txt']
+        dst_fixed = [os.path.join(root, 'archive.zip'), 'deep/file2.txt']
+        with mock.patch('os.sep', '/'), mock.patch('os.altsep', None):
+            util.fs.mkzip(src[:1])
+            util.fs.save(src, DUMMY_BYTES)
+        with mock.patch('os.sep', '\\'), mock.patch('os.altsep', '/'):
+            util.fs.copy(src, dst)
+        with mock.patch('os.sep', '/'), mock.patch('os.altsep', None):
+            self.assert_file_equal({'file': src}, {'file': dst_fixed})
+
+    def test_zip_file_to_nonexist_sanitize_filename2(self):
+        """Should sanitize filename when copying into another ZIP archive."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']
+        dst = [os.path.join(root, 'archive2.zip'), 'deep\\file2.txt']
+        dst_fixed = [os.path.join(root, 'archive2.zip'), 'deep/file2.txt']
+        with mock.patch('os.sep', '/'), mock.patch('os.altsep', None):
+            util.fs.mkzip(src[:1])
+            util.fs.save(src, DUMMY_BYTES)
+            util.fs.mkzip(dst[:1])
+        with mock.patch('os.sep', '\\'), mock.patch('os.altsep', '/'):
+            util.fs.copy(src, dst)
+        with mock.patch('os.sep', '/'), mock.patch('os.altsep', None):
+            self.assert_file_equal({'file': src}, {'file': dst_fixed})
+
     def test_zip_file_to_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         src = [os.path.join(root, 'archive.zip'), 'deep/file.txt']

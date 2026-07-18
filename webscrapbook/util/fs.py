@@ -1151,8 +1151,10 @@ def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
                 zi.copy(zinfo, dst)
                 continue
 
+            _zinfo = zipfile.ZipInfo(dst)
             zinfo2 = _copy.copy(zinfo)
-            zinfo2.filename = dst
+            zinfo2.orig_filename = _zinfo.orig_filename
+            zinfo2.filename = _zinfo.filename
             if zinfo.is_dir():
                 zh.writestr(zinfo2, b'')
                 if stream:
