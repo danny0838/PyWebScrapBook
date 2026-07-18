@@ -997,14 +997,14 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
                 pass
             zh.writestr(dst[1], buf.getvalue())
         util.fs.mkzip(dst)
-        with zipfile.ZipFile(zfile) as zh:
-            with zh.open(dst[1]) as fh:
-                with zipfile.ZipFile(fh) as zh2:
-                    zinfo2 = zh2.getinfo(dst[-1])
-                    self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
-                    self.assertEqual(zinfo2.compress_type, zipfile.ZIP_STORED)
-                    with zh2.open(zinfo2) as fh2:
-                        self.assertTrue(zipfile.is_zipfile(fh2))
+        with zipfile.ZipFile(zfile) as zh, \
+             zh.open(dst[1]) as fh, \
+             zipfile.ZipFile(fh) as zh2:
+            zinfo2 = zh2.getinfo(dst[-1])
+            self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo2.compress_type, zipfile.ZIP_STORED)
+            with zh2.open(zinfo2) as fh2:
+                self.assertTrue(zipfile.is_zipfile(fh2))
 
     def test_zip_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1160,14 +1160,14 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
                 pass
             zh.writestr(dst[1], buf.getvalue())
         util.fs.save(dst, DUMMY_BYTES)
-        with zipfile.ZipFile(zfile) as zh:
-            with zh.open(dst[1]) as fh:
-                with zipfile.ZipFile(fh) as zh2:
-                    zinfo2 = zh2.getinfo(dst[-1])
-                    self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
-                    self.assertEqual(zinfo2.compress_type, zipfile.ZIP_DEFLATED)
-                    with zh2.open(zinfo2) as fh2:
-                        self.assertEqual(fh2.read(), DUMMY_BYTES)
+        with zipfile.ZipFile(zfile) as zh, \
+             zh.open(dst[1]) as fh, \
+             zipfile.ZipFile(fh) as zh2:
+            zinfo2 = zh2.getinfo(dst[-1])
+            self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo2.compress_type, zipfile.ZIP_DEFLATED)
+            with zh2.open(zinfo2) as fh2:
+                self.assertEqual(fh2.read(), DUMMY_BYTES)
 
     def test_zip_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -2660,15 +2660,15 @@ class TestOpenArchivePath(unittest.TestCase):
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             self.assertEqual(oct(zip_mode(zinfo)), oct(0o700))
 
-            with zh.open(zinfo) as fh1:
-                with zipfile.ZipFile(fh1) as zh1:
-                    self.assertEqual(zh1.comment.decode('UTF-8'), 'test zip comment 1 測試')
+            with zh.open(zinfo) as fh1, \
+                 zipfile.ZipFile(fh1) as zh1:
+                self.assertEqual(zh1.comment.decode('UTF-8'), 'test zip comment 1 測試')
 
-                    # replace
-                    self.assertEqual(zh1.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
+                # replace
+                self.assertEqual(zh1.read('subdir/index.html').decode('UTF-8'), 'rewritten 測試')
 
-                    # new
-                    self.assertEqual(zh1.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
+                # new
+                self.assertEqual(zh1.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
 
 
 class TestHelpers(unittest.TestCase):

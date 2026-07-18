@@ -89,10 +89,10 @@ class TestExporterBase(TestBookMixin, unittest.TestCase):
                         with zh.open(zinfo) as fh:
                             index_data = fh.read().decode('UTF-8')
                     elif path.endswith('.htz'):
-                        with zh.open(zinfo) as fh:
-                            with zipfile.ZipFile(fh) as zh2:
-                                with zh2.open('index.html') as fh2:
-                                    index_data = fh2.read().decode('UTF-8')
+                        with zh.open(zinfo) as fh, \
+                             zipfile.ZipFile(fh) as zh2, \
+                             zh2.open('index.html') as fh2:
+                            index_data = fh2.read().decode('UTF-8')
                     else:
                         continue
 
