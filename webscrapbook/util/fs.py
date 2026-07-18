@@ -1091,7 +1091,7 @@ def _zip_compress_iter(filename, subpath, filter=None):
 
 def zip_copy(zsrc, base, zdst, subpath, filter=None, *,
              stream=None, buffer_size=io.DEFAULT_BUFFER_SIZE):
-    """Coopy entries from zsrc to be the subpath in zdst.
+    """Copy entries from zsrc to be the subpath in zdst.
 
     Args:
         zsrc: path, file-like object, or zipfile.ZipFile

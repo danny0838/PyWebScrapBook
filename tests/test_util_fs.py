@@ -18,7 +18,6 @@ from . import (
     DUMMY_TS3,
     DUMMY_TS4,
     DUMMY_TS5,
-    DUMMY_TS6,
     DUMMY_ZIP_DT,
     DUMMY_ZIP_DT2,
     DUMMY_ZIP_DT3,
@@ -2854,9 +2853,8 @@ class TestHelpers(unittest.TestCase):
         os.utime(src, (0, DUMMY_TS))
         os.utime(src2, (0, DUMMY_TS2))
         os.utime(src3, (0, DUMMY_TS3))
-        os.utime(src3, (0, DUMMY_TS4))
-        os.utime(src4, (0, DUMMY_TS5))
-        os.utime(src5, (0, DUMMY_TS6))
+        os.utime(src4, (0, DUMMY_TS4))
+        os.utime(src5, (0, DUMMY_TS5))
 
         util.fs.zip_compress(zfile, src, 'myfolder')
 
@@ -2930,9 +2928,8 @@ class TestHelpers(unittest.TestCase):
         os.utime(src, (0, DUMMY_TS))
         os.utime(src2, (0, DUMMY_TS2))
         os.utime(src3, (0, DUMMY_TS3))
-        os.utime(src3, (0, DUMMY_TS4))
-        os.utime(src4, (0, DUMMY_TS5))
-        os.utime(src5, (0, DUMMY_TS6))
+        os.utime(src4, (0, DUMMY_TS4))
+        os.utime(src5, (0, DUMMY_TS5))
 
         util.fs.zip_compress(zfile, src, '')
 
@@ -2997,9 +2994,8 @@ class TestHelpers(unittest.TestCase):
         os.utime(src, (0, DUMMY_TS))
         os.utime(src2, (0, DUMMY_TS2))
         os.utime(src3, (0, DUMMY_TS3))
-        os.utime(src3, (0, DUMMY_TS4))
-        os.utime(src4, (0, DUMMY_TS5))
-        os.utime(src5, (0, DUMMY_TS6))
+        os.utime(src4, (0, DUMMY_TS4))
+        os.utime(src5, (0, DUMMY_TS5))
 
         util.fs.zip_compress(zfile, src, 'myfolder', filter={'subfolder'})
 
