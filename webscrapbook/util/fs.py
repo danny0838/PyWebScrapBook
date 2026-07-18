@@ -1005,7 +1005,7 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
 
         for src, dst in _zip_compress_iter(filename, subpath, filter):
             try:
-                zinfo = zipfile.ZipInfo.from_file(src, dst, strict_timestamps=False)
+                zinfo = zipfile.ZipInfo.from_file(src, dst)
                 if zinfo.is_dir():
                     zh.mkdir(zinfo)
                 else:
@@ -1203,8 +1203,8 @@ def zip_extract(zip, dst, subpath=''):
                 file = os.path.join(tempdir, entry)
                 zinfo = zh.getinfo(entry)
 
-                ts = zip_timestamp(zinfo)
-                os.utime(file, (ts, ts))
+                dt = zinfo._get_datetime()
+                os.utime(file, ns=dt)
 
                 # @TODO: recover mode?
                 # It may be ignored in some OS and setting the mode for a file

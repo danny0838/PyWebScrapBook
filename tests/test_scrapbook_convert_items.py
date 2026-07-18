@@ -204,30 +204,30 @@ my page content
         })
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000001', 'index.html')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000001', 'index.html')).st_mtime_ns,
         )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
-                util.fs.zip_timestamp(zh.getinfo('index.html')),
-                os.stat(os.path.join(self.test_output, '20200101000000002', 'index.html')).st_mtime,
+                zh.getinfo('index.html')._get_datetime()[1],
+                os.stat(os.path.join(self.test_output, '20200101000000002', 'index.html')).st_mtime_ns,
             )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
-                util.fs.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
-                os.stat(os.path.join(self.test_output, '20200101000000003', 'index.html')).st_mtime,
+                zh.getinfo('20200101000000003/index.html')._get_datetime()[1],
+                os.stat(os.path.join(self.test_output, '20200101000000003', 'index.html')).st_mtime_ns,
             )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000004', 'index.html')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000004', 'index.html')).st_mtime_ns,
         )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000005', 'index.html')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000005', 'index.html')).st_mtime_ns,
         )
 
         book = Host(self.test_output).books['']
@@ -418,29 +418,29 @@ my page content
             self.assertEqual(set(zh.namelist()), {'index.html', '20200101000000005.txt'})
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000001.htz')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000001.htz')).st_mtime_ns,
         )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000002.htz')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000002.htz')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000002.htz')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000002.htz')).st_mtime_ns,
         )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
-                util.fs.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
-                os.stat(os.path.join(self.test_output, '20200101000000003.htz')).st_mtime,
+                zh.getinfo('20200101000000003/index.html')._get_datetime()[1],
+                os.stat(os.path.join(self.test_output, '20200101000000003.htz')).st_mtime_ns,
             )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000004.htz')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000004.htz')).st_mtime_ns,
         )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000005.htz')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000005.htz')).st_mtime_ns,
         )
 
         book = Host(self.test_output).books['']
@@ -670,29 +670,29 @@ my page content
                 )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000001.maff')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000001.maff')).st_mtime_ns,
         )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
-                util.fs.zip_timestamp(zh.getinfo('index.html')),
-                os.stat(os.path.join(self.test_output, '20200101000000002.maff')).st_mtime,
+                zh.getinfo('index.html')._get_datetime()[1],
+                os.stat(os.path.join(self.test_output, '20200101000000002.maff')).st_mtime_ns,
             )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000003.maff')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000003.maff')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000003.maff')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000003.maff')).st_mtime_ns,
         )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000004.maff')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000004.maff')).st_mtime_ns,
         )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000005.maff')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000005.maff')).st_mtime_ns,
         )
 
         book = Host(self.test_output).books['']
@@ -949,30 +949,30 @@ my page content
 """)
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000001.html')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000001', 'index.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000001.html')).st_mtime_ns,
         )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000002.htz')) as zh:
             self.assertEqual(
-                util.fs.zip_timestamp(zh.getinfo('index.html')),
-                os.stat(os.path.join(self.test_output, '20200101000000002.html')).st_mtime,
+                zh.getinfo('index.html')._get_datetime()[1],
+                os.stat(os.path.join(self.test_output, '20200101000000002.html')).st_mtime_ns,
             )
 
         with zipfile.ZipFile(os.path.join(self.test_input, '20200101000000003.maff')) as zh:
             self.assertEqual(
-                util.fs.zip_timestamp(zh.getinfo('20200101000000003/index.html')),
-                os.stat(os.path.join(self.test_output, '20200101000000003.html')).st_mtime,
+                zh.getinfo('20200101000000003/index.html')._get_datetime()[1],
+                os.stat(os.path.join(self.test_output, '20200101000000003.html')).st_mtime_ns,
             )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000004.html')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000004.html')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000004.html')).st_mtime_ns,
         )
 
         self.assertEqual(
-            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime,
-            os.stat(os.path.join(self.test_output, '20200101000000005.txt')).st_mtime,
+            os.stat(os.path.join(self.test_input, '20200101000000005.txt')).st_mtime_ns,
+            os.stat(os.path.join(self.test_output, '20200101000000005.txt')).st_mtime_ns,
         )
 
         book = Host(self.test_output).books['']

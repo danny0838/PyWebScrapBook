@@ -14,7 +14,6 @@ except ImportError:
 
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
-from webscrapbook.util.fs import zip_timestamp
 
 from . import (
     DUMMY_BYTES,
@@ -22,12 +21,12 @@ from . import (
     DUMMY_TS,
     DUMMY_TS2,
     DUMMY_TS3,
-    DUMMY_TS4,
-    DUMMY_TS5,
+    DUMMY_TS_NS,
+    DUMMY_TS_NS2,
+    DUMMY_TS_NS3,
+    DUMMY_TS_NS4,
+    DUMMY_TS_NS5,
     DUMMY_ZIP_DT,
-    DUMMY_ZIP_DT2,
-    DUMMY_ZIP_DT3,
-    DUMMY_ZIP_DT4,
     TEMP_DIR,
     TestFileMixin,
     glob_files,
@@ -801,9 +800,12 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'deep/subdir']
-        util.fs.mkdir(dst)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
+            zinfo = zh.getinfo('deep/subdir/')
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
 
     def test_zip_nonexist_nested(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -812,12 +814,13 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w') as zh:
             with zh.open(dst[1], 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-        util.fs.mkdir(dst)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh, \
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
             self.assertEqual(zh2.namelist(), ['deep/subdir/'])
             zinfo2 = zh2.getinfo('deep/subdir/')
-            self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo2._get_datetime()[1], DUMMY_TS_NS)
 
     def test_zip_nonexist_mode(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -834,14 +837,15 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('deep/subdir/', DUMMY_ZIP_DT)
-            zh.writestr(zinfo, '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('deep/subdir/', '')
         dst = [zfile, 'deep/subdir']
-        util.fs.mkdir(dst)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+            util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
             zinfo = zh.getinfo('deep/subdir/')
-            self.assertEqual(zip_timestamp(zinfo), DUMMY_TS)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
 
     def test_zip_dir_not_exist_ok(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -934,9 +938,13 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/subarchive.zip']
-        util.fs.mkzip(dst)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.mkzip(dst)
         with zipfile.ZipFile(zfile) as zh:
-            with zh.open('nested/subarchive.zip') as fh:
+            zinfo = zh.getinfo(dst[-1])
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+            with zh.open(zinfo) as fh:
                 self.assertTrue(zipfile.is_zipfile(fh))
 
     def test_zip_nonexist_nested(self):
@@ -946,11 +954,12 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w') as zh:
             with zh.open(dst[1], 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-        util.fs.mkzip(dst)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.mkzip(dst)
         with zipfile.ZipFile(zfile) as zh, \
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
             zinfo2 = zh2.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo2._get_datetime()[1], DUMMY_TS_NS)
             self.assertEqual(zinfo2.compress_type, zipfile.ZIP_STORED)
             with zh2.open(zinfo2) as fh2:
                 self.assertTrue(zipfile.is_zipfile(fh2))
@@ -959,15 +968,17 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('nested/subarchive.zip', DUMMY_ZIP_DT)
+            zinfo = zipfile.ZipInfo('nested/subarchive.zip')._set_datetime(DUMMY_TS_NS)
+            zinfo.compress_type = zipfile.ZIP_BZIP2
             zinfo.external_attr = 0o770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
-            zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
+            zh.writestr(zinfo, '123')
         dst = [zfile, 'nested/subarchive.zip']
-        util.fs.mkzip(dst)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+            util.fs.mkzip(dst)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
@@ -1045,10 +1056,11 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/file.txt']
-        util.fs.save(dst, DUMMY_BYTES)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1060,10 +1072,11 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w'):
             pass
         dst = [zfile, 'nested/image.jpg']
-        util.fs.save(dst, DUMMY_BYTES)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1075,10 +1088,11 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             pass
         dst = [zfile, 'nested/file.txt']
         stream = io.BytesIO(DUMMY_BYTES)
-        util.fs.save(dst, stream)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1091,10 +1105,11 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             pass
         dst = [zfile, 'nested/image.jpg']
         stream = io.BytesIO(DUMMY_BYTES)
-        util.fs.save(dst, stream)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1106,11 +1121,12 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w') as zh:
             with zh.open(dst[1], 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-        util.fs.save(dst, DUMMY_BYTES)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh, \
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
             zinfo2 = zh2.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo2._get_datetime()[1], DUMMY_TS_NS)
             self.assertEqual(zinfo2.compress_type, zipfile.ZIP_DEFLATED)
             with zh2.open(zinfo2) as fh2:
                 self.assertEqual(fh2.read(), DUMMY_BYTES)
@@ -1119,15 +1135,17 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('nested/file.txt', DUMMY_ZIP_DT)
+            zinfo = zipfile.ZipInfo('nested/file.txt')._set_datetime(DUMMY_TS_NS)
+            zinfo.compress_type = zipfile.ZIP_BZIP2
             zinfo.external_attr = 0o770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
-            zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
+            zh.writestr(zinfo, '123')
         dst = [zfile, 'nested/file.txt']
-        util.fs.save(dst, DUMMY_BYTES)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+            util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
             self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
@@ -1138,16 +1156,18 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zinfo = zipfile.ZipInfo('nested/file.txt', DUMMY_ZIP_DT)
+            zinfo = zipfile.ZipInfo('nested/file.txt')._set_datetime(DUMMY_TS_NS)
+            zinfo.compress_type = zipfile.ZIP_BZIP2
             zinfo.external_attr = 0o770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
-            zh.writestr(zinfo, '123', compress_type=zipfile.ZIP_BZIP2)
+            zh.writestr(zinfo, '123')
         dst = [zfile, 'nested/file.txt']
         stream = io.BytesIO(DUMMY_BYTES)
-        util.fs.save(dst, stream)
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+            util.fs.save(dst, stream)
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
             self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
@@ -2625,14 +2645,15 @@ class TestOpenArchivePath(unittest.TestCase):
         zfile = os.path.join(root, 'entry.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
             zh.comment = 'test zip comment 測試'.encode('UTF-8')
-            zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT)
+            zinfo = zipfile.ZipInfo('entry1.zip')._set_datetime(DUMMY_TS_NS)
             zinfo.compress_type = zipfile.ZIP_BZIP2
             zinfo.external_attr = 0o700 << 16
             with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.comment = 'test zip comment 1 測試'.encode('UTF-8')
                 zh1.writestr('subdir/index.html', 'Hello World!')
 
-        with util.fs.open_archive_path([zfile, 'entry1.zip', 'subdir/index.html'], 'a') as zh:
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2), \
+             util.fs.open_archive_path([zfile, 'entry1.zip', 'subdir/index.html'], 'a') as zh:
             # replace
             zh.repack([zh.remove('subdir/index.html')])
             zh.writestr('subdir/index.html', 'rewritten 測試')
@@ -2646,7 +2667,7 @@ class TestOpenArchivePath(unittest.TestCase):
 
             # for a nested archive file, force date and compress_type, keep others
             zinfo = zh.getinfo('entry1.zip')
-            self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
+            self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             self.assertEqual(oct(zinfo._get_mode()), oct(0o700))
 
@@ -2680,7 +2701,7 @@ class TestOpenArchivePath(unittest.TestCase):
             self.assertIsNone(zh.testzip())
 
 
-class TestHelpers(unittest.TestCase):
+class TestHelpers(TestFsUtilBase):
     @require_junction()
     def test_isjunction1(self):
         # junction (target exists)
@@ -2845,11 +2866,11 @@ class TestHelpers(unittest.TestCase):
             fh.write('123456')
         with open(src5, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        os.utime(src, (0, DUMMY_TS))
-        os.utime(src2, (0, DUMMY_TS2))
-        os.utime(src3, (0, DUMMY_TS3))
-        os.utime(src4, (0, DUMMY_TS4))
-        os.utime(src5, (0, DUMMY_TS5))
+        os.utime(src, ns=(0, DUMMY_TS_NS + 10 ** 9))
+        os.utime(src2, ns=(0, DUMMY_TS_NS2 + 10 ** 9))
+        os.utime(src3, ns=(0, DUMMY_TS_NS3 + 10 ** 9))
+        os.utime(src4, ns=(0, DUMMY_TS_NS4 + 10 ** 9))
+        os.utime(src5, ns=(0, DUMMY_TS_NS5 + 10 ** 9))
 
         util.fs.zip_compress(zfile, src, 'myfolder')
 
@@ -2863,25 +2884,28 @@ class TestHelpers(unittest.TestCase):
                     'myfolder/subfile.txt',
                 },
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/')),
-                os.path.getmtime(src),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/'},
+                {'file': src},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/')._get_mode()),
                 oct(os.stat(src).st_mode & 0xFFFF),
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/subfolder/')),
-                os.path.getmtime(src2),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/subfolder/'},
+                {'file': src2},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/subfolder/')._get_mode()),
                 oct(os.stat(src2).st_mode & 0xFFFF),
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/subfolder/subfolderfile.txt')),
-                os.path.getmtime(src3),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/subfolder/subfolderfile.txt'},
+                {'file': src3},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/subfolder/subfolderfile.txt')._get_mode()),
@@ -2891,9 +2915,10 @@ class TestHelpers(unittest.TestCase):
                 zh.read('myfolder/subfolder/subfolderfile.txt').decode('UTF-8'),
                 'ABCDEF'
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/subfile.txt')),
-                os.path.getmtime(src4),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/subfile.txt'},
+                {'file': src4},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/subfile.txt')._get_mode()),
@@ -2920,11 +2945,11 @@ class TestHelpers(unittest.TestCase):
             fh.write('123456')
         with open(src5, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        os.utime(src, (0, DUMMY_TS))
-        os.utime(src2, (0, DUMMY_TS2))
-        os.utime(src3, (0, DUMMY_TS3))
-        os.utime(src4, (0, DUMMY_TS4))
-        os.utime(src5, (0, DUMMY_TS5))
+        os.utime(src, ns=(0, DUMMY_TS_NS + 10 ** 9))
+        os.utime(src2, ns=(0, DUMMY_TS_NS2 + 10 ** 9))
+        os.utime(src3, ns=(0, DUMMY_TS_NS3 + 10 ** 9))
+        os.utime(src4, ns=(0, DUMMY_TS_NS4 + 10 ** 9))
+        os.utime(src5, ns=(0, DUMMY_TS_NS5 + 10 ** 9))
 
         util.fs.zip_compress(zfile, src, '')
 
@@ -2937,17 +2962,19 @@ class TestHelpers(unittest.TestCase):
                     'subfile.txt',
                 },
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('subfolder/')),
-                os.path.getmtime(src2),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'subfolder/'},
+                {'file': src2},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('subfolder/')._get_mode()),
                 oct(os.stat(src2).st_mode & 0xFFFF),
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('subfolder/subfolderfile.txt')),
-                os.path.getmtime(src3),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'subfolder/subfolderfile.txt'},
+                {'file': src3},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('subfolder/subfolderfile.txt')._get_mode()),
@@ -2957,9 +2984,10 @@ class TestHelpers(unittest.TestCase):
                 zh.read('subfolder/subfolderfile.txt').decode('UTF-8'),
                 'ABCDEF'
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('subfile.txt')),
-                os.path.getmtime(src4),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'subfile.txt'},
+                {'file': src4},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('subfile.txt')._get_mode()),
@@ -2986,11 +3014,11 @@ class TestHelpers(unittest.TestCase):
             fh.write('123456')
         with open(src5, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        os.utime(src, (0, DUMMY_TS))
-        os.utime(src2, (0, DUMMY_TS2))
-        os.utime(src3, (0, DUMMY_TS3))
-        os.utime(src4, (0, DUMMY_TS4))
-        os.utime(src5, (0, DUMMY_TS5))
+        os.utime(src, ns=(0, DUMMY_TS_NS + 10 ** 9))
+        os.utime(src2, ns=(0, DUMMY_TS_NS2 + 10 ** 9))
+        os.utime(src3, ns=(0, DUMMY_TS_NS3 + 10 ** 9))
+        os.utime(src4, ns=(0, DUMMY_TS_NS4 + 10 ** 9))
+        os.utime(src5, ns=(0, DUMMY_TS_NS5 + 10 ** 9))
 
         util.fs.zip_compress(zfile, src, 'myfolder', filter={'subfolder'})
 
@@ -3003,25 +3031,28 @@ class TestHelpers(unittest.TestCase):
                     'myfolder/subfolder/subfolderfile.txt',
                 },
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/')),
-                os.path.getmtime(src),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/'},
+                {'file': src},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/')._get_mode()),
                 oct(os.stat(src).st_mode & 0xFFFF),
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/subfolder/')),
-                os.path.getmtime(src2),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/subfolder/'},
+                {'file': src2},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/subfolder/')._get_mode()),
                 oct(os.stat(src2).st_mode & 0xFFFF),
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfolder/subfolder/subfolderfile.txt')),
-                os.path.getmtime(src3),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfolder/subfolder/subfolderfile.txt'},
+                {'file': src3},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfolder/subfolder/subfolderfile.txt')._get_mode()),
@@ -3038,7 +3069,7 @@ class TestHelpers(unittest.TestCase):
         zfile = os.path.join(root, 'zipfile.zip')
         with open(src, 'w', encoding='UTF-8') as fh:
             fh.write('ABC中文')
-        os.utime(src, (0, DUMMY_TS))
+        os.utime(src, ns=(0, DUMMY_TS_NS + 10 ** 9))
 
         util.fs.zip_compress(zfile, src, 'myfile.txt')
 
@@ -3049,9 +3080,10 @@ class TestHelpers(unittest.TestCase):
                     'myfile.txt',
                 },
             )
-            self.assertEqual(
-                zip_timestamp(zh.getinfo('myfile.txt')),
-                os.path.getmtime(src),
+            self.assert_file_equal(
+                {'zip': zh, 'filename': 'myfile.txt'},
+                {'file': src},
+                mtime_allowed_delta=0,
             )
             self.assertEqual(
                 oct(zh.getinfo('myfile.txt')._get_mode()),
@@ -3482,15 +3514,22 @@ class TestHelpers(unittest.TestCase):
                 zipfile.ZIP_BZIP2,
             )
 
+    def _test_zip_extract_prepare_archive(self, zfile):
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS + 10 ** 9):
+                zh.writestr('file.txt', 'ABC中文')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2 + 10 ** 9):
+                zh.writestr('folder/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3 + 10 ** 9):
+                zh.writestr('folder/subfile.txt', '123456')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4 + 10 ** 9):
+                zh.writestr('implicit_folder/subfile.txt', 'abc')
+
     def test_zip_extract_root(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'zipfile')
-        with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
+        self._test_zip_extract_prepare_archive(zfile)
 
         util.fs.zip_extract(zfile, dst)
 
@@ -3504,32 +3543,32 @@ class TestHelpers(unittest.TestCase):
                 os.path.join(dst, 'implicit_folder', 'subfile.txt'),
             },
         )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'file.txt')).st_mtime,
-            DUMMY_TS,
+        self.assert_file_equal(
+            {'file': [zfile, 'file.txt']},
+            {'file': os.path.join(dst, 'file.txt')},
+            mtime_allowed_delta=0,
         )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'folder')).st_mtime,
-            DUMMY_TS2,
+        self.assert_file_equal(
+            {'file': [zfile, 'folder']},
+            {'file': os.path.join(dst, 'folder')},
+            mtime_allowed_delta=0,
         )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'folder', 'subfile.txt')).st_mtime,
-            DUMMY_TS3,
+        self.assert_file_equal(
+            {'file': [zfile, 'folder/subfile.txt']},
+            {'file': os.path.join(dst, 'folder', 'subfile.txt')},
+            mtime_allowed_delta=0,
         )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'implicit_folder', 'subfile.txt')).st_mtime,
-            DUMMY_TS4,
+        self.assert_file_equal(
+            {'file': [zfile, 'implicit_folder/subfile.txt']},
+            {'file': os.path.join(dst, 'implicit_folder', 'subfile.txt')},
+            mtime_allowed_delta=0,
         )
 
     def test_zip_extract_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'folder')
-        with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
+        self._test_zip_extract_prepare_archive(zfile)
 
         util.fs.zip_extract(zfile, dst, 'folder')
 
@@ -3539,24 +3578,22 @@ class TestHelpers(unittest.TestCase):
                 os.path.join(dst, 'subfile.txt'),
             },
         )
-        self.assertEqual(
-            os.stat(dst).st_mtime,
-            DUMMY_TS2,
+        self.assert_file_equal(
+            {'file': [zfile, 'folder']},
+            {'file': dst},
+            mtime_allowed_delta=0,
         )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'subfile.txt')).st_mtime,
-            DUMMY_TS3,
+        self.assert_file_equal(
+            {'file': [zfile, 'folder/subfile.txt']},
+            {'file': os.path.join(dst, 'subfile.txt')},
+            mtime_allowed_delta=0,
         )
 
     def test_zip_extract_dir_implicit(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'implicit_folder')
-        with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
+        self._test_zip_extract_prepare_archive(zfile)
 
         util.fs.zip_extract(zfile, dst, 'implicit_folder')
 
@@ -3566,38 +3603,32 @@ class TestHelpers(unittest.TestCase):
                 os.path.join(dst, 'subfile.txt'),
             },
         )
-        self.assertEqual(
-            os.stat(os.path.join(dst, 'subfile.txt')).st_mtime,
-            DUMMY_TS4,
+        self.assert_file_equal(
+            {'file': [zfile, 'implicit_folder/subfile.txt']},
+            {'file': os.path.join(dst, 'subfile.txt')},
+            mtime_allowed_delta=0,
         )
 
     def test_zip_extract_file(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'zipfile.txt')
-        with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
+        self._test_zip_extract_prepare_archive(zfile)
 
         util.fs.zip_extract(zfile, dst, 'file.txt')
 
         self.assertTrue(os.path.isfile(dst))
-        self.assertEqual(
-            os.stat(dst).st_mtime,
-            DUMMY_TS,
+        self.assert_file_equal(
+            {'file': [zfile, 'file.txt']},
+            {'file': dst},
+            mtime_allowed_delta=0,
         )
 
     def test_zip_extract_to_exist(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         dst = os.path.join(root, 'subdir')
-        with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), 'ABC中文')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/subfile.txt', DUMMY_ZIP_DT3), '123456')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/subfile.txt', DUMMY_ZIP_DT4), 'abc')
+        self._test_zip_extract_prepare_archive(zfile)
         os.makedirs(dst)
 
         with self.assertRaises(FileExistsError):

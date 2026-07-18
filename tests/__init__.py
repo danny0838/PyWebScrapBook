@@ -10,7 +10,6 @@ import webscrapbook
 from webscrapbook import WSB_CONFIG, WSB_DIR, util
 from webscrapbook._polyfill import zipfile
 from webscrapbook.scrapbook import host as wsb_host
-from webscrapbook.util.fs import zip_timestamp
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -43,6 +42,19 @@ DUMMY_TS6 = datetime(1996, 1, 2, 0, 0, 0).timestamp()
 DUMMY_TS7 = datetime(1997, 1, 2, 0, 0, 0).timestamp()
 DUMMY_TS8 = datetime(1998, 1, 2, 0, 0, 0).timestamp()
 DUMMY_TS9 = datetime(1999, 1, 2, 0, 0, 0).timestamp()
+
+# compatible with os.stat_result.st_mtime_ns
+# corresponds to above DUMMY_TS
+DUMMY_TS_NS = int(DUMMY_TS) * 10 ** 9
+DUMMY_TS_NS1 = int(DUMMY_TS1) * 10 ** 9
+DUMMY_TS_NS2 = int(DUMMY_TS2) * 10 ** 9
+DUMMY_TS_NS3 = int(DUMMY_TS3) * 10 ** 9
+DUMMY_TS_NS4 = int(DUMMY_TS4) * 10 ** 9
+DUMMY_TS_NS5 = int(DUMMY_TS5) * 10 ** 9
+DUMMY_TS_NS6 = int(DUMMY_TS6) * 10 ** 9
+DUMMY_TS_NS7 = int(DUMMY_TS7) * 10 ** 9
+DUMMY_TS_NS8 = int(DUMMY_TS8) * 10 ** 9
+DUMMY_TS_NS9 = int(DUMMY_TS9) * 10 ** 9
 
 # compatible with ZipInfo.date_time
 # corresponds to above DUMMY_TS
@@ -212,7 +224,7 @@ class TestFileMixin:
 
         return data
 
-    def assert_file_equal(self, data1, data2):
+    def assert_file_equal(self, data1, data2, *, mtime_allowed_delta=2 * 10 ** 9):
         """Assert if file datas are equivalent.
 
         Args:
@@ -230,7 +242,7 @@ class TestFileMixin:
                 if i == 'mtime':
                     msg = f'{i} not match'
                     try:
-                        self.assertAlmostEqual(v1, v2, delta=2, msg=msg)
+                        self.assertAlmostEqual(v1, v2, delta=mtime_allowed_delta, msg=msg)
                     except TypeError:
                         # a value is not int or float
                         self.assertEqual(v1, v2, msg=msg)
@@ -258,17 +270,17 @@ class TestFileMixin:
                     'mode': st1.st_mode,
                     'uid': st1.st_uid,
                     'gid': st1.st_gid,
-                    'mtime': st1.st_mtime,
+                    'mtime': st1.st_mtime_ns,
                 }
             else:
                 stat1 = {
-                    'mtime': st1.st_mtime,
+                    'mtime': st1.st_mtime_ns,
                 }
 
         elif isinstance(st1, zipfile.ZipInfo):
             if isinstance(st2, zipfile.ZipInfo):
                 stat1 = {
-                    'mtime': zip_timestamp(st1),
+                    'mtime': st1._get_datetime()[1],
                     'compress_type': st1.compress_type,
                     'comment': st1.comment,
                     'extra': st1.extra,
@@ -278,7 +290,7 @@ class TestFileMixin:
                 }
             else:
                 stat1 = {
-                    'mtime': zip_timestamp(st1),
+                    'mtime': st1._get_datetime()[1],
                 }
         else:
             stat1 = {}
@@ -289,17 +301,17 @@ class TestFileMixin:
                     'mode': st2.st_mode,
                     'uid': st2.st_uid,
                     'gid': st2.st_gid,
-                    'mtime': st2.st_mtime,
+                    'mtime': st2.st_mtime_ns,
                 }
             else:
                 stat2 = {
-                    'mtime': st2.st_mtime,
+                    'mtime': st2.st_mtime_ns,
                 }
 
         elif isinstance(st2, zipfile.ZipInfo):
             if isinstance(st1, zipfile.ZipInfo):
                 stat2 = {
-                    'mtime': zip_timestamp(st2),
+                    'mtime': st2._get_datetime()[1],
                     'compress_type': st2.compress_type,
                     'comment': st2.comment,
                     'extra': st2.extra,
@@ -309,7 +321,7 @@ class TestFileMixin:
                 }
             else:
                 stat2 = {
-                    'mtime': zip_timestamp(st2),
+                    'mtime': st2._get_datetime()[1],
                 }
         else:
             stat2 = {}

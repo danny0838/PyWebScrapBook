@@ -23,15 +23,15 @@ from . import (
     DUMMY_TS3,
     DUMMY_TS4,
     DUMMY_TS5,
-    DUMMY_TS6,
     DUMMY_TS7,
-    DUMMY_TS8,
-    DUMMY_ZIP_DT,
-    DUMMY_ZIP_DT2,
-    DUMMY_ZIP_DT3,
-    DUMMY_ZIP_DT4,
-    DUMMY_ZIP_DT5,
-    DUMMY_ZIP_DT6,
+    DUMMY_TS_NS,
+    DUMMY_TS_NS2,
+    DUMMY_TS_NS3,
+    DUMMY_TS_NS4,
+    DUMMY_TS_NS5,
+    DUMMY_TS_NS6,
+    DUMMY_TS_NS7,
+    DUMMY_TS_NS8,
     PROG_DIR,
     ROOT_DIR,
     TEMP_DIR,
@@ -247,7 +247,8 @@ class TestView(TestActions):
 
     def test_htz(self):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('index.html', 'Hello World! 你好')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.htz', buffered=True)
@@ -257,7 +258,8 @@ class TestView(TestActions):
     def test_maff(self):
         # 1 page
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('19870101/index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('19870101/index.html', 'Hello World! 你好')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.maff', buffered=True)
@@ -285,8 +287,10 @@ class TestView(TestActions):
 
         # 2+ pages
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('19870101/index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
-            zh.writestr(zipfile.ZipInfo('19870201/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好嗎')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('19870101/index.html', 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('19870201/index.html', 'Hello World! 你好嗎')
 
         with self.app.test_client() as c, mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
             r = c.get('/deep/archive.maff', buffered=True)
@@ -308,7 +312,8 @@ class TestView(TestActions):
 
     def test_zip(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('index.html', 'Hello World! 你好')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.zip', buffered=True)
@@ -373,7 +378,8 @@ class TestView(TestActions):
     @mock.patch('webscrapbook.app.render_template', return_value='')
     def test_zip_subdir(self, mock_template):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('index.html', 'Hello World! 你好')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/', buffered=True)
@@ -417,8 +423,10 @@ class TestView(TestActions):
     @mock.patch('webscrapbook.app.abort', wraps=wsb_app.abort)
     def test_zip_subdir_noslash(self, mock_abort):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('subdir/', DUMMY_ZIP_DT), '')
-            zh.writestr(zipfile.ZipInfo('subdir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('subdir/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('subdir/index.html', 'Hello World! 你好')
 
         with self.app.test_client() as c:
             c.get('/deep/archive.zip!/subdir', buffered=True)
@@ -426,7 +434,8 @@ class TestView(TestActions):
 
     def test_zip_subfile(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('index.html', DUMMY_ZIP_DT), 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('index.html', 'Hello World! 你好')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/index.html', buffered=True)
@@ -464,9 +473,9 @@ class TestView(TestActions):
 
     def test_zip_subfile_nested(self):
         with zipfile.ZipFile(self.test_htz, 'w') as zh:
-            zinfo = zipfile.ZipInfo('entry1.htz', DUMMY_ZIP_DT)
+            zinfo = zipfile.ZipInfo('entry1.htz', DUMMY_TS_NS)
             with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
-                with mock.patch('time.time', return_value=DUMMY_TS2):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
                     zh1.writestr('index.html', 'Hello World')
 
         with self.app.test_client() as c:
@@ -487,7 +496,8 @@ class TestView(TestActions):
 
     def test_zip_markdown(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('index.md', DUMMY_ZIP_DT), '## Header\n\nHello 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('index.md', '## Header\n\nHello 你好')
 
         with self.app.test_client() as c:
             with mock.patch('webscrapbook.app.render_template', return_value='') as mock_template:
@@ -527,7 +537,8 @@ class TestView(TestActions):
 
     def test_zip_meta_refresh(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('refresh.htm', DUMMY_ZIP_DT), '<meta http-equiv="refresh" content="0;url=index.html">')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('refresh.htm', '<meta http-equiv="refresh" content="0;url=index.html">')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/refresh.htm', buffered=True)
@@ -657,13 +668,16 @@ class TestInfo(TestActions):
 
     def test_file_zip(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('explicit_dir/', DUMMY_ZIP_DT), '')
-            zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
-            zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT3), 'Hello World! 你好嗎')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('explicit_dir/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('explicit_dir/index.html', 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
+                zh.writestr('implicit_dir/index.html', 'Hello World! 你好嗎')
 
-            zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT4)
+            zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_TS_NS4)
             with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
-                with mock.patch('time.time', return_value=DUMMY_TS5):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS5):
                     zh1.writestr('implicit_dir/index.html', 'ABC')
 
         with self.app.test_client() as c:
@@ -873,15 +887,20 @@ class TestList(TestActions):
 
     def test_zip(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('explicit_dir/', DUMMY_ZIP_DT), '')
-            zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
-            zh.writestr(zipfile.ZipInfo('explicit_dir/subdir/', DUMMY_ZIP_DT3), '')
-            zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT4), 'Hello World! 你好嗎')
-            zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', DUMMY_ZIP_DT5), 'Hello World!')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('explicit_dir/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('explicit_dir/index.html', 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
+                zh.writestr('explicit_dir/subdir/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4):
+                zh.writestr('implicit_dir/index.html', 'Hello World! 你好嗎')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS5):
+                zh.writestr('implicit_dir/subdir/index.html', 'Hello World!')
 
-            zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT6)
+            zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_TS_NS6)
             with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
-                with mock.patch('time.time', return_value=DUMMY_TS7):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS7):
                     zh1.writestr('index.html', 'ABC')
 
         with self.app.test_client() as c:
@@ -1095,11 +1114,16 @@ class TestList(TestActions):
 
     def test_sse_zip(self):
         with zipfile.ZipFile(self.test_zip, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('explicit_dir/', DUMMY_ZIP_DT), '')
-            zh.writestr(zipfile.ZipInfo('explicit_dir/index.html', DUMMY_ZIP_DT2), 'Hello World! 你好')
-            zh.writestr(zipfile.ZipInfo('explicit_dir/subdir/', DUMMY_ZIP_DT3), '')
-            zh.writestr(zipfile.ZipInfo('implicit_dir/index.html', DUMMY_ZIP_DT4), 'Hello World! 你好嗎')
-            zh.writestr(zipfile.ZipInfo('implicit_dir/subdir/index.html', DUMMY_ZIP_DT5), 'Hello World!')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('explicit_dir/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('explicit_dir/index.html', 'Hello World! 你好')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
+                zh.writestr('explicit_dir/subdir/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4):
+                zh.writestr('implicit_dir/index.html', 'Hello World! 你好嗎')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS5):
+                zh.writestr('implicit_dir/subdir/index.html', 'Hello World!')
 
         with self.app.test_client() as c:
             # explicit dir (no slash)
@@ -3545,22 +3569,22 @@ class TestMove(TestActions):
 
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             with zh.open('entry.maff', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
-                with mock.patch('time.time', return_value=DUMMY_TS4):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4):
                     zh1.writestr('subdir/', '')
-                with mock.patch('time.time', return_value=DUMMY_TS5):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS5):
                     zh1.writestr('subdir/index.html', 'Nested maff 測試',
                                  compress_type=zipfile.ZIP_DEFLATED)
-                with mock.patch('time.time', return_value=DUMMY_TS6):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS6):
                     zh1.writestr('subdir2/index.html', 'Nested maff 測試',
                                  compress_type=zipfile.ZIP_DEFLATED)
-                with mock.patch('time.time', return_value=DUMMY_TS7):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS7):
                     zh1.writestr('subdir3/index.html/', '')
-                with mock.patch('time.time', return_value=DUMMY_TS8):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS8):
                     zh1.writestr('subdir4/subdir', 'Nested maff 測試',
                                  compress_type=zipfile.ZIP_DEFLATED)
-            with mock.patch('time.time', return_value=DUMMY_TS):
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
                 zh.writestr('subdir/', '')
-            with mock.patch('time.time', return_value=DUMMY_TS2):
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
                 info = zipfile.ZipInfo('subdir/index.html')
                 info.comment = 'dummy comment'.encode('UTF-8')
                 zh.writestr(
@@ -3568,7 +3592,7 @@ class TestMove(TestActions):
                     'Maff content 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
-            with mock.patch('time.time', return_value=DUMMY_TS3):
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
                 zh.writestr('subdir2/index.html', 'Maff content 測試',
                             compress_type=zipfile.ZIP_DEFLATED)
 
@@ -4197,22 +4221,22 @@ class TestCopy(TestActions):
 
         with zipfile.ZipFile(self.test_maff, 'w') as zh:
             with zh.open('entry.maff', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
-                with mock.patch('time.time', return_value=DUMMY_TS4):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4):
                     zh1.writestr('subdir/', '')
-                with mock.patch('time.time', return_value=DUMMY_TS5):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS5):
                     zh1.writestr('subdir/index.html', 'Nested maff 測試',
                                  compress_type=zipfile.ZIP_DEFLATED)
-                with mock.patch('time.time', return_value=DUMMY_TS6):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS6):
                     zh1.writestr('subdir2/index.html', 'Nested maff 測試',
                                  compress_type=zipfile.ZIP_DEFLATED)
-                with mock.patch('time.time', return_value=DUMMY_TS7):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS7):
                     zh1.writestr('subdir3/index.html/', '')
-                with mock.patch('time.time', return_value=DUMMY_TS8):
+                with mock.patch('time.time_ns', return_value=DUMMY_TS_NS8):
                     zh1.writestr('subdir4/subdir', 'Nested maff 測試',
                                  compress_type=zipfile.ZIP_DEFLATED)
-            with mock.patch('time.time', return_value=DUMMY_TS):
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
                 zh.writestr('subdir/', '')
-            with mock.patch('time.time', return_value=DUMMY_TS2):
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
                 info = zipfile.ZipInfo('subdir/index.html')
                 info.comment = 'dummy comment'.encode('UTF-8')
                 zh.writestr(
@@ -4220,7 +4244,7 @@ class TestCopy(TestActions):
                     'Maff content 測試',
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
-            with mock.patch('time.time', return_value=DUMMY_TS3):
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
                 zh.writestr('subdir2/index.html', 'Maff content 測試',
                             compress_type=zipfile.ZIP_DEFLATED)
 

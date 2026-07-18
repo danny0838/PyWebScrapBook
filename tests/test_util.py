@@ -11,7 +11,7 @@ import lxml.html
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
 
-from . import DUMMY_ZIP_DT, ROOT_DIR, TEMP_DIR, require_altsep, require_sep
+from . import ROOT_DIR, TEMP_DIR, require_altsep, require_sep
 
 test_root = os.path.join(ROOT_DIR, 'test_util')
 
@@ -1420,7 +1420,7 @@ foo   中文<br/>
     def test_parse_maff_index_rdf(self):
         maff_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'tempfile.maff')
         with zipfile.ZipFile(maff_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('19870101/index.rdf', DUMMY_ZIP_DT), """<?xml version="1.0"?>
+            zh.writestr('19870101/index.rdf', """<?xml version="1.0"?>
 <RDF:RDF xmlns:MAF="http://maf.mozdev.org/metadata/rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -1443,7 +1443,7 @@ foo   中文<br/>
     def test_get_maff_pages(self):
         maff_filename = os.path.join(tempfile.mkdtemp(dir=tmpdir), 'tempfile.maff')
         with zipfile.ZipFile(maff_filename, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('webpage1/index.rdf', DUMMY_ZIP_DT), """<?xml version="1.0"?>
+            zh.writestr('webpage1/index.rdf', """<?xml version="1.0"?>
 <RDF:RDF xmlns:MAF="http://maf.mozdev.org/metadata/rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -1455,8 +1455,8 @@ foo   中文<br/>
     <MAF:charset RDF:resource="UTF-8"/>
   </RDF:Description>
 </RDF:RDF>""")
-            zh.writestr(zipfile.ZipInfo('webpage2/index.html', DUMMY_ZIP_DT), '')
-            zh.writestr(zipfile.ZipInfo('webpage3/index.svg', DUMMY_ZIP_DT), '')
+            zh.writestr('webpage2/index.html', '')
+            zh.writestr('webpage3/index.svg', '')
 
         self.assertEqual(util.get_maff_pages(maff_filename), [
             ('Example MAFF', 'http://example.com/', 'Mon, 25 Dec 2017 17:27:46 GMT', 'webpage1/index.html', 'UTF-8'),

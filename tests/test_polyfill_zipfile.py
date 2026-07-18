@@ -1,17 +1,46 @@
 import io
+import os
+import struct
+import tempfile
+import time
 import unittest
 from contextlib import nullcontext
+from datetime import datetime, timezone
 from unittest import mock
 
 from webscrapbook._polyfill import zipfile
 
-from . import DUMMY_TS, DUMMY_ZIP_DT
+from . import (
+    DUMMY_TS,
+    DUMMY_TS2,
+    DUMMY_TS3,
+    DUMMY_TS4,
+    DUMMY_TS5,
+    DUMMY_TS_NS,
+    DUMMY_TS_NS2,
+    DUMMY_TS_NS3,
+    DUMMY_TS_NS4,
+    DUMMY_ZIP_DT,
+    TEMP_DIR,
+)
+
+
+def setUpModule():
+    # set up a temp directory for testing
+    global _tmpdir, tmpdir
+    _tmpdir = tempfile.TemporaryDirectory(prefix='polyfill.zipfile-', dir=TEMP_DIR)
+    tmpdir = os.path.realpath(_tmpdir.name)
+
+
+def tearDownModule():
+    # cleanup the temp directory
+    _tmpdir.cleanup()
 
 
 class TestZipInfoExt(unittest.TestCase):
     def test_init(self):
         # default to current datetime if not provided
-        with mock.patch('time.time', return_value=DUMMY_TS):
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
             zinfo = zipfile.ZipInfo()
             self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
 
@@ -27,21 +56,449 @@ class TestZipInfoExt(unittest.TestCase):
         zinfo = zipfile.ZipInfo('file.txt')
         self.assertEqual(zinfo.external_attr, 0o600 << 16)
 
-    def test_set_datetime(self):
-        # before local 1980-01-01 00:00:00 (DOS min)
-        dt = (1979, 12, 30, 23, 59, 59)
-        zinfo = zipfile.ZipInfo('dummy')._set_datetime(dt)
+    def test_get_datetime(self):
+        # date_time
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = b''
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS, DUMMY_TS_NS),
+        )
+
+        # NTFS Extra Field
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack(
+            '<HHLHHQQQ', 0x000a, 32,
+            0, 0x0001, 24,
+            DUMMY_TS_NS2 // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            DUMMY_TS_NS3 // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            DUMMY_TS_NS4 // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        )
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS3, DUMMY_TS_NS2),
+        )
+
+        # Extended timestamp (UT)
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHBL', 0x5455, 5, 1, int(DUMMY_TS2))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS2),
+        )
+
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHBLL', 0x5455, 9, 3, int(DUMMY_TS2), int(DUMMY_TS3))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS2),
+        )
+
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHBL', 0x5455, 5, 2, int(DUMMY_TS2))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS, DUMMY_TS_NS),
+        )
+
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHB', 0x5455, 1, 0)
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS, DUMMY_TS_NS),
+        )
+
+        # Unix1 (0x5855)
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHLL', 0x5855, 8, int(DUMMY_TS2), int(DUMMY_TS3))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS3),
+        )
+
+        # Unix0 (0x000d)
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHLLHH', 0x000d, 12, int(DUMMY_TS2), int(DUMMY_TS3), 0, 0)
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS3),
+        )
+
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = struct.pack('<HHLLHH3s', 0x000d, 15, int(DUMMY_TS2), int(DUMMY_TS3), 1, 2, b'foo')
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS3),
+        )
+
+        # NTFS > UT
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = b''.join((
+            struct.pack(
+                '<HHLHHQQQ', 0x000a, 32,
+                0, 0x0001, 24,
+                DUMMY_TS_NS2 // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+                DUMMY_TS_NS3 // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+                DUMMY_TS_NS4 // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ),
+            struct.pack('<HHBL', 0x5455, 5, 1, int(DUMMY_TS5)),
+        ))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS3, DUMMY_TS_NS2),
+        )
+
+        # UT > Unix1
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = b''.join((
+            struct.pack('<HHBL', 0x5455, 5, 1, int(DUMMY_TS2)),
+            struct.pack('<HHLL', 0x5855, 8, int(DUMMY_TS3), int(DUMMY_TS4)),
+        ))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS2),
+        )
+
+        # Unix1 > Unix0
+        zinfo = zipfile.ZipInfo()
+        zinfo.date_time = DUMMY_ZIP_DT
+        zinfo.extra = b''.join((
+            struct.pack('<HHLL', 0x5855, 8, int(DUMMY_TS2), int(DUMMY_TS3)),
+            struct.pack('<HHLLHH', 0x000d, 12, int(DUMMY_TS4), int(DUMMY_TS5), 0, 0)
+        ))
+        self.assertEqual(
+            zinfo._get_datetime(),
+            (DUMMY_TS_NS2, DUMMY_TS_NS3),
+        )
+
+    def test_set_datetime_params(self):
+        zinfo = zipfile.ZipInfo()
+
+        # not set
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            zinfo._set_datetime()
+        self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, DUMMY_TS_NS // 10 ** 9
+        ))
+
+        # None
+        with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+            zinfo._set_datetime(None)
+        self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, DUMMY_TS_NS // 10 ** 9
+        ))
+
+        # float
+        self.assertIsInstance(DUMMY_TS, float)
+        zinfo._set_datetime(DUMMY_TS)
+        self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, DUMMY_TS_NS // 10 ** 9
+        ))
+
+        # int
+        self.assertIsInstance(DUMMY_TS_NS, int)
+        zinfo._set_datetime(DUMMY_TS_NS)
+        self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, DUMMY_TS_NS // 10 ** 9
+        ))
+
+        # os.stat_result
+        root = tempfile.mkdtemp(dir=tmpdir)
+        file = os.path.join(root, 'file.txt')
+        with open(file, 'wb'):
+            pass
+        os.utime(file, ns=(DUMMY_TS_NS2, DUMMY_TS_NS))
+        st = os.stat(file)
+
+        zinfo._set_datetime(st)
+        self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, DUMMY_TS_NS // 10 ** 9
+        ))
+
+        # ZIP date_time tuple
+        zinfo._set_datetime(DUMMY_ZIP_DT)
+        self.assertEqual(zinfo.date_time, DUMMY_ZIP_DT)
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, DUMMY_TS_NS // 10 ** 9
+        ))
+
+    def test_set_datetime_extras(self):
+        # should append new fields
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HH', 0xf001, 0),
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HH', 0xf001, 0),
+            struct.pack('<HHBL', 0x5455, 5, 1, ts // 10 ** 9),
+        ])
+
+        # should append new fields but before the invalid tail
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HH', 0xf001, 0),
+            b'zzz',
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HH', 0xf001, 0),
+            struct.pack('<HHBL', 0x5455, 5, 1, ts // 10 ** 9),
+            b'zzz',
+        ])
+
+        # should update fields in the original order
+        # should update NTFS field if exists
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HH', 0xf001, 0),
+            struct.pack('<HH', 0x5455, 0),
+            struct.pack('<HH', 0xf002, 0),
+            struct.pack('<HH', 0x000a, 0),
+            struct.pack('<HH', 0xf003, 0),
+            b'zzz',
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HH', 0xf001, 0),
+            struct.pack('<HHBL', 0x5455, 5, 1, ts // 10 ** 9),
+            struct.pack('<HH', 0xf002, 0),
+            struct.pack(
+                '<HHLHHQQQ', 0x000a, 32, 0, 0x0001, 24,
+                ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+                ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+                ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ),
+            struct.pack('<HH', 0xf003, 0),
+            b'zzz',
+        ])
+
+        # should strip duplicated fields
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HH', 0x5455, 0),
+            struct.pack('<HHBL', 0x5455, 5, 1, 0),
+            struct.pack('<HH', 0x000a, 0),
+            struct.pack('<HHLHHQQQ', 0x000a, 32, 0, 0x0001, 24, 0, 0, 0),
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HHBL', 0x5455, 5, 1, ts // 10 ** 9),
+            struct.pack(
+                '<HHLHHQQQ', 0x000a, 32, 0, 0x0001, 24,
+                ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+                ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+                ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ),
+        ])
+
+        # should strip existing fields if no more valid
+        dt = datetime(1600, 12, 31, 23, 59, 59, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HHLHHQQQ', 0x000a, 32,
+                        0, 0x0001, 24, 0x7777_7777, 0x7777_7777, 0x7777_7777),
+            struct.pack('<HHBL', 0x5455, 5, 0x01, 0x7777),
+            struct.pack('<HH', 0xf001, 0),
+            b'zzz',
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HH', 0xf001, 0),
+            b'zzz',
+        ])
+
+    def test_set_datetime_special_dt(self):
+        # before 1601-01-01T00:00:00Z (NTFS min)
+        dt = datetime(1600, 12, 31, 23, 59, 59, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
         self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [])
+
+        # before 1970-01-01T00:00:00Z (UT min)
+        dt = datetime(1601, 1, 1, 0, 0, 0, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x000a])
+        self.assertEqual(struct.unpack('<HHLHHQQQ', extras.get(0x000a)), (
+            0x000a, 32, 0, 0x0001, 24,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        ))
+
+        dt = datetime(1969, 12, 31, 23, 59, 59, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x000a])
+        self.assertEqual(struct.unpack('<HHLHHQQQ', extras.get(0x000a)), (
+            0x000a, 32, 0, 0x0001, 24,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        ))
+
+        # before local 1980-01-01 00:00:00 (DOS min)
+        dt = datetime(1979, 12, 30, 23, 59, 59, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x5455])
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, ts // 10 ** 9
+        ))
 
         # normal
-        dt = (2038, 1, 19, 3, 14, 7)
-        zinfo = zipfile.ZipInfo('dummy')._set_datetime(dt)
-        self.assertEqual(zinfo.date_time, dt)
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, time.localtime(ts // 10 ** 9)[:6])
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x5455])
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, ts // 10 ** 9
+        ))
+
+        # after 2038-01-19T03:14:07Z (UT max if signed)
+        dt = datetime(2038, 1, 19, 3, 14, 8, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, time.localtime(ts // 10 ** 9)[:6])
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x5455])
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, ts // 10 ** 9
+        ))
+
+        dt = datetime(2106, 2, 7, 6, 28, 15, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, time.localtime(ts // 10 ** 9)[:6])
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x5455])
+        self.assertEqual(struct.unpack('<HHBL', extras.get(0x5455)), (
+            0x5455, 5, 1, ts // 10 ** 9
+        ))
+
+        # after 2106-02-07T06:28:15Z (UT max)
+        dt = datetime(2106, 2, 7, 6, 28, 16, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, time.localtime(ts // 10 ** 9)[:6])
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x000a])
+        self.assertEqual(struct.unpack('<HHLHHQQQ', extras.get(0x000a)), (
+            0x000a, 32, 0, 0x0001, 24,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        ))
+
+        dt = datetime(2107, 12, 31, 0, 0, 0, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, time.localtime(ts // 10 ** 9)[:6])
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x000a])
+        self.assertEqual(struct.unpack('<HHLHHQQQ', extras.get(0x000a)), (
+            0x000a, 32, 0, 0x0001, 24,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        ))
 
         # after local 2107-12-31 23:59:59 (DOS max)
-        dt = (2108, 1, 2, 0, 0, 0)
-        zinfo = zipfile.ZipInfo('dummy')._set_datetime(dt)
+        dt = datetime(2108, 1, 2, 0, 0, 0, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
         self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 58))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x000a])
+        self.assertEqual(struct.unpack('<HHLHHQQQ', extras.get(0x000a)), (
+            0x000a, 32, 0, 0x0001, 24,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        ))
+
+        dt = datetime(2300, 1, 1, 0, 0, 0, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 58))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [0x000a])
+        self.assertEqual(struct.unpack('<HHLHHQQQ', extras.get(0x000a)), (
+            0x000a, 32, 0, 0x0001, 24,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+            ts // 100 + zipfile.WIN_TICKS_FROM_EPOCH,
+        ))
+
+        # after NTFS max
+        ts = ((1 << 64) - zipfile.WIN_TICKS_FROM_EPOCH) * 100
+        zinfo = zipfile.ZipInfo()._set_datetime(ts)
+        self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 58))
+        extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
+        self.assertEqual(list(extras), [])
+
+    def test_set_datetime_legacy_fields(self):
+        """Update or clear legacy fields if exists."""
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HHLL', 0x5855, 8, int(DUMMY_TS2), int(DUMMY_TS3)),
+            struct.pack('<HHLLHH3s', 0x000d, 15, int(DUMMY_TS4), int(DUMMY_TS5), 1, 2, b'foo'),
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HHLLHH3s', 0x000d, 15, ts // 10 ** 9, ts // 10 ** 9, 1, 2, b'foo'),
+            struct.pack('<HHBL', 0x5455, 5, 1, ts // 10 ** 9),
+        ])
 
 
 class TestZipFileExt(unittest.TestCase):

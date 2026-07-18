@@ -19,10 +19,10 @@ from . import (
     DUMMY_TS2,
     DUMMY_TS3,
     DUMMY_TS4,
-    DUMMY_ZIP_DT,
-    DUMMY_ZIP_DT2,
-    DUMMY_ZIP_DT3,
-    DUMMY_ZIP_DT4,
+    DUMMY_TS_NS,
+    DUMMY_TS_NS2,
+    DUMMY_TS_NS3,
+    DUMMY_TS_NS4,
     ROOT_DIR,
     TEMP_DIR,
     require_junction,
@@ -860,10 +860,14 @@ class TestFilesystemHelpers(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), '123456')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', DUMMY_ZIP_DT3), '123')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', DUMMY_ZIP_DT4), '1234')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('file.txt', '123456')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('folder/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
+                zh.writestr('folder/.gitkeep', '123')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4):
+                zh.writestr('implicit_folder/.gitkeep', '1234')
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'file.txt'),
@@ -941,9 +945,12 @@ class TestFilesystemHelpers(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('deep/subdir/file.txt', DUMMY_ZIP_DT), '123456')
-            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('deep/subdir/folder/.gitkeep', DUMMY_ZIP_DT3), '123')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('deep/subdir/file.txt', '123456')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('deep/subdir/folder/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
+                zh.writestr('deep/subdir/folder/.gitkeep', '123')
 
         self.assertEqual(
             wsbapp.zip_file_info(zfile, 'deep/subdir/file.txt', base=''),
@@ -992,10 +999,14 @@ class TestFilesystemHelpers(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            zh.writestr(zipfile.ZipInfo('file.txt', DUMMY_ZIP_DT), '123456')
-            zh.writestr(zipfile.ZipInfo('folder/', DUMMY_ZIP_DT2), '')
-            zh.writestr(zipfile.ZipInfo('folder/.gitkeep', DUMMY_ZIP_DT3), '123')
-            zh.writestr(zipfile.ZipInfo('implicit_folder/.gitkeep', DUMMY_ZIP_DT4), '1234')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
+                zh.writestr('file.txt', '123456')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
+                zh.writestr('folder/', '')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS3):
+                zh.writestr('folder/.gitkeep', '123')
+            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS4):
+                zh.writestr('implicit_folder/.gitkeep', '1234')
 
         self.assertEqual(set(wsbapp.zip_listdir(zfile, '')), {
             ('folder', 'dir', None, DUMMY_TS2),
