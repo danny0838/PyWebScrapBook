@@ -28,6 +28,7 @@ from . import (
     require_case_insensitive,
     require_junction,
     require_posix_mode,
+    require_resource,
     require_symlink,
 )
 
@@ -2669,6 +2670,27 @@ class TestOpenArchivePath(unittest.TestCase):
 
                 # new
                 self.assertEqual(zh1.read('newdir/test.txt').decode('UTF-8'), 'new file 測試')
+
+    @require_resource('extralargefile')
+    def test_open_archive_path_write_zip64(self):
+        """Should save a large nested ZIP archive without zip64 error."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'entry.zip')
+        with zipfile.ZipFile(zfile, 'w') as zh:
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, 'w'):
+                pass
+            zh.writestr('entry1.zip', buf.getvalue())
+
+        size = 4.1 * 1024 ** 3
+        chunk_size = 1024 ** 2
+        chunk = b'a' * chunk_size
+        with util.fs.open_archive_path([zfile, 'entry1.zip', '_'], 'a') as zh:
+            for i in range(int(size // chunk_size + 1)):
+                zh.writestr(f'file{i}.txt', chunk)
+
+        with util.fs.open_archive_path([zfile, 'entry1.zip', '_']) as zh:
+            self.assertIsNone(zh.testzip())
 
 
 class TestHelpers(unittest.TestCase):
