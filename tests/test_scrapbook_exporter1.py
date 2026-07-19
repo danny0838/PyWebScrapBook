@@ -69,10 +69,9 @@ class TestExporter(TestBookMixin, unittest.TestCase):
                         with zh.open(zinfo) as fh:
                             index_data = fh.read().decode('UTF-8')
                     elif zinfo.filename.endswith('.htz'):
-                        with zh.open(zinfo) as fh:
-                            with zipfile.ZipFile(fh) as zh2:
-                                with zh2.open('index.html') as fh2:
-                                    index_data = fh2.read().decode('UTF-8')
+                        with zh.open(zinfo) as _, zipfile.ZipFile(_) as _, \
+                             _.open('index.html') as fh:
+                            index_data = fh.read().decode('UTF-8')
                     continue
 
                 if zinfo.filename.startswith('favicon/'):

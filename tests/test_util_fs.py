@@ -878,12 +878,11 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
                 pass
             zh.writestr(dst[1], buf.getvalue())
         util.fs.mkdir(dst)
-        with zipfile.ZipFile(zfile) as zh:
-            with zh.open(dst[1]) as fh:
-                with zipfile.ZipFile(fh) as zh2:
-                    self.assertEqual(zh2.namelist(), ['deep/subdir/'])
-                    zinfo2 = zh2.getinfo('deep/subdir/')
-                    self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
+        with zipfile.ZipFile(zfile) as zh, \
+             zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
+            self.assertEqual(zh2.namelist(), ['deep/subdir/'])
+            zinfo2 = zh2.getinfo('deep/subdir/')
+            self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
 
     def test_zip_nonexist_mode(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -1016,8 +1015,7 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
             zh.writestr(dst[1], buf.getvalue())
         util.fs.mkzip(dst)
         with zipfile.ZipFile(zfile) as zh, \
-             zh.open(dst[1]) as fh, \
-             zipfile.ZipFile(fh) as zh2:
+             zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
             zinfo2 = zh2.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo2.compress_type, zipfile.ZIP_STORED)
@@ -1179,8 +1177,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
             zh.writestr(dst[1], buf.getvalue())
         util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh, \
-             zh.open(dst[1]) as fh, \
-             zipfile.ZipFile(fh) as zh2:
+             zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
             zinfo2 = zh2.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo2), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo2.compress_type, zipfile.ZIP_DEFLATED)
