@@ -1617,9 +1617,9 @@ class TestDownload(TestActions):
             zh.writestr('explicit_dir/', '')
             zh.writestr('explicit_dir/subdir/', '')
             zh.writestr('explicit_dir/subdir/foo.txt', 'ABC')
-            zh.writestr('explicit_dir/bar.txt', '中文')
-            zh.writestr('implicit_dir/subdir/foo.txt', 'ABC')
-            zh.writestr('implicit_dir/bar.txt', '中文')
+            zh.writestr('explicit_dir/bar.txt', '中文123')
+            zh.writestr('implicit_dir/subdir/foo.txt', 'DEF')
+            zh.writestr('implicit_dir/bar.txt', '中文456')
 
         with self.app.test_client() as c:
             r = c.get('/deep/archive.zip!/explicit_dir', query_string={'a': 'download'}, buffered=True)
@@ -1673,9 +1673,9 @@ class TestDownload(TestActions):
             zh.writestr('explicit_dir/', '')
             zh.writestr('explicit_dir/subdir/', '')
             zh.writestr('explicit_dir/subdir/foo.txt', 'ABC')
-            zh.writestr('explicit_dir/bar.txt', '中文')
-            zh.writestr('implicit_dir/subdir/foo.txt', 'ABC')
-            zh.writestr('implicit_dir/bar.txt', '中文')
+            zh.writestr('explicit_dir/bar.txt', '中文123')
+            zh.writestr('implicit_dir/subdir/foo.txt', 'DEF')
+            zh.writestr('implicit_dir/bar.txt', '中文456')
 
         # i=['subdir/foo.txt']
         with self.app.test_client() as c:
@@ -1717,7 +1717,7 @@ class TestDownload(TestActions):
                 with self.assertRaises(KeyError):
                     zh2.getinfo('subdir/foo.txt')
                 self.assert_file_equal(
-                    {'zip': zh, 'filename': 'implicit_dir/bar.txt'},
+                    {'zip': zh, 'filename': 'explicit_dir/bar.txt'},
                     {'zip': zh2, 'filename': 'bar.txt'},
                 )
 
@@ -1741,7 +1741,7 @@ class TestDownload(TestActions):
                     {'zip': zh2, 'filename': 'subdir/foo.txt'},
                 )
                 self.assert_file_equal(
-                    {'zip': zh, 'filename': 'implicit_dir/bar.txt'},
+                    {'zip': zh, 'filename': 'explicit_dir/bar.txt'},
                     {'zip': zh2, 'filename': 'bar.txt'},
                 )
 
