@@ -22,6 +22,7 @@ from . import (
     DUMMY_TS_NS4,
     DUMMY_ZIP_DT,
     TEMP_DIR,
+    require_posix_mode,
 )
 
 
@@ -765,6 +766,25 @@ class TestZipFileExt(unittest.TestCase):
         st = os.stat(os.path.join(root, zinfo.filename))
         self.assertEqual(st.st_mtime_ns, DUMMY_TS_NS2)
 
+    @require_posix_mode()
+    def test_extract_mode(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        buf = io.BytesIO()
+
+        with zipfile.ZipFile(buf, 'w') as zh:
+            zinfo = zipfile.ZipInfo('file.txt', fmask=0o022)
+            zh.writestr(zinfo, b'foo')
+            zh.extract(zinfo, root)
+        dst = os.path.join(root, zinfo.filename)
+        self.assertEqual(oct(os.stat(dst).st_mode), '0o100755')
+
+        with zipfile.ZipFile(buf, 'w') as zh:
+            zinfo = zipfile.ZipInfo('folder/', dmask=0o002)
+            zh.mkdir(zinfo)
+            zh.extract(zinfo, root)
+        dst = os.path.join(root, zinfo.filename)
+        self.assertEqual(oct(os.stat(dst).st_mode), '0o40775')
+
     def test_extractall(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         buf = io.BytesIO()
@@ -802,6 +822,32 @@ class TestZipFileExt(unittest.TestCase):
         st = os.stat(dst)
         self.assertEqual(st.st_size, zinfo3.file_size)
         self.assertEqual(st.st_mtime_ns, DUMMY_TS_NS3)
+
+    @require_posix_mode()
+    def test_extractall_mode(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        buf = io.BytesIO()
+
+        with zipfile.ZipFile(buf, 'w') as zh:
+            zinfo1 = zipfile.ZipInfo('folder/', dmask=0o002)
+            zh.mkdir(zinfo1)
+
+            zinfo2 = zipfile.ZipInfo('folder/file2.txt', fmask=0o022)
+            zh.writestr(zinfo2, b'foo')
+
+            zinfo3 = zipfile.ZipInfo('implicit_folder/file3.txt', fmask=0o133)
+            zh.writestr(zinfo3, b'bar')
+
+            zh.extractall(root)
+
+        dst = os.path.join(root, zinfo1.filename)
+        self.assertEqual(oct(os.stat(dst).st_mode), '0o40775')
+
+        dst = os.path.join(root, zinfo2.filename)
+        self.assertEqual(oct(os.stat(dst).st_mode), '0o100755')
+
+        dst = os.path.join(root, zinfo3.filename)
+        self.assertEqual(oct(os.stat(dst).st_mode), '0o100644')
 
     def test_extractall_error_handling(self):
         """Should skip OSError when restoring attributes."""

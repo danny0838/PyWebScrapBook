@@ -224,7 +224,7 @@ class TestFileMixin:
 
         return data
 
-    def assert_file_equal(self, data1, data2, *, mtime_allowed_delta=2 * 10 ** 9):
+    def assert_file_equal(self, data1, data2, *, mode_filter=0o170700, mtime_allowed_delta=2 * 10 ** 9):
         """Assert if file datas are equivalent.
 
         Args:
@@ -246,6 +246,11 @@ class TestFileMixin:
                     except TypeError:
                         # a value is not int or float
                         self.assertEqual(v1, v2, msg=msg)
+                elif i == 'mode':
+                    msg = f'{i} not match (filter: {oct(mode_filter)})'
+                    v1 = oct(v1 & mode_filter)
+                    v2 = oct(v2 & mode_filter)
+                    self.assertEqual(v1, v2, msg=msg)
                 else:
                     self.assertEqual(v1, v2, msg=msg)
         except self.failureException as exc:
@@ -275,6 +280,7 @@ class TestFileMixin:
             else:
                 stat1 = {
                     'mtime': st1.st_mtime_ns,
+                    'mode': st1.st_mode & 0xFFFF,
                 }
 
         elif isinstance(st1, zipfile.ZipInfo):
@@ -291,6 +297,7 @@ class TestFileMixin:
             else:
                 stat1 = {
                     'mtime': st1._get_datetime()[1],
+                    'mode': st1._get_mode() & 0xFFFF,
                 }
         else:
             stat1 = {}
@@ -306,6 +313,7 @@ class TestFileMixin:
             else:
                 stat2 = {
                     'mtime': st2.st_mtime_ns,
+                    'mode': st2.st_mode & 0xFFFF,
                 }
 
         elif isinstance(st2, zipfile.ZipInfo):
@@ -322,6 +330,7 @@ class TestFileMixin:
             else:
                 stat2 = {
                     'mtime': st2._get_datetime()[1],
+                    'mode': st2._get_mode() & 0xFFFF,
                 }
         else:
             stat2 = {}

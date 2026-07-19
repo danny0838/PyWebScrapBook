@@ -86,6 +86,7 @@ def autocompressor_deflate_compressible(archive, zinfo):
 
 class ZipExtractorBase:
     debug = 0
+    allowed_mode = 0o7777
 
     def __init__(self, archive, path=None, pwd=None):
         self.archive = archive
@@ -136,11 +137,19 @@ class ZipExtractorBase:
         dt = zinfo._get_datetime()
         os.utime(targetpath, ns=dt)
 
+    def chmod(self, targetpath, zinfo):
+        mode = (zinfo.external_attr >> 16) & self.allowed_mode
+        mode = os.stat(targetpath).st_mode & ~self.allowed_mode | mode
+        os.chmod(targetpath, mode)
+
 
 class ZipExtractor(ZipExtractorBase):
+    allowed_mode = 0o777
+
     def restore_attributes(self, targetpath, zinfo):
         try:
             self.utime(targetpath, zinfo)
+            self.chmod(targetpath, zinfo)
         except OSError as exc:
             self._debug(1, f'zipfile: {exc}')
 

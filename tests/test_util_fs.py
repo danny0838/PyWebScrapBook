@@ -3640,6 +3640,50 @@ class TestHelpers(TestFsUtilBase):
             set(),
         )
 
+    @require_posix_mode()
+    def test_zip_extract_mode(self):
+        root = tempfile.mkdtemp(dir=tmpdir)
+        zfile = os.path.join(root, 'zipfile.zip')
+        dst = os.path.join(root, 'zipfile')
+        self._test_zip_extract_prepare_archive(zfile)
+
+        util.fs.zip_extract(zfile, dst)
+
+        self.assertEqual(
+            glob_files(dst),
+            {
+                os.path.join(dst, 'file.txt'),
+                os.path.join(dst, 'folder'),
+                os.path.join(dst, 'folder', 'subfile.txt'),
+                os.path.join(dst, 'implicit_folder'),
+                os.path.join(dst, 'implicit_folder', 'subfile.txt'),
+            },
+        )
+        self.assert_file_equal(
+            {'file': [zfile, 'file.txt']},
+            {'file': os.path.join(dst, 'file.txt')},
+            mode_filter=0o777,
+            mtime_allowed_delta=0,
+        )
+        self.assert_file_equal(
+            {'file': [zfile, 'folder']},
+            {'file': os.path.join(dst, 'folder')},
+            mode_filter=0o777,
+            mtime_allowed_delta=0,
+        )
+        self.assert_file_equal(
+            {'file': [zfile, 'folder/subfile.txt']},
+            {'file': os.path.join(dst, 'folder', 'subfile.txt')},
+            mode_filter=0o777,
+            mtime_allowed_delta=0,
+        )
+        self.assert_file_equal(
+            {'file': [zfile, 'implicit_folder/subfile.txt']},
+            {'file': os.path.join(dst, 'implicit_folder', 'subfile.txt')},
+            mode_filter=0o777,
+            mtime_allowed_delta=0,
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
