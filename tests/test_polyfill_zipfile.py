@@ -48,13 +48,17 @@ class TestZipInfoExt(unittest.TestCase):
         zinfo = zipfile.ZipInfo('folder/')
         self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
 
-        # tidy bad bits for folders
-        zinfo = zipfile.ZipInfo('folder/', mode=0o777777)
+        # tidy bad bits and apply dmask for folders
+        zinfo = zipfile.ZipInfo('folder/', mode=0o777777, dmask=0)
         self.assertEqual(zinfo.external_attr, (0o47777 << 16) | 0x10)
 
         # default to 0o100600 for files
         zinfo = zipfile.ZipInfo('file.txt')
-        self.assertEqual(zinfo.external_attr, 0o600 << 16)
+        self.assertEqual(zinfo.external_attr, 0o100600 << 16)
+
+        # tidy bad bits and apply fmask for files
+        zinfo = zipfile.ZipInfo('file.txt', mode=0o777777, fmask=0)
+        self.assertEqual(zinfo.external_attr, 0o107777 << 16)
 
     def test_get_datetime(self):
         # date_time
@@ -638,7 +642,7 @@ class TestZipFileExt(unittest.TestCase):
         with zipfile.ZipFile(fh, 'w') as zh:
             zh.writestr('file.txt', b'foo')
             zinfo = zh.getinfo('file.txt')
-            self.assertEqual(oct(zinfo._get_mode()), '0o600')
+            self.assertEqual(oct(zinfo._get_mode()), '0o100600')
 
     def test_mkdir(self):
         fh = io.BytesIO()
@@ -667,7 +671,7 @@ class TestZipFileExt(unittest.TestCase):
             self.assertEqual(zinfo.file_size, 0)
             self.assertEqual(zinfo.compress_size, 0)
             self.assertEqual(zinfo.CRC, 0)
-            self.assertEqual(oct(zinfo._get_mode()), '0o40777')
+            self.assertEqual(oct(zinfo._get_mode()), '0o40775')
 
         # folder
         with zipfile.ZipFile(fh, 'w') as zh:
@@ -677,7 +681,7 @@ class TestZipFileExt(unittest.TestCase):
             self.assertEqual(zinfo.file_size, 0)
             self.assertEqual(zinfo.compress_size, 0)
             self.assertEqual(zinfo.CRC, 0)
-            self.assertEqual(oct(zinfo._get_mode()), '0o40777')
+            self.assertEqual(oct(zinfo._get_mode()), '0o40775')
 
     def test_set_compression(self):
         fh = io.BytesIO()

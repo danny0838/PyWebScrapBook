@@ -86,7 +86,8 @@ def autocompressor_deflate_compressible(archive, zinfo):
 class ZipInfoExt(_ZipInfo):
     __slots__ = ()
 
-    def __init__(self, filename="NoName", date_time=None, *, mode=0o775):
+    def __init__(self, filename="NoName", date_time=None, *, mode=0o777,
+                 dmask=0o002, fmask=0o177):
         """Provide suitable default attributes.
 
         Works mostly like native ZipInfo._for_archive(), but with more
@@ -97,10 +98,10 @@ class ZipInfoExt(_ZipInfo):
         self._set_datetime(date_time)
 
         if self.is_dir():
-            self.external_attr = (0o40000 | (mode & 0o7777)) << 16  # Unix attributes
+            self.external_attr = (0o40000 | (mode & 0o7777 & ~dmask)) << 16  # Unix attributes
             self.external_attr |= 0x10  # MS-DOS directory flag
         else:
-            self.external_attr = 0o600 << 16  # ?rw-------
+            self.external_attr = (0o100000 | (mode & 0o7777 & ~fmask)) << 16
 
     @classmethod
     def _transform(cls, zinfo):

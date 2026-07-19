@@ -805,6 +805,7 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
             zinfo = zh.getinfo('deep/subdir/')
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o40775))
 
     def test_zip_nonexist_nested(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -820,6 +821,7 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertEqual(zh2.namelist(), ['deep/subdir/'])
             zinfo2 = zh2.getinfo('deep/subdir/')
             self.assertEqual(zinfo2._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo2._get_mode()), oct(0o40775))
 
     def test_zip_nonexist_mode(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -830,14 +832,16 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst, mode=0o660)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
-            self.assertEqual(oct(zh.getinfo('deep/subdir/')._get_mode()), oct(0o40660))
+            zinfo = zh.getinfo('deep/subdir/')
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o40660))
 
     def test_zip_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            with mock.patch('time.time_ns', return_value=DUMMY_TS_NS):
-                zh.writestr('deep/subdir/', '')
+            zinfo = zipfile.ZipInfo('deep/subdir/')._set_datetime(DUMMY_TS_NS)
+            zinfo.external_attr = 0o40700 << 16
+            zh.writestr(zinfo, '')
         dst = [zfile, 'deep/subdir']
         with mock.patch('time.time_ns', return_value=DUMMY_TS_NS2):
             util.fs.mkdir(dst)
@@ -845,6 +849,7 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
             zinfo = zh.getinfo('deep/subdir/')
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o40700))
 
     def test_zip_dir_not_exist_ok(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -864,6 +869,8 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/somefile.txt', 'deep/subdir/'])
+            zinfo = zh.getinfo('deep/subdir/')
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o40775))
 
     def test_zip_dir_implicit_not_exist_ok(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -874,6 +881,8 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst, exist_ok=False)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/somefile.txt', 'deep/subdir/'])
+            zinfo = zh.getinfo('deep/subdir/')
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o40775))
 
     def test_zip_dir_root(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -942,6 +951,7 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100600))
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
                 self.assertTrue(zipfile.is_zipfile(fh))
@@ -969,7 +979,7 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w') as zh:
             zinfo = zipfile.ZipInfo('nested/subarchive.zip')._set_datetime(DUMMY_TS_NS)
             zinfo.compress_type = zipfile.ZIP_BZIP2
-            zinfo.external_attr = 0o770 << 16
+            zinfo.external_attr = 0o100770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123')
         dst = [zfile, 'nested/subarchive.zip']
@@ -979,7 +989,7 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
-            self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             with zh.open(dst[-1]) as fh:
                 self.assertTrue(zipfile.is_zipfile(fh))
@@ -1060,6 +1070,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100600))
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1076,6 +1087,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100600))
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1092,6 +1104,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100600))
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1109,6 +1122,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100600))
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
             with zh.open(zinfo) as fh:
                 self.assertEqual(fh.read(), DUMMY_BYTES)
@@ -1126,6 +1140,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
             zinfo2 = zh2.getinfo(dst[-1])
             self.assertEqual(zinfo2._get_datetime()[1], DUMMY_TS_NS)
+            self.assertEqual(oct(zinfo2._get_mode()), oct(0o100600))
             self.assertEqual(zinfo2.compress_type, zipfile.ZIP_DEFLATED)
             with zh2.open(zinfo2) as fh2:
                 self.assertEqual(fh2.read(), DUMMY_BYTES)
@@ -1136,7 +1151,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w') as zh:
             zinfo = zipfile.ZipInfo('nested/file.txt')._set_datetime(DUMMY_TS_NS)
             zinfo.compress_type = zipfile.ZIP_BZIP2
-            zinfo.external_attr = 0o770 << 16
+            zinfo.external_attr = 0o100770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123')
         dst = [zfile, 'nested/file.txt']
@@ -1145,7 +1160,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
-            self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
@@ -1157,7 +1172,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile, 'w') as zh:
             zinfo = zipfile.ZipInfo('nested/file.txt')._set_datetime(DUMMY_TS_NS)
             zinfo.compress_type = zipfile.ZIP_BZIP2
-            zinfo.external_attr = 0o770 << 16
+            zinfo.external_attr = 0o100770 << 16
             zinfo.comment = 'my awesome file'.encode('UTF-8')
             zh.writestr(zinfo, '123')
         dst = [zfile, 'nested/file.txt']
@@ -1167,7 +1182,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
-            self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
@@ -2646,7 +2661,7 @@ class TestOpenArchivePath(unittest.TestCase):
             zh.comment = 'test zip comment 測試'.encode('UTF-8')
             zinfo = zipfile.ZipInfo('entry1.zip')._set_datetime(DUMMY_TS_NS)
             zinfo.compress_type = zipfile.ZIP_BZIP2
-            zinfo.external_attr = 0o700 << 16
+            zinfo.external_attr = 0o100770 << 16
             with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.comment = 'test zip comment 1 測試'.encode('UTF-8')
                 zh1.writestr('subdir/index.html', 'Hello World!')
@@ -2668,7 +2683,7 @@ class TestOpenArchivePath(unittest.TestCase):
             zinfo = zh.getinfo('entry1.zip')
             self.assertEqual(zinfo._get_datetime()[1], DUMMY_TS_NS2)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
-            self.assertEqual(oct(zinfo._get_mode()), oct(0o700))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o100770))
 
             with zh.open(zinfo) as fh1, \
                  zipfile.ZipFile(fh1) as zh1:
