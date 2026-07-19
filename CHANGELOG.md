@@ -3,8 +3,13 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.9.1] - 2026-07-19
+* Fixed a Zip64 error when uploading a large file into a ZIP archive.
+* Fixed improper filename sanitization when copying a file into another ZIP archive.
+* Miscellaneous improvements to the internal code, test suite, and dev tools.
+
 ## [2.9.0] - 2026-07-12
-* Fixed a potential error when writing a large file into a nested ZIP archive.
+* Fixed a Zip64 error when modifying a large nested ZIP archive.
 * Introduced the `zipremove` dependency to optimize ZIP-related file operations.
 * Allowed compression when streaming out a ZIP file.
 * Miscellaneous improvements to the internal code, test suite, and dev tools.
