@@ -4,7 +4,6 @@ from contextlib import nullcontext
 from unittest import mock
 
 from webscrapbook._polyfill import zipfile
-from webscrapbook.util.fs import zip_mode
 
 from . import DUMMY_TS, DUMMY_ZIP_DT
 
@@ -176,13 +175,13 @@ class TestZipFileExt(unittest.TestCase):
         with zipfile.ZipFile(fh, 'w') as zh:
             zh.writestr('folder/', b'')
             zinfo = zh.getinfo('folder/')
-            self.assertEqual(oct(zip_mode(zinfo)), '0o40775')
+            self.assertEqual(oct(zinfo._get_mode()), '0o40775')
 
         # should write file with mode 0o600
         with zipfile.ZipFile(fh, 'w') as zh:
             zh.writestr('file.txt', b'foo')
             zinfo = zh.getinfo('file.txt')
-            self.assertEqual(oct(zip_mode(zinfo)), '0o600')
+            self.assertEqual(oct(zinfo._get_mode()), '0o600')
 
     def test_mkdir(self):
         fh = io.BytesIO()
@@ -211,7 +210,7 @@ class TestZipFileExt(unittest.TestCase):
             self.assertEqual(zinfo.file_size, 0)
             self.assertEqual(zinfo.compress_size, 0)
             self.assertEqual(zinfo.CRC, 0)
-            self.assertEqual(oct(zip_mode(zinfo)), '0o40777')
+            self.assertEqual(oct(zinfo._get_mode()), '0o40777')
 
         # folder
         with zipfile.ZipFile(fh, 'w') as zh:
@@ -221,7 +220,7 @@ class TestZipFileExt(unittest.TestCase):
             self.assertEqual(zinfo.file_size, 0)
             self.assertEqual(zinfo.compress_size, 0)
             self.assertEqual(zinfo.CRC, 0)
-            self.assertEqual(oct(zip_mode(zinfo)), '0o40777')
+            self.assertEqual(oct(zinfo._get_mode()), '0o40777')
 
     def test_set_compression(self):
         fh = io.BytesIO()

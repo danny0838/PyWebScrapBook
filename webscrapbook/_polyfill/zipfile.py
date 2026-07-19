@@ -61,6 +61,14 @@ class ZipInfoExt(_ZipInfo):
 
         return self
 
+    def _get_mode(self):
+        """Get a compatible mode.
+
+        Returns:
+            int: mode compatible with os.stat_result.st_mode
+        """
+        return self.external_attr >> 16
+
 
 class ZipFileExt(_ZipFile):
     """Extended ZipFile.

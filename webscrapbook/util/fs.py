@@ -915,23 +915,6 @@ def zip_timestamp(zinfo_or_tuple):
     return time.mktime(tuple_ + (0, 0, -1))
 
 
-def zip_mode(zinfo_or_attr):
-    """Get a compatible mode from a ZipInfo.
-
-    Args:
-        zinfo_or_attr: ZipInfo or ZipInfo.external_attr
-
-    Returns:
-        int: mode compatible with os.stat_result.st_mode
-    """
-    if isinstance(zinfo_or_attr, zipfile.ZipInfo):
-        value = zinfo_or_attr.external_attr
-    else:
-        value = zinfo_or_attr
-
-    return value >> 16
-
-
 def zip_check_subpath(zip, subpath, allow_invalid=False):
     """Check what is at the subpath in the ZIP.
 

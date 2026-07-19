@@ -14,7 +14,7 @@ except ImportError:
 
 from webscrapbook import util
 from webscrapbook._polyfill import zipfile
-from webscrapbook.util.fs import zip_mode, zip_timestamp
+from webscrapbook.util.fs import zip_timestamp
 
 from . import (
     DUMMY_BYTES,
@@ -828,7 +828,7 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         util.fs.mkdir(dst, mode=0o660)
         with zipfile.ZipFile(zfile) as zh:
             self.assertEqual(zh.namelist(), ['deep/subdir/'])
-            self.assertEqual(oct(zip_mode(zh.getinfo('deep/subdir/'))), oct(0o40660))
+            self.assertEqual(oct(zh.getinfo('deep/subdir/')._get_mode()), oct(0o40660))
 
     def test_zip_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
@@ -969,7 +969,7 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
-            self.assertEqual(oct(zip_mode(zinfo)), oct(0o770))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             with zh.open(dst[-1]) as fh:
                 self.assertTrue(zipfile.is_zipfile(fh))
@@ -1128,7 +1128,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
-            self.assertEqual(oct(zip_mode(zinfo)), oct(0o770))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
@@ -1148,7 +1148,7 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         with zipfile.ZipFile(zfile) as zh:
             zinfo = zh.getinfo(dst[-1])
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
-            self.assertEqual(oct(zip_mode(zinfo)), oct(0o770))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o770))
             self.assertEqual(zinfo.comment.decode('UTF-8'), 'my awesome file')
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_BZIP2)
             with zh.open(zinfo) as fh:
@@ -2648,7 +2648,7 @@ class TestOpenArchivePath(unittest.TestCase):
             zinfo = zh.getinfo('entry1.zip')
             self.assertAlmostEqual(zip_timestamp(zinfo), datetime.now().timestamp(), delta=5)
             self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
-            self.assertEqual(oct(zip_mode(zinfo)), oct(0o700))
+            self.assertEqual(oct(zinfo._get_mode()), oct(0o700))
 
             with zh.open(zinfo) as fh1, \
                  zipfile.ZipFile(fh1) as zh1:
@@ -2763,20 +2763,6 @@ class TestHelpers(unittest.TestCase):
             DUMMY_TS,
         )
 
-    def test_zip_mode(self):
-        root = tempfile.mkdtemp(dir=tmpdir)
-        file = os.path.join(root, 'file.txt')
-        with open(file, 'wb'):
-            pass
-        mode = os.stat(file).st_mode & 0xFFFF
-        zinfo = zipfile.ZipInfo.from_file(file)
-
-        # zinfo
-        self.assertEqual(util.fs.zip_mode(zinfo), mode)
-
-        # external_attr
-        self.assertEqual(util.fs.zip_mode(zinfo.external_attr), mode)
-
     def test_zip_check_subpath(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'zipfile.zip')
@@ -2882,7 +2868,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/'))),
+                oct(zh.getinfo('myfolder/')._get_mode()),
                 oct(os.stat(src).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -2890,7 +2876,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src2),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/subfolder/'))),
+                oct(zh.getinfo('myfolder/subfolder/')._get_mode()),
                 oct(os.stat(src2).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -2898,7 +2884,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src3),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/subfolder/subfolderfile.txt'))),
+                oct(zh.getinfo('myfolder/subfolder/subfolderfile.txt')._get_mode()),
                 oct(os.stat(src3).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -2910,7 +2896,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src4),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/subfile.txt'))),
+                oct(zh.getinfo('myfolder/subfile.txt')._get_mode()),
                 oct(os.stat(src4).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -2956,7 +2942,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src2),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('subfolder/'))),
+                oct(zh.getinfo('subfolder/')._get_mode()),
                 oct(os.stat(src2).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -2964,7 +2950,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src3),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('subfolder/subfolderfile.txt'))),
+                oct(zh.getinfo('subfolder/subfolderfile.txt')._get_mode()),
                 oct(os.stat(src3).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -2976,7 +2962,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src4),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('subfile.txt'))),
+                oct(zh.getinfo('subfile.txt')._get_mode()),
                 oct(os.stat(src4).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -3022,7 +3008,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/'))),
+                oct(zh.getinfo('myfolder/')._get_mode()),
                 oct(os.stat(src).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -3030,7 +3016,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src2),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/subfolder/'))),
+                oct(zh.getinfo('myfolder/subfolder/')._get_mode()),
                 oct(os.stat(src2).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -3038,7 +3024,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src3),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfolder/subfolder/subfolderfile.txt'))),
+                oct(zh.getinfo('myfolder/subfolder/subfolderfile.txt')._get_mode()),
                 oct(os.stat(src3).st_mode & 0xFFFF),
             )
             self.assertEqual(
@@ -3068,7 +3054,7 @@ class TestHelpers(unittest.TestCase):
                 os.path.getmtime(src),
             )
             self.assertEqual(
-                oct(zip_mode(zh.getinfo('myfile.txt'))),
+                oct(zh.getinfo('myfile.txt')._get_mode()),
                 oct(os.stat(src).st_mode & 0xFFFF),
             )
             self.assertEqual(
