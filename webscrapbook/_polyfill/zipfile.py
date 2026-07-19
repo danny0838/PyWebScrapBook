@@ -1,5 +1,6 @@
 import os
 import struct
+import sys
 import time
 from datetime import datetime
 
@@ -81,6 +82,67 @@ def autocompressor_deflate_compressible(archive, zinfo):
         return ZIP_DEFLATED, 9 if (lv := archive.compresslevel) is None else lv
     else:
         return ZIP_STORED, None
+
+
+class ZipExtractorBase:
+    debug = 0
+
+    def __init__(self, archive, path=None, pwd=None):
+        self.archive = archive
+        if path is None:
+            self.target_path = os.getcwd()
+        else:
+            self.target_path = os.fspath(path)
+        self.pwd = pwd
+        self._dirs = {}
+
+    def _debug(self, level, *msg, file=sys.stderr):
+        if level <= self.debug:
+            print(*msg, file=file)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.finalize(exc_type, exc_value, traceback)
+
+    def __call__(self, zinfo):
+        targetpath = self.archive._extract_member(zinfo, self.target_path, self.pwd)
+
+        # Delay restoring attributes for directories since permissions
+        # can interfere with extraction and extracting contents can
+        # reset mtime.
+        if zinfo.is_dir():
+            self._dirs[zinfo] = targetpath
+        else:
+            self.restore_attributes(targetpath, zinfo)
+
+        return targetpath
+
+    def finalize(self, exc_type=None, exc_value=None, traceback=None):
+        # restore attributes for directories from bottom to top
+        items = sorted(self._dirs.items(), key=lambda i: i[0].filename, reverse=True)
+        for zinfo, targetpath in items:
+            # skip if directory missing
+            if not os.path.isdir(targetpath):
+                continue
+
+            self.restore_attributes(targetpath, zinfo)
+
+    def restore_attributes(self, targetpath, zinfo):
+        pass
+
+    def utime(self, targetpath, zinfo):
+        dt = zinfo._get_datetime()
+        os.utime(targetpath, ns=dt)
+
+
+class ZipExtractor(ZipExtractorBase):
+    def restore_attributes(self, targetpath, zinfo):
+        try:
+            self.utime(targetpath, zinfo)
+        except OSError as exc:
+            self._debug(1, f'zipfile: {exc}')
 
 
 class ZipInfoExt(_ZipInfo):
@@ -398,6 +460,20 @@ class ZipFileExt(_ZipFile):
 
         # use _compresslevel for downward compatibility with Python < 3.13
         zinfo.compress_type, zinfo._compresslevel = comp_tuple
+
+    def extract(self, member, path=None, pwd=None, *, extractor=ZipExtractor):
+        zinfo = member if isinstance(member, self._ZipInfo) else self.getinfo(member)
+        with extractor(self, path, pwd=pwd) as extr:
+            return extr(zinfo)
+
+    def extractall(self, path=None, members=None, pwd=None, *, extractor=ZipExtractor):
+        if members is None:
+            members = self.namelist()
+
+        zinfos = [m if isinstance(m, self._ZipInfo) else self.getinfo(m) for m in members]
+        with extractor(self, path, pwd=pwd) as extr:
+            for zinfo in zinfos:
+                extr(zinfo)
 
 
 # map general ZipFile and ZipInfo to be the extended classes

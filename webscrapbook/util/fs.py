@@ -1169,6 +1169,7 @@ def zip_extract(zip, dst, subpath=''):
     tempdir = tempfile.mkdtemp()
     try:
         with nullcontext(zip) if isinstance(zip, zipfile.ZipFile) else zipfile.ZipFile(zip) as zh:
+            # extract only one if multiple zinfos share the same subpath
             if not subpath:
                 entries = zh.namelist()
             else:
@@ -1179,18 +1180,7 @@ def zip_extract(zip, dst, subpath=''):
                 else:
                     entries = [subpath]
 
-            # extract entries and recover mtime
             zh.extractall(tempdir, entries)
-            for entry in entries:
-                file = os.path.join(tempdir, entry)
-                zinfo = zh.getinfo(entry)
-
-                dt = zinfo._get_datetime()
-                os.utime(file, ns=dt)
-
-                # @TODO: recover mode?
-                # It may be ignored in some OS and setting the mode for a file
-                # can prevent another file from being set.
 
         # move to target path
         if not subpath:
