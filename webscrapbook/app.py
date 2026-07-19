@@ -112,7 +112,7 @@ def zip_static_file(zh, subpath, mimetype=None):
 
     fh = zh.open(info, 'r')
 
-    lm = util.fs.zip_timestamp(info)
+    lm = info._get_datetime()[1] // 10 ** 9
     last_modified = http_date(lm)
 
     etag = '%s-%s-%s' % (
@@ -387,7 +387,7 @@ def handle_markdown_output(localpaths, zh=None):
         # calculate last-modified time and etag
         if zh:
             info = zh.getinfo(localpaths[-1])
-            lm = util.fs.zip_timestamp(info)
+            lm = info._get_datetime()[1] // 10 ** 9
             last_modified = http_date(lm)
 
             etag = '%s-%s-%s' % (
@@ -1887,7 +1887,7 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
             return FileInfo(
                 name=name, type='file',
                 size=info.file_size,
-                last_modified=util.fs.zip_timestamp(info),
+                last_modified=info._get_datetime()[1] // 10 ** 9,
             )
 
         try:
@@ -1897,7 +1897,7 @@ def zip_file_info(zip, subpath, base=None, check_implicit_dir=False):
         else:
             return FileInfo(
                 name=name, type='dir', size=None,
-                last_modified=util.fs.zip_timestamp(info),
+                last_modified=info._get_datetime()[1] // 10 ** 9,
             )
 
         if check_implicit_dir:

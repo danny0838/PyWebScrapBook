@@ -26,7 +26,6 @@ from . import (
     DUMMY_TS_NS3,
     DUMMY_TS_NS4,
     DUMMY_TS_NS5,
-    DUMMY_ZIP_DT,
     TEMP_DIR,
     TestFileMixin,
     glob_files,
@@ -2770,19 +2769,6 @@ class TestHelpers(TestFsUtilBase):
         dst = os.path.join(root, 'symlink')
         os.symlink(ref, dst, False)
         self.assertFalse(util.fs.isjunction(dst))
-
-    def test_zip_timestamp(self):
-        # zinfo
-        self.assertEqual(
-            util.fs.zip_timestamp(zipfile.ZipInfo('dummy', DUMMY_ZIP_DT)),
-            DUMMY_TS,
-        )
-
-        # tuple
-        self.assertEqual(
-            util.fs.zip_timestamp(DUMMY_ZIP_DT),
-            DUMMY_TS,
-        )
 
     def test_zip_check_subpath(self):
         root = tempfile.mkdtemp(dir=tmpdir)

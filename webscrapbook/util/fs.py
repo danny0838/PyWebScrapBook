@@ -9,7 +9,6 @@ import stat
 import subprocess
 import sys
 import tempfile
-import time
 from contextlib import contextmanager, nullcontext
 
 from .._polyfill import zipfile
@@ -897,23 +896,6 @@ def junction(src, dst):
 #########################################################################
 # ZIP handling
 #########################################################################
-
-def zip_timestamp(zinfo_or_tuple):
-    """Get a compatible timestamp from a ZipInfo.
-
-    Args:
-        zinfo_or_tuple: ZipInfo or a tuple as ZipInfo.date_time
-
-    Returns:
-        float: timestamp compatible with os.stat_result.st_mtime
-    """
-    if isinstance(zinfo_or_tuple, zipfile.ZipInfo):
-        tuple_ = zinfo_or_tuple.date_time
-    else:
-        tuple_ = zinfo_or_tuple
-
-    return time.mktime(tuple_ + (0, 0, -1))
-
 
 def zip_check_subpath(zip, subpath, allow_invalid=False):
     """Check what is at the subpath in the ZIP.

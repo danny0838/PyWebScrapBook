@@ -433,7 +433,7 @@ class FulltextCacheGenerator():
         book = self.book
 
         try:
-            self.cache_last_modified = max(os.stat(f).st_mtime for f in book.iter_fulltext_files())
+            self.cache_last_modified = max(os.stat(f).st_mtime_ns for f in book.iter_fulltext_files())
         except ValueError:
             # no fulltext file
             self.cache_last_modified = 0
@@ -518,7 +518,7 @@ class FulltextCacheGenerator():
             # unless newly created, presume no change if archive file not newer
             # than cache file, for better performance
             if util.is_archive(indexfile):
-                if os.stat(indexfile).st_mtime <= self.cache_last_modified:
+                if os.stat(indexfile).st_mtime_ns <= self.cache_last_modified:
                     yield Info('debug', f'Skipped {id!r} (archive file older than cache)')
                     return
 
@@ -613,7 +613,7 @@ class FulltextCacheGenerator():
             try:
                 with zh as zh:
                     info = zh.getinfo(path)
-                    return util.fs.zip_timestamp(info)
+                    return info._get_datetime()[1]
             except KeyError:
                 return None
             except Exception as exc:
@@ -622,7 +622,7 @@ class FulltextCacheGenerator():
 
         file = os.path.join(self.book.data_dir, os.path.dirname(item.index), path)
         try:
-            return os.stat(file).st_mtime
+            return os.stat(file).st_mtime_ns
         except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
             return None
         except OSError as exc:
