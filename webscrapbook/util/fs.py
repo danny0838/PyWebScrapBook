@@ -851,7 +851,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=None):
                 if fh:
                     zinfo = zh.getinfo(cpath[i + 1])
                     zh.repack([zh.remove(zinfo)])
-                    zinfo.file_size = fh.tell()
+                    zinfo.file_size = fh.seek(0, 2)
                     zinfo.date_time = time.localtime()
                     zinfo.compress_type = zipfile.ZIP_STORED
                     with zh.open(zinfo, 'w') as fw:
