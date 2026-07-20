@@ -1,3 +1,10 @@
+"""
+Patch the native mimetypes database to fix certain MIME types mappings and
+support user defined mappings.
+
+Providing a private patched database doesn't work since some dependency API
+(e.g., Flask) uses the native mimetypes database.
+"""
 import mimetypes as _mimetypes
 import os
 

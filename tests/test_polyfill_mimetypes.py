@@ -2,6 +2,7 @@ import importlib
 import os
 import tempfile
 import unittest
+from textwrap import dedent
 from unittest import mock
 
 from webscrapbook import WSB_USER_DIR
@@ -82,12 +83,14 @@ class TestMimetypes(unittest.TestCase):
             os.makedirs(user_config_dir)
             with open(os.path.join(user_config_dir, mimetypes.WSB_USER_MIMETYPES), 'w', encoding='UTF-8') as fh:
                 # poison with bad/invalid conversions that are unlikely really used
-                fh.write("""\
-user/.type       js
-user/.type2      js
-text/javascript  .userext
-text/javascript  .userext2 .userext3
-""")
+                fh.write(dedent(
+                    """\
+                    user/.type       js
+                    user/.type2      js
+                    text/javascript  .userext
+                    text/javascript  .userext2 .userext3
+                    """
+                ))
 
             try:
                 with mock.patch('webscrapbook.Config.user_config_dir', return_value=os.devnull):
