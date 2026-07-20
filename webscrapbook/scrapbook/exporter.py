@@ -7,7 +7,7 @@ from contextlib import nullcontext
 from datetime import timedelta
 
 from .. import util
-from .._polyfill import mimetypes, zipfile
+from .._polyfill import zipfile
 from ..util import Info
 from .book import _id_now
 from .host import Host
@@ -176,12 +176,8 @@ class Exporter():
 
         # add topdir and info files
         zh.mkdir(f'{ets}/')
-        fn = f'{ets}/meta.json'
-        zh.writestr(fn, json.dumps(meta_data, ensure_ascii=False, indent=2),
-                    **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
-        fn = f'{ets}/export.json'
-        zh.writestr(fn, json.dumps(export_data, ensure_ascii=False, indent=2),
-                    **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
+        zh.writestr(f'{ets}/meta.json', json.dumps(meta_data, ensure_ascii=False, indent=2))
+        zh.writestr(f'{ets}/export.json', json.dumps(export_data, ensure_ascii=False, indent=2))
         if self.stream is not None:
             yield Info('debug', 'Streaming...', self.stream.get())
 

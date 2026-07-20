@@ -223,6 +223,65 @@ class TestZipFileExt(unittest.TestCase):
             self.assertEqual(zinfo.CRC, 0)
             self.assertEqual(oct(zip_mode(zinfo)), '0o40777')
 
+    def test_set_compression(self):
+        fh = io.BytesIO()
+
+        # default compression to None
+        # use default compresslevel for the autocompressor
+        with zipfile.ZipFile(fh, 'w') as zh:
+            self.assertEqual(zh.compression, None)
+            self.assertEqual(zh.compresslevel, None)
+
+            zinfo = zipfile.ZipInfo('foo.txt')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zinfo._compresslevel, 9)
+
+            zinfo = zipfile.ZipInfo('foo.jpg')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+            self.assertEqual(zinfo._compresslevel, None)
+
+        with zipfile.ZipFile(fh, 'w', compression=None) as zh:
+            self.assertEqual(zh.compression, None)
+            self.assertEqual(zh.compresslevel, None)
+
+        # suggest compresslevel for the autocompressor if set
+        with zipfile.ZipFile(fh, 'w', compresslevel=6) as zh:
+            zinfo = zipfile.ZipInfo('foo.txt')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zinfo._compresslevel, 6)
+
+            zinfo = zipfile.ZipInfo('foo.jpg')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+            self.assertEqual(zinfo._compresslevel, None)
+
+        # take compression if set
+        # take compresslevel
+        with zipfile.ZipFile(fh, 'w', compression=zipfile.ZIP_DEFLATED) as zh:
+            zinfo = zipfile.ZipInfo('foo.txt')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zinfo._compresslevel, None)
+
+            zinfo = zipfile.ZipInfo('foo.jpg')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zinfo._compresslevel, None)
+
+        with zipfile.ZipFile(fh, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=4) as zh:
+            zinfo = zipfile.ZipInfo('foo.txt')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zinfo._compresslevel, 4)
+
+            zinfo = zipfile.ZipInfo('foo.jpg')
+            zh._set_compression(zinfo)
+            self.assertEqual(zinfo.compress_type, zipfile.ZIP_DEFLATED)
+            self.assertEqual(zinfo._compresslevel, 4)
+
 
 if __name__ == '__main__':
     unittest.main()

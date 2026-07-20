@@ -8,7 +8,7 @@ from contextlib import nullcontext
 from datetime import timedelta
 
 from .. import util
-from .._polyfill import mimetypes, zipfile
+from .._polyfill import zipfile
 from ..util import Info
 from .book import _id_now
 from .host import Host
@@ -117,12 +117,8 @@ class Exporter():
             'path': parents,
         }
         with zipfile.ZipFile(dst, 'w') as zh:
-            fn = 'meta.json'
-            zh.writestr(fn, json.dumps(meta_data, ensure_ascii=False, indent=2),
-                        **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
-            fn = 'export.json'
-            zh.writestr(fn, json.dumps(export_data, ensure_ascii=False, indent=2),
-                        **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
+            zh.writestr('meta.json', json.dumps(meta_data, ensure_ascii=False, indent=2))
+            zh.writestr('export.json', json.dumps(export_data, ensure_ascii=False, indent=2))
 
             # include data file(s)
             if index:

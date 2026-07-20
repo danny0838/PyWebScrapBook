@@ -209,10 +209,7 @@ class Converter:
 
                 rdf_content = self._generate_index_rdf(book, id)
                 with zipfile.ZipFile(fdst, 'a') as zh:
-                    zh.writestr(
-                        f'{subpath}/index.rdf', rdf_content,
-                        **util.fs.zip_compression_params(mimetype='application/rdf+xml')
-                    )
+                    zh.writestr(f'{subpath}/index.rdf', rdf_content)
 
                 shutil.copystat(os.path.join(indexdir, 'index.html'), fdst)
 

@@ -12,7 +12,7 @@ import tempfile
 import time
 from contextlib import contextmanager, nullcontext
 
-from .._polyfill import mimetypes, zipfile
+from .._polyfill import zipfile
 from . import util
 
 ZIP_SUBPATH_NONE = 0
@@ -460,9 +460,7 @@ def save(cpath, src, *, buffer_size=None):
                     zinfo._set_datetime()
                 else:
                     zinfo = zipfile.ZipInfo(cpath[-1])
-                    comp = zip_compression_params(mimetypes.guess_type(cpath[-1])[0])
-                    zinfo.compress_type = comp['compress_type']
-                    zinfo._compresslevel = comp['compresslevel']
+                    zh._set_compression(zinfo)
 
                 # determine file size and force_zip64
                 force_zip64 = False
@@ -900,20 +898,6 @@ def junction(src, dst):
 # ZIP handling
 #########################################################################
 
-def zip_compression_params(mimetype=None, compress_type=None, compresslevel=None, autodetector=util.is_compressible):
-    """A helper for determining compress type and level.
-    """
-    if compress_type is None and compresslevel is None and autodetector is not None:
-        compressible = autodetector(mimetype)
-        compress_type = zipfile.ZIP_DEFLATED if compressible else zipfile.ZIP_STORED
-        compresslevel = 9 if compressible else None
-
-    return {
-        'compress_type': compress_type,
-        'compresslevel': compresslevel,
-    }
-
-
 def zip_timestamp(zinfo_or_tuple):
     """Get a compatible timestamp from a ZipInfo.
 
@@ -1042,9 +1026,7 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
                 if zinfo.is_dir():
                     zh.mkdir(zinfo)
                 else:
-                    comp = zip_compression_params(mimetypes.guess_type(dst)[0])
-                    zinfo.compress_type = comp['compress_type']
-                    zinfo._compresslevel = comp['compresslevel']
+                    zh._set_compression(zinfo)
                     with open(src, 'rb') as ih, zh.open(zinfo, 'w') as oh:
                         for chunk in iter(functools.partial(ih.read, buffer_size), b''):
                             oh.write(chunk)

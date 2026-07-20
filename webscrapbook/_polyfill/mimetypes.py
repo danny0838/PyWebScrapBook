@@ -18,6 +18,7 @@ def _patch_mimetypes():
         # WebScrapBook related
         '.htz': 'application/html+zip',
         '.maff': 'application/x-maff',
+        '.rdf': 'application/rdf+xml',
         '.wsba': 'application/wsba+zip',
 
         # Some common types

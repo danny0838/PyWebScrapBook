@@ -3,9 +3,21 @@ import time
 from zipremove import *
 from zipremove import __all__
 
+from ..util import util
+from . import mimetypes
+
 # subclasses with modified or extended features
 _ZipInfo = ZipInfo
 _ZipFile = ZipFile
+
+
+def autocompressor_deflate_compressible(archive, zinfo):
+    mimetype = mimetypes.guess_type(zinfo.filename)[0]
+    compressible = util.is_compressible(mimetype)
+    if compressible:
+        return ZIP_DEFLATED, 9 if (lv := archive.compresslevel) is None else lv
+    else:
+        return ZIP_STORED, None
 
 
 class ZipInfoExt(_ZipInfo):
@@ -56,6 +68,15 @@ class ZipFileExt(_ZipFile):
     Should pass ZipInfoExt instead of native ZipInfo to methods.
     """
     _ZipInfo = ZipInfoExt
+    _autocompressor = autocompressor_deflate_compressible
+
+    def __init__(self, file, mode='r', compression=None, *args, **kwargs):
+        """Extended method to allow compression=None for auto-detection."""
+        # tweak passed value to bypass the check of native zipfile._check_compression()
+        _compression = ZIP_STORED if compression is None else compression
+        super().__init__(file, mode, _compression, *args, **kwargs)
+        if compression is None:
+            self.compression = None
 
     @property
     def _strict_timestamps(self):
@@ -117,6 +138,18 @@ class ZipFileExt(_ZipFile):
         except AttributeError:
             # fallback for Python < 3.11
             super().writestr(zinfo, b'')
+
+    def _set_compression(self, zinfo):
+        """Assign proper compression type and level to zinfo."""
+        if zinfo.is_dir():
+            comp_tuple = ZIP_STORED, None
+        elif self.compression is None:
+            comp_tuple = self._autocompressor(zinfo)
+        else:
+            comp_tuple = self.compression, self.compresslevel
+
+        # use _compresslevel for downward compatibility with Python < 3.13
+        zinfo.compress_type, zinfo._compresslevel = comp_tuple
 
 
 # map general ZipFile and ZipInfo to be the extended classes
