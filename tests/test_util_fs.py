@@ -354,22 +354,13 @@ class TestCPath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             zh.writestr('entry1.zip!/entry2.zip!/', '')
-
-            buf2 = io.BytesIO()
-            with zipfile.ZipFile(buf2, 'w'):
+            with zh.open('entry1.zip!/entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
-
             zh.writestr('entry1.zip!/', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -380,22 +371,13 @@ class TestCPath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             zh.writestr('entry1.zip!/entry2.zip!/.gitkeep', '')
-
-            buf2 = io.BytesIO()
-            with zipfile.ZipFile(buf2, 'w'):
+            with zh.open('entry1.zip!/entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
-
             zh.writestr('entry1.zip!/', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -405,21 +387,13 @@ class TestCPath(unittest.TestCase):
         # entry1.zip!/entry2.zip > entry1.zip!/
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
-            buf2 = io.BytesIO()
-            with zipfile.ZipFile(buf2, 'w'):
+            with zh.open('entry1.zip!/entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
-
             zh.writestr('entry1.zip!/', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -430,17 +404,11 @@ class TestCPath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             zh.writestr('entry1.zip!/entry2.zip', 'non-zip')
-
             zh.writestr('entry1.zip!/', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -451,15 +419,10 @@ class TestCPath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             zh.writestr('entry1.zip!/', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -470,15 +433,10 @@ class TestCPath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
             zh.writestr('entry1.zip!/.gitkeep', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -488,14 +446,10 @@ class TestCPath(unittest.TestCase):
         # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!/', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -505,14 +459,10 @@ class TestCPath(unittest.TestCase):
         # entry1.zip entry2.zip!/ > entry1.zip entry2.zip
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!/.gitkeep', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -522,13 +472,9 @@ class TestCPath(unittest.TestCase):
         # entry1.zip entry2.zip > entry1.zip
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
                     pass
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -538,9 +484,8 @@ class TestCPath(unittest.TestCase):
         # entry1.zip
         root = tempfile.mkdtemp(dir=tmpdir)
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
-            with zipfile.ZipFile(buf1, 'w') as zh1:
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip', 'non-zip')
-            zh.writestr('entry1.zip', buf1.getvalue())
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/'),
@@ -647,21 +592,13 @@ class TestCPath(unittest.TestCase):
             return os.path.normpath(os.path.join(root, p))
 
         with zipfile.ZipFile(os.path.join(root, 'entry.zip'), 'w') as zh:
-            buf2 = io.BytesIO()
-            with zipfile.ZipFile(buf2, 'w'):
+            with zh.open('entry1.zip!/entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr('entry1.zip!/entry2.zip', buf2.getvalue())
-
             zh.writestr('entry1.zip!/', '')
-
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w'):
-                    pass
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.writestr('entry2.zip!', '')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
+                    pass
 
         self.assertSequenceEqual(
             util.fs.CPath.resolve(f'{root}/entry.zip!/entry1.zip!/entry2.zip!/', resolver),
@@ -873,10 +810,8 @@ class TestMkDir(TestFsUtilBasicMixin, TestFsUtilBase):
         zfile = os.path.join(root, 'archive.zip')
         dst = [zfile, 'nested/subarchive.zip', 'deep/subdir']
         with zipfile.ZipFile(zfile, 'w') as zh:
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, 'w'):
+            with zh.open(dst[1], 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr(dst[1], buf.getvalue())
         util.fs.mkdir(dst)
         with zipfile.ZipFile(zfile) as zh, \
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
@@ -1009,10 +944,8 @@ class TestMkZip(TestFsUtilBasicMixin, TestFsUtilBase):
         zfile = os.path.join(root, 'archive.zip')
         dst = [zfile, 'nested/subarchive.zip', 'nested2/subarchive2.zip']
         with zipfile.ZipFile(zfile, 'w') as zh:
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, 'w'):
+            with zh.open(dst[1], 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr(dst[1], buf.getvalue())
         util.fs.mkzip(dst)
         with zipfile.ZipFile(zfile) as zh, \
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
@@ -1171,10 +1104,8 @@ class TestSave(TestFsUtilBasicMixin, TestFsUtilBase):
         zfile = os.path.join(root, 'archive.zip')
         dst = [zfile, 'nested/subarchive.zip', 'nested2/file.txt']
         with zipfile.ZipFile(zfile, 'w') as zh:
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, 'w'):
+            with zh.open(dst[1], 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr(dst[1], buf.getvalue())
         util.fs.save(dst, DUMMY_BYTES)
         with zipfile.ZipFile(zfile) as zh, \
              zh.open(dst[1]) as _, zipfile.ZipFile(_) as zh2:
@@ -2676,13 +2607,9 @@ class TestOpenArchivePath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'entry.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            buf1 = io.BytesIO()
-            with zipfile.ZipFile(buf1, 'w') as zh1:
-                buf11 = io.BytesIO()
-                with zipfile.ZipFile(buf11, 'w') as zh2:
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
+                with zh1.open('entry2.zip', 'w') as _, zipfile.ZipFile(_, 'w') as zh2:
                     zh2.writestr('subdir/index.html', 'Hello World!')
-                zh1.writestr('entry2.zip', buf11.getvalue())
-            zh.writestr('entry1.zip', buf1.getvalue())
 
         # normal read
         with util.fs.open_archive_path([zfile, 'entry1.zip', 'entry2.zip', 'subdir/index.html']) as zh:
@@ -2701,11 +2628,9 @@ class TestOpenArchivePath(unittest.TestCase):
             zinfo = zipfile.ZipInfo('entry1.zip', DUMMY_ZIP_DT)
             zinfo.compress_type = zipfile.ZIP_BZIP2
             zinfo.external_attr = 0o700 << 16
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, 'w') as zh1:
+            with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
                 zh1.comment = 'test zip comment 1 測試'.encode('UTF-8')
                 zh1.writestr('subdir/index.html', 'Hello World!')
-            zh.writestr(zinfo, buf.getvalue())
 
         with util.fs.open_archive_path([zfile, 'entry1.zip', 'subdir/index.html'], 'a') as zh:
             # replace
@@ -2741,10 +2666,8 @@ class TestOpenArchivePath(unittest.TestCase):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'entry.zip')
         with zipfile.ZipFile(zfile, 'w') as zh:
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, 'w'):
+            with zh.open('entry1.zip', 'w') as _, zipfile.ZipFile(_, 'w'):
                 pass
-            zh.writestr('entry1.zip', buf.getvalue())
 
         size = 4.1 * 1024 ** 3
         chunk_size = 1024 ** 2

@@ -416,13 +416,12 @@ def mkzip(cpath):
                     zinfo = zh.getinfo(cpath[-1])
                     zh.repack([zh.remove(zinfo)])
                     zinfo.date_time = time.localtime()
+                    zinfo.file_size = 0
                 else:
                     zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
                 zinfo.compress_type = zipfile.ZIP_STORED
-                buf = io.BytesIO()
-                with zipfile.ZipFile(buf, 'w'):
+                with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w'):
                     pass
-                zh.writestr(zinfo, buf.getvalue())
     except FSError:
         raise
     except Exception as exc:

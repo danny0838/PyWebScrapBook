@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import tempfile
@@ -122,9 +121,6 @@ new_at_top = true
         - Favicon should be imported and icon property should be consistent with the book.
         """
         wsba_file = os.path.join(self.test_input, '20200401000000000.wsba')
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w') as zh:
-            zh.writestr('index.html', 'page content')
         with zipfile.ZipFile(wsba_file, 'w') as zh:
             zh.writestr('export.json', json.dumps({
                 'version': 1,
@@ -146,7 +142,8 @@ new_at_top = true
                 'source': 'http://example.com',
                 'icon': '../tree/favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
             }))
-            zh.writestr('data/20200101000000001.htz', buf.getvalue())
+            with zh.open('data/20200101000000001.htz', 'w') as _, zipfile.ZipFile(_, 'w') as zh1:
+                zh1.writestr('index.html', 'page content')
             zh.writestr('favicon/dbc82be549e49d6db9a5719086722a4f1c5079cd.bmp',
                         b64decode('Qk08AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABACAAAAAAAAYAAAASCwAAEgsAAAAAAAAAAAAAAP8AAAAA'))
 
