@@ -373,11 +373,7 @@ def mkdir(cpath, mode=0o777, exist_ok=True):
                     raise FSDirExistsError(cpath)
 
             with open_archive_path(cpath, 'a') as zh:
-                zinfo = zipfile.ZipInfo(cpath[-1] + '/', time.localtime())
-                zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16  # Unix attributes
-                zinfo.external_attr |= 0x10  # MS-DOS directory flag
-                zinfo.compress_type = zipfile.ZIP_STORED
-                zh.writestr(zinfo, b'')
+                zh.mkdir(cpath[-1] + '/', mode)
     except FSError:
         raise
     except Exception as exc:
@@ -414,11 +410,11 @@ def mkzip(cpath):
                 if cur == ZIP_SUBPATH_FILE:
                     zinfo = zh.getinfo(cpath[-1])
                     zh.repack([zh.remove(zinfo)])
-                    zinfo.date_time = time.localtime()
+                    zinfo._set_datetime()
                     zinfo.file_size = 0
                     zinfo.compress_type = zipfile.ZIP_STORED
                 else:
-                    zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
+                    zinfo = zipfile.ZipInfo(cpath[-1])
                 with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w'):
                     pass
     except FSError:
@@ -461,9 +457,9 @@ def save(cpath, src, *, buffer_size=None):
                 if cur == ZIP_SUBPATH_FILE:
                     zinfo = zh.getinfo(cpath[-1])
                     zh.repack([zh.remove(zinfo)])
-                    zinfo.date_time = time.localtime()
+                    zinfo._set_datetime()
                 else:
-                    zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
+                    zinfo = zipfile.ZipInfo(cpath[-1])
                     comp = zip_compression_params(mimetypes.guess_type(cpath[-1])[0])
                     zinfo.compress_type = comp['compress_type']
                     zinfo._compresslevel = comp['compresslevel']
@@ -850,7 +846,7 @@ def open_archive_path(cpath, mode='r', *, buffer_size=None):
                     zinfo = zh.getinfo(cpath[i + 1])
                     zh.repack([zh.remove(zinfo)])
                     zinfo.file_size = fh.seek(0, 2)
-                    zinfo.date_time = time.localtime()
+                    zinfo._set_datetime()
                     zinfo.compress_type = zipfile.ZIP_STORED
                     with zh.open(zinfo, 'w') as fw:
                         fh.seek(0)
@@ -1044,7 +1040,7 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
             try:
                 zinfo = zipfile.ZipInfo.from_file(src, dst, strict_timestamps=False)
                 if zinfo.is_dir():
-                    zh.writestr(zinfo, b'')
+                    zh.mkdir(zinfo)
                 else:
                     comp = zip_compression_params(mimetypes.guess_type(dst)[0])
                     zinfo.compress_type = comp['compress_type']
@@ -1155,7 +1151,7 @@ def _zip_copy_gen(zsrc, base, zdst, subpath, filter=None, *,
             zinfo2.orig_filename = _zinfo.orig_filename
             zinfo2.filename = _zinfo.filename
             if zinfo.is_dir():
-                zh.writestr(zinfo2, b'')
+                zh.mkdir(zinfo2)
                 if stream:
                     yield stream.get()
             else:

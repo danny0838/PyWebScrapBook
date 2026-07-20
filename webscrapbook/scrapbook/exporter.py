@@ -175,7 +175,7 @@ class Exporter():
         zh = self._zh
 
         # add topdir and info files
-        zh.writestr(f'{ets}/', '')
+        zh.mkdir(f'{ets}/')
         fn = f'{ets}/meta.json'
         zh.writestr(fn, json.dumps(meta_data, ensure_ascii=False, indent=2),
                     **util.fs.zip_compression_params(mimetypes.guess_type(fn)[0]))
@@ -187,7 +187,7 @@ class Exporter():
 
         # include data file(s)
         if index:
-            zh.writestr(f'{ets}/data/', '')
+            zh.mkdir(f'{ets}/data/')
             src = os.path.join(self.book.data_dir, os.path.dirname(index) if index.endswith('/index.html') else index)
             yield Info('debug', f'Saving data files for {id!r}: {self.book.get_subpath(src)!r}')
             gen = util.fs.zip_compress(zh, src, f'{ets}/data/{os.path.basename(src)}', stream=self.stream)
@@ -204,7 +204,7 @@ class Exporter():
         if not os.path.normcase(iconfile).startswith(os.path.normcase(favicon_dir)):
             return
 
-        zh.writestr(f'{ets}/favicon/', '')
+        zh.mkdir(f'{ets}/favicon/')
         gen = util.fs.zip_compress(zh, iconfile, f'{ets}/favicon/{os.path.basename(iconfile)}', stream=self.stream)
         if self.stream is not None:
             for bytes_ in gen:

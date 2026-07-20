@@ -126,7 +126,7 @@ class Exporter():
 
             # include data file(s)
             if index:
-                zh.writestr('data/', '')
+                zh.mkdir('data/')
                 src = os.path.join(self.book.data_dir, os.path.dirname(index) if index.endswith('/index.html') else index)
                 yield Info('debug', f'Saving data files for {id!r}: {self.book.get_subpath(src)!r}')
                 util.fs.zip_compress(zh, src, f'data/{os.path.basename(src)}')
@@ -140,7 +140,7 @@ class Exporter():
             if not os.path.normcase(iconfile).startswith(os.path.normcase(favicon_dir)):
                 return
 
-            zh.writestr('favicon/', '')
+            zh.mkdir('favicon/')
             util.fs.zip_compress(zh, iconfile, f'favicon/{os.path.basename(iconfile)}')
 
 
