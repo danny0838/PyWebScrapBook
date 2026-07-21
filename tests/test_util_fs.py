@@ -3158,6 +3158,22 @@ class TestHelpers(unittest.TestCase):
                 zipfile.ZIP_DEFLATED,
             )
 
+    def test_zip_compress_datetime(self):
+        """Should not raise for extreme file datetimes."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+        src = os.path.join(root, 'file.txt')
+        zfile = os.path.join(root, 'zipfile.zip')
+        with open(src, 'w', encoding='UTF-8') as fh:
+            fh.write('ABC中文')
+
+        ts = datetime(1979, 12, 30, 23, 59, 59).timestamp()
+        os.utime(src, (ts, ts))
+        util.fs.zip_compress(zfile, src, 'myfile.txt')
+
+        ts = datetime(2108, 1, 2, 0, 0, 0).timestamp()
+        os.utime(src, (ts, ts))
+        util.fs.zip_compress(zfile, src, 'myfile.txt')
+
     def test_zip_copy_dir_to_dir(self):
         root = tempfile.mkdtemp(dir=tmpdir)
         zfile = os.path.join(root, 'archive.zip')

@@ -1042,7 +1042,7 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
 
         for src, dst in _zip_compress_iter(filename, subpath, filter):
             try:
-                zinfo = zipfile.ZipInfo.from_file(src, dst)
+                zinfo = zipfile.ZipInfo.from_file(src, dst, strict_timestamps=False)
                 if zinfo.is_dir():
                     zh.writestr(zinfo, b'')
                 else:
