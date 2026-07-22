@@ -603,6 +603,8 @@ ul  >  li  :not([hidden])  {
         self.assertTrue(util.is_compressible('application/x-javascript'))
         self.assertTrue(util.is_compressible('application/json'))
         self.assertTrue(util.is_compressible('application/xml'))
+        self.assertTrue(util.is_compressible('application/yaml'))
+        self.assertTrue(util.is_compressible('application/rtf'))
 
         # text-like suffixes
         self.assertTrue(util.is_compressible('application/xhtml+xml'))
