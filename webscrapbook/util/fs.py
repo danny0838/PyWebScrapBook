@@ -416,9 +416,9 @@ def mkzip(cpath):
                     zh.repack([zh.remove(zinfo)])
                     zinfo.date_time = time.localtime()
                     zinfo.file_size = 0
+                    zinfo.compress_type = zipfile.ZIP_STORED
                 else:
                     zinfo = zipfile.ZipInfo(cpath[-1], time.localtime())
-                zinfo.compress_type = zipfile.ZIP_STORED
                 with zh.open(zinfo, 'w') as _, zipfile.ZipFile(_, 'w'):
                     pass
     except FSError:
