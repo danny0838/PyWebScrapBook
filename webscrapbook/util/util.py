@@ -748,11 +748,11 @@ def mime_is_maff(mime):
 
 
 def mime_is_markdown(mime):
-    return mime in {'text/markdown'}
+    return mime == 'text/markdown'
 
 
 def mime_is_wsba(mime):
-    return mime in {'application/wsba+zip'}
+    return mime == 'application/wsba+zip'
 
 
 def is_html(filename):
