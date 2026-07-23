@@ -1047,8 +1047,6 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
                 zinfo = zipfile.ZipInfo.from_file(src, dst)
                 if zinfo.is_dir():
                     zh.writestr(zinfo, b'')
-                    if stream:
-                        yield stream.get()
                 else:
                     comp = zip_compression_params(mimetypes.guess_type(dst)[0])
                     zinfo.compress_type = comp['compress_type']
@@ -1060,6 +1058,9 @@ def _zip_compress_gen(zh, filename, subpath, filter, *,
                                 yield stream.get()
             except OSError as why:
                 errors.append((src, dst, why))
+
+            if stream:
+                yield stream.get()
 
         if errors:
             raise shutil.Error(errors)
