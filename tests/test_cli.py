@@ -13,6 +13,27 @@ from webscrapbook.scrapbook import util as wsb_util
 
 from . import PROG_DIR, TEMP_DIR
 
+try:
+    import contextlib
+    contextlib.chdir
+except AttributeError:
+    # polyfill for Python < 3.11
+    class chdir(contextlib.AbstractContextManager):  # noqa: N801
+        """Non thread-safe context manager to change the current working directory."""
+
+        def __init__(self, path):
+            self.path = path
+            self._old_cwd = []
+
+        def __enter__(self):
+            self._old_cwd.append(os.getcwd())
+            os.chdir(self.path)
+
+        def __exit__(self, *excinfo):
+            os.chdir(self._old_cwd.pop())
+    contextlib.chdir = chdir
+    del chdir
+
 RESOURCE_DIR = os.path.join(PROG_DIR, 'resources')
 
 
@@ -1571,6 +1592,29 @@ class TestHelpers(Test):
                              fr'jar:file:{pathname2url(testfile3)}!/def/index.html')
             self.assertEqual(len(os.listdir(testtemp)), 0)
 
+            # test jar (with relative paths)
+            mock_browser.reset_mock()
+            with contextlib.chdir(self.root), mock.patch('webscrapbook.cli.config', {
+                'browser': {
+                    'command': '',
+                    'cache_prefix': 'webscrapbook.',
+                    'cache_expire': 1000,
+                    'use_jar': True,
+                }
+            }):
+                cli.view_archive_files([os.path.basename(f) for f in [testfile1, testfile2, testfile3, testfile4]])
+
+            self.assertEqual(len(mock_browser.mock_calls), 5)
+            self.assertEqual(mock_browser.mock_calls[1][1][0],
+                             fr'jar:file:{pathname2url(testfile1)}!/index.html')
+            self.assertEqual(mock_browser.mock_calls[2][1][0],
+                             fr'jar:file:{pathname2url(testfile2)}!/123456/index.html')
+            self.assertEqual(mock_browser.mock_calls[3][1][0],
+                             fr'jar:file:{pathname2url(testfile3)}!/abc/index.html')
+            self.assertEqual(mock_browser.mock_calls[4][1][0],
+                             fr'jar:file:{pathname2url(testfile3)}!/def/index.html')
+            self.assertEqual(len(os.listdir(testtemp)), 0)
+
             # test simple view
             mock_browser.reset_mock()
             with mock.patch('webscrapbook.cli.config', {
@@ -1582,6 +1626,30 @@ class TestHelpers(Test):
                 }
             }):
                 cli.view_archive_files([testfile1, testfile2, testfile3, testfile4])
+
+            mock_browser.assert_called_once_with(None)
+            self.assertEqual(len(mock_browser.mock_calls), 5)
+            self.assertRegex(mock_browser.mock_calls[1][1][0],
+                             fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/index\.html$')
+            self.assertRegex(mock_browser.mock_calls[2][1][0],
+                             fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/123456/index\.html$')
+            self.assertRegex(mock_browser.mock_calls[3][1][0],
+                             fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/abc/index\.html$')
+            self.assertRegex(mock_browser.mock_calls[4][1][0],
+                             fr'^file:{re.escape(pathname2url(testtemp))}/webscrapbook\.[0-9a-z]*_[0-9a-z_]*/def/index\.html$')
+            self.assertEqual(len(os.listdir(testtemp)), 3)
+
+            # test simple view (with relative paths)
+            mock_browser.reset_mock()
+            with contextlib.chdir(self.root), mock.patch('webscrapbook.cli.config', {
+                'browser': {
+                    'command': '',
+                    'cache_prefix': 'webscrapbook.',
+                    'cache_expire': 1000,
+                    'use_jar': False,
+                }
+            }):
+                cli.view_archive_files([os.path.basename(f) for f in [testfile1, testfile2, testfile3, testfile4]])
 
             mock_browser.assert_called_once_with(None)
             self.assertEqual(len(mock_browser.mock_calls), 5)

@@ -444,6 +444,7 @@ def view_archive_files(files):
             continue
 
         if use_jar:
+            file = os.path.abspath(file)
             base_url = 'jar:file:' + pathname2url(file) + '!/'
             if mime == 'application/html+zip':
                 urls.append(base_url + 'index.html')
