@@ -440,15 +440,15 @@ def view_archive_files(files):
 
     for file in files:
         mime, _ = mimetypes.guess_type(file)
-        if mime not in ('application/html+zip', 'application/x-maff'):
+        if not util.mime_is_archive(mime):
             continue
 
         if use_jar:
             file = os.path.abspath(file)
             base_url = 'jar:file:' + pathname2url(file) + '!/'
-            if mime == 'application/html+zip':
+            if util.mime_is_htz(mime):
                 urls.append(base_url + 'index.html')
-            elif mime == 'application/x-maff':
+            elif util.mime_is_maff(mime):
                 urls.extend(base_url + f.indexfilename for f in util.get_maff_pages(file))
             continue
 
@@ -474,9 +474,9 @@ def view_archive_files(files):
 
         # get URL of every index page
         base_url = 'file:' + pathname2url(dest_dir) + '/'
-        if mime == 'application/html+zip':
+        if util.mime_is_htz(mime):
             urls.append(base_url + 'index.html')
-        elif mime == 'application/x-maff':
+        elif util.mime_is_maff(mime):
             urls.extend(base_url + f.indexfilename for f in util.get_maff_pages(file))
 
     # open pages in the browser

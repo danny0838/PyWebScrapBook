@@ -337,7 +337,7 @@ def handle_archive_viewing(localpaths, mimetype):
                                pages=pages,
                                )
 
-    if mimetype == 'application/html+zip':
+    if util.mime_is_htz(mimetype):
         subpath = 'index.html'
     else:
         if len(localpaths) > 1:
@@ -575,11 +575,11 @@ def action_view():
                 abort(404)
             else:
                 # view archive file
-                if mimetype in ('application/html+zip', 'application/x-maff'):
+                if util.mime_is_archive(mimetype):
                     return handle_archive_viewing(localpaths, mimetype)
 
                 # view markdown
-                if mimetype == 'text/markdown':
+                if util.mime_is_markdown(mimetype):
                     return handle_markdown_output(localpaths, zh)
 
                 # convert meta refresh to 302 redirect
@@ -612,11 +612,11 @@ def action_view():
         # handle file
         elif os.path.isfile(localpath):
             # view archive file
-            if mimetype in ('application/html+zip', 'application/x-maff'):
+            if util.mime_is_archive(mimetype):
                 return handle_archive_viewing(localpaths, mimetype)
 
             # view markdown
-            if mimetype == 'text/markdown':
+            if util.mime_is_markdown(mimetype):
                 return handle_markdown_output(localpaths)
 
             # convert meta refresh to 302 redirect
@@ -843,7 +843,7 @@ def action_editx():
     if os.path.lexists(localpath) and not os.path.isfile(localpath):
         abort(400, 'Found a non-file here.')
 
-    if request.localmimetype not in ('text/html', 'application/xhtml+xml'):
+    if not util.mime_is_html(request.localmimetype):
         abort(400, 'This is not an HTML file.')
 
     if len(localpaths) > 1:
