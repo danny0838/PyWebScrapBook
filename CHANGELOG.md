@@ -3,6 +3,15 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.10.0] - 2026-07-26
+* Added support for storing/restoring accurate datetime for files in a ZIP archive.
+* Added support for restoring POSIX permissions when extracting files from a ZIP archive.
+* Improved default external attribute bits for files written into a ZIP archive.
+* Added support for compressing additional file types (e.g., .rtf, .ico, .ttf).
+* Reduced authorization delay when a password is required but not provided.
+* Fixed archive viewing failure with relative paths and `use_jar=true`.
+* Miscellaneous improvements to the internal code, test suite, and dev tools.
+
 ## [2.9.1] - 2026-07-19
 * Fixed a Zip64 error when uploading a large file into a ZIP archive.
 * Fixed improper filename sanitization when copying a file into another ZIP archive.
