@@ -14,6 +14,7 @@ import shutil
 import sys
 
 import PyInstaller.__main__
+from PyInstaller.utils.hooks import collect_submodules
 
 from webscrapbook import __version__
 
@@ -52,6 +53,11 @@ def build_binary(args):
     pack_name = f'webscrapbook-{version}-py{pyver}-{os_}-{arch}{onefile}'
     dist = os.path.join(dist, pack_name)
 
+    # modules imported through importlib cannot be automatically detected
+    hidden_imports = [
+        *collect_submodules('webscrapbook.scrapbook.convert'),
+    ]
+
     # run the compiler
     pyinstaller_args = [
         os.path.join(assets, 'wsb.py'),
@@ -59,7 +65,7 @@ def build_binary(args):
         '--workpath', build,
         '--specpath', build,
         '--distpath', dist,
-        '--hidden-import', 'webscrapbook.cli',
+        *(arg for mod in hidden_imports for arg in ('--hidden-import', mod)),
         '--add-data', ':'.join((os.path.join(root, 'webscrapbook', 'resources'), os.path.join('webscrapbook', 'resources'))),
         '--add-data', ':'.join((os.path.join(root, 'webscrapbook', 'themes'), os.path.join('webscrapbook', 'themes'))),
         '--icon', os.path.join(assets, 'icon32.ico'),
