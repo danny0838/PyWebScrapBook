@@ -3,6 +3,9 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.10.1] - 2026-08-04
+* Fixed missing `convert` submodules for binary builds.
+
 ## [2.10.0] - 2026-07-26
 * Added support for storing/restoring accurate datetime for files in a ZIP archive.
 * Added support for restoring POSIX permissions when extracting files from a ZIP archive.
