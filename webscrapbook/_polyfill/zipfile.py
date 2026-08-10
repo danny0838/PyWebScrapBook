@@ -234,7 +234,7 @@ class ZipInfoExt(_ZipInfo):
             elif tp == 0x5455:
                 # Extended timestamp (0x5455)
                 try:
-                    ut_bits, ut_mtime = struct.unpack_from('<BL', extra, pos)
+                    ut_bits, ut_mtime = struct.unpack_from('<Bl', extra, pos)
                     assert ut_bits & 0x01
                 except (struct.error, AssertionError):
                     pass
@@ -245,7 +245,7 @@ class ZipInfoExt(_ZipInfo):
             elif tp == 0x5855:
                 # Unix1 (0x5855)
                 try:
-                    ux_atime, ux_mtime = struct.unpack_from('<LL', extra, pos)
+                    ux_atime, ux_mtime = struct.unpack_from('<ll', extra, pos)
                 except struct.error:
                     pass
                 else:
@@ -254,7 +254,7 @@ class ZipInfoExt(_ZipInfo):
             elif tp == 0x000d:
                 # Unix0 (0x000d)
                 try:
-                    ux_atime, ux_mtime = struct.unpack_from('<LL', extra, pos)
+                    ux_atime, ux_mtime = struct.unpack_from('<ll', extra, pos)
                 except struct.error:
                     pass
                 else:
@@ -297,11 +297,9 @@ class ZipInfoExt(_ZipInfo):
 
         # Extended timestamp (UT) (0x5455)
         # Prefer this as supported by most tools like Info-ZIP, 7Zip, and Windows native tar.
-        # According to libzip's doc, the timestamps should be 4-byte unsigned integers:
-        # https://libzip.org/specifications/extrafld.txt
         ut_mtime = mtime // 10 ** 9
         try:
-            extras[0x5455] = struct.pack('<HHBL', 0x5455, 5, 0x01, ut_mtime)
+            extras[0x5455] = struct.pack('<HHBl', 0x5455, 5, 0x01, ut_mtime)
         except (struct.error, ValueError):
             # unable to pack due to overflow/underflow
             # some platform (such as PyPy) may raise ValueError instead
@@ -333,11 +331,11 @@ class ZipInfoExt(_ZipInfo):
         # Legacy. Update atime/mtime since it may contain UID, GID, and other info.
         if 0x000d in extras:
             try:
-                _, ux_len, ux_atime, ux_mtime, ux_uid, ux_gid = struct.unpack_from('<HHLLHH', extras[0x000d])
+                _, ux_len, ux_atime, ux_mtime, ux_uid, ux_gid = struct.unpack_from('<HHllHH', extras[0x000d])
                 ux_var = extras[0x000d][16:]
                 ux_mtime = mtime // 10 ** 9
                 ux_atime = atime // 10 ** 9
-                extras[0x000d] = struct.pack(f'<HHLLHH{ux_len - 12}s', 0x000d,
+                extras[0x000d] = struct.pack(f'<HHllHH{ux_len - 12}s', 0x000d,
                                              ux_len, ux_atime, ux_mtime, ux_uid, ux_gid, ux_var)
             except (struct.error, ValueError):
                 # unable to pack due to overflow/underflow
