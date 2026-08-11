@@ -591,6 +591,7 @@ ul  >  li  :not([hidden])  {
 
         # compressible binaries
         self.assertFalse(util.is_text('application/tar'))
+        self.assertFalse(util.is_text('image/bmp'))
         self.assertFalse(util.is_text('image/x-icon'))
         self.assertFalse(util.is_text('font/ttf'))
 
@@ -653,6 +654,7 @@ ul  >  li  :not([hidden])  {
 
         # compressible binaries
         self.assertTrue(util.is_compressible('application/tar'))
+        self.assertTrue(util.is_compressible('image/bmp'))
         self.assertTrue(util.is_compressible('image/x-icon'))
         self.assertTrue(util.is_compressible('font/ttf'))
 

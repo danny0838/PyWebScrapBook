@@ -676,6 +676,8 @@ TEXT_TYPES = {
     'application/postscript',
     'application/rtf',
     'application/sql',
+    'application/toml',
+    'application/x-sh',
     'application/xml',
     'application/xml-dtd',
     'application/xml-external-parsed-entity',
@@ -692,6 +694,7 @@ TEXT_TYPES = {
 TEXT_SUFFIXES = {
     '+csv',
     '+json',
+    '+json-seq',
     '+xml',
     '+yaml',
 }
@@ -702,6 +705,7 @@ COMPRESSIBLE_TYPES = {
     'application/wasm',
     'font/otf',
     'font/ttf',
+    'image/bmp',
     'image/vnd.microsoft.icon',
     'image/x-icon',
 
