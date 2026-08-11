@@ -3,6 +3,12 @@
 * Versions before 1.0 are in initial development. APIs are not stable for these versions, even a `y` version can involve a breaking change, and only partial notable changes are summarized in this document. See full commit history in the source repository for details.
 * Client requirement in this document refers to the version of [`WebScrapBook`](https://github.com/danny0838/webscrapbook) browser extension.
 
+## [2.10.2] - 2026-08-11
+* Fixed handling of negative UNIX timestamps in extra fields for zipfile.
+* Fixed improper updating of Unix0 extra fields in certain cases for zipfile.
+* Fixed an issue where a compressible binary file is treated as text file by some utilities.
+* Added support for auto-compressing more file types (e.g., .bmp).
+
 ## [2.10.1] - 2026-08-04
 * Fixed missing `convert` submodules for binary builds.
 
@@ -10,7 +16,7 @@
 * Added support for storing/restoring accurate datetime for files in a ZIP archive.
 * Added support for restoring POSIX permissions when extracting files from a ZIP archive.
 * Improved default external attribute bits for files written into a ZIP archive.
-* Added support for compressing additional file types (e.g., .rtf, .ico, .ttf).
+* Added support for auto-compressing additional file types (e.g., .rtf, .ico, .ttf).
 * Reduced authorization delay when a password is required but not provided.
 * Fixed archive viewing failure with relative paths and `use_jar=true`.
 * Miscellaneous improvements to the internal code, test suite, and dev tools.
