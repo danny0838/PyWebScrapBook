@@ -574,16 +574,50 @@ ul  >  li  :not([hidden])  {
         self.assertEqual(util.format_filesize(0, space=''), '0B')
         self.assertEqual(util.format_filesize(1048576, space='\xA0'), '1.0\xA0MB')
 
+    def test_is_text(self):
+        # None
+        self.assertFalse(util.is_text(None))
+
+        # binary
+        self.assertFalse(util.is_text('image/jpeg'))
+        self.assertFalse(util.is_text('application/octet-stream'))
+        self.assertFalse(util.is_text('application/ogg'))
+        self.assertFalse(util.is_text('application/pdf'))
+        self.assertFalse(util.is_text('application/zip'))
+        self.assertFalse(util.is_text('application/x-rar-compressed'))
+        self.assertFalse(util.is_text('application/x-gzip'))
+        self.assertFalse(util.is_text('application/html+zip'))
+        self.assertFalse(util.is_text('application/x-maff'))
+
+        # compressible binaries
+        self.assertFalse(util.is_text('application/tar'))
+        self.assertFalse(util.is_text('image/x-icon'))
+        self.assertFalse(util.is_text('font/ttf'))
+
+        # text/*
+        self.assertTrue(util.is_text('text/plain'))
+        self.assertTrue(util.is_text('text/html'))
+        self.assertTrue(util.is_text('text/css'))
+        self.assertTrue(util.is_text('text/javascript'))
+        self.assertTrue(util.is_text('text/markdown'))
+
+        # text-like suffixes
+        self.assertTrue(util.is_text('application/xhtml+xml'))
+        self.assertTrue(util.is_text('application/ld+json'))
+
+        # text-like application/*
+        self.assertTrue(util.is_text('application/javascript'))
+        self.assertTrue(util.is_text('application/ecmascript'))
+        self.assertTrue(util.is_text('application/x-ecmascript'))
+        self.assertTrue(util.is_text('application/x-javascript'))
+        self.assertTrue(util.is_text('application/json'))
+        self.assertTrue(util.is_text('application/xml'))
+        self.assertTrue(util.is_text('application/yaml'))
+        self.assertTrue(util.is_text('application/rtf'))
+
     def test_is_compressible(self):
         # None
         self.assertFalse(util.is_compressible(None))
-
-        # text/*
-        self.assertTrue(util.is_compressible('text/plain'))
-        self.assertTrue(util.is_compressible('text/html'))
-        self.assertTrue(util.is_compressible('text/css'))
-        self.assertTrue(util.is_compressible('text/javascript'))
-        self.assertTrue(util.is_compressible('text/markdown'))
 
         # binary
         self.assertFalse(util.is_compressible('image/jpeg'))
@@ -596,6 +630,17 @@ ul  >  li  :not([hidden])  {
         self.assertFalse(util.is_compressible('application/html+zip'))
         self.assertFalse(util.is_compressible('application/x-maff'))
 
+        # text/*
+        self.assertTrue(util.is_compressible('text/plain'))
+        self.assertTrue(util.is_compressible('text/html'))
+        self.assertTrue(util.is_compressible('text/css'))
+        self.assertTrue(util.is_compressible('text/javascript'))
+        self.assertTrue(util.is_compressible('text/markdown'))
+
+        # text-like suffixes
+        self.assertTrue(util.is_compressible('application/xhtml+xml'))
+        self.assertTrue(util.is_compressible('application/ld+json'))
+
         # text-like application/*
         self.assertTrue(util.is_compressible('application/javascript'))
         self.assertTrue(util.is_compressible('application/ecmascript'))
@@ -606,9 +651,10 @@ ul  >  li  :not([hidden])  {
         self.assertTrue(util.is_compressible('application/yaml'))
         self.assertTrue(util.is_compressible('application/rtf'))
 
-        # text-like suffixes
-        self.assertTrue(util.is_compressible('application/xhtml+xml'))
-        self.assertTrue(util.is_compressible('application/ld+json'))
+        # compressible binaries
+        self.assertTrue(util.is_compressible('application/tar'))
+        self.assertTrue(util.is_compressible('image/x-icon'))
+        self.assertTrue(util.is_compressible('font/ttf'))
 
     def test_mime_is_html(self):
         self.assertTrue(util.mime_is_html('text/html'))

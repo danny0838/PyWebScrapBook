@@ -855,7 +855,7 @@ class SingleHtmlConverter(HtmlRewriter):
         except OSError:
             return f'urn:scrapbook:converter:error:url:{url}'
 
-        if util.is_compressible(mime):
+        if util.is_text(mime):
             return f'data:{mime},{quote(bytes_)}'
 
         return f'data:{mime};base64,{b64encode(bytes_).decode("ascii")}'

@@ -671,38 +671,66 @@ def format_filesize(bytes, si=False, space=' '):
     return tpl.format(n, space, units[e])
 
 
-COMPRESSIBLE_TYPES = {
+TEXT_TYPES = {
     'application/json',
     'application/postscript',
     'application/rtf',
     'application/sql',
-    'application/tar',
-    'application/wasm',
     'application/xml',
     'application/xml-dtd',
     'application/xml-external-parsed-entity',
     'application/yaml',
+
+    # legacy
+    'application/ecmascript',
+    'application/javascript',
+    'application/x-ecmascript',
+    'application/x-javascript',
+    'application/x-yaml',
+}
+
+TEXT_SUFFIXES = {
+    '+csv',
+    '+json',
+    '+xml',
+    '+yaml',
+}
+
+COMPRESSIBLE_TYPES = {
+    *TEXT_TYPES,
+    'application/tar',
+    'application/wasm',
     'font/otf',
     'font/ttf',
     'image/vnd.microsoft.icon',
     'image/x-icon',
 
     # legacy
-    'application/ecmascript',
     'application/font-sfnt',
-    'application/javascript',
-    'application/x-ecmascript',
     'application/x-font-ttf',
-    'application/x-javascript',
-    'application/x-yaml',
 }
 
 COMPRESSIBLE_SUFFIXES = {
-    '+csv',
-    '+json',
-    '+xml',
-    '+yaml',
+    *TEXT_SUFFIXES,
 }
+
+
+def is_text(mimetype):
+    """Guess if the given mimetype is text."""
+    if not mimetype:
+        return False
+
+    if mimetype.startswith('text/'):
+        return True
+
+    if mimetype in TEXT_TYPES:
+        return True
+
+    for suffix in TEXT_SUFFIXES:
+        if mimetype.endswith(suffix):
+            return True
+
+    return False
 
 
 def is_compressible(mimetype):
