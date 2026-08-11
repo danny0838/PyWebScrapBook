@@ -375,7 +375,7 @@ class TestZipInfoExt(unittest.TestCase):
             b'zzz',
         ])
 
-    def test_set_datetime_special_dt(self):
+    def test_set_datetime_special(self):
         # before 1601-01-01T00:00:00Z (NTFS min)
         dt = datetime(1600, 12, 31, 23, 59, 59, 123456, tzinfo=timezone.utc)
         ts = int(dt.timestamp() * 10 ** 9)
@@ -503,19 +503,59 @@ class TestZipInfoExt(unittest.TestCase):
         extras = {tp: extra for extra, tp in zipfile._Extra.iter(zinfo.extra)}
         self.assertEqual(list(extras), [])
 
-    def test_set_datetime_legacy_fields(self):
-        """Update or clear legacy fields if exists."""
+    def test_set_datetime_unix1(self):
+        """Should remove unix1."""
         dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
         ts = int(dt.timestamp() * 10 ** 9)
         zinfo = zipfile.ZipInfo()
         zinfo.extra = b''.join((
             struct.pack('<HHll', 0x5855, 8, int(DUMMY_TS2), int(DUMMY_TS3)),
-            struct.pack('<HHllHH3s', 0x000d, 15, int(DUMMY_TS4), int(DUMMY_TS5), 1, 2, b'foo'),
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HHBl', 0x5455, 5, 1, ts // 10 ** 9),
+        ])
+
+    def test_set_datetime_unix0_with_uid_or_gid(self):
+        """Should update unix0 when having UID/GID."""
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HHllHH3s', 0x000d, 15, int(DUMMY_TS2), int(DUMMY_TS3), 1, 2, b'foo'),
         ))
         zinfo._set_datetime(ts)
         extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
         self.assertEqual(extras, [
             struct.pack('<HHllHH3s', 0x000d, 15, ts // 10 ** 9, ts // 10 ** 9, 1, 2, b'foo'),
+            struct.pack('<HHBl', 0x5455, 5, 1, ts // 10 ** 9),
+        ])
+
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HHllH', 0x000d, 10, int(DUMMY_TS2), int(DUMMY_TS3), 1),
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
+            struct.pack('<HHllH', 0x000d, 10, ts // 10 ** 9, ts // 10 ** 9, 1),
+            struct.pack('<HHBl', 0x5455, 5, 1, ts // 10 ** 9),
+        ])
+
+    def test_set_datetime_unix0_without_uid_or_gid(self):
+        """Should remove unix0 when not having UID/GID."""
+        dt = datetime(2038, 1, 19, 3, 14, 7, 123456, tzinfo=timezone.utc)
+        ts = int(dt.timestamp() * 10 ** 9)
+        zinfo = zipfile.ZipInfo()
+        zinfo.extra = b''.join((
+            struct.pack('<HHll', 0x000d, 8, int(DUMMY_TS2), int(DUMMY_TS3)),
+        ))
+        zinfo._set_datetime(ts)
+        extras = [extra for extra, _ in zipfile._Extra.iter(zinfo.extra)]
+        self.assertEqual(extras, [
             struct.pack('<HHBl', 0x5455, 5, 1, ts // 10 ** 9),
         ])
 

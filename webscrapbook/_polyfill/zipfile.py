@@ -328,19 +328,25 @@ class ZipInfoExt(_ZipInfo):
         extras.pop(0x5855, None)
 
         # Unix0 (0x000d)
-        # Legacy. Update atime/mtime since it may contain UID, GID, and other info.
+        # Legacy. Update atime/mtime iff it contains UID, GID, or other info.
         if 0x000d in extras:
             try:
-                _, ux_len, ux_atime, ux_mtime, ux_uid, ux_gid = struct.unpack_from('<HHllHH', extras[0x000d])
-                ux_var = extras[0x000d][16:]
-                ux_mtime = mtime // 10 ** 9
-                ux_atime = atime // 10 ** 9
-                extras[0x000d] = struct.pack(f'<HHllHH{ux_len - 12}s', 0x000d,
-                                             ux_len, ux_atime, ux_mtime, ux_uid, ux_gid, ux_var)
-            except (struct.error, ValueError):
-                # unable to pack due to overflow/underflow
-                # some platform (such as PyPy) may raise ValueError instead
+                _, ux_len = struct.unpack_from('<HH', extras[0x000d])
+                assert ux_len > 8
+            except (struct.error, AssertionError):
+                # invalid or no UID/GID
                 extras.pop(0x000d, None)
+            else:
+                try:
+                    ux_var = extras[0x000d][12:]
+                    ux_mtime = mtime // 10 ** 9
+                    ux_atime = atime // 10 ** 9
+                    extras[0x000d] = struct.pack(
+                        '<HHll', 0x000d, ux_len, ux_atime, ux_mtime) + ux_var
+                except (struct.error, ValueError):
+                    # unable to pack due to overflow/underflow
+                    # some platform (such as PyPy) may raise ValueError instead
+                    extras.pop(0x000d, None)
 
         # @TODO: update or clear other subfields containing datetime information
 
