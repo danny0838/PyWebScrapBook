@@ -1,4 +1,5 @@
 import os
+import stat
 import struct
 import sys
 import time
@@ -484,6 +485,14 @@ class ZipFileExt(_ZipFile):
             members = self.namelist()
 
         zinfos = [m if isinstance(m, self._ZipInfo) else self.getinfo(m) for m in members]
+        for zinfo in zinfos:
+            filename = zinfo.filename
+            if (
+                filename.startswith('/')
+                or '..' in filename.split('/')
+                or stat.S_ISLNK(zinfo.external_attr >> 16)
+            ):
+                raise ValueError('Unsafe zip entry: %r' % (filename,))
         with extractor(self, path, pwd=pwd) as extr:
             for zinfo in zinfos:
                 extr(zinfo)
