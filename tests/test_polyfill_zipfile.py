@@ -1,5 +1,6 @@
 import io
 import os
+import stat
 import struct
 import tempfile
 import time
@@ -932,6 +933,39 @@ class TestZipFileExt(unittest.TestCase):
         st = os.stat(dst)
         self.assertEqual(st.st_size, zinfo2.file_size)
         self.assertAlmostEqual(st.st_mtime_ns, time.time_ns(), delta=10 ** 9)
+
+    def test_extractall_unsafe_members(self):
+        """Should reject absolute paths, parent components, and symlinks."""
+        root = tempfile.mkdtemp(dir=tmpdir)
+
+        # absolute path
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zh:
+            zh.writestr('/abs/path.txt', b'foo')
+        with zipfile.ZipFile(buf) as zh:
+            with self.assertRaises(ValueError):
+                zh.extractall(root)
+        self.assertEqual(os.listdir(root), [])
+
+        # parent-directory component
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zh:
+            zh.writestr('../evil.txt', b'foo')
+        with zipfile.ZipFile(buf) as zh:
+            with self.assertRaises(ValueError):
+                zh.extractall(root)
+        self.assertEqual(os.listdir(root), [])
+
+        # symlink
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zh:
+            zinfo = zipfile.ZipInfo('link')
+            zinfo.external_attr = (stat.S_IFLNK | 0o777) << 16
+            zh.writestr(zinfo, b'foo')
+        with zipfile.ZipFile(buf) as zh:
+            with self.assertRaises(ValueError):
+                zh.extractall(root)
+        self.assertEqual(os.listdir(root), [])
 
 
 if __name__ == '__main__':
